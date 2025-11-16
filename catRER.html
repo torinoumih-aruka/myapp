@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>猫給餌カロリー計算</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            padding: 10px;
+        }
+        .top-section {
+            width: 100%;
+            max-width: 400px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+        .center-section {
+            width: 100%;
+            max-width: 400px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+        .bottom-section {
+            width: 100%;
+            max-width: 400px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        select, button {
+            padding: 5px;
+            font-size: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45A049;
+        }
+        .result {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: rgb(255,0,0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-section">
+            <label for="weight">体重(Kg)</label>
+            <select id="weight" style="width:80px;"></select>
+            <label for="times">1日</label>
+            <select id="times" style="width:50px;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+            <label>回</label>
+
+            <button onclick="calculateEnergy()" style="width:70px;">計算</button>
+			<br>
+           <label>1食あたりの必要kcal：</label><span id="result" class="result"></span>
+        </div>
+
+        <div class="center-section">
+            <label for="feeds">ごはんリスト</label>
+            <textarea id="feeds" rows="3" style="width:100%">ミャウミャウジューシー,60,36,黒缶（パウチ）,70,56,黒缶（缶詰）,100,80,ピュリナフィリックス（パウチ）,100,76,ピュリナワン白魚,100,365,ミャウミャウカリカリ小粒まぐろ,100,350</textarea>
+			<br>
+            <button onclick="setFeeds()" style="width:120px;">リスト作成</button>
+        </div>
+
+        <div class="bottom-section">
+            <label for="feedMain">メイン</label>
+            <select id="feedMain" style="width:200px;"></select>
+            <select id="gmMain" style="100px;"></select>
+            <br>
+
+            <label for="feedSub1">サブ１</label>
+            <select id="feedSub1" style="width:200px;"></select>
+            <select id="gmSub1" style="100px;"></select>
+            <br>
+
+            <label for="feedSub2">サブ２</label>
+            <select id="feedSub2" style="width:200px;"></select>
+            <select id="gmSub2" style="100px;"></select>
+            <br>
+
+            <label for="feedInput">入力</label>
+            <input type=text" id="inputGm" style="width:70px" /input>g
+            <input type=text" id="inputCal" style="width:70px" /input>kcal
+            <select id="gmInput" style="100px;"></select>
+			<br>
+            <button onclick="calculateVolume()" style="width:120px;">グラム計算</button>
+        </div>
+ 
+         <div class="bottom-section">
+         
+         	<table id="rstTable">
+         		<tr>
+	         		<th>名前</th>
+	         		<th>g</th>
+	         		<th>KCal</th>
+         		</tr>
+         	</table>
+        </div>
+    </div>
+
+<script>
+    // 体重プルダウン生成
+    const weightSelect = document.getElementById('weight');
+    for (let w = 3.0; w <= 6.0; w += 0.1) {
+        const option = document.createElement('option');
+        option.value = w.toFixed(1);
+        option.textContent = w.toFixed(1);
+        weightSelect.appendChild(option);
+    }
+
+    function calculateEnergy() {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const times = parseInt(document.getElementById('times').value);
+
+        // DER * 係数（室内外の猫）
+        const DER = 70 * Math.pow(weight, 0.75) * 1.2;
+
+        // 1食あたり
+        const perMeal = DER / times;
+
+        // 四捨五入（小数第一位）
+        const rounded = Math.round(perMeal);
+
+        document.getElementById('result').textContent = rounded;
+    }
+    
+    function setFeeds() {
+    
+		const text = document.getElementById('feeds').value.trim();
+	    const items = text.split(",");
+	    
+	    let isErr= false;
+
+    	const dataList = [];
+	    for (let i = 0; i < items.length; i += 3) {
+	        const name = items[i];
+	        const gram = parseFloat(items[i + 1]);
+	        const kcal = parseFloat(items[i + 2]);
+
+	        // 1グラムあたりカロリー（小数第3位四捨五入 → 小数第2位まで）
+	        const kcalPerGram = Math.round((kcal / gram) * 100) / 100;
+	        
+	        if(kcalPerGram==0){
+	        	isErr=true;
+	        }
+
+	        dataList.push({ name, value: kcalPerGram });
+    	}
+
+	    // プルダウン3つ
+	    const selects = [
+	        document.getElementById("feedMain"),
+	        document.getElementById("feedSub1"),
+	        document.getElementById("feedSub2"),
+	    ];
+
+	    // 3つのプルダウンに同じ選択肢セットを入れる
+	    selects.forEach(select => {
+	        select.innerHTML = null; // 初期化
+
+	        if(select.id != "feedMain"){
+	            const nonSel = document.createElement("option");
+	            nonSel.textContent = "なし";
+	            nonSel.value = 0;
+	            select.appendChild(nonSel);
+            }
+			dataList.forEach(item => {
+	            const opt = document.createElement("option");
+	            opt.textContent = item.name;
+	            opt.value = item.value;
+	            select.appendChild(opt);
+	        });
+	    });
+
+	    // グラムプルダウン3つ
+	    const gmSelects = [
+	        document.getElementById("gmMain"),
+	        document.getElementById("gmSub1"),
+	        document.getElementById("gmSub2"),
+	        document.getElementById("gmInput"),
+	    ];
+
+	    // 3つのプルダウンに同じ選択肢セットを入れる
+	    gmSelects.forEach(select => {
+	        select.innerHTML = ''; // 初期化
+	        
+	        if(select.id != "gmMain"){
+	            const nonSel = document.createElement("option");
+	            nonSel.textContent = "未定";
+	            nonSel.value = -1;
+	            select.appendChild(nonSel);
+	        }
+
+			for(let j = 0; j < 40; j++){
+	            const opt = document.createElement("option");
+	            opt.textContent = j+5;
+	            opt.value = j+5;
+	            select.appendChild(opt);
+	        }
+	        console.log("1");
+	    });
+	    console.log("2");
+	    if(isErr){
+	    	alert("ごはんリストの値がおかしいか、カロリーの設定が誤っています。");
+	    	isErr = false;
+	    }
+	    console.log("3");
+    }
+    
+    function calculateVolume(){
+    
+    	const selectFeedList = [];
+    	
+    	let totalCal = 0;
+    	let anbunCnt = 0;
+    	let errMsg="";
+
+		const tbl = document.getElementById('rstTable');
+		
+		tbl.innerHTML = '';
+    	
+    	const result = document.getElementById("result").textContent;
+    	
+//    	if(minusCal<0){
+//    		errMsg = mainName + "のグラム数が多すぎます。";
+//    	}
+
+		// メイン・サブ餌のリスト登録
+	    const selects = [
+	        document.getElementById("feedMain"),
+	        document.getElementById("feedSub1"),
+	        document.getElementById("feedSub2"),
+	    ];
+	    
+	    selects.forEach(select => {
+	    
+	    	const name = select.options[select.selectedIndex].text;
+	    	const cal = select.value;
+	    	let grams = 0;
+	    	let isCalc = false;
+	    	let isAnbun = false;
+	    	let calcCal = 0;
+	    	
+	    	// 餌が選ばれていない場合は、計算フラグを立てない
+	    	if(name=="なし"){
+	    		grams = 0;
+	    		isCalc = false;
+	    	}else{
+	    	
+	    		// 餌が選ばれている場合は、グラム数を取得し、計算フラグを立てる
+	    		grams = document.getElementById("gm" + select.id.substring(4,8)).value;
+	    		isCalc = true;
+	    		
+	    		// グラム数が「未定」の場合は、案分対象とする
+	    		if(grams == -1){
+		    		isAnbun = true;
+		    	// グラム数が未定ではない場合は、1グラム当たりのカロリー×グラム数の計算を行う
+		    	}else{
+			    	calcCal = Math.round(grams * cal);
+			    	totalCal += calcCal;
+		    	}
+	    	}
+	    
+	    	// リスト登録
+		    selectFeedList.push({ name: name , cal: cal, grams: grams ,isCalc: isCalc ,calcCal: calcCal ,isAnbun: isAnbun});
+	    });
+
+		// 入力餌のリスト登録
+		const kcal_i = document.getElementById("inputCal").value;
+		const gram_i = document.getElementById("inputGm").value;
+		
+		// 1グラムあたりのカロリー、グラムが入力されていない場合はリスト登録しない
+		if(kcal_i != "" || gram_i != ""){
+		
+			// 入力されているが数値ではない場合は、エラーとし処理を中断する
+			if(isNaN(kcal_i) || isNaN(gram_i)){
+				alert("入力餌のグラム数、カロリー数は両方とも数字で入力してください。");
+				return;
+			}
+			
+	    	let grams_i = document.getElementById("gmInput").value;
+	    	let isCalc_i = true;
+	    	let calcCal_i = 0;
+	    	let isAnbun_i = false;
+
+			// 1グラム当たりのカロリー計算
+			const kcalPerGram = Math.round((kcal_i / gram_i) * 100) / 100;
+
+			// グラム数が「未定」の場合は、案分対象とする
+    		if(grams_i == -1){
+	    		isAnbun_i = true;
+	    	// グラム数が未定ではない場合は、1グラム当たりのカロリー×グラム数の計算を行う
+	    	}else{
+	    		calcCal_i = Math.round(grams_i * kcalPerGram);
+			    totalCal += calcCal_i;
+	    	}
+
+			selectFeedList.push({ name: "入力餌" , cal: kcalPerGram, grams: grams_i ,isCalc: isCalc_i,calcCal: calcCal_i ,isAnbun: isAnbun_i});
+		}
+		
+		// グラム指定した餌のカロリー総量だけで、要求カロリー数をオーバーする場合
+		if(result<totalCal){
+		
+		}
+
+	    let outputTotalCal = 0;
+
+	    selectFeedList.forEach(list => {
+	    
+	    	if(list.isCalc){
+		    	const tr = document.createElement("tr");
+		    	const tdName = document.createElement("td");
+		    	tdName.textContent = list.name;
+
+		    	const tdGrams = document.createElement("td");
+		    	tdGrams.textContent = list.grams;
+
+		    	const tdCal = document.createElement("td");
+		    	tdCal.textContent = list.calcCal;
+		    	
+		    	outputTotalCal += list.calcCal;
+		    	
+		    	tr.appendChild(tdName);
+		    	tr.appendChild(tdGrams);
+		    	tr.appendChild(tdCal);
+				tbl.appendChild(tr);
+		    }
+		    
+	    
+	    });
+
+    	const tr = document.createElement("tr");
+    	const tdName = document.createElement("td");
+    	tdName.textContent = "合計";
+
+    	const tdGrams = document.createElement("td");
+    	tdGrams.textContent = "-";
+
+    	const tdCal = document.createElement("td");
+    	tdCal.textContent = outputTotalCal;
+    	
+    	tr.appendChild(tdName);
+    	tr.appendChild(tdGrams);
+    	tr.appendChild(tdCal);
+		tbl.appendChild(tr);	
+
+    }
+
+	window.onload = function() {
+	    loadOptions();   // 初期表示時に自動実行
+	};
+	
+	function loadOptions(){
+	
+		const weight = document.getElementById("weight");
+		weight.value = "4.5"; //テトちゃんの体重
+
+		const times = document.getElementById("times");
+		times.value = "2"; //一日のごはん回数
+		
+		calculateEnergy(); //カロリー計算
+
+		const params = new URLSearchParams(window.location.search);
+
+		const csv = params.get("list");
+		if(csv){
+			document.getElementById("feeds").value = csv;
+		}
+		
+		setFeeds(); // プルダウン生成
+
+
+        document.getElementById("feedMain").selectedIndex = 0;
+        document.getElementById("feedSub1").selectedIndex = 2;
+        document.getElementById("feedSub2").selectedIndex = 3;
+
+	    document.getElementById("gmMain").value = 20;
+
+	}
+	
+</script>
+</body>
+</html>
