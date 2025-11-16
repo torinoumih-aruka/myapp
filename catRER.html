@@ -66,6 +66,14 @@
         button:hover {
             background-color: #45A049;
         }
+        table,tr,td {
+        	border: 1px solid;
+        }
+        th {
+        	border: 1px solid;
+        	font-weight: bold;
+        	
+        }
         .result {
             font-size: 20px;
             font-weight: bold;
@@ -86,32 +94,28 @@
                 <option value="3">3</option>
             </select>
             <label>回</label>
+            <br>
+            <label for="snack">1日のおやつカロリー(KCal)</label>
+            <input type="text" id="snack" style="width:40px;"></input>
 
             <button onclick="calculateEnergy()" style="width:70px;">計算</button>
 			<br>
            <label>1食あたりの必要kcal：</label><span id="result" class="result"></span>
         </div>
 
-        <div class="center-section">
-            <label for="feeds">ごはんリスト</label>
-            <textarea id="feeds" rows="3" style="width:100%">ミャウミャウジューシー,60,36,黒缶（パウチ）,70,56,黒缶（缶詰）,100,80,ピュリナフィリックス（パウチ）,100,76,ピュリナワン白魚,100,365,ミャウミャウカリカリ小粒まぐろ,100,350</textarea>
-			<br>
-            <button onclick="setFeeds()" style="width:120px;">リスト作成</button>
-        </div>
-
         <div class="bottom-section">
             <label for="feedMain">メイン</label>
-            <select id="feedMain" style="width:200px;"></select>
+            <select id="feedMain" style="width:230px;"></select>
             <select id="gmMain" style="100px;"></select>
             <br>
 
             <label for="feedSub1">サブ１</label>
-            <select id="feedSub1" style="width:200px;"></select>
+            <select id="feedSub1" style="width:230px;"></select>
             <select id="gmSub1" style="100px;"></select>
             <br>
 
             <label for="feedSub2">サブ２</label>
-            <select id="feedSub2" style="width:200px;"></select>
+            <select id="feedSub2" style="width:230px;"></select>
             <select id="gmSub2" style="100px;"></select>
             <br>
 
@@ -126,13 +130,17 @@
          <div class="bottom-section">
          
          	<table id="rstTable">
-         		<tr>
-	         		<th>名前</th>
-	         		<th>g</th>
-	         		<th>KCal</th>
-         		</tr>
          	</table>
         </div>
+
+        <div class="center-section">
+            <label for="feeds">ごはんリスト</label>
+            <textarea id="feeds" rows="3" style="width:100%">wミャウミャウジューシー,60,36,w黒缶,70,56,wフィリックス（パウチ）,100,76,kピュリナワン白魚,100,365,kピュリナワンサーモン＆ツナ,100,352,kミャウミャウカリカリ小粒まぐろ,100,350,kナチュラハチキン,100,390,k懐石ベストセレクション,100,340,kシーバ,100,405,kプレステージターキー,100,391</textarea>
+			<br>
+            <button onclick="setFeeds()" style="width:120px;">リスト作成</button>
+            <button onclick="createURL()" style="width:120px;">URLコピー</button>
+        </div>
+
     </div>
 
 <script>
@@ -148,12 +156,13 @@
     function calculateEnergy() {
         const weight = parseFloat(document.getElementById('weight').value);
         const times = parseInt(document.getElementById('times').value);
+        const snack = parseInt(document.getElementById('snack').value);
 
         // DER * 係数（室内外の猫）
         const DER = 70 * Math.pow(weight, 0.75) * 1.2;
 
         // 1食あたり
-        const perMeal = DER / times;
+        const perMeal = (DER-snack) / times;
 
         // 四捨五入（小数第一位）
         const rounded = Math.round(perMeal);
@@ -228,10 +237,10 @@
 	            select.appendChild(nonSel);
 	        }
 
-			for(let j = 0; j < 40; j++){
+			for(let j = 0; j < 50; j++){
 	            const opt = document.createElement("option");
-	            opt.textContent = j+5;
-	            opt.value = j+5;
+	            opt.textContent = j+1;
+	            opt.value = j+1;
 	            select.appendChild(opt);
 	        }
 	        console.log("1");
@@ -291,6 +300,7 @@
 	    		// グラム数が「未定」の場合は、案分対象とする
 	    		if(grams == -1){
 		    		isAnbun = true;
+		    		anbunCnt++;
 		    	// グラム数が未定ではない場合は、1グラム当たりのカロリー×グラム数の計算を行う
 		    	}else{
 			    	calcCal = Math.round(grams * cal);
@@ -326,6 +336,7 @@
 			// グラム数が「未定」の場合は、案分対象とする
     		if(grams_i == -1){
 	    		isAnbun_i = true;
+	    		anbunCnt++;
 	    	// グラム数が未定ではない場合は、1グラム当たりのカロリー×グラム数の計算を行う
 	    	}else{
 	    		calcCal_i = Math.round(grams_i * kcalPerGram);
@@ -338,9 +349,37 @@
 		// グラム指定した餌のカロリー総量だけで、要求カロリー数をオーバーする場合
 		if(result<totalCal){
 		
+		}else{
+			// 案分する場合の１種類の餌あたりのカロリー
+			let partCal = Math.round((result - totalCal)/anbunCnt);
+		
+			selectFeedList.forEach(list => {
+			
+				// 案分対象の餌
+				if(list.isAnbun){
+					//案分処理
+					list.grams = Math.round(partCal / list.cal);
+					list.calcCal = Math.round(list.grams * list.cal);
+				}
+			});
 		}
 
 	    let outputTotalCal = 0;
+
+    	const tr1 = document.createElement("tr");
+    	const thName = document.createElement("th");
+    	thName.textContent = "名前";
+
+    	const thGrams = document.createElement("th");
+    	thGrams.textContent = "g";
+
+    	const thCal = document.createElement("th");
+    	thCal.textContent = "KCal";
+    	
+    	tr1.appendChild(thName);
+    	tr1.appendChild(thGrams);
+    	tr1.appendChild(thCal);
+		tbl.appendChild(tr1);	
 
 	    selectFeedList.forEach(list => {
 	    
@@ -351,6 +390,9 @@
 
 		    	const tdGrams = document.createElement("td");
 		    	tdGrams.textContent = list.grams;
+		    	if(list.isAnbun){
+		    		tdGrams.style.backgroundColor = "#ffff00";
+		    	}
 
 		    	const tdCal = document.createElement("td");
 		    	tdCal.textContent = list.calcCal;
@@ -366,7 +408,7 @@
 	    
 	    });
 
-    	const tr = document.createElement("tr");
+    	const tr2 = document.createElement("tr");
     	const tdName = document.createElement("td");
     	tdName.textContent = "合計";
 
@@ -376,12 +418,27 @@
     	const tdCal = document.createElement("td");
     	tdCal.textContent = outputTotalCal;
     	
-    	tr.appendChild(tdName);
-    	tr.appendChild(tdGrams);
-    	tr.appendChild(tdCal);
-		tbl.appendChild(tr);	
-
+    	tr2.appendChild(tdName);
+    	tr2.appendChild(tdGrams);
+    	tr2.appendChild(tdCal);
+		tbl.appendChild(tr2);	
     }
+
+
+	function createURL(){
+	
+		const text = document.getElementById("feeds").value;
+		const encoded = encodeURIComponent(text);
+
+		// クリップボードへコピー
+		navigator.clipboard.writeText("https://torinoumih-aruka.github.io/myapp/catRER.html?list=" + encoded)
+				.then(() => {
+			alert("ごはんリストを反映したURLをクリップボードに書き込みました");
+		})
+				.catch(err => {
+			alert("コピーに失敗しました: " + err);
+		});
+	}
 
 	window.onload = function() {
 	    loadOptions();   // 初期表示時に自動実行
@@ -395,6 +452,9 @@
 		const times = document.getElementById("times");
 		times.value = "2"; //一日のごはん回数
 		
+		const snack = document.getElementById("snack");
+		snack.value = "10";//一日のおやつカロリー
+		
 		calculateEnergy(); //カロリー計算
 
 		const params = new URLSearchParams(window.location.search);
@@ -406,13 +466,10 @@
 		
 		setFeeds(); // プルダウン生成
 
-
         document.getElementById("feedMain").selectedIndex = 0;
         document.getElementById("feedSub1").selectedIndex = 2;
         document.getElementById("feedSub2").selectedIndex = 3;
-
 	    document.getElementById("gmMain").value = 20;
-
 	}
 	
 </script>
