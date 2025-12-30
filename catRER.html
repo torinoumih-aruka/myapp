@@ -66,6 +66,10 @@
         button:hover {
             background-color: #45A049;
         }
+        button:disabled {
+            pointer-events: none;
+            background-color: #999999;
+        }
         table,tr,td {
         	border: 1px solid;
         }
@@ -83,7 +87,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="normal">
         <div class="top-section">
             <label for="weight">体重(Kg)</label>
             <select id="weight" style="width:80px;"></select>
@@ -143,6 +147,51 @@
 
     </div>
 
+    <div class="container" id="nazotoki0">
+    	<div>
+    		<p>プレゼントを隠しました。謎解きを解いて、プレゼントのありかを突き止めよう！</p>
+			<button onclick="nazotoki_start()" style="width:160px;">謎解きスタート</button>
+    	</div>
+    </div>
+
+    <div class="container" id="nazotoki">
+    	<div>
+    		<p>※答えは全てカタカナで入力すること</p>
+
+    		<p>【１】ヒラガイレジギオレマスホ</p>
+    		<p>１．和名は、ハナハッカ</p>
+    		<input type=text id="a_1" style="width:65px" /input><button id="b_1" onclick="ques('a_1','b_1','w_1')" style="width:70px">確認</button><span id="w_1"></span>
+    		<p>２．女文字</p>
+    		<input type=text id="a_2" style="width:65px" /input><button id="b_2" onclick="ques('a_2','b_2','w_2')" style="width:70px">確認</button><span id="w_2"></span>
+    		<p>３．世界一長いベンチ</p>
+    		<input type=text id="a_3" style="width:90px" /input><button id="b_3" onclick="ques('a_3','b_3','w_3')" style="width:70px">確認</button><span id="w_3"></span>
+    		<p>４．全国図鑑No.486</p>
+    		<input type=text id="a_4" style="width:70px" /input><button id="b_4" onclick="ques('a_4','b_4','w_4')" style="width:70px">確認</button><span id="w_4"></span>
+    		<br><br>
+
+    		<p>【２】ゲンエイワヒシカノウラ</p>
+    		<p>１．◇</p>
+    		<input type=text id="a_5" style="width:65px" /input><button id="b_5" onclick="ques('a_5','b_5','w_5')" style="width:70px">確認</button><span id="w_5"></span>
+    		<p>２．チネチッタ</p>
+    		<input type=text id="a_6" style="width:70px" /input><button id="b_6" onclick="ques('a_6','b_6','w_6')" style="width:70px">確認</button><span id="w_6"></span>
+    		<p>３．電気飴</p>
+    		<input type=text id="a_7" style="width:65px" /input><button id="b_7" onclick="ques('a_7','b_7','w_7')" style="width:70px">確認</button><span id="w_7"></span>
+    		<p>４．35.05983069285643, 134.63349852719963</p>
+    		<input type=text id="a_8" style="width:70px" /input><button id="b_8" onclick="ques('a_8','b_8','w_8')" style="width:70px">確認</button><span id="w_8"></span>
+    		<br><br>
+
+    		<p>【３】キヨノナイボヨノナイドノアジ</p>
+    		<p>１．余能那賀比登</p>
+    		<input type=text id="a_9" style="width:90px" /input><button id="b_9" onclick="ques('a_9','b_9','w_9')" style="width:70px">確認</button><span id="w_9"></span>
+    		<p>２．湊線の終着駅</p>
+    		<input type=text id="a_10" style="width:70px" /input><button id="b_10" onclick="ques('a_10','b_10','w_10')" style="width:70px">確認</button><span id="w_10"></span>
+    		<p>３．夏越の祓で流すもの</p>
+    		<input type=text id="a_11" style="width:65px" /input><button id="b_11" onclick="ques('a_11','b_11','w_11')" style="width:70px">確認</button><span id="w_11"></span>
+    		<p>４．虎</p>
+    		<input type=text id="a_12" style="width:65px" /input><button id="b_12" onclick="ques('a_12','b_12','w_12')" style="width:70px">確認</button><span id="w_12"></span>
+    	</div>
+    </div>
+
 <script>
     // 体重プルダウン生成
     const weightSelect = document.getElementById('weight');
@@ -152,6 +201,73 @@
         option.textContent = w.toFixed(1);
         weightSelect.appendChild(option);
     }
+    
+    function ques(textbox,button,span){
+
+		const textControl = document.getElementById(textbox);
+		const buttonControl = document.getElementById(button);
+		const spanControl = document.getElementById(span);
+		
+		let isCorrect = false;
+
+    	if(textbox == "a_1"){
+    		if(textControl.value == "オレガノ"){isCorrect = true;}
+    	}else if(textbox == "a_2"){
+    		if(textControl.value == "ヒラガナ"){isCorrect = true;}
+    	}else if(textbox == "a_3"){
+    		if(textControl.value == "マスホガウラ"){isCorrect = true;}
+    	}else if(textbox == "a_4"){
+    		if(textControl.value == "レジギガス"){isCorrect = true;}
+    	}else if(textbox == "a_5"){
+    		if(textControl.value == "ヒシガタ"){isCorrect = true;}
+    	}else if(textbox == "a_6"){
+    		if(textControl.value == "エイガカン"){isCorrect = true;}
+    	}else if(textbox == "a_7"){
+    		if(textControl.value == "ワタガシ"){isCorrect = true;}
+    	}else if(textbox == "a_8"){
+    		if(textControl.value == "シカガツボ"){isCorrect = true;}
+    	}else if(textbox == "a_9"){
+    		if(textControl.value == "ヨノナガヒト"){isCorrect = true;}
+    	}else if(textbox == "a_10"){
+    		if(textControl.value == "アジガウラ"){isCorrect = true;}
+    	}else if(textbox == "a_11"){
+    		if(textControl.value == "ヒトガタ"){isCorrect = true;}
+    	}else if(textbox == "a_12"){
+    		if(textControl.value == "タイガー"){isCorrect = true;}
+    	}      	
+    	// 正解
+    	if(isCorrect){
+    		textControl.setAttribute("readOnly", true);
+    		textControl.style.background = 'rgb(235,235,228)';
+    		buttonControl.setAttribute("disabled", true);
+    		spanControl.innerText = "○";
+    	}else{
+    		textControl.removeAttribute("readOnly");
+    		textControl.style.background = "white";
+    		buttonControl.removeAttribute("disabled");
+    		spanControl.innerText = "×";
+    	}
+    	
+
+		let cnt = 0;
+    	for(let i=1;i<13;i++){
+
+
+	    	const spans = document.getElementById("w_" + i);
+	    	if(spans.innerText=="○"){
+	    		cnt+=1;
+	    	}
+    		
+    		if(cnt===12){
+    			alert("0626を、初めてハンモックに乗った日に変えてみよう");
+    			return;
+    		}
+    	}
+    }
+    
+    function nazotoki_start() {
+	    location.href = "https://torinoumih-aruka.github.io/myapp/catRER.html?teto=06261";
+	}
 
     function calculateEnergy() {
         const weight = parseFloat(document.getElementById('weight').value);
@@ -445,7 +561,11 @@
 	};
 	
 	function loadOptions(){
-	
+
+		// 謎解きフィールドは非表示に
+		document.getElementById("nazotoki").style.display = "none";
+		document.getElementById("nazotoki0").style.display = "none";
+
 		const weight = document.getElementById("weight");
 		weight.value = "4.5"; //テトちゃんの体重
 
@@ -463,9 +583,36 @@
 		if(csv){
 			document.getElementById("feeds").value = csv;
 		}
+
+		const mode = params.get("teto");
+		if(mode){
+			if(mode == "0626"){
+				alert("メリークリスマス！良いお年を！");
+				const normal = document.getElementById("normal");
+				normal.style.display = "none";
+				document.getElementById("nazotoki0").style.display = "block";
+				document.getElementById("nazotoki").style.display = "none";
+			}
+			if(mode == "06261"){
+				const normal = document.getElementById("normal");
+				normal.style.display = "none";
+				document.getElementById("nazotoki0").style.display = "none";
+				document.getElementById("nazotoki").style.display = "block";
+			}
+			if(mode == "0916"){
+				alert("いつもと違う箇所を５つ探して、その文字どうしをつなぐように山折りにしよう");
+				const normal = document.getElementById("normal");
+				document.getElementById('feeds').value = "wミャウミャウジューシー,60,36,w黒缶,70,56,wフィリックス（パウチ）,100,76,kピュリナワン白魚,100,365,kピュリナンサーモン＆ナ,100,352,kミャウミャウカリカリ小粒まぐろ,100,350,kナチュラチキン,100,390,k懐石ベストセクション,100,340,kシーバ,100,405,kプレステージーキー,100,391"
+			}
+		}
 		
 		setFeeds(); // プルダウン生成
-
+		if(mode){
+			if(mode == "0916"){
+				document.getElementById('feeds').value = "wミャウミャウジューシー,60,36,w黒缶,70,56,wフィリックス（パウチ）,100,76,kピュリナワン白魚,100,365,kピュリナワンサーモン＆ツナ,100,352,kミャウミャウカリカリ小粒まぐろ,100,350,kナチュラハチキン,100,390,k懐石ベストセレクション,100,340,kシーバ,100,405,kプレステージターキー,100,391"
+			}
+		}
+		
         document.getElementById("feedMain").selectedIndex = 0;
         document.getElementById("feedSub1").selectedIndex = 2;
         document.getElementById("feedSub2").selectedIndex = 3;
