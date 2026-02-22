@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emoji Rogue: Complete Version</title>
+    <style>
+        :root {
+            --bg-color: #000;
+            --panel-color: #1a1a1a;
+            --hp-color: #ff4d4d;
+            --hunger-color: #ffcc00;
+            --exp-color: #4d4dff;
+            --tile-w: 17px;
+            --tile-h: 28px;
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: var(--bg-color);
+            color: white; font-family: sans-serif;
+            overflow: hidden; touch-action: none;
+        }
+
+        #game-container {
+            display: flex; flex-direction: column;
+            height: 100vh; max-width: 500px; margin: 0 auto;
+            position: relative;
+        }
+
+        /* 階層移動時のフェードオーバーレイ */
+        #floor-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; color: white; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; pointer-events: none; opacity: 1;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        #status-area { padding: 10px; background: var(--panel-color); font-size: 13px; z-index: 200; }
+        .stat-row { display: flex; align-items: center; margin-bottom: 4px; }
+        .bar-bg { flex-grow: 1; height: 10px; background: #333; border-radius: 5px; margin: 0 10px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.2s; }
+        #hp-fill { background: var(--hp-color); }
+        #hunger-fill { background: var(--hunger-color); }
+        #exp-fill { background: var(--exp-color); }
+
+        #viewport { flex: 1; position: relative; overflow: hidden; background: #000; }
+
+        #map-root {
+            position: absolute;
+            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+            font-size: 28px; line-height: 28px; letter-spacing: -11px;
+            transition: transform 0.4s ease-out; 
+        }
+
+        .layer { position: absolute; top: 0; left: 0; white-space: pre; }
+        #fog-layer { position: absolute; top: 0; left: 0; display: grid; z-index: 100; }
+        .fog-cell { background-color: rgba(0, 0, 0, 0.7); transition: background-color 0.3s; }
+        .fog-visible { background-color: rgba(0, 0, 0, 0); }
+
+        /* Canvasミニマップ */
+        #minimap-canvas {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0, 0, 0, 0.6); border: 1px solid #444;
+            z-index: 150; pointer-events: none;
+        }
+
+        #controls {
+            height: 35%; background: var(--panel-color);
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            padding: 10px; z-index: 200;
+        }
+        .btn {
+            background: #333; color: white; border: none; border-radius: 8px; font-size: 20px;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #000;
+        }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px #000; background: #444; }
+        
+		/* メッセージウィンドウをゲーム画面の下側に重ねる */
+		#msg-log {
+		    position: absolute;
+		    bottom: 10px;
+		    left: 50%;
+		    transform: translateX(-50%);
+		    width: 90%;
+		    height: 3.5em; /* 2行分 */
+		    background: rgba(0, 0, 0, 0.85); /* 透過率15%の黒 */
+		    color: white;
+		    padding: 8px 12px;
+		    font-size: 16px; /* 少し大きく */
+		    border-radius: 8px;
+		    z-index: 1100; /* メッセージウィンドウ */
+		    overflow: hidden;
+		    pointer-events: none;
+		    line-height: 1.6;
+		    border: 1px solid #444;
+		}
+
+		/* 階段の選択肢ダイアログ */
+		#choice-dialog {
+		    position: absolute;
+		    top: 50%;
+		    left: 50%;
+		    transform: translate(-50%, -50%);
+		    background: rgba(0, 0, 0, 0.95);
+		    padding: 20px;
+		    border: 2px solid white;
+		    border-radius: 10px;
+		    z-index: 1200; /* メッセージ（選択肢）が最前面 */
+		    display: none;
+		    text-align: center;
+		}
+		.choice-btn {
+		    margin: 10px;
+		    padding: 8px 20px;
+		    background: #333;
+		    color: white;
+		    border: 1px solid white;
+		    border-radius: 5px;
+		    cursor: pointer;
+		    font-size: 16px;
+		}
+
+		/* 表示順の調整 (z-index) */
+		#inventory-panel { z-index: 1000; }
+		#minimap-canvas { z-index: 900; }
+		#fog-layer { z-index: 600; }
+		.entity[data-type="player"] { z-index: 500; }
+		.entity[data-type="enemy"] { z-index: 400; }
+		.entity[data-type="item"] { z-index: 300; }
+		.stair-tile { z-index: 200; position: absolute; } /* 階段を独立させる場合 */
+		#terrain-layer { z-index: 100; }
+
+
+        /* エンティティ（スライド移動） */
+        #entity-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        .entity {
+            position: absolute; width: var(--tile-w); height: var(--tile-h);
+            display: flex; align-items: center; justify-content: center; font-size: 28px;
+            transition: left 0.2s ease-out, top 0.2s ease-out; z-index: 10;
+        }
+        @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.5); } }
+        .entity.dying { animation: fadeOut 0.2s forwards; transition: none; }
+
+        /* インベントリUI */
+        #inventory-panel {
+            position: absolute; top: 10%; left: 10%; width: 80%; height: 80%;
+            background: rgba(20, 20, 20, 0.95); border: 2px solid #555; border-radius: 10px;
+            z-index: 300; display: none; flex-direction: column; padding: 15px; box-sizing: border-box;
+        }
+        #inventory-panel h3 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 5px; }
+        #inv-list { flex: 1; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+        .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #444; }
+        .inv-btn { background: #444; color: white; border: none; padding: 5px 10px; border-radius: 5px; }
+        #close-inv-btn { margin-top: 10px; padding: 10px; background: #ff4d4d; color: white; border: none; border-radius: 5px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="floor-overlay">地下 1階</div>
+
+    <div id="status-area">
+        <div class="stat-row">
+            <span style="width: 35px;">HP</span><div class="bar-bg"><div id="hp-fill" class="bar-fill"></div></div><span id="hp-val">20/20</span>
+        </div>
+        <div class="stat-row">
+            <span style="width: 35px;">🍞</span><div class="bar-bg"><div id="hunger-fill" class="bar-fill"></div></div><span id="hunger-val">100%</span>
+        </div>
+        <div class="stat-row">
+            <span style="width: 35px;">Lv.<span id="lv-val">1</span></span><div class="bar-bg"><div id="exp-fill" class="bar-fill"></div></div><span id="exp-val">0/10</span>
+        </div>
+        <div class="stat-row" style="color: #aaa; margin-top: 4px;">
+            攻: <span id="atk-val">2</span> | 防: <span id="def-val">2</span>
+        </div>
+    </div>
+
+
+
+    <div id="viewport">
+        <canvas id="minimap-canvas"></canvas>
+		<div id="choice-dialog">
+            <div id="choice-text" style="margin-bottom:15px; color:white;"></div>
+            <button class="choice-btn" id="btn-descend">降りる</button>
+            <button class="choice-btn" id="btn-stay">そのまま</button>
+        </div>
+        <div id="map-root">
+            <div id="terrain-layer" class="layer"></div>
+            <div id="entity-layer" class="layer"></div>
+            <div id="fog-layer"></div>
+        </div>
+	    <div id="msg-log">探索を開始した...</div>
+    </div>
+
+    <div id="inventory-panel">
+        <h3>🎒 持ち物 (<span id="inv-count">0</span>/20)</h3>
+        <ul id="inv-list"></ul>
+        <button id="close-inv-btn" onclick="game.toggleInventory()">閉じる</button>
+    </div>
+
+    <div id="controls">
+        <button class="btn" onclick="game.move(-1, -1)">↖</button>
+        <button class="btn" onclick="game.move(0, -1)">▲</button>
+        <button class="btn" onclick="game.move(1, -1)">↗</button>
+        <button class="btn" style="background:#552222" onclick="game.toggleInventory()">🎒</button>
+
+        <button class="btn" onclick="game.move(-1, 0)">◀</button>
+        <button class="btn" style="font-size:14px" onclick="game.wait()">足踏み<br>⌛</button>
+        <button class="btn" onclick="game.move(1, 0)">▶</button>
+        <button class="btn" style="visibility: hidden;"></button>
+
+        <button class="btn" onclick="game.move(-1, 1)">↙</button>
+        <button class="btn" onclick="game.move(0, 1)">▼</button>
+        <button class="btn" onclick="game.move(1, 1)">↘</button>
+        <button class="btn" style="visibility: hidden;"></button>
+    </div>
+</div>
+
+<script>
+	// クラス外またはコンストラクタ付近に定義
+	const MSG_CONFIG = {
+	    NAMES: {
+	        PLAYER: { id: "あいうえ", color: "yellow" },
+	        ENEMIES: { "ニョロヘビ": "red", "さまようむくろ": "red", "オニ小僧": "red" },
+	        ITEMS: { "パン": "cyan", "ダガー": "cyan", "木甲の盾": "cyan" }
+	    }
+	};
+
+    const CONFIG = {
+        MAP_W: 50, MAP_H: 30, MINIMAP_TILE_SIZE: 3,
+        TILES: { WALL: '⬛', FLOOR: '⬜', WATER: '🟦', STAIRS: '📶', PLAYER: '🙂', ENEMY: ['👹', '🐍', '💀'], ITEM: ['🥖', '⚔️', '🛡️'] } // 将来的に草・巻物などをここに追加
+    };
+
+    class Game {
+        constructor() {
+            this.floor = 1;
+            // プレイヤー初期ステータス（レベル・XP・ボーナス値・インベントリを追加）
+            this.player = { 
+                x: 0, y: 0, level: 1, exp: 0, 
+                maxHp: 20, hp: 20, hunger: 100, 
+                bonusAtk: 0, bonusDef: 0, atk: 2, def: 2,
+                inventory: [] 
+            };
+            this.updateStatsCalc(); // レベルに応じたステータス計算
+
+            this.map = [];
+            this.rooms = [];
+            this.entities = { enemies: [], items: [] };
+            this.isMoving = false;
+            this.seenTiles = new Set();
+            this.setupFogGrid();
+            this.initLevel(true);
+        }
+
+        // レベルと数式に基づくステータスの再計算
+        updateStatsCalc() {
+            this.player.maxHp = 15 + (this.player.level * 5);
+            this.player.atk = 1 + this.player.level + this.player.bonusAtk;
+            this.player.def = 2 + this.player.bonusDef; // 防御はレベルで上がらない
+        }
+
+        gainExp(amount) {
+            this.player.exp += amount;
+            let nextExp = this.player.level * 10;
+            let leveledUp = false;
+            while (this.player.exp >= nextExp) {
+                this.player.exp -= nextExp;
+                this.player.level++;
+                this.updateStatsCalc();
+                this.player.hp = this.player.maxHp; // レベルアップで全回復
+                leveledUp = true;
+                nextExp = this.player.level * 10;
+            }
+            if(leveledUp) this.log(`レベル${this.player.level}に上がった！`);
+        }
+
+        setupFogGrid() {
+            const fogLayer = document.getElementById('fog-layer');
+            fogLayer.innerHTML = '';
+            this.fogCells = [];
+            for (let i = 0; i < CONFIG.MAP_W * CONFIG.MAP_H; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'fog-cell';
+                fogLayer.appendChild(cell);
+                this.fogCells.push(cell);
+            }
+        }
+
+        initLevel(isFirst = false) {
+            this.seenTiles.clear();
+            this.generateMap();
+            this.ensureConnectivity();
+            this.spawnInRooms();
+            
+            // 階層移動フェード演出
+            const overlay = document.getElementById('floor-overlay');
+            overlay.textContent = `地下 ${this.floor}階`;
+            overlay.style.transition = 'none';
+            overlay.style.opacity = '1';
+            
+            // 描画後にフェードアウト
+            setTimeout(() => {
+                this.draw(true);
+                overlay.style.transition = 'opacity 1.5s ease-in-out';
+                overlay.style.opacity = '0';
+                if (!isFirst) this.log(`${this.floor}Fに降りた。`);
+            }, 50);
+        }
+
+		generateMap() {
+            // マップの初期化
+            this.map = Array.from({ length: CONFIG.MAP_H }, () => Array(CONFIG.MAP_W).fill(CONFIG.TILES.WALL));
+            this.rooms = [];
+
+            // 1. 部屋の生成
+            for (let i = 0; i < 8; i++) {
+                const w = Math.floor(Math.random() * 6) + 4;
+                const h = Math.floor(Math.random() * 6) + 4;
+                const x = Math.floor(Math.random() * (CONFIG.MAP_W - w - 2)) + 1;
+                const y = Math.floor(Math.random() * (CONFIG.MAP_H - h - 2)) + 1;
+
+                // 重なりチェック
+                if (this.rooms.some(r => x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y)) continue;
+
+                // 部屋を床で埋める
+                for (let ry = y; ry < y + h; ry++) {
+                    for (let rx = x; rx < x + w; rx++) {
+                        this.map[ry][rx] = CONFIG.TILES.FLOOR;
+                    }
+                }
+
+                // 前の部屋と通路で繋ぐ
+                if (this.rooms.length > 0) {
+                    const prev = this.rooms[this.rooms.length - 1];
+                    this.digCorridor(
+                        Math.floor(prev.x + prev.w / 2), Math.floor(prev.y + prev.h / 2),
+                        Math.floor(x + w / 2), Math.floor(y + h / 2)
+                    );
+                }
+                this.rooms.push({ x, y, w, h });
+            }
+
+            // 部屋が一つも作れなかった場合の安全策
+            if (this.rooms.length === 0) {
+                this.rooms.push({ x: 5, y: 5, w: 5, h: 5 });
+                for(let ry=5; ry<10; ry++) for(let rx=5; rx<10; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
+            }
+
+            // 2. 水路の生成（直線化：上下左右のみ）
+            for (let i = 0; i < 2; i++) {
+                let wx = Math.floor(Math.random() * CONFIG.MAP_W);
+                let wy = Math.floor(Math.random() * CONFIG.MAP_H);
+                for (let j = 0; j < 40; j++) {
+                    if (wy >= 0 && wy < CONFIG.MAP_H && wx >= 0 && wx < CONFIG.MAP_W) {
+                        this.map[wy][wx] = CONFIG.TILES.WATER;
+                    }
+                    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                    const d = dirs[Math.floor(Math.random() * 4)];
+                    wx += d[0]; wy += d[1];
+                }
+            }
+
+            // 3. プレイヤーと階段の配置
+            const startRoom = this.rooms[0];
+            this.player.x = Math.floor(startRoom.x + startRoom.w / 2);
+            this.player.y = Math.floor(startRoom.y + startRoom.h / 2);
+
+            const endRoom = this.rooms[this.rooms.length - 1];
+            const sx = Math.floor(endRoom.x + endRoom.w / 2);
+            const sy = Math.floor(endRoom.y + endRoom.h / 2);
+            this.map[sy][sx] = CONFIG.TILES.STAIRS;
+
+            // 4. 到達性チェック（エラー回避ロジック版）
+            this.ensureConnectivity(this.player.x, this.player.y, sx, sy);
+        }
+
+		// 通路生成メソッド
+		digCorridor(x1, y1, x2, y2) {
+            let cx = x1, cy = y1;
+            while (cx !== x2 || cy !== y2) {
+                if (Math.random() < 0.5) {
+                    if (cx !== x2) cx += (x2 > cx ? 1 : -1);
+                    else if (cy !== y2) cy += (y2 > cy ? 1 : -1);
+                } else {
+                    if (cy !== y2) cy += (y2 > cy ? 1 : -1);
+                    else if (cx !== x2) cx += (x2 > cx ? 1 : -1);
+                }
+                // マップの範囲内であることを確認してから代入
+                if (this.map[cy] && this.map[cy][cx] !== undefined) {
+                    this.map[cy][cx] = CONFIG.TILES.FLOOR;
+                }
+            }
+        }
+
+		// 階段までの到達性を保証する処理
+        ensurePathToStairs(px, py, sx, sy) {
+			const walkable = (t) => t === CONFIG.TILES.FLOOR || t === CONFIG.TILES.STAIR; // 通路や床はOK
+            
+            // 1. まず現在のマップで階段まで行けるかBFSで判定
+            const queue = [[px, py]];
+            const visited = new Set([`${px},${py}`]);
+            let reached = false;
+
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                if (cx === sx && cy === sy) { reached = true; break; }
+
+                const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dx, dy] of dirs) {
+                    const nx = cx + dx, ny = cy + dy;
+                    const key = `${nx},${ny}`;
+                    if (nx >= 0 && nx < CONFIG.MAP_W && ny >= 0 && ny < CONFIG.MAP_H && !visited.has(key)) {
+                        const tile = this.map[ny][nx];
+                        if (tile === CONFIG.TILES.FLOOR || tile === CONFIG.TILES.STAIRS) {
+                            visited.add(key);
+                            queue.push([nx, ny]);
+                        }
+                    }
+                }
+            }
+
+            // 2. もし辿り着けない場合のみ、水や壁を壊して道を繋げる
+            if (!reached) {
+                let curX = px, curY = py;
+                while (curX !== sx || curY !== sy) {
+                    // 座標を階段に近づける
+                    if (curX !== sx) curX += (sx > curX ? 1 : -1);
+                    else if (curY !== sy) curY += (sy > curY ? 1 : -1);
+
+                    // 階段自体を上書きしないように床にする
+                    if (this.map[curY][curX] !== CONFIG.TILES.STAIRS) {
+                        this.map[curY][curX] = CONFIG.TILES.FLOOR;
+                    }
+                }
+            }
+        }
+
+        dig(x1, y1, x2, y2) {
+            let cx = x1, cy = y1;
+            while (cx !== x2 || cy !== y2) {
+                if (cx !== x2) cx += x2 > cx ? 1 : -1;
+                else if (cy !== y2) cy += y2 > cy ? 1 : -1;
+                if (this.map[cy][cx] === CONFIG.TILES.WALL) this.map[cy][cx] = CONFIG.TILES.FLOOR;
+            }
+        }
+
+		ensureConnectivity(px, py, sx, sy) {
+            // BFSで階段まで行けるかチェック
+            const queue = [[px, py]];
+            const visited = new Set([`${px},${py}`]);
+            let reached = false;
+
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                if (cx === sx && cy === sy) { reached = true; break; }
+
+                const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dx, dy] of dirs) {
+                    const nx = cx + dx, ny = cy + dy;
+                    if (nx >= 0 && nx < CONFIG.MAP_W && ny >= 0 && ny < CONFIG.MAP_H && !visited.has(`${nx},${ny}`)) {
+                        const tile = this.map[ny][nx];
+                        // 床または階段なら進める
+                        if (tile === CONFIG.TILES.FLOOR || tile === CONFIG.TILES.STAIRS) {
+                            visited.add(`${nx},${ny}`);
+                            queue.push([nx, ny]);
+                        }
+                    }
+                }
+            }
+
+            // 到達できない場合、水路や壁を強制的に「床」にして道を繋げる
+            if (!reached) {
+                let curX = px, curY = py;
+                while (curX !== sx || curY !== sy) {
+                    if (curX !== sx) curX += (sx > curX ? 1 : -1);
+                    else if (curY !== sy) curY += (sy > curY ? 1 : -1);
+
+                    // 階段以外の場所なら床に上書き（配列の存在チェック付き）
+                    if (this.map[curY] && this.map[curY][curX] !== undefined) {
+                        if (this.map[curY][curX] !== CONFIG.TILES.STAIRS) {
+                            this.map[curY][curX] = CONFIG.TILES.FLOOR;
+                        }
+                    }
+                }
+            }
+        }
+
+        spawnInRooms() {
+            // 水マスや壁を避けて床のみにスポーンさせる
+            const getValidFloorPos = () => {
+                while(true) {
+                    const r = this.rooms[Math.floor(Math.random() * this.rooms.length)];
+                    let x = r.x + Math.floor(Math.random() * r.w);
+                    let y = r.y + Math.floor(Math.random() * r.h);
+                    if (this.map[y][x] === CONFIG.TILES.FLOOR) return {x, y};
+                }
+            };
+
+            const pPos = getValidFloorPos(); this.player.x = pPos.x; this.player.y = pPos.y;
+            this.entities.enemies = []; this.entities.items = [];
+            
+            // 敵は各部屋に確率で配置
+            this.rooms.forEach((r, idx) => {
+                if (idx === 0) return;
+                if (Math.random() < 0.6) {
+                    const ePos = getValidFloorPos();
+                    this.entities.enemies.push({
+                        id: 'e-' + Math.random().toString(36).substr(2, 9),
+                        x: ePos.x, y: ePos.y, hp: 10 + this.floor * 2,
+                        type: CONFIG.TILES.ENEMY[Math.floor(Math.random() * CONFIG.TILES.ENEMY.length)],
+                        isAwake: false, lastSeenPos: null
+                    });
+                }
+            });
+
+            // アイテム出現数を2倍に
+            const itemCount = (Math.floor(Math.random() * 6) + 3) * 2;
+            for(let i=0; i<itemCount; i++) {
+                const iPos = getValidFloorPos();
+                this.entities.items.push({
+                    id: 'i-' + Math.random().toString(36).substr(2, 9),
+                    x: iPos.x, y: iPos.y,
+                    type: CONFIG.TILES.ITEM[Math.floor(Math.random() * CONFIG.TILES.ITEM.length)]
+                });
+            }
+        }
+
+        // 壁の角抜け判定
+        isCornerBlocked(cx, cy, nx, ny) {
+            if (cx === nx || cy === ny) return false;
+            const t1 = this.map[cy][nx];
+            const t2 = this.map[ny][cx];
+            if (t1 === CONFIG.TILES.WALL || t2 === CONFIG.TILES.WALL) return true;
+            return false;
+        }
+
+        move(dx, dy) {
+            if (this.gameState !== 'PLAY' || this.isMoving) return;
+            const nx = this.player.x + dx, ny = this.player.y + dy;
+            if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) return;
+            
+            // 水と壁の当たり判定
+            const t = this.map[ny][nx];
+            if (t === CONFIG.TILES.WALL || t === CONFIG.TILES.WATER) return;
+            if (this.isCornerBlocked(this.player.x, this.player.y, nx, ny)) return;
+
+            const enemy = this.entities.enemies.find(e => e.x === nx && e.y === ny);
+            if (enemy) { this.combat(this.player, enemy); this.tick(); return; }
+
+			// 移動実行
+            this.isMoving = true;
+            this.player.x = nx;
+            this.player.y = ny;
+
+			// 階段に乗った判定
+		    if (this.map[ny][nx] === CONFIG.TILES.STAIRS) {
+		        this.log(`${MSG_CONFIG.NAMES.PLAYER.id}は階段に乗った。`);
+		        this.showStairChoice();
+		        this.update();
+		        return; // ターン消費や敵の行動は一旦止め、選択肢を待つ
+		    }
+
+            this.checkItem();
+            if (this.map[ny][nx] === CONFIG.TILES.STAIRS) {
+                this.floor++; this.initLevel();
+                this.isMoving = false; return;
+            }
+            this.tick();
+            setTimeout(() => this.isMoving = false, 200);
+        }
+
+		showStairChoice() {
+            this.gameState = 'CHOICE';
+            const dialog = document.getElementById('choice-dialog');
+            const text = document.getElementById('choice-text');
+            text.innerHTML = `${MSG_CONFIG.NAMES.PLAYER.id}は階段に乗った。<br>次のフロアに降りますか？`;
+            dialog.style.display = 'block';
+
+            document.getElementById('btn-descend').onclick = () => {
+                dialog.style.display = 'none';
+                this.gameState = 'PLAY';
+                this.floor++;
+                this.initLevel();
+            };
+
+            document.getElementById('btn-stay').onclick = () => {
+                dialog.style.display = 'none';
+                this.gameState = 'PLAY';
+            };
+        }
+
+        wait() { this.log("足踏み中..."); this.player.hp = Math.min(this.player.maxHp, this.player.hp + 0.5); this.tick(); }
+
+        tick() {
+            this.player.hunger -= 0.5;
+            if (this.player.hunger <= 0) { this.player.hunger = 0; this.player.hp -= 1; }
+            if (this.player.hp <= 0) { alert("冒険失敗..."); location.reload(); }
+            this.moveEnemies();
+            this.draw();
+        }
+
+        moveEnemies() {
+            const playerRoom = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
+            this.entities.enemies.sort((a,b) => Math.max(Math.abs(a.x-this.player.x),Math.abs(a.y-this.player.y)) - Math.max(Math.abs(b.x-this.player.x),Math.abs(b.y-this.player.y)));
+            
+            this.entities.enemies.forEach(e => {
+                const enemyRoom = this.rooms.find(r => e.x >= r.x && e.x < r.x + r.w && e.y >= r.y && e.y < r.y + r.h);
+                const dist = Math.max(Math.abs(e.x - this.player.x), Math.abs(e.y - this.player.y));
+                let canSee = (enemyRoom && playerRoom === enemyRoom) || (dist <= 1);
+
+                if (canSee) { e.isAwake = true; e.lastSeenPos = { x: this.player.x, y: this.player.y }; }
+
+                if (dist === 1 && canSee && !this.isCornerBlocked(e.x, e.y, this.player.x, this.player.y)) {
+                    this.combat(e, this.player);
+                } else if (e.isAwake) {
+                    const target = canSee ? { x: this.player.x, y: this.player.y } : (e.lastSeenPos || {x: e.x, y: e.y});
+                    let bestDist = Infinity; let moves = [];
+                    for (let my = -1; my <= 1; my++) {
+                        for (let mx = -1; mx <= 1; mx++) {
+                            if (mx === 0 && my === 0) continue;
+                            const nx = e.x + mx, ny = e.y + my;
+                            if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) continue;
+                            const t = this.map[ny][nx];
+                            // 敵も水と壁を迂回
+                            if (t === CONFIG.TILES.WALL || t === CONFIG.TILES.WATER) continue;
+                            if (this.isCornerBlocked(e.x, e.y, nx, ny)) continue;
+                            if (this.entities.enemies.some(oe => oe.x === nx && oe.y === ny) || (nx === this.player.x && ny === this.player.y)) continue;
+                            
+                            const d = Math.max(Math.abs(nx - target.x), Math.abs(ny - target.y));
+                            if (d < bestDist) { bestDist = d; moves = [{x: mx, y: my}]; }
+                            else if (d === bestDist) { moves.push({x: mx, y: my}); }
+                        }
+                    }
+                    if(moves.length > 0) {
+                        let m = moves[Math.floor(Math.random()*moves.length)];
+                        e.x += m.x; e.y += m.y;
+                    }
+                }
+            });
+        }
+
+        combat(atk, def) {
+            const dmg = Math.max(1, (atk === this.player ? atk.atk : 4 + this.floor) - (def === this.player ? def.def : 0));
+            def.hp -= dmg;
+            this.log(atk === this.player ? `${def.type}に攻撃!(${dmg}D)` : `${atk.type}から被弾!(${dmg}D)`);
+            if (def.hp <= 0 && def !== this.player) {
+                this.entities.enemies = this.entities.enemies.filter(e => e !== def);
+                this.gainExp(5 + this.floor); // 経験値獲得
+            }
+        }
+
+        checkItem() {
+            const idx = this.entities.items.findIndex(i => i.x === this.player.x && i.y === this.player.y);
+            if (idx !== -1) {
+                const it = this.entities.items[idx];
+                if(this.player.inventory.length < 20) {
+                    this.player.inventory.push(it);
+                    this.log(`${it.type}を拾った`);
+                    this.entities.items.splice(idx, 1);
+                    this.updateInventoryUI();
+                } else {
+                    this.log(`持ち物がいっぱいで${it.type}を拾えない！`);
+                }
+            }
+        }
+
+        // インベントリの開閉と描画
+        toggleInventory() {
+            const panel = document.getElementById('inventory-panel');
+            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+            this.updateInventoryUI();
+        }
+
+        updateInventoryUI() {
+            document.getElementById('inv-count').textContent = this.player.inventory.length;
+            const list = document.getElementById('inv-list');
+            list.innerHTML = '';
+            this.player.inventory.forEach((it, index) => {
+                const li = document.createElement('li');
+                li.className = 'inv-item';
+                li.innerHTML = `<span>${it.type}</span> <button class="inv-btn" onclick="game.useItem(${index})">使う/装備</button>`;
+                list.appendChild(li);
+            });
+        }
+
+        useItem(index) {
+            const it = this.player.inventory[index];
+            if (!it) return;
+            if (it.type === '🥖') {
+                this.player.hunger = Math.min(100, this.player.hunger + 40);
+                this.log('パンを食べた！');
+            } else if (it.type === '⚔️') {
+                this.player.bonusAtk += 2; this.updateStatsCalc();
+                this.log('剣を装備した！(攻撃力+2)');
+            } else if (it.type === '🛡️') {
+                this.player.bonusDef += 1; this.updateStatsCalc();
+                this.log('盾を装備した！(防御力+1)');
+            } else {
+                this.log(`${it.type}を使ったが何も起きなかった`);
+            }
+            this.player.inventory.splice(index, 1);
+            this.updateInventoryUI();
+            
+            document.getElementById('inventory-panel').style.display = 'none';
+            this.tick(); // アイテム使用で1ターン経過
+        }
+
+        draw(forceNoAnimation = false) {
+            const terrainLayer = document.getElementById('terrain-layer');
+            const entityLayer = document.getElementById('entity-layer');
+            const fogLayer = document.getElementById('fog-layer');
+            
+            // ステータス更新
+            document.getElementById('hp-fill').style.width = `${(this.player.hp / this.player.maxHp) * 100}%`;
+            document.getElementById('hp-val').textContent = `${Math.ceil(this.player.hp)}/${this.player.maxHp}`;
+            document.getElementById('hunger-fill').style.width = `${this.player.hunger}%`;
+            document.getElementById('hunger-val').textContent = `${Math.ceil(this.player.hunger)}%`;
+            
+            const nextExp = this.player.level * 10;
+            document.getElementById('exp-fill').style.width = `${(this.player.exp / nextExp) * 100}%`;
+            document.getElementById('exp-val').textContent = `${this.player.exp}/${nextExp}`;
+            document.getElementById('lv-val').textContent = this.player.level;
+            document.getElementById('atk-val').textContent = this.player.atk;
+            document.getElementById('def-val').textContent = this.player.def;
+
+            const actualTileW = terrainLayer.offsetWidth / CONFIG.MAP_W;
+            const actualTileH = 28;
+            
+            // 視界計算
+            const inRoom = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
+            const visibleSet = new Set();
+            fogLayer.style.gridTemplateColumns = `repeat(${CONFIG.MAP_W}, ${actualTileW}px)`;
+            fogLayer.style.gridTemplateRows = `repeat(${CONFIG.MAP_H}, ${actualTileH}px)`;
+
+            this.fogCells.forEach((cell, i) => {
+                const x = i % CONFIG.MAP_W, y = Math.floor(i / CONFIG.MAP_W);
+                let isVisible = false;
+                if (inRoom) {
+                    if (x >= inRoom.x - 1 && x <= inRoom.x + inRoom.w && y >= inRoom.y - 1 && y <= inRoom.y + inRoom.h) isVisible = true;
+                } else {
+                    if (Math.abs(this.player.x - x) <= 1 && Math.abs(this.player.y - y) <= 1) isVisible = true;
+                }
+                cell.style.width = `${actualTileW}px`; cell.style.height = `${actualTileH}px`;
+                if (isVisible) {
+                    this.seenTiles.add(`${x},${y}`);
+                    cell.className = 'fog-cell fog-visible';
+                    visibleSet.add(`${x},${y}`);
+                } else { cell.className = 'fog-cell'; }
+            });
+
+            // 地形描画
+            terrainLayer.textContent = this.map.map((row, y) => row.map((tile, x) => {
+                if (tile === CONFIG.TILES.STAIRS && !this.seenTiles.has(`${x},${y}`)) return CONFIG.TILES.FLOOR;
+                return tile;
+            }).join('')).join('\n');
+
+            // エンティティ描画 (DOM再利用でスライド移動を維持、初期化時はアニメーション回避)
+            const allEntities = [
+                { id: 'player', x: this.player.x, y: this.player.y, icon: CONFIG.TILES.PLAYER, awake: true },
+                ...this.entities.enemies.filter(e => visibleSet.has(`${e.x},${e.y}`)).map(e => ({ id: e.id, x: e.x, y: e.y, icon: e.type, awake: e.isAwake })),
+                ...this.entities.items.filter(it => this.seenTiles.has(`${it.x},${it.y}`)).map(it => ({ id: it.id, x: it.x, y: it.y, icon: it.type, awake: true }))
+            ];
+
+            const currentIds = new Set(allEntities.map(e => e.id));
+            Array.from(entityLayer.children).forEach(child => {
+                if (!currentIds.has(child.dataset.id)) {
+                    if (child.dataset.id.startsWith('e-')) { child.classList.add('dying'); setTimeout(() => child.remove(), 200); }
+                    else child.remove();
+                }
+            });
+
+            allEntities.forEach(ent => {
+                let div = entityLayer.querySelector(`[data-id="${ent.id}"]`);
+                let isNew = false;
+                if (!div) {
+                    div = document.createElement('div');
+                    div.className = 'entity';
+                    div.dataset.id = ent.id;
+                    entityLayer.appendChild(div);
+                    isNew = true;
+                }
+                div.textContent = ent.icon;
+                if(ent.id.startsWith('e-')) div.style.opacity = ent.awake ? '1' : '0.5';
+                div.style.width = `${actualTileW}px`;
+                div.style.height = `${actualTileH}px`;
+
+                // 新規生成時またはフロア移動時は初期位置のズレ（スライドアニメーション）を防ぐ
+                if (isNew || forceNoAnimation) {
+                    div.style.transition = 'none';
+                    div.style.left = `${ent.x * actualTileW}px`;
+                    div.style.top = `${ent.y * actualTileH}px`;
+                    div.offsetHeight; // リフロー強制
+                    div.style.transition = ''; // transition復活
+                } else {
+                    div.style.left = `${ent.x * actualTileW}px`;
+                    div.style.top = `${ent.y * actualTileH}px`;
+                }
+            });
+
+            // Canvas ミニマップ描画 (図形で描画することで文字ズレを完全解消)
+            const canvas = document.getElementById('minimap-canvas');
+            const ts = CONFIG.MINIMAP_TILE_SIZE;
+            canvas.width = CONFIG.MAP_W * ts;
+            canvas.height = CONFIG.MAP_H * ts;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < CONFIG.MAP_H; y++) {
+                for (let x = 0; x < CONFIG.MAP_W; x++) {
+                    const key = `${x},${y}`;
+                    if (this.player.x === x && this.player.y === y) {
+                        ctx.fillStyle = 'yellow';
+                        ctx.beginPath(); ctx.arc(x * ts + ts/2, y * ts + ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                    } else if (visibleSet.has(key) && this.entities.enemies.some(e => e.x === x && e.y === y)) {
+                        ctx.fillStyle = 'red';
+                        ctx.beginPath(); ctx.arc(x * ts + ts/2, y * ts + ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                    } else if (this.seenTiles.has(key)) {
+                        if (this.entities.items.some(it => it.x === x && it.y === y)) {
+                            ctx.fillStyle = 'cyan';
+                            ctx.beginPath(); ctx.arc(x * ts + ts/2, y * ts + ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                        } else {
+                            const tile = this.map[y][x];
+                            if (tile === CONFIG.TILES.STAIRS) {
+                                ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+                                ctx.strokeRect(x * ts + 0.5, y * ts + 0.5, ts - 1, ts - 1);
+                            } else if (tile === CONFIG.TILES.WATER) {
+                                ctx.fillStyle = 'white'; ctx.fillRect(x * ts, y * ts, ts, ts);
+                            } else if (tile === CONFIG.TILES.FLOOR) {
+                                ctx.fillStyle = '#4444ff'; ctx.fillRect(x * ts, y * ts, ts, ts);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // カメラ追従
+            const viewport = document.getElementById('viewport');
+            const vx = (viewport.offsetWidth / 2) - (this.player.x * actualTileW) - (actualTileW / 2);
+            const vy = (viewport.offsetHeight / 2) - (this.player.y * actualTileH) - (actualTileH / 2);
+            document.getElementById('map-root').style.transform = `translate(${vx}px, ${vy}px)`;
+        }
+
+        log(msg) {
+		    const logEl = document.getElementById('msg-log');
+		    let html = msg;
+
+		    // 色付け処理
+		    html = html.replace(MSG_CONFIG.NAMES.PLAYER.id, `<span style="color:${MSG_CONFIG.NAMES.PLAYER.color}">${MSG_CONFIG.NAMES.PLAYER.id}</span>`);
+		    for (const [name, color] of Object.entries(MSG_CONFIG.NAMES.ENEMIES)) {
+		        html = html.replace(name, `<span style="color:${color}">${name}</span>`);
+		    }
+		    for (const [name, color] of Object.entries(MSG_CONFIG.NAMES.ITEMS)) {
+		        html = html.replace(name, `<span style="color:${color}">${name}</span>`);
+		    }
+
+		    // 2行保持ロジック
+		    const lines = logEl.innerHTML.split('<br>').filter(l => l !== "");
+		    lines.push(html);
+		    if (lines.length > 2) lines.shift();
+		    logEl.innerHTML = lines.join('<br>');
+		}
+    }
+
+    const game = new Game();
+</script>
+</body>
+</html>
