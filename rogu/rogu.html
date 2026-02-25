@@ -426,6 +426,7 @@
             this.seenTiles.clear();
             this.entities = { enemies: [], items: [], traps: [] };
             this.player.statuses.see_all = false; // フロア移動でよくみえ解除
+            this.turnCount = 0;
             
             this.generateMap();
             this.spawnEntities();
@@ -952,8 +953,9 @@
             if (this.turnCount > this.config.respawnTurn && this.entities.enemies.length < this.config.maxEnemies && this.enemyMaster.length > 0) {
                 this.turnCount = 0;
                 let safe = false; let sx, sy;
-                for(let i=0; i<20; i++){
-                    const pos = this.getRandomValidPos();
+                for(let i=0; i<20; i++){                   
+                    //const pos = this.getRandomValidPos();
+                    const pos = this.getRandomPosInRoom();
                     if(Math.abs(pos.x - this.player.x) > 10 || Math.abs(pos.y - this.player.y) > 10) {
                         sx = pos.x; sy = pos.y; safe = true; break;
                     }
@@ -1301,7 +1303,7 @@
                 const room = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
                 if (room) {
                     this.entities.enemies.forEach(e => {
-                        if (e.x >= room.x && e.x < room.x + r.w && e.y >= room.y && e.y < room.y + r.h) e.statuses.asleep = 10;
+                        if (e.x >= room.x && e.x < room.x + room.w && e.y >= room.y && e.y < room.y + room.h) e.statuses.asleep = 10;
                     });
                 } else {
                     this.entities.enemies.forEach(e => {
