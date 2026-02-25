@@ -8,7 +8,7 @@
         :root {
             --bg-color: #000;
             --panel-color: #1a1a1a;
-            --hp-color: #99cc00; /* 黄緑色 */
+            --hp-color: #99cc00;
             --hunger-color: #ffcc00;
             --tile-w: 17px;
             --tile-h: 28px;
@@ -20,14 +20,12 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* アドレスバー対策：dvhで高さを確保 */
         #game-container {
             display: none; flex-direction: column;
             height: 100dvh; max-width: 500px; margin: 0 auto;
             position: relative;
         }
 
-        /* --- タイトル・設定画面 --- */
         #title-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 99999; display: flex; flex-direction: column;
@@ -49,14 +47,12 @@
         .config-row input[type="text"] { width: 100%; padding: 8px; font-size: 16px; background: #333; color: white; border: 1px solid #777;}
         .radio-group label { display: inline-block; margin-right: 15px; font-size: 14px;}
         
-        /* 階層フェード */
         #floor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: black; color: white; font-size: 24px; display: none;
             align-items: center; justify-content: center; z-index: 90000; opacity: 1; transition: opacity 1.5s ease;
         }
 
-        /* ステータスエリア */
         #status-area { padding: 6px 10px; background: var(--panel-color); font-size: 13px; z-index: 200; border-bottom: 1px solid #333;}
         .stat-header { display: flex; justify-content: space-between; margin-bottom: 4px; color: #fff; font-size: 11px; white-space: nowrap;}
         .stat-row { display: flex; align-items: center; margin-bottom: 2px; }
@@ -67,7 +63,6 @@
 
         #viewport { flex: 1; position: relative; overflow: hidden; background: #000; }
 
-        /* [重要] -11px 維持 */
         #map-root {
             position: absolute; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
             font-size: 28px; line-height: 28px; letter-spacing: -11px; transition: transform 0.1s linear; 
@@ -78,7 +73,6 @@
             font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 28px; line-height: 28px; letter-spacing: -11px;
         }
 
-        /* レイヤーとZ-Indexの厳格管理 */
         .layer { position: absolute; top: 0; left: 0; white-space: pre; }
         #terrain-layer { z-index: 10; }
         #entity-layer { z-index: 20; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;}
@@ -87,9 +81,8 @@
         .fog-cell { background-color: rgba(0, 0, 0, 0.7); transition: background-color 0.3s; }
         .fog-visible { background-color: rgba(0, 0, 0, 0); }
 
-        #minimap-canvas { position: absolute; top: 10px; right: 10px; border: 1px solid #444; z-index: 90; pointer-events: none; }
+        #minimap-canvas { position: absolute; top: 10px; right: 10px; border: 1px solid #444; z-index: 90; pointer-events: none; background: rgba(0,0,0,0.6); }
 
-        /* コントロールパッド縦幅縮小 */
         #controls {
             background: var(--panel-color); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
             padding: 5px; z-index: 200; height: 20dvh; min-height: 120px; max-height: 160px;
@@ -100,7 +93,6 @@
         }
         .btn:active { transform: translateY(2px); box-shadow: 0 1px #000; background: #444; }
         
-        /* メッセージウィンドウ */
         #msg-log {
             position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
             width: 92%; height: 3.2em; background: rgba(0, 0, 0, 0.85); color: white;
@@ -133,13 +125,14 @@
         }
         #debug-log-view { flex: 1; overflow-y: auto; font-size: 11px; background: #000; padding: 5px; border: 1px solid #444; margin-bottom: 10px;}
 
-        /* エンティティの表示順 (プレイヤー > 敵 > アイテム > 地形) */
+        /* エンティティ（罠も含む） */
         .entity {
             position: absolute; width: var(--tile-w); height: var(--tile-h);
             display: flex; align-items: center; justify-content: center; font-size: 28px;
             transition: left 0.15s ease-out, top 0.15s ease-out, transform 0.2s ease-in-out;
             background-repeat: no-repeat; background-position: center; background-size: contain;
         }
+        .entity[data-type="trap"] { z-index: 15; }
         .entity[data-type="item"] { z-index: 21; }
         .entity[data-type="enemy"] { z-index: 22; }
         .entity[data-type="player"] { z-index: 23; }
@@ -178,6 +171,10 @@
         <label>部屋の最大広さ: <span id="val-roomsize">15</span></label>
         <input type="range" id="cfg-roomsize" min="4" max="20" value="15" oninput="document.getElementById('val-roomsize').innerText=this.value">
     </div>
+    <div class="config-row">
+        <label>罠の最大数: <span id="val-traps">10</span></label>
+        <input type="range" id="cfg-traps" min="0" max="30" value="10" oninput="document.getElementById('val-traps').innerText=this.value">
+    </div>
     <div class="config-row radio-group">
         <label style="display:block;">ミニマップの大きさ</label>
         <label><input type="radio" name="cfg-mm-size" value="small" checked> 小</label>
@@ -198,7 +195,7 @@
 
     <div id="status-area" onclick="game.toggleDebugPanel()">
         <div class="stat-header">
-            <span style="flex:1;"><span id="floor-val">1</span>F Lv.<span id="lv-val">1</span> 経験値:<span id="exp-val">0</span></span>
+            <span style="flex:1;"><span id="floor-val">1</span>F Lv.<span id="lv-val">1</span> 経験値:<span id="exp-val">0</span> <span id="pos-val" style="color:#aaa;">(0,0)</span></span>
             <span style="flex:1; text-align:right;">ちから:<span id="str-val">8</span> 武器:<span id="atk-val">0</span> 盾:<span id="def-val">0</span></span>
         </div>
         <div class="stat-row">
@@ -237,6 +234,7 @@
         <h3 style="margin-top:0;">デバッグメニュー</h3>
         <label><input type="checkbox" id="chk-debug-map" onchange="game.draw()"> 全マップ・エンティティ表示</label>
         <hr style="width:100%; border-color:#55f;">
+        <div id="debug-surroundings" style="font-size:12px; margin-bottom:10px; color:#aaa;"></div>
         <div id="debug-log-view"></div>
         <button style="padding:10px; background:#f55; color:white; border:none; margin-top:10px;" onclick="document.getElementById('debug-panel').style.display='none'">閉じる</button>
     </div>
@@ -255,7 +253,7 @@
         <button class="btn" onclick="game.handleInput(-1, 1)">↙</button>
         <button class="btn" onclick="game.handleInput(0, 1)">▼</button>
         <button class="btn" onclick="game.handleInput(1, 1)">↘</button>
-        <button class="btn" style="visibility: hidden;"></button>
+        <button class="btn" style="background:#883333; font-size:22px;" onclick="game.startSwingMode()">⚔️</button>
     </div>
 </div>
 
@@ -267,24 +265,24 @@
 
     class Game {
         constructor() {
-            this.gameState = 'TITLE'; 
+            this.gameState = 'TITLE'; // PLAY, MENU, CHOICE, ANIMATING, THROWING, SELECT_TARGET, FEET_MENU, SWINGING
             this.actualTileW = 17;   
             this.actualTileH = 28;
             this.seenTiles = new Set();
             this.fullLogHistory = [];
             this.msgClearTimer = null;
             
-            this.config = { name: "ジェミニ", color: "yellow", maxEnemies: 10, respawnTurn: 30, maxItems: 10, roomSize: 15, minimapSize: 'small', minimapOpacity: 2 };
-            this.loadConfigCookie(); // Cookieから設定を復元
+            this.config = { name: "ジェミニ", color: "yellow", maxEnemies: 10, respawnTurn: 30, maxItems: 10, roomSize: 15, maxTraps: 10, minimapSize: 'small', minimapOpacity: 2 };
+            this.loadConfigCookie(); 
             
             this.enemyMaster = [];
             this.itemMaster = [];
+            this.trapMaster = [];
             this.measureTileSize();
             this.setupFogGrid();
             this.loadMasterData();
         }
 
-        // --- 設定管理 ---
         loadConfigCookie() {
             const match = document.cookie.match(/(?:^|; )roguConfig=([^;]*)/);
             if (match) {
@@ -293,7 +291,6 @@
                     this.config = { ...this.config, ...c };
                 } catch(e) {}
             }
-            // 画面に反映
             document.getElementById('cfg-name').value = this.config.name;
             document.getElementById('cfg-enemies').value = this.config.maxEnemies;
             document.getElementById('val-enemies').innerText = this.config.maxEnemies;
@@ -303,6 +300,8 @@
             document.getElementById('val-items').innerText = this.config.maxItems;
             document.getElementById('cfg-roomsize').value = this.config.roomSize;
             document.getElementById('val-roomsize').innerText = this.config.roomSize;
+            document.getElementById('cfg-traps').value = this.config.maxTraps || 10;
+            document.getElementById('val-traps').innerText = this.config.maxTraps || 10;
             
             document.querySelector(`input[name="cfg-mm-size"][value="${this.config.minimapSize}"]`).checked = true;
             document.getElementById('cfg-mm-op').value = this.config.minimapOpacity;
@@ -315,6 +314,7 @@
             this.config.respawnTurn = parseInt(document.getElementById('cfg-respawn').value) || 30;
             this.config.maxItems = parseInt(document.getElementById('cfg-items').value) || 10;
             this.config.roomSize = parseInt(document.getElementById('cfg-roomsize').value) || 15;
+            this.config.maxTraps = parseInt(document.getElementById('cfg-traps').value) || 0;
             this.config.minimapSize = document.querySelector('input[name="cfg-mm-size"]:checked').value;
             this.config.minimapOpacity = parseInt(document.getElementById('cfg-mm-op').value) || 2;
 
@@ -330,12 +330,9 @@
                 canvas.style.display = 'none';
             } else {
                 canvas.style.display = 'block';
-                const opacityMap = { 1: 0.2, 2: 0.5, 3: 0.8 };
-                canvas.style.background = `rgba(0,0,0,${opacityMap[this.config.minimapOpacity]})`;
             }
         }
 
-        // --- データ初期化 ---
         measureTileSize() {
             const measureEl = document.getElementById('measure-tile');
             const rect = measureEl.getBoundingClientRect();
@@ -346,18 +343,23 @@
         }
 
         async loadMasterData() {
+            // 罠マスターのハードコード
+            this.trapMaster = [
+                { id: "t1", name: "落石の罠", emoji: "🪨", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rock" },
+                { id: "t2", name: "落とし穴", emoji: "🕳️", break_rate: 100, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "pit" }
+            ];
+
             try {
                 const [eRes, iRes] = await Promise.all([fetch('enemies.json'), fetch('items.json')]);
                 if(!eRes.ok || !iRes.ok) throw new Error("JSON Fetch Error");
                 this.enemyMaster = await eRes.json();
                 this.itemMaster = await iRes.json();
             } catch (error) {
-                // 色違いの敵「あおむくろ」を追加。speed(行動回数), attack_count(攻撃回数)も実装。
                 this.enemyMaster = [
-                    {id: "e1", emoji: "🐍", name: "ニョロヘビ", color: "red", hp: 10, exp: 5, atk: 3, def: 1, accuracy: 90, drop_rate: 2, spawn_floors: [1,2,3], behavior: "chase"},
-                    {id: "e2", emoji: "💀", name: "さまようむくろ", color: "red", hp: 15, exp: 8, atk: 4, def: 2, accuracy: 85, drop_rate: 2, spawn_floors: [1,2,3,4], behavior: "wander"},
-                    {id: "e3", emoji: "👹", name: "オニ小僧", color: "red", hp: 20, exp: 12, atk: 6, def: 3, accuracy: 80, drop_rate: 2, spawn_floors: [2,3,4,5], behavior: "random"},
-                    {id: "e4", emoji: "💀", name: "あおむくろ", color: "cyan", overlay_color: "rgba(0,100,255,0.5)", hp: 25, exp: 15, atk: 5, def: 3, accuracy: 85, drop_rate: 5, spawn_floors: [3,4,5], behavior: "chase", speed: 2, attack_count: 1}
+                    {id: "e1", emoji: "🐍", name: "ニョロヘビ", color: "red", hp: 10, exp: 5, atk: 3, def: 1, accuracy: 90, drop_rate: 2, spawn_floors: [1,2,3], behavior: "chase", evolve_id: "e2", devolve_id: null},
+                    {id: "e2", emoji: "💀", name: "さまようむくろ", color: "red", hp: 15, exp: 8, atk: 4, def: 2, accuracy: 85, drop_rate: 2, spawn_floors: [1,2,3,4], behavior: "wander", evolve_id: "e4", devolve_id: "e1"},
+                    {id: "e3", emoji: "👹", name: "オニ小僧", color: "red", hp: 20, exp: 12, atk: 6, def: 3, accuracy: 80, drop_rate: 2, spawn_floors: [2,3,4,5], behavior: "random", evolve_id: null, devolve_id: "e2"},
+                    {id: "e4", emoji: "💀", name: "あおむくろ", color: "cyan", overlay_color: "rgba(0,100,255,0.5)", hp: 25, exp: 15, atk: 5, def: 3, accuracy: 85, drop_rate: 5, spawn_floors: [3,4,5], behavior: "chase", speed: 2, attack_count: 1, evolve_id: null, devolve_id: "e2"}
                 ];
                 this.itemMaster = [
                     {id: "i1", emoji: "🥖", name: "パン", color: "cyan", category: "food", effects: {hunger: 40}, consumable: true, spawn_rate: 30},
@@ -365,10 +367,16 @@
                     {id: "i3", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 10},
                     {id: "i4", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 10},
                     {id: "i5", emoji: "🗡️", name: "ダガー", color: "cyan", category: "weapon", effects: {atk: 2}, accuracy: 95, consumable: false, spawn_rate: 15},
-                    {id: "i6", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, consumable: false, spawn_rate: 15}
+                    {id: "i6", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, consumable: false, spawn_rate: 15},
+                    // 新アイテム
+                    {id: "i7", emoji: "🍀", name: "しあわせ草", color: "yellow", category: "herb", effects: {}, consumable: true, spawn_rate: 10},
+                    {id: "i8", emoji: "🌱", name: "不幸の種", color: "purple", category: "herb", effects: {}, consumable: true, spawn_rate: 10},
+                    {id: "i9", emoji: "📜", name: "バクスイの巻物", color: "pink", category: "scroll", effects: {}, consumable: true, spawn_rate: 10},
+                    {id: "i10", emoji: "🌿", name: "まどわし草", color: "lightgreen", category: "herb", effects: {}, consumable: true, spawn_rate: 10},
+                    {id: "i11", emoji: "🍂", name: "混乱草", color: "orange", category: "herb", effects: {}, consumable: true, spawn_rate: 10},
+                    {id: "i12", emoji: "🍃", name: "目薬草", color: "lightblue", category: "herb", effects: {}, consumable: true, spawn_rate: 10}
                 ];
             }
-            // Canvasを用いて色違いの画像URLを生成しておく
             this.enemyMaster.forEach(e => {
                 if (e.overlay_color) e.imageSrc = this.createEmojiImage(e.emoji, e.overlay_color);
             });
@@ -401,6 +409,7 @@
                 maxHp: 20, hp: 20, maxHunger: 100, hunger: 100, 
                 strength: 8, baseAtk: 5, baseDef: 0, 
                 atk: 0, def: 0,
+                statuses: { confused: 0, see_all: false },
                 inventory: [], equipment: { weapon: null, shield: null, bracelet: null }
             };
             this.fullLogHistory = [];
@@ -415,10 +424,12 @@
         initLevel(isFirst = false) {
             this.gameState = 'INIT';
             this.seenTiles.clear();
-            this.entities = { enemies: [], items: [] };
+            this.entities = { enemies: [], items: [], traps: [] };
+            this.player.statuses.see_all = false; // フロア移動でよくみえ解除
             
             this.generateMap();
             this.spawnEntities();
+            this.spawnTraps();
             
             const overlay = document.getElementById('floor-overlay');
             overlay.textContent = `地下 ${this.floor}階`;
@@ -436,7 +447,7 @@
             }, 100);
         }
 
-        // --- マップ生成 ---
+        // --- マップ・罠生成 ---
         generateMap() {
             this.map = Array.from({ length: CONFIG.MAP_H }, () => Array(CONFIG.MAP_W).fill(CONFIG.TILES.WALL));
             this.rooms = [];
@@ -554,31 +565,28 @@
             }
         }
 
-        // 初期位置は必ず「部屋の中」
         getRandomPosInRoom() {
             while(true) {
                 let room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
                 let x = room.x + Math.floor(Math.random() * room.w);
                 let y = room.y + Math.floor(Math.random() * room.h);
-                if (this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i=>i.x===x&&i.y===y) && !this.entities.enemies.some(e=>e.x===x&&e.y===y)) {
+                if (this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i=>i.x===x&&i.y===y) && !this.entities.enemies.some(e=>e.x===x&&e.y===y) && (!this.entities.traps || !this.entities.traps.some(t=>t.x===x&&t.y===y))) {
                     return {x, y};
                 }
             }
         }
 
-        // リスポーン等で部屋以外（通路）でもOKな場合のランダム位置
         getRandomValidPos() {
             while(true) {
                 let x = Math.floor(Math.random() * CONFIG.MAP_W);
                 let y = Math.floor(Math.random() * CONFIG.MAP_H);
-                if (this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i=>i.x===x&&i.y===y) && !this.entities.enemies.some(e=>e.x===x&&e.y===y)) {
+                if (this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i=>i.x===x&&i.y===y) && !this.entities.enemies.some(e=>e.x===x&&e.y===y) && (!this.entities.traps || !this.entities.traps.some(t=>t.x===x&&t.y===y))) {
                     return {x, y};
                 }
             }
         }
 
         spawnEntities() {
-            // 出現フロア判定関数
             const canSpawn = (master) => {
                 if(!master.spawn_floors) return true;
                 return master.spawn_floors.includes(this.floor);
@@ -610,7 +618,6 @@
         spawnEnemyAt(x, y, masterList = this.enemyMaster) {
             if(masterList.length === 0) return;
             const master = masterList[Math.floor(Math.random() * masterList.length)];
-            // 50%で起きている
             const awake = Math.random() < 0.5;
             this.entities.enemies.push({
                 id: 'e-' + Date.now() + Math.floor(Math.random()*1000), type: 'enemy',
@@ -618,8 +625,47 @@
                 atk: master.atk, def: master.def, exp: master.exp, accuracy: master.accuracy || 90, drop_rate: master.drop_rate || 2,
                 name: master.name, emoji: master.emoji, color: master.color, imageSrc: master.imageSrc, behavior: master.behavior,
                 speed: master.speed || 1, attack_count: master.attack_count || 1,
+                evolve_id: master.evolve_id, devolve_id: master.devolve_id,
+                statuses: { asleep: 0, confused: 0 },
                 isAwake: awake, lastSeenPos: null
             });
+        }
+
+        spawnTraps() {
+            if (this.floor <= 2) return;
+            const numTraps = this.config.maxTraps;
+            if (numTraps <= 0) return;
+
+            let validSpots = [];
+            for (let r of this.rooms) {
+                // 境界(出入り口になり得る場所)を避ける
+                for (let y = r.y + 1; y < r.y + r.h - 1; y++) {
+                    for (let x = r.x + 1; x < r.x + r.w - 1; x++) {
+                        if (this.map[y][x] === CONFIG.TILES.FLOOR &&
+                            !this.entities.items.some(i => i.x===x && i.y===y) &&
+                            this.map[y][x] !== CONFIG.TILES.STAIRS) {
+                            validSpots.push({x, y});
+                        }
+                    }
+                }
+            }
+            validSpots.sort(() => Math.random() - 0.5);
+            const availableTraps = this.trapMaster.filter(t => t.spawn_floors.includes(this.floor));
+            if (availableTraps.length === 0) return;
+
+            let placed = 0;
+            for (let spot of validSpots) {
+                if (placed >= numTraps) break;
+                let tMaster = availableTraps[Math.floor(Math.random() * availableTraps.length)];
+                this.entities.traps.push({
+                    id: 't-' + Date.now() + Math.random(),
+                    x: spot.x, y: spot.y,
+                    type: 'trap',
+                    master: tMaster,
+                    isVisible: false
+                });
+                placed++;
+            }
         }
 
         // --- プレイヤーステータス・経験値 ---
@@ -647,12 +693,58 @@
             this.log(`${this.config.name}は ${amount}の経験値を得た`);
             
             while (this.player.level < 99 && this.player.exp >= this.getRequiredExp(this.player.level)) {
-                this.player.level++;
-                this.player.baseAtk += 2;
-                this.player.maxHp += 5;
-                this.player.hp += 5; // 増えた分だけ回復
+                this.levelUp();
+            }
+        }
+
+        levelUp() {
+            this.player.level++;
+            this.player.baseAtk += 2;
+            this.player.maxHp += 5;
+            this.player.hp += 5; 
+            this.recalculateStats();
+            this.log(`レベル${this.player.level}に上がった！`);
+        }
+
+        levelDown() {
+            if (this.player.level > 1) {
+                this.player.level--;
+                this.player.baseAtk = Math.max(5, this.player.baseAtk - 2);
+                this.player.maxHp = Math.max(20, this.player.maxHp - 5);
+                this.player.hp = Math.min(this.player.hp, this.player.maxHp);
+                this.player.exp = this.getRequiredExp(this.player.level - 1);
                 this.recalculateStats();
-                this.log(`レベル${this.player.level}に上がった！`);
+                this.log(`レベル${this.player.level}に下がった...`);
+            }
+        }
+
+        evolveEnemy(enemy) {
+            if (enemy.evolve_id) {
+                const master = this.enemyMaster.find(m => m.id === enemy.evolve_id);
+                if (master) {
+                    enemy.name = master.name; enemy.emoji = master.emoji;
+                    enemy.color = master.color; enemy.imageSrc = master.imageSrc;
+                    enemy.maxHp = master.hp + (this.floor * 2); enemy.hp = enemy.maxHp;
+                    enemy.atk = master.atk; enemy.def = master.def; enemy.exp = master.exp;
+                    enemy.evolve_id = master.evolve_id; enemy.devolve_id = master.devolve_id;
+                    enemy.behavior = master.behavior;
+                    this.log(`${enemy.name}は レベルが上がった`);
+                }
+            }
+        }
+
+        devolveEnemy(enemy) {
+            if (enemy.devolve_id) {
+                const master = this.enemyMaster.find(m => m.id === enemy.devolve_id);
+                if (master) {
+                    enemy.name = master.name; enemy.emoji = master.emoji;
+                    enemy.color = master.color; enemy.imageSrc = master.imageSrc;
+                    enemy.maxHp = master.hp + (this.floor * 2); enemy.hp = enemy.maxHp;
+                    enemy.atk = master.atk; enemy.def = master.def; enemy.exp = master.exp;
+                    enemy.evolve_id = master.evolve_id; enemy.devolve_id = master.devolve_id;
+                    enemy.behavior = master.behavior;
+                    this.log(`${enemy.name}は レベルが下がった`);
+                }
             }
         }
 
@@ -674,8 +766,24 @@
                 }
                 return;
             }
+            if (this.gameState === 'SWINGING') {
+                if (dx === 0 && dy === 0) {
+                    this.gameState = 'PLAY';
+                    document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
+                } else {
+                    await this.executeSwing(dx, dy);
+                }
+                return;
+            }
 
             if (this.gameState !== 'PLAY') return;
+
+            // 混乱状態
+            if (this.player.statuses.confused > 0) {
+                const dirs = [[-1,-1], [0,-1], [1,-1], [-1,0], [1,0], [-1,1], [0,1], [1,1]];
+                const rDir = dirs[Math.floor(Math.random() * dirs.length)];
+                dx = rDir[0]; dy = rDir[1];
+            }
 
             const nx = this.player.x + dx, ny = this.player.y + dy;
             if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) return;
@@ -688,6 +796,7 @@
                 this.gameState = 'ANIMATING';
                 await this.playAttackAnim(this.player, enemy.x, enemy.y);
                 this.combat(this.player, enemy);
+                this.checkTrapReveal(enemy.x, enemy.y);
                 this.triggerTurn();
                 return;
             }
@@ -695,13 +804,40 @@
             this.player.x = nx;
             this.player.y = ny;
 
-            // 自動拾い（20未満なら）
+            // 自動拾い
             const itemIdx = this.entities.items.findIndex(i => i.x === this.player.x && i.y === this.player.y);
             if (itemIdx !== -1 && this.player.inventory.length < 20) {
                 this.pickupItemLogic(this.entities.items[itemIdx]);
             }
 
-            if (this.map[ny][nx] === CONFIG.TILES.STAIRS) {
+            // 罠踏み処理
+            const trap = this.entities.traps.find(t => t.x === this.player.x && t.y === this.player.y);
+            if (trap) {
+                if (!trap.isVisible) trap.isVisible = true;
+                this.log(`${this.config.name}は ${trap.master.name}を踏んだ`);
+                if (Math.random() < 0.7) {
+                    this.log(`${trap.master.name}が 発動した`);
+                    if (trap.master.type === 'rock') {
+                        this.player.hp -= 15;
+                        this.log(`${this.config.name}は 15のダメージを受けた`);
+                    } else if (trap.master.type === 'pit') {
+                        this.player.hp -= 5;
+                        this.log(`${this.config.name}は 5のダメージを受けた`);
+                        if (this.player.hp > 0) {
+                            setTimeout(() => { this.floor++; this.initLevel(); }, 300);
+                            return;
+                        }
+                    }
+                } else {
+                    this.log(`${trap.master.name}は 発動しなかった`);
+                }
+                if (Math.random() * 100 < trap.master.break_rate) {
+                    this.entities.traps = this.entities.traps.filter(t => t.id !== trap.id);
+                    this.log(`${trap.master.name}は 壊れた`);
+                }
+            }
+
+            if (this.map[ny][nx] === CONFIG.TILES.STAIRS && this.player.hp > 0) {
                 this.log(`${this.config.name}は 階段に乗った。`);
                 this.showChoiceDialog("次のフロアに降りますか？", 
                     () => { this.floor++; this.initLevel(); }, 
@@ -714,11 +850,51 @@
         }
 
         handleCenterBtn() {
-            if (this.gameState === 'THROWING') {
-                this.endThrowMode();
+            if (this.gameState === 'THROWING' || this.gameState === 'SWINGING') {
+                this.gameState = 'PLAY';
+                document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
             } else if (this.gameState === 'PLAY') {
-                // 足踏みメッセージ廃止
                 this.triggerTurn();
+            }
+        }
+
+        startSwingMode() {
+            if (this.gameState !== 'PLAY') return;
+            this.gameState = 'SWINGING';
+            this.log("攻撃する方向を選んでください");
+            document.getElementById('btn-center').innerHTML = '取消<br>❌';
+        }
+
+        async executeSwing(dx, dy) {
+            this.gameState = 'PLAY';
+            document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
+            
+            if (this.player.statuses.confused > 0) {
+                const dirs = [[-1,-1], [0,-1], [1,-1], [-1,0], [1,0], [-1,1], [0,1], [1,1]];
+                const rDir = dirs[Math.floor(Math.random() * dirs.length)];
+                dx = rDir[0]; dy = rDir[1];
+            }
+            
+            const tx = this.player.x + dx;
+            const ty = this.player.y + dy;
+            
+            this.gameState = 'ANIMATING';
+            await this.playAttackAnim(this.player, tx, ty);
+            
+            const enemy = this.entities.enemies.find(e => e.x === tx && e.y === ty);
+            if (enemy) {
+                this.combat(this.player, enemy);
+            }
+            this.checkTrapReveal(tx, ty);
+            
+            if (this.gameState === 'ANIMATING') this.gameState = 'PLAY';
+            this.triggerTurn();
+        }
+
+        checkTrapReveal(tx, ty) {
+            const trap = this.entities.traps.find(t => t.x === tx && t.y === ty);
+            if (trap && !trap.isVisible) {
+                trap.isVisible = true;
             }
         }
 
@@ -741,6 +917,11 @@
 
         async triggerTurn() {
             this.gameState = 'ANIMATING'; 
+
+            if (this.player.statuses.confused > 0) {
+                this.player.statuses.confused--;
+                if (this.player.statuses.confused === 0) this.log(`${this.config.name}の 混乱が解けた`);
+            }
 
             this.hungerTurnCount++;
             if (this.hungerTurnCount >= 10) {
@@ -834,20 +1015,15 @@
                 this.entities.enemies = this.entities.enemies.filter(e => e !== defEntity);
                 this.gainExp(defEntity.exp || 0);
                 
-                // ドロップ処理
-                if (Math.random() * 100 < (defEntity.drop_rate || 2)) {
-                    let m;
-                    if (defEntity.drop_item_id) m = this.itemMaster.find(i => i.id === defEntity.drop_item_id);
-                    if (!m && this.itemMaster.length > 0) m = this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
-                    if (m) {
-                        let mod = 0;
-                        if (['weapon', 'shield'].includes(m.category)) {
-                            const r = Math.random() * 100;
-                            if (r < 40) mod = 0; else if (r < 65) mod = 1; else if (r < 80) mod = 2; else if (r < 90) mod = 3; else mod = -1;
-                        }
-                        const item = { id: 'i-' + Date.now(), ...m, modifier: mod, isEquipped: false, type: 'item' };
-                        this.dropItemAt(item, defEntity.x, defEntity.y);
+                if (Math.random() * 100 < (defEntity.drop_rate || 2) && this.itemMaster.length > 0) {
+                    const m = this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
+                    let mod = 0;
+                    if (['weapon', 'shield'].includes(m.category)) {
+                        const r = Math.random() * 100;
+                        if (r < 40) mod = 0; else if (r < 65) mod = 1; else if (r < 80) mod = 2; else if (r < 90) mod = 3; else mod = -1;
                     }
+                    const dItem = { id: 'i-' + Date.now(), ...m, modifier: mod, isEquipped: false, type: 'item' };
+                    this.dropItemAt(dItem, defEntity.x, defEntity.y);
                 }
             }
         }
@@ -859,17 +1035,23 @@
             for (let e of sortedEnemies) {
                 if (e.hp <= 0) continue; 
                 
+                // バクスイ・混乱ターン経過
+                if (e.statuses.asleep > 0) { e.statuses.asleep--; continue; }
+                if (e.statuses.confused > 0) e.statuses.confused--;
+
                 const enemyRoom = this.rooms.find(r => e.x >= r.x && e.x < r.x + r.w && e.y >= r.y && e.y < r.y + r.h);
                 const dist = Math.max(Math.abs(e.x - this.player.x), Math.abs(e.y - this.player.y));
                 let canSee = (enemyRoom && playerRoom === enemyRoom) || (dist <= 1);
 
                 if (canSee) { e.isAwake = true; e.lastSeenPos = { x: this.player.x, y: this.player.y }; }
 
-                let willMoveRandomly = (e.behavior === 'random' && Math.random() < 0.7);
+                let isConfused = e.statuses.confused > 0;
+                let willMoveRandomly = isConfused || (e.behavior === 'random' && Math.random() < 0.7);
+                let isFear = e.behavior === 'fear';
+
                 let speed = e.speed || 1;
                 let attacks = e.attack_count || 1;
 
-                // 行動回数ループ
                 for (let s = 0; s < speed; s++) {
                     if (e.hp <= 0) break;
                     let currentDist = Math.max(Math.abs(e.x - this.player.x), Math.abs(e.y - this.player.y));
@@ -877,18 +1059,21 @@
                     if (currentDist === 1 && canSee && !this.isCornerBlocked(e.x, e.y, this.player.x, this.player.y)) {
                         if (willMoveRandomly) {
                             this.executeRandomMove(e);
+                        } else if (isFear) {
+                            this.executeFearMove(e);
                         } else {
-                            // 攻撃ループ
                             for (let a = 0; a < attacks; a++) {
                                 if (this.player.hp <= 0 || e.hp <= 0) break;
                                 await this.playAttackAnim(e, this.player.x, this.player.y);
                                 this.combat(e, this.player);
                             }
-                            break; // 攻撃したら移動終了
+                            break; 
                         }
                     } else if (e.isAwake) {
                         if (willMoveRandomly) {
                             this.executeRandomMove(e);
+                        } else if (isFear && canSee) {
+                            this.executeFearMove(e);
                         } else {
                             const target = canSee ? { x: this.player.x, y: this.player.y } : (e.lastSeenPos || this.getRandomRoomCenter(e));
                             let bestDist = Infinity; let moves = [];
@@ -927,6 +1112,29 @@
                         if (this.map[ny][nx] !== CONFIG.TILES.WALL && this.map[ny][nx] !== CONFIG.TILES.WATER) {
                             if (!this.isCornerBlocked(e.x, e.y, nx, ny) && !this.entities.enemies.some(oe => oe.x === nx && oe.y === ny) && !(nx === this.player.x && ny === this.player.y)) {
                                 moves.push({x: mx, y: my});
+                            }
+                        }
+                    }
+                }
+            }
+            if (moves.length > 0) {
+                let m = moves[Math.floor(Math.random()*moves.length)];
+                e.x += m.x; e.y += m.y;
+            }
+        }
+
+        executeFearMove(e) {
+            let bestDist = -1; let moves = [];
+            for (let my = -1; my <= 1; my++) {
+                for (let mx = -1; mx <= 1; mx++) {
+                    if (mx === 0 && my === 0) continue;
+                    const nx = e.x + mx, ny = e.y + my;
+                    if (nx >= 0 && nx < CONFIG.MAP_W && ny >= 0 && ny < CONFIG.MAP_H) {
+                        if (this.map[ny][nx] !== CONFIG.TILES.WALL && this.map[ny][nx] !== CONFIG.TILES.WATER) {
+                            if (!this.isCornerBlocked(e.x, e.y, nx, ny) && !this.entities.enemies.some(oe => oe.x === nx && oe.y === ny) && !(nx === this.player.x && ny === this.player.y)) {
+                                const d = Math.max(Math.abs(nx - this.player.x), Math.abs(ny - this.player.y));
+                                if (d > bestDist) { bestDist = d; moves = [{x: mx, y: my}]; }
+                                else if (d === bestDist) { moves.push({x: mx, y: my}); }
                             }
                         }
                     }
@@ -1066,10 +1274,41 @@
                 this.log(`${item.emoji}${item.name}を 食べた`);
                 used = true;
             } else if (item.category === 'herb') {
-                if (this.player.hp >= this.player.maxHp) this.player.maxHp += 1;
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
-                this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
-                this.log(`${item.emoji}${item.name}を 飲んだ`);
+                if (item.name === "しあわせ草") {
+                    this.levelUp();
+                    used = true;
+                } else if (item.name === "不幸の種") {
+                    this.levelDown();
+                    used = true;
+                } else if (item.name === "まどわし草" || item.name === "混乱草") {
+                    this.player.statuses.confused = 20;
+                    this.log(`${this.config.name}は 混乱した`);
+                    used = true;
+                } else if (item.name === "目薬草") {
+                    this.player.statuses.see_all = true;
+                    this.entities.traps.forEach(t => t.isVisible = true);
+                    this.log(`${this.config.name}は 罠が見えるようになった`);
+                    used = true;
+                } else {
+                    // 通常草
+                    if (this.player.hp >= this.player.maxHp) this.player.maxHp += 1;
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
+                    this.log(`${item.emoji}${item.name}を 飲んだ`);
+                    used = true;
+                }
+            } else if (item.category === 'scroll' && item.name === "バクスイの巻物") {
+                const room = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
+                if (room) {
+                    this.entities.enemies.forEach(e => {
+                        if (e.x >= room.x && e.x < room.x + r.w && e.y >= room.y && e.y < room.y + r.h) e.statuses.asleep = 10;
+                    });
+                } else {
+                    this.entities.enemies.forEach(e => {
+                        if (Math.abs(e.x - this.player.x) <= 1 && Math.abs(e.y - this.player.y) <= 1) e.statuses.asleep = 10;
+                    });
+                }
+                this.log(`周囲の敵は 眠りに落ちた`);
                 used = true;
             } else if (item.name === "天の恵みの巻物" || item.name === "地の恵みの巻物") {
                 this.gameState = 'SELECT_TARGET';
@@ -1078,12 +1317,10 @@
                 this.scrollTargetCategory = item.name === "天の恵みの巻物" ? 'weapon' : 'shield';
                 document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
                 
-                // もし足元から使う場合、一度配列から抜いておく（キャンセル時に戻す）
                 if (source === 'feet') {
                     const idx = this.entities.items.findIndex(i => i.id === item.id);
                     if (idx !== -1) this.entities.items.splice(idx, 1);
                 }
-                
                 this.renderInventory();
                 return; 
             } else {
@@ -1117,11 +1354,10 @@
                 this.log(`${scrollItem.emoji}${scrollItem.name}は 効果が現れなかった`);
             }
             
-            // 巻物を消費
             if (this.scrollSource === 'inventory') {
                 const idx = this.player.inventory.findIndex(i => i.id === scrollItem.id);
                 if (idx !== -1) this.player.inventory.splice(idx, 1);
-            } // 足元からの場合はすでに配列から抜かれているので何もしなくて良い
+            } 
             
             this.scrollItem = null;
             this.closeInventory();
@@ -1129,7 +1365,7 @@
         }
 
         putItemLogic(item, source) {
-            if (source === 'feet') return; // 足元のものを置くことはできない
+            if (source === 'feet') return; 
             
             if (this.dropItemAt(item, this.player.x, this.player.y, true)) {
                 const idx = this.player.inventory.findIndex(i => i.id === item.id);
@@ -1164,7 +1400,6 @@
             this.gameState = 'PLAY';
             document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
             
-            // キャンセル時の復元処理
             if (this.scrollItem) {
                 if (this.scrollSource === 'feet') this.entities.items.push(this.scrollItem);
                 this.scrollItem = null;
@@ -1205,7 +1440,17 @@
             if(hitEnemy) {
                 this.log(`${item.emoji}${this.getItemDisplayName(item, false)}が ${hitEnemy.name}に 当たった`);
                 if(item.category === 'herb') {
-                    hitEnemy.hp = Math.min(hitEnemy.maxHp, hitEnemy.hp + (item.effects.hp || 0));
+                    if (item.name === "しあわせ草") {
+                        this.evolveEnemy(hitEnemy);
+                    } else if (item.name === "不幸の種") {
+                        this.devolveEnemy(hitEnemy);
+                    } else if (item.name === "まどわし草") {
+                        hitEnemy.behavior = 'fear';
+                    } else if (item.name === "混乱草") {
+                        hitEnemy.statuses.confused = 20;
+                    } else if (item.name !== "目薬草") {
+                        hitEnemy.hp = Math.min(hitEnemy.maxHp, hitEnemy.hp + (item.effects.hp || 0));
+                    }
                 } else if(['weapon', 'shield', 'projectile'].includes(item.category)) {
                     let val = (item.effects.atk || 0) + (item.effects.def || 0) + (item.modifier || 0) + 1;
                     hitEnemy.hp -= val;
@@ -1213,7 +1458,6 @@
                         this.log(`${hitEnemy.name}は 倒れた`);
                         this.entities.enemies = this.entities.enemies.filter(e => e !== hitEnemy);
                         this.gainExp(hitEnemy.exp || 0);
-                        // ドロップ
                         if (Math.random() * 100 < (hitEnemy.drop_rate || 2) && this.itemMaster.length > 0) {
                             const m = this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
                             const dItem = { id: 'i-' + Date.now(), ...m, modifier: 0, isEquipped: false, type: 'item' };
@@ -1234,6 +1478,7 @@
                 if(x < 0 || x >= CONFIG.MAP_W || y < 0 || y >= CONFIG.MAP_H) return false;
                 if(this.map[y][x] !== CONFIG.TILES.FLOOR) return false;
                 if(this.entities.items.some(i => i.x === x && i.y === y)) return false;
+                if(this.entities.traps && this.entities.traps.some(t => t.x === x && t.y === y)) return false;
                 return true;
             };
             if (isDroppable(startX, startY)) {
@@ -1312,7 +1557,43 @@
             } else {
                 panel.style.display = 'flex';
                 document.getElementById('debug-log-view').innerHTML = this.fullLogHistory.join('<hr style="border-color:#333; margin:2px 0;">');
+                this.updateDebugSurroundings();
             }
+        }
+
+        updateDebugSurroundings() {
+            let html = '<b style="color:white;">【周囲8マスのエンティティ情報】</b><br>';
+            let found = false;
+            
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    
+                    let nx = this.player.x + dx;
+                    let ny = this.player.y + dy;
+                    
+                    let enemies = this.entities.enemies.filter(e => e.x === nx && e.y === ny);
+                    let items = this.entities.items.filter(i => i.x === nx && i.y === ny);
+                    let traps = this.entities.traps.filter(t => t.x === nx && t.y === ny);
+                    
+                    if (enemies.length > 0 || items.length > 0 || traps.length > 0) {
+                        found = true;
+                        let dir = '';
+                        if(dx===-1 && dy===-1) dir='↖'; else if(dx===0 && dy===-1) dir='↑'; else if(dx===1 && dy===-1) dir='↗';
+                        else if(dx===-1 && dy===0) dir='←'; else if(dx===1 && dy===0) dir='→';
+                        else if(dx===-1 && dy===1) dir='↙'; else if(dx===0 && dy===1) dir='↓'; else if(dx===1 && dy===1) dir='↘';
+                        
+                        html += `[${dir} ${nx},${ny}] `;
+                        enemies.forEach(e => html += `<span style="color:${e.color}">${e.name}(HP:${e.hp})</span> `);
+                        items.forEach(i => html += `<span style="color:${i.color}">${i.name}</span> `);
+                        traps.forEach(t => html += `<span style="color:#aaa">${t.master.name}</span> `);
+                        html += '<br>';
+                    }
+                }
+            }
+            
+            if (!found) html += 'なし<br>';
+            document.getElementById('debug-surroundings').innerHTML = html;
         }
 
 		// --- UI描画系 ---
@@ -1331,7 +1612,6 @@
             if (lines.length > 2) lines.shift(); 
             logEl.innerHTML = lines.join('<br>');
 
-            // 5秒更新がなければクリア
             clearTimeout(this.msgClearTimer);
             this.msgClearTimer = setTimeout(() => {
                 logEl.innerHTML = '';
@@ -1381,7 +1661,10 @@
             const terrainLayer = document.getElementById('terrain-layer');
             const entityLayer = document.getElementById('entity-layer');
             const fogLayer = document.getElementById('fog-layer');
-            
+
+            document.getElementById('pos-val').textContent = `(${this.player.x},${this.player.y})`;
+            if (document.getElementById('debug-panel').style.display === 'flex') this.updateDebugSurroundings();
+
             document.getElementById('floor-val').textContent = this.floor;
             document.getElementById('lv-val').textContent = this.player.level;
             document.getElementById('exp-val').textContent = this.player.exp;
@@ -1415,7 +1698,6 @@
                 }
             });
 
-            // 階段は文字出力なのでZ-Indexが10の地形に描画される
             terrainLayer.textContent = this.map.map((row, y) => row.map((tile, x) => {
                 if (tile === CONFIG.TILES.STAIRS && !this.seenTiles.has(`${x},${y}`) && !isDebugMap) return CONFIG.TILES.FLOOR;
                 return tile;
@@ -1424,7 +1706,8 @@
             const allEntities = [
                 { id: 'player', type: 'player', x: this.player.x, y: this.player.y, icon: CONFIG.TILES.PLAYER, awake: true },
                 ...this.entities.enemies.filter(e => visibleSet.has(`${e.x},${e.y}`)).map(e => ({ id: e.id, type: 'enemy', x: e.x, y: e.y, icon: e.emoji, imageSrc: e.imageSrc, awake: e.isAwake })),
-                ...this.entities.items.filter(it => this.seenTiles.has(`${it.x},${it.y}`)).map(it => ({ id: it.id, type: 'item', x: it.x, y: it.y, icon: it.emoji, awake: true }))
+                ...this.entities.items.filter(it => this.seenTiles.has(`${it.x},${it.y}`)).map(it => ({ id: it.id, type: 'item', x: it.x, y: it.y, icon: it.emoji, awake: true })),
+                ...this.entities.traps.filter(t => visibleSet.has(`${t.x},${t.y}`) && t.isVisible).map(t => ({ id: t.id, type: 'trap', x: t.x, y: t.y, icon: t.master.emoji, awake: true }))
             ];
 
             const currentIds = new Set(allEntities.map(e => e.id));
@@ -1447,7 +1730,6 @@
                     isNew = true;
                 }
                 
-                // 色違いの画像URLがあれば背景にセット
                 if (ent.imageSrc) {
                     div.style.backgroundImage = `url(${ent.imageSrc})`;
                     div.textContent = '';
@@ -1482,22 +1764,34 @@
                 canvas.height = CONFIG.MAP_H * ts;
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const alphaMap = { 1: 0.2, 2: 0.5, 3: 0.8 };
+                const alpha = alphaMap[this.config.minimapOpacity] || 0.5;
 
                 for (let y = 0; y < CONFIG.MAP_H; y++) {
                     for (let x = 0; x < CONFIG.MAP_W; x++) {
                         const key = `${x},${y}`;
                         if (this.player.x === x && this.player.y === y) {
-                            ctx.fillStyle = 'yellow'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                            ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
                         } else if (visibleSet.has(key) && this.entities.enemies.some(e => e.x === x && e.y === y)) {
-                            ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                            ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
                         } else if (this.seenTiles.has(key)) {
+                            const trap = this.entities.traps.find(t => t.x === x && t.y === y);
                             if (this.entities.items.some(it => it.x === x && it.y === y)) {
-                                ctx.fillStyle = 'cyan'; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                                ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`; ctx.beginPath(); ctx.arc(x*ts+ts/2, y*ts+ts/2, ts/2, 0, Math.PI*2); ctx.fill();
+                            } else if (trap && (trap.isVisible || this.player.statuses.see_all)) {
+                                ctx.strokeStyle = 'rgba(255, 255, 255, 1)'; ctx.lineWidth = 1;
+                                ctx.beginPath(); ctx.moveTo(x*ts, y*ts); ctx.lineTo(x*ts+ts, y*ts+ts);
+                                ctx.moveTo(x*ts+ts, y*ts); ctx.lineTo(x*ts, y*ts+ts); ctx.stroke();
                             } else {
                                 const tile = this.map[y][x];
-                                if (tile === CONFIG.TILES.STAIRS) { ctx.strokeStyle = 'white'; ctx.lineWidth = 1; ctx.strokeRect(x*ts+0.5, y*ts+0.5, ts-1, ts-1); }
-                                else if (tile === CONFIG.TILES.WATER) { ctx.fillStyle = 'white'; ctx.fillRect(x*ts, y*ts, ts, ts); }
-                                else if (tile === CONFIG.TILES.FLOOR) { ctx.fillStyle = '#4444ff'; ctx.fillRect(x*ts, y*ts, ts, ts); }
+                                if (tile === CONFIG.TILES.STAIRS) { 
+                                    ctx.strokeStyle = 'rgba(255, 255, 255, 1)'; ctx.lineWidth = 1; ctx.strokeRect(x*ts+0.5, y*ts+0.5, ts-1, ts-1); 
+                                } else if (tile === CONFIG.TILES.WATER) { 
+                                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`; ctx.fillRect(x*ts, y*ts, ts, ts); 
+                                } else if (tile === CONFIG.TILES.FLOOR) { 
+                                    ctx.fillStyle = `rgba(68, 68, 255, ${alpha})`; ctx.fillRect(x*ts, y*ts, ts, ts); 
+                                }
                             }
                         }
                     }
