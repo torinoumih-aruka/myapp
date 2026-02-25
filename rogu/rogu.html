@@ -169,21 +169,21 @@
     </div>
     <div class="config-row">
         <label>部屋の最大広さ: <span id="val-roomsize">15</span></label>
-        <input type="range" id="cfg-roomsize" min="4" max="20" value="15" oninput="document.getElementById('val-roomsize').innerText=this.value">
+        <input type="range" id="cfg-roomsize" min="4" max="20" value="7" oninput="document.getElementById('val-roomsize').innerText=this.value">
     </div>
     <div class="config-row">
         <label>罠の最大数: <span id="val-traps">10</span></label>
-        <input type="range" id="cfg-traps" min="0" max="30" value="10" oninput="document.getElementById('val-traps').innerText=this.value">
+        <input type="range" id="cfg-traps" min="0" max="30" value="5" oninput="document.getElementById('val-traps').innerText=this.value">
     </div>
     <div class="config-row radio-group">
         <label style="display:block;">ミニマップの大きさ</label>
-        <label><input type="radio" name="cfg-mm-size" value="small" checked> 小</label>
-        <label><input type="radio" name="cfg-mm-size" value="large"> 大</label>
+        <label><input type="radio" name="cfg-mm-size" value="small"> 小</label>
+        <label><input type="radio" name="cfg-mm-size" value="large" checked> 大</label>
         <label><input type="radio" name="cfg-mm-size" value="none"> 無</label>
     </div>
     <div class="config-row">
-        <label>ミニマップの透明度 (1=20%, 2=50%, 3=80%): <span id="val-mm-op">2</span></label>
-        <input type="range" id="cfg-mm-op" min="1" max="3" step="1" value="2" oninput="document.getElementById('val-mm-op').innerText=this.value">
+        <label>ミニマップの透明度 (1=20%, 2=50%, 3=80%): <span id="val-mm-op">3</span></label>
+        <input type="range" id="cfg-mm-op" min="1" max="3" step="1" value="3" oninput="document.getElementById('val-mm-op').innerText=this.value">
     </div>
     <button class="title-btn" style="margin-top:20px;" onclick="game.saveConfigAndClose()">保存して閉じる</button>
 </div>
@@ -312,11 +312,11 @@
             this.config.name = document.getElementById('cfg-name').value.trim().substring(0,4) || "ジェミニ";
             this.config.maxEnemies = parseInt(document.getElementById('cfg-enemies').value) || 10;
             this.config.respawnTurn = parseInt(document.getElementById('cfg-respawn').value) || 30;
-            this.config.maxItems = parseInt(document.getElementById('cfg-items').value) || 10;
-            this.config.roomSize = parseInt(document.getElementById('cfg-roomsize').value) || 15;
-            this.config.maxTraps = parseInt(document.getElementById('cfg-traps').value) || 0;
+            this.config.maxItems = parseInt(document.getElementById('cfg-items').value) || 8;
+            this.config.roomSize = parseInt(document.getElementById('cfg-roomsize').value) || 7;
+            this.config.maxTraps = parseInt(document.getElementById('cfg-traps').value) || 5;
             this.config.minimapSize = document.querySelector('input[name="cfg-mm-size"]:checked').value;
-            this.config.minimapOpacity = parseInt(document.getElementById('cfg-mm-op').value) || 2;
+            this.config.minimapOpacity = parseInt(document.getElementById('cfg-mm-op').value) || 3;
 
             document.cookie = `roguConfig=${encodeURIComponent(JSON.stringify(this.config))}; max-age=31536000; path=/`;
             document.getElementById('config-screen').style.display = 'none';
@@ -1077,31 +1077,138 @@
                         } else if (isFear && canSee) {
                             this.executeFearMove(e);
                         } else {
-                            const target = canSee ? { x: this.player.x, y: this.player.y } : (e.lastSeenPos || this.getRandomRoomCenter(e));
-                            let bestDist = Infinity; let moves = [];
-                            for (let my = -1; my <= 1; my++) {
-                                for (let mx = -1; mx <= 1; mx++) {
-                                    if (mx === 0 && my === 0) continue;
-                                    const nx = e.x + mx, ny = e.y + my;
-                                    if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) continue;
-                                    const t = this.map[ny][nx];
-                                    if (t === CONFIG.TILES.WALL || t === CONFIG.TILES.WATER) continue;
-                                    if (this.isCornerBlocked(e.x, e.y, nx, ny)) continue;
-                                    if (this.entities.enemies.some(oe => oe.x === nx && oe.y === ny) || (nx === this.player.x && ny === this.player.y)) continue;
-                                    
-                                    const d = Math.max(Math.abs(nx - target.x), Math.abs(ny - target.y));
-                                    if (d < bestDist) { bestDist = d; moves = [{x: mx, y: my}]; }
-                                    else if (d === bestDist) { moves.push({x: mx, y: my}); }
-                                }
-                            }
-                            if(moves.length > 0) {
-                                let m = moves[Math.floor(Math.random()*moves.length)];
-                                e.x += m.x; e.y += m.y;
-                            }
+                            this.executeChaseMove(e, canSee, enemyRoom);
                         }
                     }
                 }
             }
+        }
+
+        executeChaseMove(e, canSee, enemyRoom) {
+            let target = null;
+            
+            if (canSee) {
+                target = { x: this.player.x, y: this.player.y };
+                e.targetExit = null;
+            } else if (e.lastSeenPos) {
+                target = e.lastSeenPos;
+                if (e.x === e.lastSeenPos.x && e.y === e.lastSeenPos.y) {
+                    e.lastSeenPos = null;
+                    target = null;
+                }
+            }
+
+            if (!target) {
+                if (enemyRoom) {
+                    if (!e.targetExit) {
+                        let exits = this.getRoomExits(enemyRoom);
+                        if (exits.length > 0) {
+                            e.targetExit = exits[Math.floor(Math.random() * exits.length)];
+                        }
+                    }
+                    if (e.targetExit && e.x === e.targetExit.x && e.y === e.targetExit.y) {
+                        e.targetExit = null;
+                        target = null;
+                    } else {
+                        target = e.targetExit;
+                    }
+                } else {
+                    target = null;
+                }
+            }
+
+            let move = null;
+
+            if (target) {
+                let bestDist = Infinity;
+                let bestMoves = [];
+                for (let my = -1; my <= 1; my++) {
+                    for (let mx = -1; mx <= 1; mx++) {
+                        if (mx === 0 && my === 0) continue;
+                        let nx = e.x + mx, ny = e.y + my;
+                        if (this.canEnemyMoveTo(e, nx, ny)) {
+                            let dist = Math.max(Math.abs(nx - target.x), Math.abs(ny - target.y));
+                            let euclidDist = (nx - target.x)*(nx - target.x) + (ny - target.y)*(ny - target.y);
+                            if (dist < bestDist) {
+                                bestDist = dist;
+                                bestMoves = [{x: nx, y: ny, euclidDist}];
+                            } else if (dist === bestDist) {
+                                bestMoves.push({x: nx, y: ny, euclidDist});
+                            }
+                        }
+                    }
+                }
+                if (bestMoves.length > 0) {
+                    bestMoves.sort((a,b) => a.euclidDist - b.euclidDist);
+                    let minEuclid = bestMoves[0].euclidDist;
+                    let finalCandidates = bestMoves.filter(m => m.euclidDist === minEuclid);
+                    move = finalCandidates[Math.floor(Math.random() * finalCandidates.length)];
+                }
+            }
+
+            if (!move) {
+                let validMoves = [];
+                let allMoves = [];
+                for (let my = -1; my <= 1; my++) {
+                    for (let mx = -1; mx <= 1; mx++) {
+                        if (mx === 0 && my === 0) continue;
+                        let nx = e.x + mx, ny = e.y + my;
+                        if (this.canEnemyMoveTo(e, nx, ny)) {
+                            allMoves.push({x: nx, y: ny});
+                            if (nx !== e.lastX || ny !== e.lastY) {
+                                validMoves.push({x: nx, y: ny});
+                            }
+                        }
+                    }
+                }
+                if (validMoves.length > 0) {
+                    move = validMoves[Math.floor(Math.random() * validMoves.length)];
+                } else if (allMoves.length > 0) {
+                    move = allMoves[Math.floor(Math.random() * allMoves.length)];
+                }
+            }
+
+            if (move) {
+                e.lastX = e.x;
+                e.lastY = e.y;
+                e.x = move.x;
+                e.y = move.y;
+            }
+        }
+
+        canEnemyMoveTo(e, nx, ny) {
+            if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) return false;
+            const t = this.map[ny][nx];
+            if (t === CONFIG.TILES.WALL || t === CONFIG.TILES.WATER) return false;
+            if (this.isCornerBlocked(e.x, e.y, nx, ny)) return false;
+            if (this.entities.enemies.some(oe => oe.x === nx && oe.y === ny)) return false;
+            if (nx === this.player.x && ny === this.player.y) return false;
+            return true;
+        }
+
+        getRoomExits(room) {
+            if (room.exits) return room.exits;
+            let exits = [];
+            for (let y = room.y; y < room.y + room.h; y++) {
+                for (let x = room.x; x < room.x + room.w; x++) {
+                    if (x === room.x || x === room.x + room.w - 1 || y === room.y || y === room.y + room.h - 1) {
+                        let isExit = false;
+                        [[0,1], [0,-1], [1,0], [-1,0]].forEach(([dx, dy]) => {
+                            let nx = x + dx, ny = y + dy;
+                            if (nx >= 0 && nx < CONFIG.MAP_W && ny >= 0 && ny < CONFIG.MAP_H) {
+                                if (this.map[ny][nx] === CONFIG.TILES.FLOOR || this.map[ny][nx] === CONFIG.TILES.STAIRS) {
+                                    if (nx < room.x || nx >= room.x + room.w || ny < room.y || ny >= room.y + room.h) {
+                                        isExit = true;
+                                    }
+                                }
+                            }
+                        });
+                        if (isExit) exits.push({x, y});
+                    }
+                }
+            }
+            room.exits = exits;
+            return exits;
         }
 
         executeRandomMove(e) {
@@ -1121,6 +1228,7 @@
             }
             if (moves.length > 0) {
                 let m = moves[Math.floor(Math.random()*moves.length)];
+                e.lastX = e.x; e.lastY = e.y;
                 e.x += m.x; e.y += m.y;
             }
         }
@@ -1144,6 +1252,7 @@
             }
             if (moves.length > 0) {
                 let m = moves[Math.floor(Math.random()*moves.length)];
+                e.lastX = e.x; e.lastY = e.y;
                 e.x += m.x; e.y += m.y;
             }
         }
