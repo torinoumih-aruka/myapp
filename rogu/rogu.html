@@ -297,6 +297,20 @@
             return Math.random().toString(36).substr(2, 9);
         }
 
+        // === タグフォーマット用ヘルパーメソッド ===
+        fmtP() {
+            return `[P:${this.config.name}]`;
+        }
+        fmtE(enemy) {
+            return `[E:${enemy.id}:${enemy.name}]`;
+        }
+        fmtI(item) {
+            if (typeof item === 'string') return `[I:unknown:${item}]`;
+            const displayName = this.getItemDisplayName(item, false);
+            return `[I:${item.id}:${displayName}]`;
+        }
+        // =====================================
+
         loadConfigCookie() {
             const match = document.cookie.match(/(?:^|; )roguConfig=([^;]*)/);
             if (match) {
@@ -479,7 +493,7 @@
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.style.display = 'none', 1500);
                 if (isFirst) this.log("冒険を開始した！");
-                else this.log(`${this.config.name}は 階段を降りた。`);
+                else this.log(`${this.fmtP()}は 階段を降りた。`);
                 this.gameState = 'PLAY';
             }, 100);
         }
@@ -754,7 +768,7 @@
 
         gainExp(amount) {
             this.player.exp += amount;
-            this.log(`${this.config.name}は ${amount}の経験値を得た`);
+            this.log(`${this.fmtP()}は ${amount}の経験値を得た`);
             
             while (this.player.level < 99 && this.player.exp >= this.getRequiredExp(this.player.level)) {
                 this.levelUp();
@@ -786,7 +800,7 @@
             if (enemy.evolve_id) {
                 const master = this.enemyMaster.find(m => m.id === enemy.evolve_id);
                 if (master) {
-                    const oldname = enemy.name;
+                    const oldname = this.fmtE(enemy);
                     enemy.id = master.id; enemy.name = master.name; enemy.emoji = master.emoji;
                     enemy.color = master.color; enemy.imageSrc = master.imageSrc;
                     enemy.maxHp = master.hp + (this.floor * 2); enemy.hp = enemy.maxHp;
@@ -794,7 +808,7 @@
                     enemy.evolve_id = master.evolve_id; enemy.devolve_id = master.devolve_id;
                     enemy.behavior = master.behavior;
                     if(master.attributes) enemy.attributes = [...master.attributes];
-                    this.log(`${oldname}は レベルが上がって ${enemy.name}になった`);
+                    this.log(`${oldname}は レベルが上がって ${this.fmtE(enemy)}になった`);
                 }
             }
         }
@@ -803,7 +817,7 @@
             if (enemy.devolve_id) {
                 const master = this.enemyMaster.find(m => m.id === enemy.devolve_id);
                 if (master) {
-                    const oldname = enemy.name;
+                    const oldname = this.fmtE(enemy);
                     enemy.id = master.id; enemy.name = master.name; enemy.emoji = master.emoji;
                     enemy.color = master.color; enemy.imageSrc = master.imageSrc;
                     enemy.maxHp = master.hp + (this.floor * 2); enemy.hp = enemy.maxHp;
@@ -811,7 +825,7 @@
                     enemy.evolve_id = master.evolve_id; enemy.devolve_id = master.devolve_id;
                     enemy.behavior = master.behavior;
                     if(master.attributes) enemy.attributes = [...master.attributes];
-                    this.log(`${oldname}は レベルが下がって ${enemy.name}になった`);
+                    this.log(`${oldname}は レベルが下がって ${this.fmtE(enemy)}になった`);
                 }
             }
         }
@@ -847,7 +861,7 @@
             if (this.gameState !== 'PLAY') return;
 
             if (this.player.statuses.paralyzed > 0) {
-                this.log(`${this.config.name}は かなしばりで動けない`);
+                this.log(`${this.fmtP()}は かなしばりで動けない`);
                 this.triggerTurn();
                 return;
             }
@@ -882,22 +896,22 @@
                 if (this.player.inventory.length < 20) {
                     this.pickupItemLogic(this.entities.items[itemIdx]);
                 } else {
-                    this.log(`${this.entities.items[itemIdx].emoji}${this.entities.items[itemIdx].name}は 拾えなかった`);
+                    this.log(`${this.entities.items[itemIdx].emoji}${this.fmtI(this.entities.items[itemIdx])}は 拾えなかった`);
                 }
             }
 
             const trap = this.entities.traps.find(t => t.x === this.player.x && t.y === this.player.y);
             if (trap) {
                 if (!trap.isVisible) trap.isVisible = true;
-                this.log(`${this.config.name}は ${trap.master.name}を踏んだ`);
+                this.log(`${this.fmtP()}は ${trap.master.name}を踏んだ`);
                 if (Math.random() < 0.7) {
                     this.log(`${trap.master.name}が 発動した`);
                     if (trap.master.type === 'rock') {
                         this.player.hp -= 15;
-                        this.log(`${this.config.name}は 15のダメージを受けた`);
+                        this.log(`${this.fmtP()}は 15のダメージを受けた`);
                     } else if (trap.master.type === 'pit') {
                         this.player.hp -= 5;
-                        this.log(`${this.config.name}は 5のダメージを受けた`);
+                        this.log(`${this.fmtP()}は 5のダメージを受けた`);
                         if (this.player.hp > 0) {
                             setTimeout(() => { this.floor++; this.initLevel(); }, 300);
                             return;
@@ -914,13 +928,13 @@
                     } else if (trap.master.type === 'rust') {
                         let w = this.player.equipment.weapon;
                         if (w) {
-                            if (w.marks && w.marks.includes("メ")) this.log(`${w.name}は サビなかった`);
-                            else { w.modifier--; this.log(`${w.name}は サビてしまった`); }
+                            if (w.marks && w.marks.includes("メ")) this.log(`${this.fmtI(w)}は サビなかった`);
+                            else { w.modifier--; this.log(`${this.fmtI(w)}は サビてしまった`); }
                         }
                         let s = this.player.equipment.shield;
                         if (s) {
-                            if (s.marks && s.marks.includes("メ")) this.log(`${s.name}は サビなかった`);
-                            else { s.modifier--; this.log(`${s.name}は サビてしまった`); }
+                            if (s.marks && s.marks.includes("メ")) this.log(`${this.fmtI(s)}は サビなかった`);
+                            else { s.modifier--; this.log(`${this.fmtI(s)}は サビてしまった`); }
                         }
                         this.recalculateStats();
                     } else if (trap.master.type === 'summon') {
@@ -943,11 +957,12 @@
                 }
                 if (Math.random() * 100 < trap.master.break_rate) {
                     this.entities.traps = this.entities.traps.filter(t => t.uid !== trap.uid);
+                    this.log(`${trap.master.name}は 壊れた`);
                 }
             }
 
             if (this.map[ny][nx] === CONFIG.TILES.STAIRS && this.player.hp > 0) {
-                this.log(`${this.config.name}は 階段に乗った。`);
+                this.log(`${this.fmtP()}は 階段に乗った。`);
                 this.showChoiceDialog("次のフロアに降りますか？", 
                     () => { this.floor++; this.initLevel(); }, 
                     () => { this.gameState = 'PLAY'; this.triggerTurn(); } 
@@ -963,7 +978,7 @@
             if (['THROWING', 'SWINGING', 'FIREBALL_AIM'].includes(this.gameState)) {
                 this.endThrowMode();
             } else if (this.gameState === 'PLAY') {
-                if (this.player.statuses.paralyzed > 0) this.log(`${this.config.name}は かなしばりで動けない`);
+                if (this.player.statuses.paralyzed > 0) this.log(`${this.fmtP()}は かなしばりで動けない`);
                 this.triggerTurn();
             }
         }
@@ -1019,10 +1034,10 @@
             if (enemy) {
                 let dmg = Math.floor(Math.random() * 21) + 80;
                 enemy.hp -= dmg;
-                this.log(`炎が ${enemy.name}を包み込み ${dmg}ダメージを与えた`);
+                this.log(`炎が ${this.fmtE(enemy)}を包み込み ${dmg}ダメージを与えた`);
                 enemy.statuses.paralyzed = 0; // ダメージで解除
                 if (enemy.hp <= 0) {
-                    this.log(`${enemy.name}は 倒れた`);
+                    this.log(`${this.fmtE(enemy)}は 倒れた`);
                     this.entities.enemies = this.entities.enemies.filter(e => e.uid !== enemy.uid);
                     this.gainExp(enemy.exp || 0);
                     if (Math.random() * 100 < (enemy.drop_rate || 2) && this.itemMaster.length > 0) {
@@ -1099,19 +1114,19 @@
 
             if (this.player.statuses.confused > 0) {
                 this.player.statuses.confused--;
-                if (this.player.statuses.confused === 0) this.log(`${this.config.name}の 混乱が解けた`);
+                if (this.player.statuses.confused === 0) this.log(`${this.fmtP()}の 混乱が解けた`);
             }
             if (this.player.statuses.paralyzed > 0) {
                 this.player.statuses.paralyzed--;
-                if (this.player.statuses.paralyzed === 0) this.log(`${this.config.name}の かなしばりが解けた`);
+                if (this.player.statuses.paralyzed === 0) this.log(`${this.fmtP()}の かなしばりが解けた`);
             }
             if (this.player.statuses.double_speed > 0) {
                 this.player.statuses.double_speed--;
-                if (this.player.statuses.double_speed === 0) this.log(`${this.config.name}の 倍速が解けた`);
+                if (this.player.statuses.double_speed === 0) this.log(`${this.fmtP()}の 倍速が解けた`);
             }
             if (this.player.statuses.slow > 0) {
                 this.player.statuses.slow--;
-                if (this.player.statuses.slow === 0) this.log(`${this.config.name}の 鈍足が解けた`);
+                if (this.player.statuses.slow === 0) this.log(`${this.fmtP()}の 鈍足が解けた`);
             }
 
             let hungerThreshold = 10;
@@ -1147,9 +1162,9 @@
             let enemyMoves = 1;
             if (this.player.statuses.double_speed > 0) {
                 this.player.speed_extra_turn = !this.player.speed_extra_turn;
-                if (this.player.speed_extra_turn) enemyMoves = 0; // プレイヤーの2回目行動時は敵動かない
+                if (this.player.speed_extra_turn) enemyMoves = 0; 
             } else if (this.player.statuses.slow > 0) {
-                enemyMoves = 2; // プレイヤーが1回動く間に敵は2回動く
+                enemyMoves = 2; 
             }
 
             for(let i=0; i<enemyMoves; i++) {
@@ -1190,8 +1205,8 @@
         combat(atkEntity, defEntity) {
             const isPlayerAtk = (atkEntity === this.player);
             const accuracy = isPlayerAtk ? (this.player.equipment.weapon ? (this.player.equipment.weapon.accuracy || 98) : 98) : (atkEntity.accuracy || 90);
-            const atkName = isPlayerAtk ? this.config.name : atkEntity.name;
-            const defName = defEntity === this.player ? this.config.name : defEntity.name;
+            const atkName = isPlayerAtk ? this.fmtP() : this.fmtE(atkEntity);
+            const defName = defEntity === this.player ? this.fmtP() : this.fmtE(defEntity);
 
             if (Math.random() * 100 > accuracy) {
                 this.log(`${atkName}の 攻撃は外れた`);
@@ -1224,7 +1239,7 @@
             
             if(isNaN(dmg)) dmg = 1;
             defEntity.hp -= dmg;
-            defEntity.statuses.paralyzed = 0; // ダメージでかなしばり解除
+            defEntity.statuses.paralyzed = 0; 
             
             this.log(`${atkName}は ${defName}に ${dmg}ダメージを与えた`);
 
@@ -1258,16 +1273,16 @@
             for (let e of sortedEnemies) {
                 if (e.hp <= 0) continue; 
                 
-                if (e.statuses.paralyzed > 0) continue; // かなしばり
+                if (e.statuses.paralyzed > 0) continue; 
                 if (e.statuses.asleep > 0) { e.statuses.asleep--; continue; }
                 if (e.statuses.confused > 0) e.statuses.confused--;
                 if (e.statuses.double_speed > 0) {
                     e.statuses.double_speed--;
-                    if(e.statuses.double_speed === 0) this.log(`${e.name}の 倍速が解けた`);
+                    if(e.statuses.double_speed === 0) this.log(`${this.fmtE(e)}の 倍速が解けた`);
                 }
                 if (e.statuses.slow > 0) {
                     e.statuses.slow--;
-                    if(e.statuses.slow === 0) this.log(`${e.name}の 鈍足が解けた`);
+                    if(e.statuses.slow === 0) this.log(`${this.fmtE(e)}の 鈍足が解けた`);
                 }
 
                 if (e.statuses.slow > 0) {
@@ -1280,12 +1295,10 @@
                 
                 let canSee = false;
                 if (enemyRoom) {
-                    // 部屋の全マス＋周囲2マス
                     if (playerRoom === enemyRoom) canSee = true;
                     else if (this.player.x >= enemyRoom.x - 2 && this.player.x < enemyRoom.x + enemyRoom.w + 2 &&
                              this.player.y >= enemyRoom.y - 2 && this.player.y < enemyRoom.y + enemyRoom.h + 2) canSee = true;
                 } else {
-                    // 通路なら周囲2マス
                     if (dist <= 2) canSee = true;
                 }
 
@@ -1333,8 +1346,8 @@
             let target = null;
             if (e.waitCount > 0) {
                 e.waitCount--;
-                if (e.waitCount === 0) e.pastPositions = []; // 停止明けでUターン可に
-                return; // 立ち止まる
+                if (e.waitCount === 0) e.pastPositions = []; 
+                return; 
             }
             
             if (canSee) {
@@ -1344,7 +1357,7 @@
             if (!target && enemyRoom) {
                 let exits = this.getRoomExits(enemyRoom);
                 if (exits.length > 0) {
-                    target = exits[Math.floor(Math.random() * exits.length)]; // 最短ルートへの近似としてどれか
+                    target = exits[Math.floor(Math.random() * exits.length)]; 
                 }
             }
 
@@ -1368,7 +1381,7 @@
                 if (bestMoves.length > 0) move = bestMoves[Math.floor(Math.random() * bestMoves.length)];
             }
 
-            if (!move && !enemyRoom) { // 通路での前進ロジック
+            if (!move && !enemyRoom) { 
                 let validMoves = []; let allMoves = [];
                 for (let my = -1; my <= 1; my++) {
                     for (let mx = -1; mx <= 1; mx++) {
@@ -1376,8 +1389,7 @@
                         let nx = e.x + mx, ny = e.y + my;
                         if (this.canEnemyMoveTo(e, nx, ny)) {
                             allMoves.push({x: nx, y: ny});
-                            // 過去2ターンに含まれていないか
-                            if (!e.pastPositions.some(p => p.x === nx && p.y === ny)) {
+                            if (!e.pastPositions || !e.pastPositions.some(p => p.x === nx && p.y === ny)) {
                                 validMoves.push({x: nx, y: ny});
                             }
                         }
@@ -1385,8 +1397,8 @@
                 }
                 if (validMoves.length > 0) {
                     move = validMoves[Math.floor(Math.random() * validMoves.length)];
-                } else if (allMoves.length > 0) { // 行き止まり
-                    e.waitCount = 2; // 2ターン停止
+                } else if (allMoves.length > 0) { 
+                    e.waitCount = 2; 
                 }
             }
 
@@ -1465,13 +1477,13 @@
                     let existing = this.player.inventory.find(i => i.id === item.id);
                     if (existing) {
                         existing.stack = Math.min(99, (existing.stack||1) + (item.stack||1));
-                        this.log(`${item.emoji}${item.name}を 拾った`);
+                        this.log(`${item.emoji}${this.fmtI(item)}を 拾った`);
                         return;
                     }
                 }
                 
                 this.player.inventory.push(item);
-                this.log(`${item.emoji}${this.getItemDisplayName(item, false)}を 拾った`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 拾った`);
             }
         }
 
@@ -1612,21 +1624,21 @@
             if (isEquipping) {
                 const currentEquip = this.player.equipment[cat];
                 if (currentEquip && currentEquip.marks && currentEquip.marks.includes("呪")) {
-                    this.log(`${currentEquip.emoji}${currentEquip.name}は 呪われていて外せない`);
+                    this.log(`${currentEquip.emoji}${this.fmtI(currentEquip)}は 呪われていて外せない`);
                     this.closeInventory(); return;
                 }
                 if (currentEquip) currentEquip.isEquipped = false;
                 item.isEquipped = true;
                 this.player.equipment[cat] = item;
-                this.log(`${item.emoji}${this.getItemDisplayName(item, false)}を 装備した`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 装備した`);
             } else {
                 if (item.marks && item.marks.includes("呪")) {
-                    this.log(`${item.emoji}${item.name}は 呪われていて外せない`);
+                    this.log(`${item.emoji}${this.fmtI(item)}は 呪われていて外せない`);
                     this.closeInventory(); return;
                 }
                 item.isEquipped = false;
                 this.player.equipment[cat] = null;
-                this.log(`${item.emoji}${this.getItemDisplayName(item, false)}を 外した`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 外した`);
             }
             this.recalculateStats();
             this.closeInventory();
@@ -1644,7 +1656,7 @@
                     if (this.player.hunger >= this.player.maxHunger) this.player.maxHunger += 2;
                     this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                 }
-                this.log(`${item.emoji}${item.name}を 食べた`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 食べた`);
                 used = true;
             } else if (item.category === 'herb') {
                 if (item.name === "しあわせ草") {
@@ -1653,30 +1665,30 @@
                     this.levelDown(); used = true;
                 } else if (item.name === "まどわし草" || item.name === "混乱草") {
                     this.player.statuses.confused = 20;
-                    this.log(`${this.config.name}は 混乱した`);
+                    this.log(`${this.fmtP()}は 混乱した`);
                     used = true;
                 } else if (item.name === "目薬草") {
                     this.player.statuses.see_all = true;
                     if(this.entities.traps) this.entities.traps.forEach(t => t.isVisible = true);
-                    this.log(`${this.config.name}は 罠が見えるようになった`);
+                    this.log(`${this.fmtP()}は 罠が見えるようになった`);
                     used = true;
                 } else if (item.name === "毒草") {
                     this.player.hp -= 5;
                     this.player.strength = Math.max(0, this.player.strength - 1);
                     this.player.statuses.slow = 10;
-                    this.log(`${this.config.name}は 鈍足状態になった`);
+                    this.log(`${this.fmtP()}は 鈍足状態になった`);
                     used = true;
                 } else if (item.name === "すばやさ草") {
                     this.player.statuses.double_speed = 10;
-                    this.log(`${this.config.name}は 倍速状態になった`);
+                    this.log(`${this.fmtP()}は 倍速状態になった`);
                     used = true;
                 } else if (item.name === "毒消し草") {
                     this.player.strength = this.player.maxStrength;
-                    this.log(`${this.config.name}の ちからが回復した`);
+                    this.log(`${this.fmtP()}の ちからが回復した`);
                     used = true;
                 } else if (item.name === "ちからのたね") {
                     this.player.maxStrength++; this.player.strength++;
-                    this.log(`${this.config.name}の ちからの最大値が上がった`);
+                    this.log(`${this.fmtP()}の ちからの最大値が上がった`);
                     used = true;
                 } else if (item.name === "火炎草") {
                     this.gameState = 'FIREBALL_AIM';
@@ -1687,7 +1699,7 @@
                     if (this.player.hp >= this.player.maxHp) this.player.maxHp += 1;
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
                     this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
-                    this.log(`${item.emoji}${item.name}を 飲んだ`);
+                    this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
                     used = true;
                 }
             } else if (item.category === 'scroll') {
@@ -1708,7 +1720,7 @@
                     this.entities.enemies.forEach(e => {
                         if (Math.abs(e.x - this.player.x) <= 1 && Math.abs(e.y - this.player.y) <= 1) {
                             e.statuses.paralyzed = 9999;
-                            this.log(`${e.name}は かなしばり状態になった`);
+                            this.log(`${this.fmtE(e)}は かなしばり状態になった`);
                         }
                     });
                     used = true;
@@ -1725,9 +1737,9 @@
                             let dmg = Math.floor(Math.random() * 21) + 15;
                             e.hp -= dmg;
                             e.statuses.paralyzed = 0;
-                            this.log(`真空の刃が ${e.name}に ${dmg}ダメージを与えた`);
+                            this.log(`真空の刃が ${this.fmtE(e)}に ${dmg}ダメージを与えた`);
                             if (e.hp <= 0) {
-                                this.log(`${e.name}は 倒れた`);
+                                this.log(`${this.fmtE(e)}は 倒れた`);
                                 this.entities.enemies = this.entities.enemies.filter(en => en.uid !== e.uid);
                                 this.gainExp(e.exp || 0);
                             }
@@ -1740,7 +1752,7 @@
                     this.scrollSource = source;
                     if (item.name === "天の恵みの巻物") this.scrollTargetCategory = 'weapon';
                     else if (item.name === "地の恵みの巻物") this.scrollTargetCategory = 'shield';
-                    else this.scrollTargetCategory = 'any_equip'; // メッキ用
+                    else this.scrollTargetCategory = 'any_equip'; 
                     
                     document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
                     if (source === 'feet') {
@@ -1753,7 +1765,7 @@
                     this.startSynthesis(item, source);
                     return;
                 } else {
-                    this.log(`${item.emoji}${item.name}を 使ったが 何も起きなかった`);
+                    this.log(`${item.emoji}${this.fmtI(item)}を 使ったが 何も起きなかった`);
                     used = true;
                 }
             }
@@ -1767,7 +1779,6 @@
                     if (idx !== -1) this.entities.items.splice(idx, 1);
                 }
             } else if (used && item.name === "火炎草") {
-                // 火炎草は消費を保留し、投擲決定時に消費する
                 this.fireballItem = item;
                 this.fireballSource = source;
                 if (source === 'feet') {
@@ -1786,18 +1797,18 @@
             const scrollItem = this.scrollItem;
             let success = false;
             
-            if (this.scrollTargetCategory === 'any_equip') { // メッキ
+            if (this.scrollTargetCategory === 'any_equip') { 
                 if (['weapon', 'shield'].includes(targetItem.category)) {
                     if (!targetItem.marks) targetItem.marks = [];
                     if (targetItem.marks.includes("メ")) {
                         this.log(`すでに メッキされている`);
                     } else if (targetItem.marks.length < (targetItem.slots||0)) {
                         targetItem.marks.push("メ");
-                        this.log(`${targetItem.name}に メッキ加工をした`);
+                        this.log(`${this.fmtI(targetItem)}に メッキ加工をした`);
                         success = true;
                     } else {
                         this.log(`しかし 効果が無かった`);
-                        success = true; // 巻物は消費
+                        success = true; 
                     }
                 } else {
                     this.log(`しかし 効果が無かった`);
@@ -1806,15 +1817,15 @@
                 let isCursed = targetItem.marks && targetItem.marks.includes("呪");
                 if (isCursed) {
                     targetItem.marks = targetItem.marks.filter(m => m !== "呪");
-                    this.log(`${targetItem.emoji}${targetItem.name}の 呪いが解けた`);
+                    this.log(`${targetItem.emoji}${this.fmtI(targetItem)}の 呪いが解けた`);
                 }
                 const up = Math.random() < 0.05 ? 3 : 1;
                 targetItem.modifier += up;
-                this.log(`${scrollItem.emoji}${scrollItem.name}を読んだ ${targetItem.emoji}${targetItem.name}が+${up}された！`);
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ ${targetItem.emoji}${this.fmtI(targetItem)}が+${up}された！`);
                 this.recalculateStats();
                 success = true;
             } else {
-                this.log(`${scrollItem.emoji}${scrollItem.name}は 効果が現れなかった`);
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}は 効果が現れなかった`);
             }
             
             if (this.scrollSource === 'inventory') {
@@ -1865,9 +1876,9 @@
             if (!['weapon', 'shield'].includes(matItem.category) && !matItem.mark) success = false;
 
             if (!success) {
-                this.log(`${baseItem.emoji}${baseItem.name}の 合成に失敗した`);
+                this.log(`${baseItem.emoji}${this.fmtI(baseItem)}の 合成に失敗した`);
             } else {
-                this.log(`${baseItem.emoji}${baseItem.name}に ${matItem.emoji}${matItem.name}を合成した`);
+                this.log(`${baseItem.emoji}${this.fmtI(baseItem)}に ${matItem.emoji}${this.fmtI(matItem)}を合成した`);
                 
                 if (matItem.category === baseItem.category) {
                     baseItem.modifier += (matItem.modifier || 0);
@@ -1910,7 +1921,7 @@
             if (source === 'feet') return; 
             
             if (item.isEquipped && item.marks && item.marks.includes("呪")) {
-                this.log(`${item.emoji}${item.name}は 呪われていて置けない`);
+                this.log(`${item.emoji}${this.fmtI(item)}は 呪われていて置けない`);
                 this.closeInventory(); return;
             }
 
@@ -1921,23 +1932,22 @@
                 if(item.isEquipped && this.player.equipment[item.category] === item) {
                     item.isEquipped = false; this.player.equipment[item.category] = null; this.recalculateStats();
                 }
-                this.log(`${item.emoji}${this.getItemDisplayName(item, false)}を 足元に置いた`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 足元に置いた`);
                 this.closeInventory();
                 this.triggerTurn();
             } else {
-                this.log(`${item.emoji}${this.getItemDisplayName(item, false)}を 置けなかった`);
+                this.log(`${item.emoji}${this.fmtI(item)}を 置けなかった`);
                 this.closeInventory();
             }
         }
 
         startThrowMode(item, source) {
             if (item.isEquipped && item.marks && item.marks.includes("呪")) {
-                this.log(`${item.emoji}${item.name}は 呪われていて外せない`);
+                this.log(`${item.emoji}${this.fmtI(item)}は 呪われていて外せない`);
                 this.closeInventory(); return;
             }
             
             if (item.category === 'projectile') {
-                // 1個だけ切り離して投げる
                 let throwArrow = { ...item, stack: 1, isEquipped: false };
                 this.throwItem = throwArrow;
                 this.throwItemOriginUid = item.uid; 
@@ -1970,7 +1980,6 @@
             if (this.throwItem) {
                 if (this.throwSource === 'feet') {
                     if(this.throwItem.category === 'projectile' && this.throwItemOriginUid){
-                        // 元に戻す処理は煩雑なのでそのまま落とすか、インベントリ処理なら何もしない
                     } else {
                         this.entities.items.push(this.throwItem);
                     }
@@ -2008,7 +2017,7 @@
                 }
             }
             
-            this.log(`${this.config.name}は ${item.emoji}${this.getItemDisplayName(item, false)}を${item.category==='projectile'?'撃った':'投げた'}`);
+            this.log(`${this.fmtP()}は ${item.emoji}${this.fmtI(item)}を${item.category==='projectile'?'撃った':'投げた'}`);
             
             let cx = this.player.x, cy = this.player.y;
             let hitEnemy = null;
@@ -2023,7 +2032,7 @@
 
             if(hitEnemy) {
                 if (Math.random() < 0.15) {
-                    this.log(`${item.emoji}${this.getItemDisplayName(item, false)}は 当たらなかった`);
+                    this.log(`${item.emoji}${this.fmtI(item)}は 当たらなかった`);
                     this.dropItemAt(item, cx, cy);
                 } else {
                     if(item.category === 'herb') {
@@ -2039,16 +2048,16 @@
                             hitEnemy.hp -= 5;
                             hitEnemy.statuses.slow = 10;
                             hitEnemy.statuses.paralyzed = 0;
-                            this.log(`${hitEnemy.name}に 5ダメージを与えた`);
-                            this.log(`${hitEnemy.name}は 鈍足状態になった`);
+                            this.log(`${this.fmtE(hitEnemy)}に 5ダメージを与えた`);
+                            this.log(`${this.fmtE(hitEnemy)}は 鈍足状態になった`);
                         } else if (item.name === "すばやさ草") {
                             hitEnemy.statuses.double_speed = 10;
-                            this.log(`${hitEnemy.name}は 倍速状態になった`);
+                            this.log(`${this.fmtE(hitEnemy)}は 倍速状態になった`);
                         } else if (item.name === "火炎草") {
                             let dmg = Math.floor(Math.random() * 11) + 40;
                             hitEnemy.hp -= dmg;
                             hitEnemy.statuses.paralyzed = 0;
-                            this.log(`${hitEnemy.name}に ${dmg}ダメージを与えた`);
+                            this.log(`${this.fmtE(hitEnemy)}に ${dmg}ダメージを与えた`);
                         } else if (item.name === "毒消し草" || item.name === "ちからのたね") {
                             // TODO: 敵に当てた場合の効果ペンディング
                         } else if (item.name !== "目薬草") {
@@ -2057,16 +2066,16 @@
                     } else if (item.name === "くさったパン") {
                         hitEnemy.hp -= 5;
                         hitEnemy.statuses.paralyzed = 0;
-                        this.log(`${hitEnemy.name}に 5ダメージを与えた`);
+                        this.log(`${this.fmtE(hitEnemy)}に 5ダメージを与えた`);
                     } else if(['weapon', 'shield', 'projectile'].includes(item.category)) {
                         let val = (item.effects.atk || 0) + (item.effects.def || 0) + (item.modifier || 0) + 1;
                         hitEnemy.hp -= val;
                         hitEnemy.statuses.paralyzed = 0;
-                        this.log(`${hitEnemy.name}に ${val}ダメージを与えた`);
+                        this.log(`${this.fmtE(hitEnemy)}に ${val}ダメージを与えた`);
                     }
 
                     if(hitEnemy.hp <= 0) {
-                        this.log(`${hitEnemy.name}は 倒れた`);
+                        this.log(`${this.fmtE(hitEnemy)}は 倒れた`);
                         this.entities.enemies = this.entities.enemies.filter(e => e.uid !== hitEnemy.uid);
                         this.gainExp(hitEnemy.exp || 0);
                         if (Math.random() * 100 < (hitEnemy.drop_rate || 2) && this.itemMaster.length > 0) {
@@ -2088,7 +2097,7 @@
                 }
             } else {
                 if(!this.dropItemAt(item, cx, cy)) {
-                    this.log(`${item.emoji}${this.getItemDisplayName(item, false)}は 使い物にならなくなった`);
+                    this.log(`${item.emoji}${this.fmtI(item)}は 使い物にならなくなった`);
                 }
             }
             this.triggerTurn();
@@ -2240,9 +2249,23 @@
 		// --- UI描画系 ---
         log(msg) {
             let html = msg;
-            html = html.replace(new RegExp(this.config.name, 'g'), `<span style="color:${this.config.color}">${this.config.name}</span>`);
-            this.enemyMaster.forEach(e => { html = html.replace(new RegExp(e.name, 'g'), `<span style="color:${e.color}">${e.name}</span>`); });
-            this.itemMaster.forEach(it => { html = html.replace(new RegExp(it.name, 'g'), `<span style="color:${it.color}">${it.name}</span>`); });
+            
+            // [P:主人公名]
+            html = html.replace(/\[P:(.*?)\]/g, `<span style="color:${this.config.color}">$1</span>`);
+            
+            // [E:id:name]
+            html = html.replace(/\[E:([^:]+):(.*?)\]/g, (match, id, name) => {
+                const master = this.enemyMaster.find(e => e.id === id);
+                const color = master ? master.color : 'red';
+                return `<span style="color:${color}">${name}</span>`;
+            });
+            
+            // [I:id:name]
+            html = html.replace(/\[I:([^:]+):(.*?)\]/g, (match, id, name) => {
+                const master = this.itemMaster.find(i => i.id === id);
+                const color = master ? master.color : 'cyan';
+                return `<span style="color:${color}">${name}</span>`;
+            });
 
             this.fullLogHistory.push(html);
             this.msgQueue.push(html);
@@ -2257,7 +2280,6 @@
                 this.isMsgAnimating = false;
                 return;
             }
-            //this.isMsgAnimating = true;
             
             const logEl = document.getElementById('msg-log');
             let lines = logEl.innerHTML.split('<br>').filter(l => l !== "");
@@ -2270,7 +2292,6 @@
             if (this.msgQueue.length > 0) {
                 setTimeout(() => this.processMsgQueue(), 300);
             } else {
-                // Clear after a delay when empty
                 clearTimeout(this.msgClearTimer);
                 this.msgClearTimer = setTimeout(() => {
                     logEl.innerHTML = '';
