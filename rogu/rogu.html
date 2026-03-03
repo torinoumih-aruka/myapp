@@ -474,18 +474,18 @@
                     {id: "i302", emoji: "🥖", name: "くさったパン", color: "cyan", category: "food", effects: {hunger: 20}, consumable: true, spawn_rate: 25, description: "満腹度は回復するがHPとちからが減る。"},
 
                     {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20, description: "HPが25回復する。<br>合成で「薬」印。"},
-                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20, description: "HPが100回復する。<br>合成で「薬」印。"},
-                    {id: "i403", emoji: "🥬", name: "しあわせ草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むとレベルが上がる。"},
-                    {id: "i404", emoji: "🥬", name: "不幸の種", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むとレベルが下がる。"},
-                    {id: "i405", emoji: "🥬", name: "毒草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むとHPとちからが減り、鈍足になる。"},
-                    {id: "i406", emoji: "🥬", name: "すばやさ草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むと倍速になる。"},
-                    {id: "i407", emoji: "🥬", name: "毒消し草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むとちからが回復する。"},
-                    {id: "i408", emoji: "🥬", name: "ちからのたね", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むとちからの最大値と現在値が上がる。"},
-                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "炎を放ち大ダメージを与える。"},
+                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "弟", consumable: true, spawn_rate: 20, description: "HPが100回復する。<br>合成で「弟」印。"},
+                    {id: "i403", emoji: "🥬", name: "しあわせ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むとレベルが上がる。"},
+                    {id: "i404", emoji: "🥬", name: "不幸の種", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むとレベルが下がる。"},
+                    {id: "i405", emoji: "🥬", name: "毒草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むとHPとちからが減り、鈍足になる。"},
+                    {id: "i406", emoji: "🥬", name: "すばやさ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むと倍速になる。"},
+                    {id: "i407", emoji: "🥬", name: "毒消し草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むとちからが回復する。"},
+                    {id: "i408", emoji: "🥬", name: "ちからのたね", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むとちからの最大値と現在値が上がる。"},
+                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "炎を放ち大ダメージを与える。"},
                     {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", consumable: true, spawn_rate: 10},
-                    {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むと混乱する。敵に当てると怯える。"},
-                    {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むと混乱する。敵に当てると混乱する。"},
-                    {id: "i413", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {}, consumable: true, spawn_rate: 10, description: "飲むと罠が見えるようになる。"},
+                    {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むと混乱する。敵に当てると怯える。"},
+                    {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むと混乱する。敵に当てると混乱する。"},
+                    {id: "i413", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 10, description: "飲むと罠が見えるようになる。"},
 
                     {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 10, description: "武器を強化し、呪いを解く。"},
                     {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 10, description: "盾を強化し、呪いを解く。"},
@@ -1110,14 +1110,25 @@
             
             // 水路の指輪チェック
             const canWalkWater = (this.player.equipment.bracelet && this.player.equipment.bracelet.name === "水路の指輪");
-            if (targetTile === CONFIG.TILES.WALL || (targetTile === CONFIG.TILES.WATER && !canWalkWater)) return;
+            if (targetTile === CONFIG.TILES.WALL) return;
+
+            // 移動先の敵キャラ取得
+            const enemy = this.entities.enemies.find(e => e.x === nx && e.y === ny);
+
+            // 移動先が水、かつ、水の上を歩けない、かつ、敵キャラが取得できた場合、敵を攻撃する
+            if (targetTile === CONFIG.TILES.WATER && !canWalkWater && enemy) {
+                await this.executeSwing(dx, dy);
+                return;
+            }
+
+            // 移動先が水、かつ、水の上を歩けない、かつ、敵キャラが存在しない場合、何もしない
+            if (targetTile === CONFIG.TILES.WATER && !canWalkWater && !enemy) return;
+
             if (this.isCornerBlocked(this.player.x, this.player.y, nx, ny)) return;
 
-            const enemy = this.entities.enemies.find(e => e.x === nx && e.y === ny);
             if (enemy) {
 
                 await this.executeSwing(dx, dy);
-
                 return;
             }
 
@@ -1674,6 +1685,9 @@
 
                 if (this.player.equipment.weapon && this.player.equipment.weapon.marks && this.player.equipment.weapon.marks.includes("薬")) {
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + 2);
+                }
+                if (this.player.equipment.weapon && this.player.equipment.weapon.marks && this.player.equipment.weapon.marks.includes("弟")) {
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + 4);
                 }
             } else {
 
@@ -2294,38 +2308,47 @@
             } else if (item.category === 'herb') {
                 if (item.name === "しあわせ草") {
                     this.player.exp = this.getRequiredExp(this.player.level);
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.levelUp(); used = true;
                 } else if (item.name === "不幸の種") {
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.levelDown(); used = true;
                 } else if (item.name === "まどわし草" || item.name === "混乱草") {
                     this.player.statuses.confused = 20;
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}は 混乱した`);
                     used = true;
                 } else if (item.name === "目薬草") {
                     this.player.statuses.see_all = true;
                     if(this.entities.traps) this.entities.traps.forEach(t => t.isVisible = true);
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}は 罠が見えるようになった`);
                     used = true;
                 } else if (item.name === "毒草") {
                     this.player.hp -= 5;
                     this.player.strength = Math.max(0, this.player.strength - 1);
                     this.player.statuses.slow = 10;
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}は 鈍足状態になった`);
                     used = true;
                 } else if (item.name === "すばやさ草") {
                     this.player.statuses.double_speed = 10;
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}は 倍速状態になった`);
                     used = true;
                 } else if (item.name === "毒消し草") {
                     this.player.strength = this.player.maxStrength;
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}の ちからが回復した`);
                     used = true;
                 } else if (item.name === "ちからのたね") {
                     this.player.maxStrength++; this.player.strength++;
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${this.fmtP()}の ちからの最大値が上がった`);
                     used = true;
                 } else if (item.name === "高とび草") {
                     this.log(`${this.fmtP()}は ワープした`);
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.warpTarget(this.player); used = true;                   
                 } else if (item.name === "火炎草") {
                     this.gameState = 'FIREBALL_AIM';
@@ -2337,6 +2360,7 @@
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
                     this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
                     this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
+                    this.log(`${this.fmtP()}の HPが${item.effects.hp}回復した`);
                     used = true;
                 }
             } else if (item.category === 'scroll') {
