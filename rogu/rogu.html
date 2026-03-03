@@ -81,7 +81,7 @@
         .fog-cell { background-color: rgba(0, 0, 0, 0.7); transition: background-color 0.3s; }
         .fog-visible { background-color: rgba(0, 0, 0, 0); }
 
-        #minimap-canvas { position: absolute; top: 10px; right: 10px; border: 1px solid #444; z-index: 90; pointer-events: none; background: rgba(0,0,0,0.6); }
+        #minimap-canvas { position: absolute; top: 10px; right: 10px; /*border: 1px solid #444;*/ z-index: 90; pointer-events: none; background: rgba(0,0,0,0.1); }
 
         #controls {
             background: var(--panel-color); display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
@@ -408,15 +408,8 @@
         async loadMasterData() {
             this.trapMaster = [
                 { id: "t1", name: "落石の罠", emoji: "🪨", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rock" },
-                { id: "t2", name: "落とし穴", emoji: "🕳️", break_rate: 100, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "pit" },
-                { id: "t3", name: "デロデロの罠", emoji: "🩸", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rotten" },
                 { id: "t4", name: "サビの罠", emoji: "💧", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rust" },
-                { id: "t5", name: "召喚スイッチ", emoji: "🔔", break_rate: 100, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "summon" },
-                { id: "t6", name: "バネの罠", emoji: "🧿", break_rate: 0, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "spring" },
-                { id: "t7", name: "警報スイッチ", emoji: "🚨", break_rate: 50, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "alarm" },
-                { id: "t8", name: "地雷", emoji: "🧨", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "mine" },
-                { id: "t9", name: "大型地雷", emoji: "💣", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "bigmine" },
-                { id: "t10", name: "毒の罠", emoji: "🩻", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "poison" }
+                { id: "t6", name: "バネの罠", emoji: "🧿", break_rate: 0, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "spring" }
             ];
 
             try {
@@ -428,22 +421,22 @@
                 this.enemyMaster = [
                     {id: "e001", emoji: "🐍", name: "ニョロヘビ", color: "red", hp: 4, exp: 2, atk: 1, def: 1, accuracy: 90, drop_rate: 4, spawn_floors: [1,2,3], behavior: "chase", evolve_id: "e002", devolve_id: null},
                     {id: "e002", emoji: "🐍", name: "あかニョロヘビ", color: "red", overlay_color: "rgba(255,0,0,0.5)", hp: 7, exp: 5, atk: 3, def: 1, accuracy: 90, drop_rate: 4, spawn_floors: [2,3,4,5], behavior: "chase", evolve_id: "e001", devolve_id: "e003"},
-                    {id: "e003", emoji: "🐍", name: "あおニョロヘビ", color: "red", overlay_color: "rgba(0,0,255,0.5)", hp: 25, exp: 12, atk: 20, def: 5, accuracy: 90, drop_rate: 4, spawn_floors: [5,6,7,8], behavior: "chase", evolve_id: "e002", devolve_id: null},
+                    {id: "e003", emoji: "🐍", name: "あおニョロヘビ", color: "red", overlay_color: "rgba(0,0,255,0.5)", hp: 14, exp: 12, atk: 20, def: 5, accuracy: 90, drop_rate: 4, spawn_floors: [9,10,11,12], behavior: "chase", evolve_id: "e002", devolve_id: null},
                     {id: "e011", emoji: "💀", name: "さまようむくろ", color: "red", hp: 6, exp: 4, atk: 2, def: 1, accuracy: 90, drop_rate: 2, spawn_floors: [1,2,3,4], behavior: "chase", evolve_id: "e012", devolve_id: null},
                     {id: "e012", emoji: "💀", name: "あおむくろ", color: "red", overlay_color: "rgba(0,100,255,0.5)", hp: 25, exp: 15, atk: 5, def: 3, accuracy: 85, drop_rate: 5, spawn_floors: [4,5,6,7,8], behavior: "chase", speed: 2, attack_count: 1, evolve_id: null, devolve_id: "ee011"},
-                    {id: "e021", emoji: "👹", name: "オニ小僧", color: "red", hp: 10, exp: 8, atk: 9, def: 3, accuracy: 90, drop_rate: 2, drop_item_id: "i13", spawn_floors: [2,3,4,5], behavior: "random", evolve_id: "e021", devolve_id: null , attributes: ["ogre"]},
-                    {id: "e022", emoji: "👹", name: "オニ坊主", color: "red", overlay_color: "rgba(0,255,255,0.5)", hp: 35, exp: 28, atk: 23, def: 8, accuracy: 90, drop_rate: 4, drop_item_id: "i13", spawn_floors: [8,9,10,11], behavior: "random", evolve_id: null, devolve_id: null, attributes: ["ogre"]},
+                    {id: "e021", emoji: "👹", name: "オニ小僧", color: "red", hp: 10, exp: 8, atk: 7, def: 3, accuracy: 90, drop_rate: 2, drop_item_id: "i004", spawn_floors: [2,3,4,5], behavior: "random", evolve_id: "e021", devolve_id: null , attributes: ["ogre"]},
+                    {id: "e022", emoji: "👹", name: "オニ坊主", color: "red", overlay_color: "rgba(0,255,255,0.5)", hp: 28, exp: 28, atk: 20, def: 8, accuracy: 90, drop_rate: 4, drop_item_id: "i004", spawn_floors: [8,9,10,11], behavior: "random", evolve_id: null, devolve_id: null, attributes: ["ogre"]},
                     {id: "e031", emoji: "🧝‍♀️", name: "リリパット", color: "red", hp: 10, exp: 5, atk: 3, def: 1, spawn_floors: [4,5,6], behavior: "archer", projectile: "i251", evolve_id: "e032"},
                     {id: "e032", emoji: "🧝‍♀️", name: "ハントレス", color: "red", hp: 15, exp: 15, atk: 5, def: 2, spawn_floors: [6,7,8], behavior: "archer", projectile: "i252", evolve_id: "e033"},
-                    {id: "e033", emoji: "🧝‍♀️", name: "アマゾネス", color: "red", hp: 35, exp: 40, atk: 11, def: 6, spawn_floors: [10,11,12], behavior: "archer", projectile: "i252", speed: 2},
+                    {id: "e033", emoji: "🧝‍♀️", name: "アマゾネス", color: "red", hp: 35, exp: 40, atk: 6, def: 6, spawn_floors: [10,11,12], behavior: "archer", projectile: "i252", speed: 2},
                     {id: "e041", emoji: "🐈", name: "コソドロねこ", color: "red", hp: 15, exp: 7, atk: 2, def: 1, spawn_floors: [5,6], drop_rate: 99, behavior: "thief"},
-                    {id: "e042", emoji: "🐈", name: "ドロボウねこ", color: "red", hp: 40, exp: 17, atk: 9, def: 1, spawn_floors: [8,9,10], drop_rate: 99, behavior: "thief"},
-                    {id: "e051", emoji: "🤖", name: "サビロボ", color: "red", hp: 30, exp: 12, atk: 3, def: 5, spawn_floors: [4,5,10,11,12], behavior: "rustbot"},
+                    {id: "e042", emoji: "🐈", name: "ドロボウねこ", color: "red", hp: 40, exp: 17, atk: 9, def: 1, spawn_floors: [8,9,10,11], drop_rate: 99, behavior: "thief"},
+                    {id: "e051", emoji: "🤖", name: "サビロボ", color: "red", hp: 22, exp: 12, atk: 3, def: 5, spawn_floors: [4,5,10,11,12], behavior: "rustbot"},
                     {id: "e061", emoji: "👻", name: "ハンカチおばけ", color: "red", hp: 7, exp: 8, atk: 12, def: 1, spawn_floors: [4,5,6], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true},
-                    {id: "e062", emoji: "👻", name: "タオルおばけ", color: "red", overlay_color: "rgba(0,255,0.5)",hp: 25, exp: 6, atk: 20, def: 1, spawn_floors: [7,8,9], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true},
-                    {id: "e063", emoji: "👻", name: "カーテンおばけ", color: "red", overlay_color: "rgba(255,100,0,0.5)",hp: 65, exp: 6, atk: 32, def: 1, spawn_floors: [11,12], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true ,speed: 2, attack_count: 1},
+                    {id: "e062", emoji: "👻", name: "タオルおばけ", color: "red", overlay_color: "rgba(0,255,0.5)",hp: 16, exp: 6, atk: 20, def: 1, spawn_floors: [7,8,9], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true},
+                    {id: "e063", emoji: "👻", name: "カーテンおばけ", color: "red", overlay_color: "rgba(255,100,0,0.5)",hp: 45, exp: 6, atk: 32, def: 1, spawn_floors: [11,12], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true ,speed: 2, attack_count: 1},
                     {id: "e071", emoji: "🧜‍♂️", name: "さかなおとこ", color: "red", hp: 10, exp: 7, atk: 4, def: 2, spawn_floors: [4,5,6], behavior: "chase", attributes: ["water"],canWalkWater: true},
-                    {id: "e072", emoji: "🧜‍♂️", name: "さかなおとこ格上", color: "red", overlay_color: "rgba(255,100,0,0.5)", hp: 10, exp: 7, atk: 4, def: 2, spawn_floors: [4,5,6], behavior: "chase", attributes: ["water"],canWalkWater: true},
+                    {id: "e072", emoji: "🧜‍♂️", name: "さかなおとこ格上", color: "red", overlay_color: "rgba(255,100,0,0.5)", hp: 10, exp: 7, atk: 4, def: 2, spawn_floors: [11,12,13], behavior: "chase", attributes: ["water"],canWalkWater: true},
                     {id: "e081", emoji: "🧚‍♀️", name: "パンの妖精", color: "red", hp: 16, exp: 10, atk: 7, def: 5, spawn_floors: [5,6,7], drop_rate: 5, behavior: "breadfairy"},
                     {id: "e082", emoji: "🧚‍♀️", name: "パンの大妖精", color: "red", overlay_color: "rgba(0,0,0,0.1)", hp: 29, exp: 20, atk: 13, def: 12, spawn_floors: [10,11,12], drop_rate: 5, behavior: "breadfairy"},
                     {id: "e091", emoji: "🕷️", name: "毒グモ", color: "red", hp: 15, exp: 11, atk: 6, def: 2, spawn_floors: [6,7], drop_rate: 5,behavior: "poisonspider", attributes: ["drain"]},
@@ -704,14 +697,24 @@
                 }
             }
 
+            // ==水路生成=============================
+
+            // 水路の数
             const rivers = Math.floor(Math.random() * 3) + 2;
             for (let i = 0; i < rivers; i++) {
                 let wx = Math.floor(Math.random() * CONFIG.MAP_W), wy = Math.floor(Math.random() * CONFIG.MAP_H);
+                let isBending = true;
+                let d;
                 for (let j = 0; j < 40; j++) {
                     if (wy > 0 && wy < CONFIG.MAP_H-1 && wx > 0 && wx < CONFIG.MAP_W-1) this.map[wy][wx] = CONFIG.TILES.WATER;
-                    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-                    const d = dirs[Math.floor(Math.random() * 4)];
+
+                    if (isBending) {
+                        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                        d = dirs[Math.floor(Math.random() * 4)];
+                    }
                     wx += d[0]; wy += d[1];
+
+                    isBending = Math.floor(Math.random() * 100) > 80;
                 }
             }
             this.ensureAllFloorsConnected();
@@ -940,11 +943,7 @@
             let m = null;
             // thiefが盗んだアイテムを持っている場合
             if (enemy.drop_item_uid) {
-                // （※ここでは一時的に退避していた元のアイテム情報を復元する前提ですが、
-                // 簡単のためインベントリから消えた元アイテムを探すか、無い場合はドロップ無しとします）
-                // 仕様上、盗まれた時点でインベントリからは消えているため、ドロップさせるには
-                // 盗む処理の際にenemyオブジェクトに item本体 を持たせる方が確実です。
-                // 暫定として、盗品UIDがある場合は確定ドロップとします（※盗む処理も後述で修正します）
+
             } 
             
             if (enemy.stolenItem) {
@@ -979,17 +978,7 @@
 
         // --- プレイヤーステータス・経験値 ---
         getRequiredExp(level) {
-            /*
-            if (level === 1) return 10;
-            if (level === 2) return 30;
-            if (level === 3) return 60;
-            if (level === 4) return 100;
-            if (level === 5) return 200;
-            if (level === 6) return 400;
-            if (level === 7) return 700;
-            if (level === 8) return 1000;
-            return 1000 + (level - 9) * 1000;
-            */
+
             const lvlTable = [0,10,40,100,200,400,700,1000,1300,1800,2400,3000,3600,4000,4800,5600,6400,7400,8400,9900,11500,13500,15500,17500,20500,23500,29500,36500,44500,53500,64500,75600,88000,103000,120000,150000,180000,215000,260000,305000,350000,400000,450000,500000,550000,600000,650000,700000,750000,800000,855000,910000,965000,1020000,1075000,1130000,1185000,1240000,1295000,1350000,1410000,1470000,1530000,1590000,1650000,1710000,1770000,1830000,1890000,1950000,2010000,2070000,2130000,2190000,2250000,2310000,2370000,2430000,2490000,2550000,2615000,2680000,2745000,2815000,2885000,2955000,3025000,3095000,3165000,3235000,3305000,3375000,3445000,3515000,3585000,3655000,3725000,3800000,3875000];
             return lvlTable[level];
         }
@@ -1074,142 +1063,6 @@
             return false;
         }
 
-        /*
-        async handleInput(dx, dy) {
-            if (this.isMsgAnimating) return;
-
-            if (this.gameState === 'THROWING') {
-                if (dx === 0 && dy === 0) this.endThrowMode();
-                else await this.executeThrow(dx, dy);
-                return;
-            }
-            if (this.gameState === 'SWINGING') {
-                if (dx === 0 && dy === 0) { this.gameState = 'PLAY'; document.getElementById('btn-center').innerHTML = '足踏み<br>⌛'; }
-                else await this.executeSwing(dx, dy);
-                return;
-            }
-            if (this.gameState === 'FIREBALL_AIM') {
-                if (dx === 0 && dy === 0) { this.gameState = 'PLAY'; document.getElementById('btn-center').innerHTML = '足踏み<br>⌛'; }
-                else await this.executeFireballAim(dx, dy);
-                return;
-            }
-
-            if (this.gameState !== 'PLAY') return;
-
-            if (this.player.statuses.paralyzed > 0) {
-                this.log(`${this.fmtP()}は かなしばりで動けない`);
-                this.triggerTurn();
-                return;
-            }
-
-            if (this.player.statuses.confused > 0) {
-                const dirs = [[-1,-1], [0,-1], [1,-1], [-1,0], [1,0], [-1,1], [0,1], [1,1]];
-                const rDir = dirs[Math.floor(Math.random() * dirs.length)];
-                dx = rDir[0]; dy = rDir[1];
-            }
-
-            const nx = this.player.x + dx, ny = this.player.y + dy;
-            if (nx < 0 || nx >= CONFIG.MAP_W || ny < 0 || ny >= CONFIG.MAP_H) return;
-            const targetTile = this.map[ny][nx];
-            if (targetTile === CONFIG.TILES.WALL || targetTile === CONFIG.TILES.WATER) return;
-            if (this.isCornerBlocked(this.player.x, this.player.y, nx, ny)) return;
-
-            const enemy = this.entities.enemies.find(e => e.x === nx && e.y === ny);
-            if (enemy) {
-                this.gameState = 'ANIMATING';
-                await this.playAttackAnim(this.player, enemy.x, enemy.y);
-                this.combat(this.player, enemy);
-                this.checkTrapReveal(enemy.x, enemy.y);
-                this.triggerTurn();
-                return;
-            }
-
-            this.player.x = nx;
-            this.player.y = ny;
-
-            const itemIdx = this.entities.items.findIndex(i => i.x === this.player.x && i.y === this.player.y);
-            if (itemIdx !== -1) {
-                if (this.player.inventory.length < 20) {
-                    this.pickupItemLogic(this.entities.items[itemIdx]);
-                } else {
-                    this.log(`${this.entities.items[itemIdx].emoji}${this.fmtI(this.entities.items[itemIdx])}は 拾えなかった`);
-                }
-            }
-
-            const trap = this.entities.traps.find(t => t.x === this.player.x && t.y === this.player.y);
-            if (trap) {
-                if (!trap.isVisible) trap.isVisible = true;
-                this.log(`${this.fmtP()}は ${trap.master.name}を踏んだ`);
-                if (Math.random() < 0.7) {
-                    this.log(`${trap.master.name}が 発動した`);
-                    if (trap.master.type === 'rock') {
-                        this.player.hp -= 15;
-                        this.log(`${this.fmtP()}は 15のダメージを受けた`);
-                    } else if (trap.master.type === 'pit') {
-                        this.player.hp -= 5;
-                        this.log(`${this.fmtP()}は 5のダメージを受けた`);
-                        if (this.player.hp > 0) {
-                            setTimeout(() => { this.floor++; this.initLevel(); }, 300);
-                            return;
-                        }
-                    } else if (trap.master.type === 'rotten') {
-                        let count = 0;
-                        this.player.inventory.forEach(i => {
-                            if (i.name === "パン") {
-                                i.id = "i23"; i.name = "くさったパン"; i.description = "満腹度は回復するがHPとちからが減る。"; count++;
-                            }
-                        });
-                        if(count > 0) this.log(`所持しているパンがくさってしまった`);
-                        else this.log(`しかし 何も起こらなかった`);
-                    } else if (trap.master.type === 'rust') {
-                        let w = this.player.equipment.weapon;
-                        if (w) {
-                            if (w.marks && w.marks.includes("メ")) this.log(`${this.fmtI(w)}は サビなかった`);
-                            else { w.modifier--; this.log(`${this.fmtI(w)}は サビてしまった`); }
-                        }
-                        let s = this.player.equipment.shield;
-                        if (s) {
-                            if (s.marks && s.marks.includes("メ")) this.log(`${this.fmtI(s)}は サビなかった`);
-                            else { s.modifier--; this.log(`${this.fmtI(s)}は サビてしまった`); }
-                        }
-                        this.recalculateStats();
-                    } else if (trap.master.type === 'summon') {
-                        let placed = 0;
-                        const dirs = [[-1,-1], [0,-1], [1,-1], [-1,0], [1,0], [-1,1], [0,1], [1,1]];
-                        dirs.sort(() => Math.random() - 0.5);
-                        for (let [dx, dy] of dirs) {
-                            if (placed >= 4) break;
-                            let sx = this.player.x + dx, sy = this.player.y + dy;
-                            if (sx >= 0 && sx < CONFIG.MAP_W && sy >= 0 && sy < CONFIG.MAP_H && this.map[sy][sx] === CONFIG.TILES.FLOOR && !this.entities.enemies.some(e=>e.x===sx && e.y===sy)) {
-                                const availableEnemies = this.enemyMaster.filter(m => !m.spawn_floors || m.spawn_floors.includes(this.floor));
-                                this.spawnEnemyAt(sx, sy, availableEnemies.length > 0 ? availableEnemies : this.enemyMaster);
-                                placed++;
-                            }
-                        }
-                        trap.master.break_rate = 100; // 強制破壊
-                    }
-                } else {
-                    this.log(`${trap.master.name}は 発動しなかった`);
-                }
-                if (Math.random() * 100 < trap.master.break_rate) {
-                    this.entities.traps = this.entities.traps.filter(t => t.uid !== trap.uid);
-                    this.log(`${trap.master.name}は 壊れた`);
-                }
-            }
-
-            if (this.map[ny][nx] === CONFIG.TILES.STAIRS && this.player.hp > 0) {
-                this.log(`${this.fmtP()}は 階段に乗った。`);
-                this.showChoiceDialog("次のフロアに降りますか？", 
-                    () => { this.floor++; this.initLevel(); }, 
-                    () => { this.gameState = 'PLAY'; this.triggerTurn(); } 
-                );
-                return; 
-            }
-
-            this.triggerTurn();
-        }
-        */
-
         // 方向指定アクション
         // --- 杖・方向指定系のアクションを追加 ---
         async handleInput(dx, dy) {
@@ -1262,15 +1115,9 @@
 
             const enemy = this.entities.enemies.find(e => e.x === nx && e.y === ny);
             if (enemy) {
-                //this.gameState = 'ANIMATING';
-                //await this.playAttackAnim(this.player, enemy.x, enemy.y);
-                //this.combat(this.player, enemy);
 
-                // 攻撃モーション・戦闘処理などをまるごとexecuteSwingに任せる
                 await this.executeSwing(dx, dy);
 
-                //this.checkTrapReveal(enemy.x, enemy.y);
-                //this.triggerTurn();
                 return;
             }
 
@@ -2426,12 +2273,7 @@
                 this.wandItem = item;
                 this.wandSource = source;
                 this.gameState = 'WAND_AIM';
-                /*
-                if (!this.identifiedItemIDs.has(item.id)) {
-                    this.identifiedItemIDs.add(item.id);
-                    this.log(`${this.unidentifiedNames[item.id]}は ${item.name}だった`);
-                }
-                */
+
                 this.log("振る方向を選んでください");
                 document.getElementById('btn-center').innerHTML = '取消<br>❌';
                 this.closeInventory();
@@ -2504,7 +2346,9 @@
                     this.scrollItem = item;
                     this.scrollSource = source;
                     this.scrollTargetCategory = 'any'; 
-                    document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
+                    //document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
+                    document.getElementById('inv-title-text').innerHTML = `${item.emoji}${this.getItemDisplayName(item, false)} どれに使う？`;
+                    
                     if (source === 'feet') {
                         const idx = this.entities.items.findIndex(i => i.uid === item.uid);
                         if (idx !== -1) this.entities.items.splice(idx, 1);
@@ -2588,7 +2432,9 @@
                     else if (item.name === "地の恵みの巻物") this.scrollTargetCategory = 'shield';
                     else this.scrollTargetCategory = 'any_equip'; 
                     
-                    document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
+                    //document.getElementById('inv-title-text').innerText = `${item.emoji}${item.name} どれに使う？`;
+                    document.getElementById('inv-title-text').innerHTML = `${item.emoji}${this.getItemDisplayName(item, false)} どれに使う？`;
+
                     if (source === 'feet') {
                         const idx = this.entities.items.findIndex(i => i.uid === item.uid);
                         if (idx !== -1) this.entities.items.splice(idx, 1);
@@ -2643,7 +2489,7 @@
                 }
                 success = true;
             } else if (scrollItem.name === "パンの巻物") {
-                const panMaster = this.itemMaster.find(m => m.id === 'i1');
+                const panMaster = this.itemMaster.find(m => m.name === "パン");
                 const oldName = this.fmtI(targetItem);
                 
                 // パン化
@@ -2993,11 +2839,6 @@
                                     hitEnemy.x = px; hitEnemy.y = px;
                                     this.log(`${this.fmtP()}と ${this.fmtE(hitEnemy)}の 場所が入れ替わった`);
                                 }
-                                /*
-                                this.player.x = hitEnemy.x; this.player.y = hitEnemy.y;
-                                hitEnemy.x = cx; hitEnemy.y = cy; // 元のプレイヤー位置ではなく発射位置との交換
-                                this.log(`${this.fmtP()}と ${this.fmtE(hitEnemy)}の 場所が入れ替わった`);
-                                */
                             }
                         } else if(['weapon', 'shield', 'projectile'].includes(thrownItem.category)) {
                             let val = (thrownItem.effects.atk || 0) + (thrownItem.effects.def || 0) + (thrownItem.modifier || 0) + 1;
@@ -3014,23 +2855,6 @@
                             // アイテムドロップ
                             this.processEnemyDrop(hitEnemy);
 
-                            /* 以前の処理はコメントアウトにしておく
-                            if (Math.random() * 100 < (hitEnemy.drop_rate || 2) && this.itemMaster.length > 0) {
-                                let mId = hitEnemy.drop_item_id;
-                                let m = mId ? this.itemMaster.find(i=>i.id===mId) : this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
-                                if (m) {
-                                    let mod = 0; let marks = [];
-                                    if (['weapon', 'shield'].includes(m.category)) {
-                                        if (m.mark) marks.push(m.mark);
-                                        const r = Math.random() * 100;
-                                        if (r < 40) mod = 0; else if (r < 65) mod = 1; else if (r < 80) mod = 2; else if (r < 90) mod = 3; else mod = -1;
-                                        if (mod === -1 && !marks.includes("呪")) marks.push("呪");
-                                    }
-                                    const dItem = { uid: this.generateUid(), id: m.id, ...m, modifier: mod, marks: marks, slots: m.slots||0, isEquipped: false, type: 'item' };
-                                    this.dropItemAt(dItem, hitEnemy.x, hitEnemy.y);
-                                }
-                            }
-                            */
                         }
                     }
                 }
@@ -3044,86 +2868,13 @@
                 }
             }
             this.triggerTurn();
-
-/*
-            if(hitEnemy) {
-                if (Math.random() < 0.15) {
-                    this.log(`${item.emoji}${this.fmtI(item)}は 当たらなかった`);
-                    this.dropItemAt(item, cx, cy);
-                } else {
-                    if(item.category === 'herb') {
-                        if (item.name === "しあわせ草") {
-                            this.evolveEnemy(hitEnemy);
-                        } else if (item.name === "不幸の種") {
-                            this.devolveEnemy(hitEnemy);
-                        } else if (item.name === "まどわし草") {
-                            hitEnemy.behavior = 'fear';
-                        } else if (item.name === "混乱草") {
-                            hitEnemy.statuses.confused = 20;
-                        } else if (item.name === "毒草") {
-                            hitEnemy.hp -= 5;
-                            hitEnemy.statuses.slow = 10;
-                            hitEnemy.statuses.paralyzed = 0;
-                            this.log(`${this.fmtE(hitEnemy)}に 5ダメージを与えた`);
-                            this.log(`${this.fmtE(hitEnemy)}は 鈍足状態になった`);
-                        } else if (item.name === "すばやさ草") {
-                            hitEnemy.statuses.double_speed = 10;
-                            this.log(`${this.fmtE(hitEnemy)}は 倍速状態になった`);
-                        } else if (item.name === "火炎草") {
-                            let dmg = Math.floor(Math.random() * 11) + 40;
-                            hitEnemy.hp -= dmg;
-                            hitEnemy.statuses.paralyzed = 0;
-                            this.log(`${this.fmtE(hitEnemy)}に ${dmg}ダメージを与えた`);
-                        } else if (item.name === "毒消し草" || item.name === "ちからのたね") {
-                            // TODO: 敵に当てた場合の効果ペンディング
-                        } else if (item.name !== "目薬草") {
-                            hitEnemy.hp = Math.min(hitEnemy.maxHp, hitEnemy.hp + (item.effects.hp || 0));
-                        }
-                    } else if (item.name === "くさったパン") {
-                        hitEnemy.hp -= 5;
-                        hitEnemy.statuses.paralyzed = 0;
-                        this.log(`${this.fmtE(hitEnemy)}に 5ダメージを与えた`);
-                    } else if(['weapon', 'shield', 'projectile'].includes(item.category)) {
-                        let val = (item.effects.atk || 0) + (item.effects.def || 0) + (item.modifier || 0) + 1;
-                        hitEnemy.hp -= val;
-                        hitEnemy.statuses.paralyzed = 0;
-                        this.log(`${this.fmtE(hitEnemy)}に ${val}ダメージを与えた`);
-                    }
-
-                    if(hitEnemy.hp <= 0) {
-                        this.log(`${this.fmtE(hitEnemy)}は 倒れた`);
-                        this.entities.enemies = this.entities.enemies.filter(e => e.uid !== hitEnemy.uid);
-                        this.gainExp(hitEnemy.exp || 0);
-                        if (Math.random() * 100 < (hitEnemy.drop_rate || 2) && this.itemMaster.length > 0) {
-                            let mId = hitEnemy.drop_item_id;
-                            let m = mId ? this.itemMaster.find(i=>i.id===mId) : this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
-                            if (m) {
-                                let mod = 0; let marks = [];
-                                if (['weapon', 'shield'].includes(m.category)) {
-                                    if (m.mark) marks.push(m.mark);
-                                    const r = Math.random() * 100;
-                                    if (r < 40) mod = 0; else if (r < 65) mod = 1; else if (r < 80) mod = 2; else if (r < 90) mod = 3; else mod = -1;
-                                    if (mod === -1 && !marks.includes("呪")) marks.push("呪");
-                                }
-                                const dItem = { uid: this.generateUid(), id: m.id, ...m, modifier: mod, marks: marks, slots: m.slots||0, isEquipped: false, type: 'item' };
-                                this.dropItemAt(dItem, hitEnemy.x, hitEnemy.y);
-                            }
-                        }
-                    }
-                }
-            } else {
-                if(!this.dropItemAt(item, cx, cy)) {
-                    this.log(`${item.emoji}${this.fmtI(item)}は 使い物にならなくなった`);
-                }
-            }
-            this.triggerTurn();
-*/
         }
 
         dropItemAt(item, startX, startY, strict = false) {
             const isDroppable = (x, y) => {
                 if(x < 0 || x >= CONFIG.MAP_W || y < 0 || y >= CONFIG.MAP_H) return false;
-                if(this.map[y][x] !== CONFIG.TILES.FLOOR) return false;
+                //if(this.map[y][x] !== CONFIG.TILES.FLOOR) return false;
+                if(this.map[y][x] !== CONFIG.TILES.FLOOR && this.map[y][x] !== CONFIG.TILES.WATER) return false;                
                 if(this.entities.items.some(i => i.x === x && i.y === y)) return false;
                 if(this.entities.traps && this.entities.traps.some(t => t.x === x && t.y === y)) return false;
                 return true;
@@ -3468,7 +3219,7 @@
 
             const canvas = document.getElementById('minimap-canvas');
             if (this.config.minimapSize !== 'none') {
-                const ts = this.config.minimapSize === 'large' ? 4 : 2;
+                const ts = this.config.minimapSize === 'large' ? 7 : 2;
                 canvas.width = CONFIG.MAP_W * ts;
                 canvas.height = CONFIG.MAP_H * ts;
                 const ctx = canvas.getContext('2d');
