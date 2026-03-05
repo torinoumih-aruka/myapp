@@ -65,12 +65,12 @@
 
         #map-root {
             position: absolute; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
-            font-size: 28px; line-height: 28px; letter-spacing: -11px; transition: transform 0.1s linear; 
+            font-size: 28px; line-height: 28px; letter-spacing: -4px; transition: transform 0.1s linear; 
         }
 
         #measure-tile {
             position: absolute; visibility: hidden; pointer-events: none;
-            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 28px; line-height: 28px; letter-spacing: -11px;
+            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 28px; line-height: 28px; letter-spacing: -4px;
         }
 
         .layer { position: absolute; top: 0; left: 0; white-space: pre; }
@@ -1300,7 +1300,7 @@
 
         // ワープ処理
         warpTarget(target) {
-            const pos = this.getRandomValidPos();
+            const pos = this.getRandomPosInRoom();
             //this.player.x = pos.x; this.player.y = pos.y;
             target.x = pos.x; target.y = pos.y;
         }
@@ -1830,7 +1830,7 @@
                                     cx += stepX; cy += stepY;
                                     if (cx < 0 || cx >= CONFIG.MAP_W || cy < 0 || cy >= CONFIG.MAP_H) break;
                                     
-                                    if (arrow.id === 'i101') {
+                                    if (arrow.name === '銀の矢') {
                                         // TODO: 銀の矢の貫通処理
                                         break;
                                     } else {
