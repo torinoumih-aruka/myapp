@@ -2218,8 +2218,17 @@
 
             const descDiv = document.createElement('div');
             descDiv.style.color = 'white'; descDiv.style.fontSize = '12px'; descDiv.style.marginBottom = '5px';
-            descDiv.innerHTML = item.description || "";
 
+            if (['herb', 'scroll','wand','bracelet'].includes(item.category)) {
+                if (!this.identifiedItemIDs.has(item.id)) {
+                    descDiv.innerHTML = "未識別のため効果が分からない";
+                } else {
+                    descDiv.innerHTML = item.description || "";
+                }
+            } else {
+                descDiv.innerHTML = item.description || "";
+            }
+            
             if (['weapon', 'shield'].includes(item.category)) {
                 let slotsText = "";
                 const maxSlots = item.slots || 0;
@@ -3049,7 +3058,17 @@
 
             const descDiv = document.createElement('div');
             descDiv.style.color = 'white'; descDiv.style.fontSize = '12px'; descDiv.style.marginBottom = '5px';
-            descDiv.innerHTML = item.description || "";
+
+            if (['herb', 'scroll','wand','bracelet'].includes(item.category)) {
+                if (!this.identifiedItemIDs.has(item.id)) {
+                    descDiv.innerHTML = "未識別のため効果が分からない";
+                } else {
+                    descDiv.innerHTML = item.description || "";
+                }
+            } else {
+                descDiv.innerHTML = item.description || "";
+            }
+
             if (['weapon', 'shield'].includes(item.category)) {
                 let slotsText = "";
                 const maxSlots = item.slots || 0;
