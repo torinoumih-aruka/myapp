@@ -21,10 +21,29 @@
         }
 
         #release-note {
-            position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
-            width: 92%; height: 15em; background: rgba(0, 0, 0, 0.85); color: white;
-            padding: 4px 8px; font-size: 12px; border-radius: 6px; z-index: 100;
-            overflow: hidden; pointer-events: none; line-height: 1.5; border: 1px solid #ffffff;
+            position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+            width: 92%; height: 92%; background: rgba(0, 0, 0, 0.85); color: white;
+            padding: 4px 8px; font-size: 12px; border-radius: 6px; z-index: 200000;
+            overflow: hidden; line-height: 1.5; border: 1px solid #ffffff;
+        }
+
+        #release-note-scroll-area {
+            overflow-y: auto;
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #release-note-close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #ffffff;
+            z-index: 200001;
         }
 
         #game-container {
@@ -157,13 +176,21 @@
     <button class="title-btn" onclick="document.getElementById('config-screen').style.display='flex'">メニュー(設定)</button>
 
     <DIV id="release-note">
-        リリースノート v0.7.1<br>
-        地獄耳の巻物の効果が次フロアにも継続するバグを修正<br>
-        弟切草を飲んだときに、鈍足、混乱も治すよう修正<br>
-        サビロボが罠を設置する際に、アイテムがあれば設置しないよう修正<br>
-        足元の投擲武器を撃ったときに消失するバグを修正<br>
-        パン類を食べたときに満腹度が最大だったら、最大満腹度まで回復するよう修正<br>
+        <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
+        <h2>リリースノート v0.7.1</h2>
+
+        <div id="release-note-scroll-area">
+            ==0.7.1==<br>
+            <ul>
+                <li>地獄耳の巻物の効果が次フロアにも継続するバグを修正</li>
+                <li>弟切草を飲んだときに、鈍足、混乱も治すよう修正</li>
+                <li>サビロボが罠を設置する際に、アイテムがあれば設置しないよう修正</li>
+                <li>足元の投擲武器を撃ったときに消失するバグを修正</li>
+                <li>パン類を食べたときに満腹度が最大だったら、最大満腹度まで回復するよう修正</li>
+                <li>間違って消していた地雷、召喚スイッチ、デロデロの罠、毒の罠などを復活</li>
+            </ul>
+        </div>
     </DIV>
 </div>
 
@@ -290,6 +317,12 @@
 </div>
 
 <script>
+
+    function closeReleaseNote(){
+        const overlay = document.getElementById('release-note');
+        overlay.style.display = 'none';
+    }
+
     const CONFIG = {
         MAP_W: 50, MAP_H: 30,
         TILES: { WALL: '⬛', FLOOR: '⬜', WATER: '🟦', STAIRS: '📶', PLAYER: '🙂' }
@@ -700,6 +733,8 @@
 
         // --- マップ・罠生成 ---
         generateMap() {
+
+            const roomsMargin = 3;// 部屋と部屋の間の、最低保証される間隔
             this.map = Array.from({ length: CONFIG.MAP_H }, () => Array(CONFIG.MAP_W).fill(CONFIG.TILES.WALL));
             this.rooms = [];
             
@@ -716,7 +751,8 @@
                     const h = Math.floor(Math.random() * (maxH - 3)) + 4;
                     const x = Math.floor(Math.random() * (CONFIG.MAP_W - w - 2)) + 1;
                     const y = Math.floor(Math.random() * (CONFIG.MAP_H - h - 2)) + 1;
-                    if (this.rooms.some(r => x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y)) continue;
+                    const type = Math.random() < 0.50 ? 'monsterhouse' : 'normal'; 
+                    if (this.rooms.some(r => x < r.x + r.w + roomsMargin && x + w + roomsMargin > r.x && y < r.y + r.h + roomsMargin && y + h + roomsMargin > r.y)) continue;
                     for (let ry = y; ry < y + h; ry++) for (let rx = x; rx < x + w; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
                     if (this.rooms.length > 0) {
                         let targetIdx = this.rooms.length - 1;
@@ -724,7 +760,7 @@
                         const prev = this.rooms[targetIdx];
                         this.digCorridor(Math.floor(prev.x+prev.w/2), Math.floor(prev.y+prev.h/2), Math.floor(x+w/2), Math.floor(y+h/2));
                     }
-                    this.rooms.push({ x, y, w, h });
+                    this.rooms.push({ x, y, w, h ,type});
                 }
             }
 
