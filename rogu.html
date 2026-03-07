@@ -20,6 +20,32 @@
             overflow: hidden; touch-action: none;
         }
 
+        #release-note {
+            position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+            width: 92%; height: 92%; background: rgba(0, 0, 0, 0.85); color: white;
+            padding: 4px 8px; font-size: 12px; border-radius: 6px; z-index: 200000;
+            overflow: hidden; line-height: 1.5; border: 1px solid #ffffff;
+        }
+
+        #release-note-scroll-area {
+            overflow-y: auto;
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #release-note-close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #ffffff;
+            z-index: 200001;
+        }
+
         #game-container {
             display: none; flex-direction: column;
             height: 100dvh; max-width: 500px; margin: 0 auto;
@@ -65,12 +91,12 @@
 
         #map-root {
             position: absolute; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
-            font-size: 28px; line-height: 28px; letter-spacing: -11px; transition: transform 0.1s linear; 
+            font-size: 28px; line-height: 28px; letter-spacing: 0px; transition: transform 0.1s linear; 
         }
 
         #measure-tile {
             position: absolute; visibility: hidden; pointer-events: none;
-            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 28px; line-height: 28px; letter-spacing: -11px;
+            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 28px; line-height: 28px; letter-spacing: 0px;
         }
 
         .layer { position: absolute; top: 0; left: 0; white-space: pre; }
@@ -99,7 +125,7 @@
             width: 92%; height: 4.5em; background: rgba(0, 0, 0, 0.85); color: white;
             padding: 4px 8px; font-size: 12px; border-radius: 6px; z-index: 100;
             overflow: hidden; pointer-events: none; line-height: 1.5; border: 1px solid #444;
-        }
+        }        
 
         #choice-dialog {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -148,6 +174,24 @@
     <button class="title-btn" id="btn-continue" onclick="game.loadGame()" style="display: none; background: #225522;">つづきから</button>
     <button class="title-btn" onclick="game.startGame()">はじめから</button>
     <button class="title-btn" onclick="document.getElementById('config-screen').style.display='flex'">メニュー(設定)</button>
+
+    <DIV id="release-note">
+        <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
+
+        <h2>リリースノート v0.7.1</h2>
+
+        <div id="release-note-scroll-area">
+            ==0.7.1==<br>
+            <ul>
+                <li>地獄耳の巻物の効果が次フロアにも継続するバグを修正</li>
+                <li>弟切草を飲んだときに、鈍足、混乱も治すよう修正</li>
+                <li>サビロボが罠を設置する際に、アイテムがあれば設置しないよう修正</li>
+                <li>足元の投擲武器を撃ったときに消失するバグを修正</li>
+                <li>パン類を食べたときに満腹度が最大だったら、最大満腹度まで回復するよう修正</li>
+                <li>間違って消していた地雷、召喚スイッチ、デロデロの罠、毒の罠などを復活</li>
+            </ul>
+        </div>
+    </DIV>
 </div>
 
 <div id="config-screen">
@@ -273,6 +317,12 @@
 </div>
 
 <script>
+
+    function closeReleaseNote(){
+        const overlay = document.getElementById('release-note');
+        overlay.style.display = 'none';
+    }
+
     const CONFIG = {
         MAP_W: 50, MAP_H: 30,
         TILES: { WALL: '⬛', FLOOR: '⬜', WATER: '🟦', STAIRS: '📶', PLAYER: '🙂' }
@@ -295,8 +345,8 @@
             this.identifiedItemIDs = new Set();
             this.unidentifiedNames = {};
             this.dummyNames = {
-                herb: ["赤色", "青色", "黄色", "緑色", "紫色", "黒色", "白色", "虹色", "透明", "茶色"],
-                scroll: ["イヌ", "ネコ", "ネズミ", "キツネ", "タヌキ", "ウサギ", "クマ", "ライオン", "トラ", "ゾウ"],
+                herb: ["赤色", "青色", "黄色", "緑色", "紫色", "黒色", "白色", "虹色", "透明", "黄土色", "鈍色", "山吹色", "石竹色", "紫苑色", "肌色", "ねずみ色"],
+                scroll: ["イヌ", "ネコ", "ネズミ", "キツネ", "タヌキ", "ウサギ", "クマ", "ライオン", "トラ", "ゾウ", "カモシカ", "イノシシ", "カメ", "クジャク", "ビーバー", "ヒツジ", "ツル"],
                 wand: ["カシ", "スギ", "ヒノキ", "マツ", "サクラ", "シラカバ", "モミジ", "ヤナギ", "ブナ", "クスノキ"],
                 bracelet: ["ルビー", "サファイア", "エメラルド", "ダイヤ", "トパーズ", "オパール", "パール", "ヒスイ", "琥珀", "メノウ"]
             };
@@ -407,9 +457,16 @@
 
         async loadMasterData() {
             this.trapMaster = [
-                { id: "t1", name: "落石の罠", emoji: "🪨", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rock" },
-                { id: "t4", name: "サビの罠", emoji: "💧", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rust" },
-                { id: "t6", name: "バネの罠", emoji: "🧿", break_rate: 0, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "spring" }
+                { id: "t01", name: "落石の罠", emoji: "🪨", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rock" },
+                { id: "t02", name: "落とし穴", emoji: "🕳️", break_rate: 100, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "pit" },
+                { id: "t03", name: "デロデロの罠", emoji: "🩸", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rotten" },
+                { id: "t04", name: "サビの罠", emoji: "💧", break_rate: 10, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "rust" },
+                { id: "t05", name: "召喚スイッチ", emoji: "🔔", break_rate: 100, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "summon" },
+                { id: "t06", name: "バネの罠", emoji: "🧿", break_rate: 0, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "spring" },
+                { id: "t07", name: "警報スイッチ", emoji: "🚨", break_rate: 50, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "alarm" },
+                { id: "t08", name: "地雷", emoji: "🧨", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "mine" },
+                { id: "t09", name: "大型地雷", emoji: "💣", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "bigmine" },
+                { id: "t10", name: "毒の罠", emoji: "🩻", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "poison" }
             ];
 
             try {
@@ -427,11 +484,11 @@
                     {id: "e021", emoji: "👹", name: "オニ小僧", color: "red", hp: 10, exp: 8, atk: 7, def: 3, accuracy: 90, drop_rate: 2, drop_item_id: "i004", spawn_floors: [2,3,4,5], behavior: "random", evolve_id: "e021", devolve_id: null , attributes: ["ogre"]},
                     {id: "e022", emoji: "👹", name: "オニ坊主", color: "red", overlay_color: "rgba(0,255,255,0.5)", hp: 28, exp: 28, atk: 20, def: 8, accuracy: 90, drop_rate: 4, drop_item_id: "i004", spawn_floors: [8,9,10,11], behavior: "random", evolve_id: null, devolve_id: null, attributes: ["ogre"]},
                     {id: "e031", emoji: "🧝‍♀️", name: "リリパット", color: "red", hp: 10, exp: 5, atk: 3, def: 1, spawn_floors: [4,5,6], behavior: "archer", projectile: "i251", evolve_id: "e032"},
-                    {id: "e032", emoji: "🧝‍♀️", name: "ハントレス", color: "red", hp: 15, exp: 15, atk: 5, def: 2, spawn_floors: [6,7,8], behavior: "archer", projectile: "i252", evolve_id: "e033"},
-                    {id: "e033", emoji: "🧝‍♀️", name: "アマゾネス", color: "red", hp: 35, exp: 40, atk: 6, def: 6, spawn_floors: [10,11,12], behavior: "archer", projectile: "i252", speed: 2},
+                    {id: "e032", emoji: "🧝‍♀️", name: "ハントレス", color: "red", overlay_color: "rgba(0,0,255,0.5)", hp: 15, exp: 15, atk: 5, def: 2, spawn_floors: [6,7,8], behavior: "archer", projectile: "i252", evolve_id: "e033"},
+                    {id: "e033", emoji: "🧝‍♀️", name: "アマゾネス", color: "red", overlay_color: "rgba(255,0,0,0.5)", hp: 35, exp: 40, atk: 6, def: 6, spawn_floors: [10,11,12], behavior: "archer", projectile: "i252", speed: 2},
                     {id: "e041", emoji: "🐈", name: "コソドロねこ", color: "red", hp: 15, exp: 7, atk: 2, def: 1, spawn_floors: [5,6], drop_rate: 99, behavior: "thief"},
-                    {id: "e042", emoji: "🐈", name: "ドロボウねこ", color: "red", hp: 40, exp: 17, atk: 9, def: 1, spawn_floors: [8,9,10,11], drop_rate: 99, behavior: "thief"},
-                    {id: "e051", emoji: "🤖", name: "サビロボ", color: "red", hp: 22, exp: 12, atk: 3, def: 5, spawn_floors: [4,5,10,11,12], behavior: "rustbot"},
+                    {id: "e042", emoji: "🐈", name: "ドロボウねこ", color: "red", overlay_color: "rgba(100,100,255,0.5)", hp: 40, exp: 17, atk: 9, def: 1, spawn_floors: [8,9,10,11], drop_rate: 99, behavior: "thief"},
+                    {id: "e051", emoji: "🤖", name: "サビロボ", color: "red", hp: 17, exp: 12, atk: 3, def: 4, spawn_floors: [4,5,10,11,12], behavior: "rustbot"},
                     {id: "e061", emoji: "👻", name: "ハンカチおばけ", color: "red", hp: 7, exp: 8, atk: 12, def: 1, spawn_floors: [4,5,6], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true},
                     {id: "e062", emoji: "👻", name: "タオルおばけ", color: "red", overlay_color: "rgba(0,255,0.5)",hp: 16, exp: 6, atk: 20, def: 1, spawn_floors: [7,8,9], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true},
                     {id: "e063", emoji: "👻", name: "カーテンおばけ", color: "red", overlay_color: "rgba(255,100,0,0.5)",hp: 45, exp: 6, atk: 32, def: 1, spawn_floors: [11,12], behavior: "random", attributes: ["ghost", "float"],canWalkWall: true, canWalkWater: true ,speed: 2, attack_count: 1},
@@ -467,7 +524,7 @@
                     {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3},
 
                     {id: "i251", emoji: "🏹", name: "木の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 10, description: "装備して撃つことができる矢。"},
-                    {id: "i252", emoji: "🏹", name: "鉄の矢", color: "cyan", category: "projectile", effects: {atk: 8}, consumable: true, spawn_rate: 8},
+                    {id: "i252", emoji: "🏹", name: "鉄の矢", color: "cyan", category: "projectile", effects: {atk: 8}, consumable: true, spawn_rate: 7},
                     {id: "i253", emoji: "🏹", name: "銀の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 4, pierce: true},
 
                     {id: "i301", emoji: "🥖", name: "パン", color: "cyan", category: "food", effects: {hunger: 50}, consumable: true, spawn_rate: 10, description: "満腹度が50回復する。"},
@@ -483,8 +540,8 @@
                     {id: "i406", emoji: "🥬", name: "すばやさ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと倍速になる。"},
                     {id: "i407", emoji: "🥬", name: "毒消し草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからが回復する。"},
                     {id: "i408", emoji: "🥬", name: "ちからのたね", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからの最大値と現在値が上がる。"},
-                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "炎を放ち大ダメージを与える。"},
-                    {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5},
+                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "炎を放ち目の前に大ダメージを与える。"},
+                    {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと別の部屋にワープする。<br>モンスターに当てても効果があるぞ"},
                     {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると怯える。"},
                     {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると混乱する。"},
                     {id: "i413", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと罠が見えるようになる。"},
@@ -617,7 +674,9 @@
             document.getElementById('title-screen').style.display = 'none';
             document.getElementById('game-container').style.display = 'flex';
             
-            this.initializeUnidentifiedNames();
+            if(this.config.unidentifyItems){
+                this.initializeUnidentifiedNames();
+            }
             
             this.floor = 1;
             this.player = { 
@@ -643,6 +702,7 @@
             this.doorTiles.clear();
             this.entities = { enemies: [], items: [], traps: [] };
             this.player.statuses.see_all = false; 
+            this.player.statuses.hear_all = false;
             this.turnCount = 0;
             this.isOnStairs = false; // ターン終了時の階段判定フラグ
             
@@ -673,6 +733,8 @@
 
         // --- マップ・罠生成 ---
         generateMap() {
+
+            const roomsMargin = 3;// 部屋と部屋の間の、最低保証される間隔
             this.map = Array.from({ length: CONFIG.MAP_H }, () => Array(CONFIG.MAP_W).fill(CONFIG.TILES.WALL));
             this.rooms = [];
             
@@ -689,7 +751,8 @@
                     const h = Math.floor(Math.random() * (maxH - 3)) + 4;
                     const x = Math.floor(Math.random() * (CONFIG.MAP_W - w - 2)) + 1;
                     const y = Math.floor(Math.random() * (CONFIG.MAP_H - h - 2)) + 1;
-                    if (this.rooms.some(r => x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y)) continue;
+                    const type = Math.random() < 0.50 ? 'monsterhouse' : 'normal'; 
+                    if (this.rooms.some(r => x < r.x + r.w + roomsMargin && x + w + roomsMargin > r.x && y < r.y + r.h + roomsMargin && y + h + roomsMargin > r.y)) continue;
                     for (let ry = y; ry < y + h; ry++) for (let rx = x; rx < x + w; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
                     if (this.rooms.length > 0) {
                         let targetIdx = this.rooms.length - 1;
@@ -697,28 +760,31 @@
                         const prev = this.rooms[targetIdx];
                         this.digCorridor(Math.floor(prev.x+prev.w/2), Math.floor(prev.y+prev.h/2), Math.floor(x+w/2), Math.floor(y+h/2));
                     }
-                    this.rooms.push({ x, y, w, h });
+                    this.rooms.push({ x, y, w, h ,type});
                 }
             }
 
             // ==水路生成=============================
 
-            // 水路の数
-            const rivers = Math.floor(Math.random() * 3) + 2;
-            for (let i = 0; i < rivers; i++) {
-                let wx = Math.floor(Math.random() * CONFIG.MAP_W), wy = Math.floor(Math.random() * CONFIG.MAP_H);
-                let isBending = true;
-                let d;
-                for (let j = 0; j < 40; j++) {
-                    if (wy > 0 && wy < CONFIG.MAP_H-1 && wx > 0 && wx < CONFIG.MAP_W-1) this.map[wy][wx] = CONFIG.TILES.WATER;
+            // 大部屋のときは水路を作らない
+            if(numRooms > 1){
+                // 水路の数
+                const rivers = Math.floor(Math.random() * 3) + 2;
+                for (let i = 0; i < rivers; i++) {
+                    let wx = Math.floor(Math.random() * CONFIG.MAP_W), wy = Math.floor(Math.random() * CONFIG.MAP_H);
+                    let isBending = true;
+                    let d;
+                    for (let j = 0; j < 40; j++) {
+                        if (wy > 0 && wy < CONFIG.MAP_H-1 && wx > 0 && wx < CONFIG.MAP_W-1) this.map[wy][wx] = CONFIG.TILES.WATER;
 
-                    if (isBending) {
-                        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-                        d = dirs[Math.floor(Math.random() * 4)];
+                        if (isBending) {
+                            const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                            d = dirs[Math.floor(Math.random() * 4)];
+                        }
+                        wx += d[0]; wy += d[1];
+
+                        isBending = Math.floor(Math.random() * 100) > 80;
                     }
-                    wx += d[0]; wy += d[1];
-
-                    isBending = Math.floor(Math.random() * 100) > 80;
                 }
             }
             this.ensureAllFloorsConnected();
@@ -873,19 +939,22 @@
                 const pos = this.getRandomPosInRoom();
                 //const m = this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
                 
-                let mod = 0; let marks = []; let stack = 1;
+                let mod = 0; let marks = []; let stack = 1;let uses = 0;
                 if (['weapon', 'shield'].includes(m.category)) {
                     if (m.mark) marks.push(m.mark);
                     const r = Math.random() * 100;
-                    if (r < 40) mod = 0; else if (r < 65) mod = 1; else if (r < 80) mod = 2; else if (r < 90) mod = 3; else mod = -1;
+                    if (r < 70) mod = 0; else if (r < 80) mod = 1; else if (r < 90) mod = 2; else if (r < 95) mod = 3; else mod = -1;
                     if (mod === -1 && !marks.includes("呪")) marks.push("呪");
                 }
                 if (m.category === 'projectile') {
                     stack = Math.floor(Math.random() * 19) + 2; // 2~20
                 }
+                if (m.category === 'wand') {
+                    uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
+                }
                 this.entities.items.push({ 
                     uid: this.generateUid(), id: m.id, x: pos.x, y: pos.y, ...m, 
-                    modifier: mod, marks: marks, slots: m.slots || 0, stack: stack, isEquipped: false, type: 'item' 
+                    modifier: mod, marks: marks, slots: m.slots || 0, stack: stack, uses: uses, isEquipped: false, type: 'item' 
                 });
             }
         }
@@ -896,7 +965,7 @@
             const awake = Math.random() < 0.5;
             this.entities.enemies.push({
                 uid: this.generateUid(), id: master.id, type: 'enemy',
-                x: x, y: y, hp: master.hp + (this.floor * 2), maxHp: master.hp + (this.floor * 2),
+                x: x, y: y, hp: master.hp , maxHp: master.hp ,
                 atk: master.atk, def: master.def, exp: master.exp, accuracy: master.accuracy || 90, drop_rate: master.drop_rate || 2, drop_item_id: master.drop_item_id,
                 name: master.name, emoji: master.emoji, color: master.color, imageSrc: master.imageSrc, behavior: master.behavior,
                 speed: master.speed || 1, attack_count: master.attack_count || 1,
@@ -964,9 +1033,10 @@
             // サビロボの処理
             if (enemy.behavior === 'rustbot') {
                 const trapMaster = this.trapMaster.find(t => t.name === "サビの罠");
-                if (trapMaster && this.map[enemy.y][enemy.x] === CONFIG.TILES.FLOOR && !this.entities.traps.some(t => t.x === enemy.x && t.y === enemy.y)) {
+                // 足元が床で、かつ、敵とアイテムが無い場合はサビの罠を配置する
+                if (trapMaster && this.map[enemy.y][enemy.x] === CONFIG.TILES.FLOOR && !this.entities.traps.some(t => t.x === enemy.x && t.y === enemy.y && !this.entities.items.some(t => t.x === enemy.x && t.y === enemy.y))) {
                     this.entities.traps.push({ uid: this.generateUid(), id: trapMaster.id, x: enemy.x, y: enemy.y, type: 'trap', master: trapMaster, isVisible: true });
-                    return; // 罠を設置した場合はアイテムドロップは無しとする
+                    //return; // 罠を設置した場合はアイテムドロップは無しとする
                 }
             }
 
@@ -1278,7 +1348,7 @@
                             this.log(`うろこの盾が 毒を防いだ！`);
                         } else {
                             this.player.strength = Math.max(0, this.player.strength - 1);
-                            this.log(`${this.fmtP()}の ちからが下がった`);
+                            this.log(`${this.fmtP()}の ちからが1下がった`);
                         }
                     }
                 } else {
@@ -1294,7 +1364,7 @@
 
         // ワープ処理
         warpTarget(target) {
-            const pos = this.getRandomValidPos();
+            const pos = this.getRandomPosInRoom();
             //this.player.x = pos.x; this.player.y = pos.y;
             target.x = pos.x; target.y = pos.y;
         }
@@ -1502,25 +1572,7 @@
             }
         }
 
-        shootArrow() {
-            if (this.gameState !== 'PLAY' || this.isMsgAnimating) return;
-            if (this.player.equipment.projectile) {
-                let arrow = this.player.equipment.projectile;
-                let throwItem = { ...arrow, stack: 1, isEquipped: false };
-                arrow.stack--;
-                if (arrow.stack <= 0) {
-                    this.player.inventory = this.player.inventory.filter(i => i.uid !== arrow.uid);
-                    this.player.equipment.projectile = null;
-                }
-                this.throwItem = throwItem;
-                this.throwSource = 'inventory';
-                this.gameState = 'THROWING';
-                this.log("撃つ方向を選んでください");
-                document.getElementById('btn-center').innerHTML = '取消<br>❌';
-            } else {
-                this.log("矢を装備していない。");
-            }
-        }
+
 
         async triggerTurn() {
             this.gameState = 'ANIMATING'; 
@@ -1568,11 +1620,12 @@
             this.hpRecoveryTurnCount++;
             let healAmount = 0;
             const lv = this.player.level;
-            if (lv <= 5 && this.hpRecoveryTurnCount >= 10) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
-            else if (lv >= 6 && lv <= 10 && this.hpRecoveryTurnCount >= 5) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
-            else if (lv >= 11 && lv <= 15) { healAmount = 1; this.hpRecoveryTurnCount = 0;}
-            else if (lv >= 16 && lv <= 20) { healAmount = 2; this.hpRecoveryTurnCount = 0;}
-            else if (lv >= 21) { healAmount = 3; this.hpRecoveryTurnCount = 0;}
+            if (lv <= 1 && this.hpRecoveryTurnCount >= 10) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+            else if (lv >= 2 && lv <= 5 && this.hpRecoveryTurnCount >= 8) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+            else if (lv >= 6 && lv <= 9 && this.hpRecoveryTurnCount >= 5) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+            else if (lv >= 10 && lv <= 13) { healAmount = 1; this.hpRecoveryTurnCount = 0;}
+            else if (lv >= 14 && lv <= 17) { healAmount = 2; this.hpRecoveryTurnCount = 0;}
+            else if (lv >= 18) { healAmount = 3; this.hpRecoveryTurnCount = 0;}
             
             if (healAmount > 0 && this.player.hp < this.player.maxHp) {
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
@@ -1823,7 +1876,7 @@
                                     cx += stepX; cy += stepY;
                                     if (cx < 0 || cx >= CONFIG.MAP_W || cy < 0 || cy >= CONFIG.MAP_H) break;
                                     
-                                    if (arrow.id === 'i101') {
+                                    if (arrow.name === '銀の矢') {
                                         // TODO: 銀の矢の貫通処理
                                         break;
                                     } else {
@@ -2211,8 +2264,17 @@
 
             const descDiv = document.createElement('div');
             descDiv.style.color = 'white'; descDiv.style.fontSize = '12px'; descDiv.style.marginBottom = '5px';
-            descDiv.innerHTML = item.description || "";
 
+            if (['herb', 'scroll','wand','bracelet'].includes(item.category)) {
+                if (this.config.unidentifyItems && !this.identifiedItemIDs.has(item.id)) {
+                    descDiv.innerHTML = "未識別のため効果が分からない";
+                } else {
+                    descDiv.innerHTML = item.description || "";
+                }
+            } else {
+                descDiv.innerHTML = item.description || "";
+            }
+            
             if (['weapon', 'shield'].includes(item.category)) {
                 let slotsText = "";
                 const maxSlots = item.slots || 0;
@@ -2339,6 +2401,7 @@
                     this.log(`${item.emoji}${this.fmtI(item)}を 食べた`);
                     if(this.player.hunger === this.player.maxHunger){
                         this.player.maxHunger += 2;
+                        this.player.hunger = this.player.maxHunger;
                         this.log(`お腹がいっぱいになり 最大満腹度が2増えた`);
                     }else{
                         this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
@@ -2352,6 +2415,7 @@
                     this.log(`${item.emoji}${this.fmtI(item)}を 食べた`);
                     if(this.player.hunger === this.player.maxHunger){
                         this.player.maxHunger += 5;
+                        this.player.hunger = this.player.maxHunger;
                         this.log(`お腹がいっぱいになり 最大満腹度が5増えた`);
                     }else{
                         this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
@@ -2417,9 +2481,17 @@
                     used = true;
                 } else if (item.name === "ちからのたね") {
                     this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
-                    this.player.maxStrength++; this.player.strength++;
+                    if(this.player.maxStrength === this.player.strength){
+                        this.player.maxStrength++;
+                        this.player.strength++;
+                        this.log(`${this.fmtP()}の ちからの最大値が1上がった`);
+                    }else{
+                       this.player.strength++;
+                       this.log(`${this.fmtP()}の ちからが1回復した`);
+                    }
+
                     this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
-                    this.log(`${this.fmtP()}の ちからの最大値が上がった`);
+                    
                     used = true;
                 } else if (item.name === "高とび草") {
                     this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
@@ -2452,6 +2524,18 @@
                         this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
                         this.log(`${this.fmtP()}の HPが${item.effects.hp}回復した`);
                     }
+
+                    // 鈍足を治す
+                    if(this.player.statuses.slow > 0){
+                        this.player.statuses.slow = 0;
+                        this.log(`${this.fmtP()}の 鈍足が治った`);
+                    }
+                    // 混乱を治す
+                    if(this.player.statuses.confused > 0){
+                        this.player.statuses.confused = 0;
+                        this.log(`${this.fmtP()}の 混乱が治った`);
+                    }
+
                     used = true;
                 } else if (item.name === "命の草") {
                     this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
@@ -2804,6 +2888,31 @@
             }
         }
 
+        // 投擲ボタン処理
+        shootArrow() {
+            if (this.gameState !== 'PLAY' || this.isMsgAnimating) return;
+            if (this.player.equipment.projectile) {
+                let arrow = this.player.equipment.projectile;
+                let throwItem = { ...arrow, stack: 1, isEquipped: false };
+/* 投擲武器の減算や装備外しはここでは行わない
+                arrow.stack--;
+                if (arrow.stack <= 0) {
+                    this.player.inventory = this.player.inventory.filter(i => i.uid !== arrow.uid);
+                    this.player.equipment.projectile = null;
+                }
+*/
+                this.throwItem = throwItem;
+                this.throwSource = 'inventory';
+                this.throwItemOriginUid = throwItem.uid; 
+                this.gameState = 'THROWING';
+                this.log("撃つ方向を選んでください");
+                document.getElementById('btn-center').innerHTML = '取消<br>❌';
+            } else {
+                this.log("矢を装備していない。");
+            }
+        }
+
+        // 撃つ、投げる処理（インベントリ、足元から起動）
         startThrowMode(item, source) {
             if (item.isEquipped && item.marks && item.marks.includes("呪")) {
                 this.log(`${item.emoji}${this.fmtI(item)}は 呪われていて外せない`);
@@ -2811,6 +2920,9 @@
             }
             
             if (item.category === 'projectile') {
+
+                //item.stack--;
+
                 let throwArrow = { ...item, stack: 1, isEquipped: false };
                 this.throwItem = throwArrow;
                 this.throwItemOriginUid = item.uid; 
@@ -2819,8 +2931,22 @@
             }
             this.throwSource = source;
             if (source === 'feet') {
-                const idx = this.entities.items.findIndex(i => i.uid === item.uid);
-                if (idx !== -1) this.entities.items.splice(idx, 1);
+
+                // 投擲武器の場合
+                if (item.category === 'projectile') {
+                    // スタックが0になった場合
+                    if(item.stack <= 0){
+                        // 足元からはアイテムをなくす
+                        const idx = this.entities.items.findIndex(i => i.uid === item.uid);
+                        if (idx !== -1) this.entities.items.splice(idx, 1);                    
+                    } else {
+
+                    }
+                // 投擲武器外の場合
+                } else {
+                    const idx = this.entities.items.findIndex(i => i.uid === item.uid);
+                    if (idx !== -1) this.entities.items.splice(idx, 1);
+                }
             }
             this.closeInventory();
             this.gameState = 'THROWING';
@@ -2828,6 +2954,7 @@
             document.getElementById('btn-center').innerHTML = '取消<br>❌';
         }
         
+        // 撃つ、投げるの取消ボタン処理
         endThrowMode() {
             this.gameState = 'PLAY';
             document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
@@ -2841,12 +2968,14 @@
                 this.synthScrollItem = null;
             }
             if (this.throwItem) {
+/*
                 if (this.throwSource === 'feet') {
                     if(this.throwItem.category === 'projectile' && this.throwItemOriginUid){
                     } else {
                         this.entities.items.push(this.throwItem);
                     }
                 }
+*/
                 this.throwItem = null;
             }
             if (this.fireballItem) {
@@ -2855,24 +2984,39 @@
             }
         }
 
+        // 撃つ、投げるの実行処理
         async executeThrow(dx, dy) {
             const item = this.throwItem;
             this.throwItem = null;
+
+            // 中央ボタンとゲームフェーズを元に戻す
             document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
             this.gameState = 'PLAY';
 
+            // 投げるアイテムに対してUIDをセット
             let thrownItem = JSON.parse(JSON.stringify(item)); // ディープコピーしてuidを振り直す
             thrownItem.uid = this.generateUid();
             thrownItem.isEquipped = false;
 
+            // インベントリ内のアイテムを投擲する場合
             if (this.throwSource === 'inventory') {
+                // 投擲武器で、かつ、オリジナルUIDがセットある場合
                 if (item.category === 'projectile' && this.throwItemOriginUid) {
+                    // オリジナルUIDのアイテムを取得
                     let origin = this.player.inventory.find(i => i.uid === this.throwItemOriginUid);
                     if (origin) {
+
+                        // 投擲した投擲武器の数を減らす
                         origin.stack--;
+
+                        // スタックが０になったときの処理
                         if (origin.stack <= 0) {
+                            // 装備していれば装備情報を削除
                             this.player.inventory = this.player.inventory.filter(i => i.uid !== origin.uid);
                             if(origin.isEquipped) this.player.equipment.projectile = null;
+                            // インベントリからアイテムを削除
+                            const idx = this.player.inventory.findIndex(i => i.uid === item.uid);
+                            if (idx !== -1) this.player.inventory.splice(idx, 1);                            
                         }
                     }
                 } else {
@@ -2883,7 +3027,29 @@
                     }
                 }
             }
-            
+
+            // 足元のアイテムを投擲する場合
+            if (this.throwSource === 'feet') {
+                // 投擲武器で、かつ、オリジナルUIDがセットある場合
+                if (item.category === 'projectile' && this.throwItemOriginUid) {
+                    // オリジナルUIDのアイテムを取得
+                    //let origin = this.player.inventory.find(i => i.uid === this.throwItemOriginUid);
+                    let origin = this.entities.items.find(i => i.uid === this.throwItemOriginUid);
+                    if (origin) {
+
+                        // 投擲した投擲武器の数を減らす
+                        origin.stack--;
+
+                        // スタックが０になったときの処理
+                        if (origin.stack <= 0) {
+                            // 足元からはアイテムをなくす
+                            const idx = this.entities.items.findIndex(i => i.uid === origin.uid);
+                            if (idx !== -1) this.entities.items.splice(idx, 1);                              
+                        }
+                    }
+                } 
+            }            
+
             this.log(`${this.fmtP()}は ${thrownItem.emoji}${this.fmtI(thrownItem)}を${thrownItem.category==='projectile'?'撃った':'投げた'}`);
 
             // 遠投の指輪または銀の矢の貫通チェック
@@ -3004,6 +3170,7 @@
             this.triggerTurn();
         }
 
+        // 投擲アイテム落下処理
         dropItemAt(item, startX, startY, strict = false) {
             const isDroppable = (x, y) => {
                 if(x < 0 || x >= CONFIG.MAP_W || y < 0 || y >= CONFIG.MAP_H) return false;
@@ -3028,6 +3195,7 @@
             return false;
         }
 
+        // 足元ボタン処理
         showFeetItemMenu(item) {
             this.gameState = 'FEET_MENU';
             document.getElementById('msg-log').style.display = 'none';
@@ -3042,7 +3210,17 @@
 
             const descDiv = document.createElement('div');
             descDiv.style.color = 'white'; descDiv.style.fontSize = '12px'; descDiv.style.marginBottom = '5px';
-            descDiv.innerHTML = item.description || "";
+
+            if (['herb', 'scroll','wand','bracelet'].includes(item.category)) {
+                if (this.config.unidentifyItems && !this.identifiedItemIDs.has(item.id)) {
+                    descDiv.innerHTML = "未識別のため効果が分からない";
+                } else {
+                    descDiv.innerHTML = item.description || "";
+                }
+            } else {
+                descDiv.innerHTML = item.description || "";
+            }
+
             if (['weapon', 'shield'].includes(item.category)) {
                 let slotsText = "";
                 const maxSlots = item.slots || 0;
