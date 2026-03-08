@@ -179,9 +179,14 @@
     <DIV id="release-note">
         <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
-        <h2>リリースノート v0.8.0</h2>
+        <h2>リリースノート v0.8.1</h2>
 
         <div id="release-note-scroll-area">
+            ==0.8.1==<br>
+            <ul>
+                <li>1～2階でも大部屋になるとモンハウになる不具合を修正</li>
+                <li>浮島とモンハウの発生確率を増やしました</li>
+
             ==0.8.0==<br>
             <ul>
                 <li>モンスターハウスの概念追加。地下3階から5%の確率で生成します</li>
@@ -765,7 +770,7 @@
             
             const numRooms = Math.floor(Math.random() * 10) + 1; 
             if (numRooms === 1) {
-                this.rooms.push({ x: 1, y: 1, w: CONFIG.MAP_W - 2, h: CONFIG.MAP_H - 2 ,type:MONHOUSE});
+                this.rooms.push({ x: 1, y: 1, w: CONFIG.MAP_W - 2, h: CONFIG.MAP_H - 2 ,type:(this.floor > 2 ? MONHOUSE:NORMAL)});
                 for(let ry=1; ry<CONFIG.MAP_H-1; ry++) for(let rx=1; rx<CONFIG.MAP_W-1; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
             } else {
                 const maxW = Math.max(4, this.config.roomSize);
@@ -784,12 +789,12 @@
 
                     // 3階からモンスターハウスと浮島の生成を行う
                     if (this.floor > 2){
-                        // 1番目の部屋が30マス以上であれば、5%の確率でモンスターハウスにする
+                        // 1番目の部屋が30マス以上であれば、15%の確率でモンスターハウスにする
                         if(roomCreatedCount === 0 && w*h >= 30){
-                            type = Math.random() < 0.05 ? MONHOUSE : NORMAL; 
-                        // 2番目の部屋の縦幅、横幅がともに6マス以上であれば、15%の確率で浮島にする
+                            type = Math.random() < 0.15 ? MONHOUSE : NORMAL; 
+                        // 2番目の部屋の縦幅、横幅がともに6マス以上であれば、30%の確率で浮島にする
                         } else if (roomCreatedCount === 1 && w >= 6 && h >= 6){
-                            type = Math.random() < 0.15 ? ISLAND : NORMAL; 
+                            type = Math.random() < 0.20 ? ISLAND : NORMAL; 
                         }
                     }
                     roomCreatedCount++;
