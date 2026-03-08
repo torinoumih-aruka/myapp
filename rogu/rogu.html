@@ -24,14 +24,15 @@
             position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
             width: 92%; height: 92%; background: rgba(0, 0, 0, 0.85); color: white;
             padding: 4px 8px; font-size: 12px; border-radius: 6px; z-index: 200000;
-            overflow: hidden; line-height: 1.5; border: 1px solid #ffffff;
+            /*overflow: hidden;*/ line-height: 1.5; border: 1px solid #ffffff;
         }
 
         #release-note-scroll-area {
-            overflow-y: auto;
+            overflow-y: scroll;
             margin-top: 10px;
             border-top: 1px solid #eee;
-            -webkit-overflow-scrolling: touch;
+            height: 87%;
+
         }
 
         #release-note-close-btn {
