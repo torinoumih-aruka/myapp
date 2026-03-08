@@ -188,6 +188,7 @@
                 <li>モンハウも浮島も一定の広さ以上の部屋じゃないと生成しないため、部屋の広さ設定によっては出現しません。<br>また、アイテムや罠をたくさん出す設定にするとモンハウのアイテム、罠生成時にエラーで落ちるかもしれません</li>
                 <li>浮島用に、レアアイテムのみのアイテム抽選処理を追加。</li>
                 <li>識別処理を暫定的に少しだけ修正。バグだらけのまま</li>
+                <li>持ち物がいっぱいのときでも、同じ種類の矢を持っていれば拾ってスタック数を加算するよう修正</li>
                 <li>ゲームオーバー判定を、敵の行動直後に変更。またwaitを挟んでからゲームオーバー通知を出すように変更</li>
             </ul>
             ==0.7.1==<br>
@@ -1595,11 +1596,36 @@
 
             const itemIdx = this.entities.items.findIndex(i => i.x === this.player.x && i.y === this.player.y);
             if (itemIdx !== -1) {
-                // TODO:投擲武器なら20でもアイテムを拾ってスタックする処理を追加
+                const pickItem = this.entities.items[itemIdx];
+
                 if (this.player.inventory.length < 20) {
-                    this.pickupItemLogic(this.entities.items[itemIdx]);
+                    this.pickupItemLogic(pickItem);
+                // 投擲武器に関してはインベントリが20であっても、インベントリ内に同じIDのアイテムがあればスタックを追加する
                 } else {
-                    this.log(`${this.entities.items[itemIdx].emoji}${this.fmtI(this.entities.items[itemIdx])}は 拾えなかった`);
+                    // 拾ったアイテムが投擲武器
+                    if(pickItem.category === 'projectile') {
+                        // インベントリ内のIDと照合
+                        let existing = this.player.inventory.find(i => i.id === pickItem.id);
+                        // インベントリ内に同じIDがある場合
+                        if (existing) {
+                            // スタックを追加
+                            existing.stack = Math.min(99, (existing.stack||1) + (pickItem.stack||1));
+
+                            // アイテムエンティティから、拾ったアイテムを消滅させる
+                            const actualIdx = this.entities.items.findIndex(i => i.uid === pickItem.uid);
+                            if (actualIdx !== -1) {
+                                this.entities.items.splice(actualIdx, 1);
+                                this.log(`${pickItem.emoji}${this.fmtI(pickItem)}を 拾った`);
+                            }
+
+                        } else {
+                            // インベントリ内に同一IDが無い場合は拾えない
+                            this.log(`${pickItem.emoji}${this.fmtI(pickItem)}は 拾えなかった`);
+                        }
+                    } else {
+                        // インベントリが20に達している場合、アイテム種別が投擲武器以外は拾えない
+                        this.log(`${pickItem.emoji}${this.fmtI(pickItem)}は 拾えなかった`);
+                    }
                 }
             }
 
