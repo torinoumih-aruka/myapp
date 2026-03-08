@@ -178,9 +178,18 @@
     <DIV id="release-note">
         <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
-        <h2>リリースノート v0.7.1</h2>
+        <h2>リリースノート v0.8.0</h2>
 
         <div id="release-note-scroll-area">
+            ==0.8.0==<br>
+            <ul>
+                <li>モンスターハウスの概念追加。地下3階から5%の確率で生成します</li>
+                <li>浮島の概念追加。地下3階から一定確率で浮島を生成します</li>
+                <li>モンハウも浮島も一定の広さ以上の部屋じゃないと生成しないため、部屋の広さ設定によっては出現しません。<br>また、アイテムや罠をたくさん出す設定にするとモンハウのアイテム、罠生成時にエラーで落ちるかもしれません</li>
+                <li>浮島用に、レアアイテムのみのアイテム抽選処理を追加。</li>
+                <li>識別処理を暫定的に少しだけ修正。バグだらけのまま</li>
+                <li>ゲームオーバー判定を、敵の行動直後に変更。またwaitを挟んでからゲームオーバー通知を出すように変更</li>
+            </ul>
             ==0.7.1==<br>
             <ul>
                 <li>地獄耳の巻物の効果が次フロアにも継続するバグを修正</li>
@@ -232,10 +241,10 @@
     </div>
 
     <div class="config-row">
-        <label><input type="checkbox" id="cfg-unidentified-equip" checked> 武器・盾の未識別を有効にする</label>
+        <label><input type="checkbox" id="cfg-unidentified-equip"> 武器・盾の未識別を有効にする</label>
     </div>
     <div class="config-row">
-        <label><input type="checkbox" id="cfg-unidentified-items" checked> 草・巻物・杖・指輪の未識別を有効にする</label>
+        <label><input type="checkbox" id="cfg-unidentified-items"> 草・巻物・杖・指輪の未識別を有効にする</label>
     </div>    
 
     <button class="title-btn" style="margin-top:20px;" onclick="game.saveConfigAndClose()">保存して閉じる</button>
@@ -415,8 +424,8 @@
             document.getElementById('cfg-mm-op').value = this.config.minimapOpacity;
             document.getElementById('val-mm-op').innerText = this.config.minimapOpacity;
             
-            document.getElementById('cfg-unidentified-equip').checked = this.config.unidentifyEquip !== false;
-            document.getElementById('cfg-unidentified-items').checked = this.config.unidentifyItems !== false;
+            //document.getElementById('cfg-unidentified-equip').checked = this.config.unidentifyEquip !== false;
+            //document.getElementById('cfg-unidentified-items').checked = this.config.unidentifyItems !== false;
         }
 
         saveConfigAndClose() {
@@ -508,8 +517,8 @@
                     {id: "i006", emoji: "🗡️", name: "ドラゴンキラー", color: "cyan", category: "weapon", effects: {atk: 8}, slots: 2, mark: "竜", spawn_rate: 5, min_floor: 5 ,accuracy: 95, consumable: false, spawn_rate: 5, description: "攻撃力+8<br>ドラゴン系に特効がある武器。"},
                     {id: "i007", emoji: "🗡️", name: "ドレインバスター", color: "cyan", category: "weapon", effects: {atk: 4}, slots: 2, mark: "ド", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+4<br>ドレイン系に特効がある武器。"},
                     {id: "i008", emoji: "🗡️", name: "トライデント", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "水", spawn_rate: 5,accuracy: 85, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>水棲系に特効がある武器。"},
-                    {id: "i009", emoji: "🗡️", name: "妖刀かまいたち", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 2, mark: "三", spawn_rate: 5, min_floor: 5 ,description: "攻撃力+2<br>前三方向に攻撃。"},
-                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 1, description: "攻撃力+3<br>スロット数が多い聖なるダガー"},
+                    {id: "i009", emoji: "🗡️", name: "妖刀かまいたち", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 2, mark: "三", spawn_rate: 5, min_floor: 5 , description: "攻撃力+2<br>前三方向に攻撃。"},
+                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 1, special_spawn:true, description: "攻撃力+3<br>スロット数が多い聖なるダガー"},
 
                     {id: "i101", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, consumable: false, spawn_rate: 15, description: "防御力+2<br>基本の盾。"},
                     {id: "i102", emoji: "🛡️", name: "青銅甲の盾", color: "cyan", category: "shield", effects: {def: 4}, slots: 4, consumable: false, spawn_rate: 10, description: "防御力+4<br>基本の盾。"},
@@ -518,10 +527,10 @@
                     {id: "i105", emoji: "🛡️", name: "うろこの盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, mark: "鱗", spawn_rate: 5, description: "防御力+2<br>毒をふせぐ鱗で覆われた盾。"},
                     {id: "i106", emoji: "🛡️", name: "耐爆の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 2, mark: "爆", spawn_rate: 5, description: "防御力+2<br>爆発から身を守る盾。"},
                     {id: "i107", emoji: "🛡️", name: "重装の盾", color: "cyan", category: "shield", effects: {def: 9}, slots: 2, mark: "重", spawn_rate: 5, description: "防御力+9<br>お腹が減りやすいが優秀な防御力を誇る盾。"},
-                    {id: "i110", emoji: "🛡️", name: "聖なる木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 8, consumable: false, spawn_rate: 1, description: "防御力+2<br>スロットの数が多い聖なる木甲の盾。"},
+                    {id: "i110", emoji: "🛡️", name: "聖なる木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 8, consumable: false, spawn_rate: 1,special_spawn:true, description: "防御力+2<br>スロットの数が多い聖なる木甲の盾。"},
 
-                    {id: "i201", emoji: "💍", name: "水路の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3},
-                    {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3},
+                    {id: "i201", emoji: "💍", name: "水路の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 1,special_spawn:true, description: "水の上を歩けるようになる指輪。"},
+                    {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3, description: "投げたアイテムが敵や壁を貫通するようになる指輪。"},
 
                     {id: "i251", emoji: "🏹", name: "木の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 10, description: "装備して撃つことができる矢。"},
                     {id: "i252", emoji: "🏹", name: "鉄の矢", color: "cyan", category: "projectile", effects: {atk: 8}, consumable: true, spawn_rate: 7},
@@ -529,7 +538,7 @@
 
                     {id: "i301", emoji: "🥖", name: "パン", color: "cyan", category: "food", effects: {hunger: 50}, consumable: true, spawn_rate: 10, description: "満腹度が50回復する。"},
                     {id: "i302", emoji: "🥖", name: "大きなパン", color: "cyan", category: "food", effects: {hunger: 100}, consumable: true, spawn_rate: 5, description: "満腹度が100回復する。"},
-                    {id: "i303", emoji: "🥖", name: "巨大なパン", color: "cyan", category: "food", effects: {hunger: 999}, consumable: true, spawn_rate: 2, description: "満腹度が最大まで回復する。"},
+                    {id: "i303", emoji: "🥖", name: "巨大なパン", color: "cyan", category: "food", effects: {hunger: 999}, consumable: true, spawn_rate: 2, special_spawn:true, description: "満腹度が最大まで回復する。"},
                     {id: "i304", emoji: "🥖", name: "くさったパン", color: "cyan", category: "food", effects: {hunger: 20}, consumable: true, spawn_rate: 5, description: "満腹度は回復するがHPとちからが減る。"},
 
                     {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20, min_floor: 1, description: "HPが25回復する。<br>合成で「薬」印。"},
@@ -551,20 +560,19 @@
                     {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "武器を強化し、呪いを解く。"},
                     {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "盾を強化し、呪いを解く。"},
                     {id: "i503", emoji: "📜", name: "バクスイの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵を眠らせる。"},
-                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, description: "ベースに素材を合成する。"},
+                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, special_spawn:true,description: "ベースに素材を合成する。"},
                     {id: "i505", emoji: "📜", name: "かなしばりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "周囲の敵をかなしばりにする。"},
                     {id: "i506", emoji: "📜", name: "しんくうぎりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵にダメージを与える。"},
                     {id: "i507", emoji: "📜", name: "メッキの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, description: "武器や盾がサビなくなる。"},
-                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5},
-                    {id: "i509", emoji: "📜", name: "地獄耳の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5},
-                    {id: "i510", emoji: "📜", name: "千里眼の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5},
-                    {id: "i511", emoji: "📜", name: "水枯れの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2},
-                    {id: "i512", emoji: "📜", name: "大部屋の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 1},
-                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2},
+                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムを識別する。"},
+                    {id: "i509", emoji: "📜", name: "地獄耳の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "敵の居場所がわかるようになる。フロア内のみ有効"},
+                    {id: "i510", emoji: "📜", name: "千里眼の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムの場所がわかるようになる。フロア内のみ有効"},
+                    {id: "i511", emoji: "📜", name: "水枯れの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "フロア中の水が枯れて、上を歩けるようになる。"},
+                    {id: "i512", emoji: "📜", name: "大部屋の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 1,special_spawn:true, description: "フロア中の壁が崩れて大きな部屋になる。"},
+                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "選んだアイテムがパンになる。"},
 
                     {id: "i601", emoji: "🪄", name: "鈍足の杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 5, spawn_rate: 4},
                     {id: "i602", emoji: "🪄", name: "場所替えの杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 6, spawn_rate: 4}
-
                 ];
             }
             this.enemyMaster.forEach(e => {
@@ -703,6 +711,7 @@
             this.entities = { enemies: [], items: [], traps: [] };
             this.player.statuses.see_all = false; 
             this.player.statuses.hear_all = false;
+            this.player.statuses.monsterHouseCompleted = false;
             this.turnCount = 0;
             this.isOnStairs = false; // ターン終了時の階段判定フラグ
             
@@ -710,10 +719,17 @@
             this.msgQueue = [];
             this.isMsgAnimating = false;
             document.getElementById('msg-log').innerHTML = ''; 
-            
+
+            // マップ生成
             this.generateMap();
+            // アイテム、敵キャラ配置
             this.spawnEntities();
+            // 罠配置
             this.spawnTraps();
+            // モンスターハウス生成
+            this.spawnEntityMonsterHouse();
+            // 浮島にバネとアイテム生成
+            this.spawnEntityIsland();
             
             const overlay = document.getElementById('floor-overlay');
             overlay.textContent = `地下 ${this.floor}階`;
@@ -728,11 +744,18 @@
                 if (isFirst) this.log("冒険を開始した！");
                 else this.log(`${this.fmtP()}は 階段を降りた。`);
                 this.gameState = 'PLAY';
+                // モンスターハウス入室処理
+                this.initMonsterHouse();
             }, 100);
+
         }
 
         // --- マップ・罠生成 ---
         generateMap() {
+
+            const MONHOUSE = 'monsterhouse';
+            const ISLAND = 'island';
+            const NORMAL = 'normal';
 
             const roomsMargin = 3;// 部屋と部屋の間の、最低保証される間隔
             this.map = Array.from({ length: CONFIG.MAP_H }, () => Array(CONFIG.MAP_W).fill(CONFIG.TILES.WALL));
@@ -740,19 +763,35 @@
             
             const numRooms = Math.floor(Math.random() * 10) + 1; 
             if (numRooms === 1) {
-                this.rooms.push({ x: 1, y: 1, w: CONFIG.MAP_W - 2, h: CONFIG.MAP_H - 2 });
+                this.rooms.push({ x: 1, y: 1, w: CONFIG.MAP_W - 2, h: CONFIG.MAP_H - 2 ,type:MONHOUSE});
                 for(let ry=1; ry<CONFIG.MAP_H-1; ry++) for(let rx=1; rx<CONFIG.MAP_W-1; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
             } else {
                 const maxW = Math.max(4, this.config.roomSize);
                 const maxH = Math.max(4, this.config.roomSize);
 
+                let roomCreatedCount = 0;
                 for (let i = 0; i < numRooms; i++) {
                     const w = Math.floor(Math.random() * (maxW - 3)) + 4;
                     const h = Math.floor(Math.random() * (maxH - 3)) + 4;
                     const x = Math.floor(Math.random() * (CONFIG.MAP_W - w - 2)) + 1;
                     const y = Math.floor(Math.random() * (CONFIG.MAP_H - h - 2)) + 1;
-                    const type = Math.random() < 0.50 ? 'monsterhouse' : 'normal'; 
+
+                    let type = NORMAL;
+
                     if (this.rooms.some(r => x < r.x + r.w + roomsMargin && x + w + roomsMargin > r.x && y < r.y + r.h + roomsMargin && y + h + roomsMargin > r.y)) continue;
+
+                    // 3階からモンスターハウスと浮島の生成を行う
+                    if (this.floor > 2){
+                        // 1番目の部屋が30マス以上であれば、5%の確率でモンスターハウスにする
+                        if(roomCreatedCount === 0 && w*h >= 30){
+                            type = Math.random() < 0.05 ? MONHOUSE : NORMAL; 
+                        // 2番目の部屋の縦幅、横幅がともに6マス以上であれば、15%の確率で浮島にする
+                        } else if (roomCreatedCount === 1 && w >= 6 && h >= 6){
+                            type = Math.random() < 0.15 ? ISLAND : NORMAL; 
+                        }
+                    }
+                    roomCreatedCount++;
+
                     for (let ry = y; ry < y + h; ry++) for (let rx = x; rx < x + w; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
                     if (this.rooms.length > 0) {
                         let targetIdx = this.rooms.length - 1;
@@ -787,14 +826,84 @@
                     }
                 }
             }
+
             this.ensureAllFloorsConnected();
 
-            const pPos = this.getRandomPosInRoom();
+            // 特殊部屋の床、水路生成
+            this.rooms.forEach(r => {
+                if(r.type===MONHOUSE || r.type===ISLAND){
+                    for (let ry = r.y; ry < r.y + r.h; ry++) for (let rx = r.x; rx < r.x + r.w; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
+                }
+/*
+                if(r.type===MONHOUSE){
+                    for (let ry = r.y+1; ry < r.y+1 + r.h-2; ry++) for (let rx = r.x+1; rx < r.x+1 + r.w-2; rx++) this.map[ry][rx] = CONFIG.TILES.WATER;
+                }
+*/
+                if(r.type===ISLAND){
+                    for (let ry = r.y+1; ry < r.y+1 + r.h-2; ry++) for (let rx = r.x+1; rx < r.x+1 + r.w-2; rx++) this.map[ry][rx] = CONFIG.TILES.WATER;
+                    for (let ry = r.y+2; ry < r.y+2 + r.h-4; ry++) for (let rx = r.x+2; rx < r.x+2 + r.w-4; rx++) this.map[ry][rx] = CONFIG.TILES.FLOOR;
+                }
+            });
+
+            // ==主人公位置決定============
+            let pPos;
+            // 浮島の部屋indexを取得
+            const islandRoomIndex = this.rooms.findIndex(r => r.type === ISLAND);
+            do { 
+                // 主人公の位置を仮決定
+                pPos = this.getRandomPosInRoom(); 
+            // 主人公の位置が浮島部屋内だったら、浮島部屋以外になるまで位置を変更し続ける
+            } while(this.getRoomType(pPos.x,pPos.y) === ISLAND);
+
             this.player.x = pPos.x; this.player.y = pPos.y;
 
+            // ==階段位置決定============
             let sPos;
-            do { sPos = this.getRandomPosInRoom(); } while(sPos.x === pPos.x && sPos.y === pPos.y);
+            do { 
+                // 階段の位置を仮決定
+                sPos = this.getRandomPosInRoom(); 
+            // 階段の位置が浮島部屋内だったら、浮島部屋以外になるまで位置を変更し続ける
+            } while(this.getRoomType(sPos.x,sPos.y) === ISLAND);
+
             this.map[sPos.y][sPos.x] = CONFIG.TILES.STAIRS;
+        }
+
+        // 指定位置の部屋種類を取得
+        getRoomType(x,y){
+            const room = this.rooms.find(r =>
+                x >= r.x && x < r.x + r.w &&
+                y >= r.y && y < r.y + r.h
+            );
+
+            if(room){
+                return room.type;
+            } else {
+                return null;
+            }
+        }
+
+        // モンスターハウスに初めて入室した場合の処理
+        initMonsterHouse() {
+
+            const MONHOUSE = 'monsterhouse';
+
+            // モンスターハウスにまだ入ったことが無い場合
+            if(!this.player.statuses.monsterHouseCompleted){
+                // 部屋種別がモンスターハウスの場合
+                if(this.getRoomType(this.player.x,this.player.y) === MONHOUSE){
+                    // 部屋に入ったフラグを立てる
+                    this.player.statuses.monsterHouseCompleted = true;
+                    // 部屋中のモンスターの目を覚ます
+                    const room = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
+                    this.entities.enemies.forEach(e => {
+                        if (e.x >= room.x && e.x < room.x + room.w && e.y >= room.y && e.y < room.y + room.h) e.isAwake = true; e.isDeepSleep = false;
+                    });
+                    // 主人公を地獄耳状態にする
+                    this.player.statuses.hear_all = true;
+
+                    this.log(`モンスターハウスだ！`);
+                }
+            }
         }
 
         digCorridor(x1, y1, x2, y2) {
@@ -892,6 +1001,26 @@
             }
         }
 
+        // モンスターハウス専用のスポーン位置取得処理
+        // mode:monster→足元が床、階段のいずれかで、モンスターがいなければOK
+        // それ以外→足元が床で、足元にアイテムと罠が無ければOK
+        getRandomPosInMonsterHouse(mRoom,mode) {
+            while(true) {
+                let x = mRoom.x + Math.floor(Math.random() * mRoom.w);
+                let y = mRoom.y + Math.floor(Math.random() * mRoom.h);
+
+                if (mode === 'monster'){
+                    if ((this.map[y][x] === CONFIG.TILES.FLOOR || this.map[y][x] === CONFIG.TILES.STAIRS) && !this.entities.enemies.some(e=>e.x===x&&e.y===y)){
+                        return {x, y};    
+                    }
+                } else {
+                    if (this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i=>i.x===x&&i.y===y) && (!this.entities.traps || !this.entities.traps.some(t=>t.x===x&&t.y===y))) {
+                        return {x, y};
+                    }                    
+                }
+            }
+        }
+
         spawnEntities() {
             const canSpawn = (master) => {
                 if(!master.spawn_floors) return true;
@@ -910,55 +1039,91 @@
             const numI = Math.floor(Math.random() * (this.config.maxItems - 1)) + 2;
             for(let i=0; i<numI; i++) {
 
-                // 1. 出現条件（フロア数と出現率）を満たす候補を抽出
-                const candidates = this.itemMaster.filter(item => {
-                    return this.floor >= (item.min_floor || 1) && (item.spawn_rate || 1) > 0;
-                });
-
-                if(candidates.length === 0) break;
-
-                // 2. 出現率（spawn_rate）の合計値を計算
-                const totalWeight = candidates.reduce((sum, item) => sum + item.spawn_rate, 0);
-
-                // 3. 0 〜 合計値の間でランダムな数値を決定（抽選の矢を放つ）
-                let randomThreshold = Math.random() * totalWeight;                
-
-                // 4. 矢がどのアイテムの範囲に刺さったかを判定
-                let selectedItem = null;
-                for (const item of candidates) {
-                    if (randomThreshold < item.spawn_rate) {
-                        selectedItem = item;
-                        break;
-                    }
-                    randomThreshold -= item.spawn_rate;
-                }
-
-                // 最終的に決まったアイテム（m）
-                const m = selectedItem;
+                // スポーンさせるアイテムを取得
+                const m = this.getSpawnItemInfo(false);
 
                 const pos = this.getRandomPosInRoom();
-                //const m = this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
-                
-                let mod = 0; let marks = []; let stack = 1;let uses = 0;
-                if (['weapon', 'shield'].includes(m.category)) {
-                    if (m.mark) marks.push(m.mark);
-                    const r = Math.random() * 100;
-                    if (r < 70) mod = 0; else if (r < 80) mod = 1; else if (r < 90) mod = 2; else if (r < 95) mod = 3; else mod = -1;
-                    if (mod === -1 && !marks.includes("呪")) marks.push("呪");
-                }
-                if (m.category === 'projectile') {
-                    stack = Math.floor(Math.random() * 19) + 2; // 2~20
-                }
-                if (m.category === 'wand') {
-                    uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
-                }
-                this.entities.items.push({ 
-                    uid: this.generateUid(), id: m.id, x: pos.x, y: pos.y, ...m, 
-                    modifier: mod, marks: marks, slots: m.slots || 0, stack: stack, uses: uses, isEquipped: false, type: 'item' 
-                });
+
+                // スポーンさせるアイテムに、UID、補正値など設定しエンティティ化する
+                let itemEntity = this.addSpawnItemStatus(m);
+                itemEntity.x = pos.x;
+                itemEntity.y = pos.y;
+
+                this.entities.items.push(itemEntity);
             }
         }
 
+        // フロアと出現率から、スポーンさせるアイテム情報を取得する
+        getSpawnItemInfo(special) {
+
+            let candidates;
+            if(!special){
+                // 1. 出現条件（フロア数と出現率）を満たす候補を抽出
+                candidates = this.itemMaster.filter(item => {
+                    return this.floor >= (item.min_floor || 1) && (item.spawn_rate || 1) > 0;
+                });
+
+            }else{
+                // 豪華アイテムドロップ
+                candidates = this.itemMaster.filter(item => {
+                    return item.special_spawn;
+                });                
+            }
+
+            // 落とすべきアイテムが無ければ0番目のアイテムをドロップ
+            if(candidates.length === 0) return this.itemMaster[0];
+
+            // 2. 出現率（spawn_rate）の合計値を計算
+            const totalWeight = candidates.reduce((sum, item) => sum + item.spawn_rate, 0);
+
+            // 3. 0 〜 合計値の間でランダムな数値を決定（抽選の矢を放つ）
+            let randomThreshold = Math.random() * totalWeight;                
+
+            // 4. 矢がどのアイテムの範囲に刺さったかを判定
+            let selectedItem = null;
+            for (const item of candidates) {
+                if (randomThreshold < item.spawn_rate) {
+                    selectedItem = item;
+                    break;
+                }
+                randomThreshold -= item.spawn_rate;
+            }
+            return selectedItem;
+        }
+
+        // スポーンするアイテムに、補正値やスタック数、呪い状態などをランダムに設定し
+        // アイテムエンティティ情報として返却する。
+        // 尚、位置情報はここでは付与しない。
+        addSpawnItemStatus(m) {
+            let mod = 0; let marks = []; let stack = 1;let uses = 0;
+            if (['weapon', 'shield'].includes(m.category)) {
+                if (m.mark) marks.push(m.mark);
+                const r = Math.random() * 100;
+                if (r < 70) mod = 0; else if (r < 80) mod = 1; else if (r < 90) mod = 2; else if (r < 95) mod = 3; else mod = -1;
+                if (mod === -1 && !marks.includes("呪")) marks.push("呪");
+            } else if (m.category === 'bracelet') {
+                if (Math.random() < 0.3) marks.push("呪");
+            } else if (m.category === 'projectile') {
+                stack = Math.floor(Math.random() * 19) + 2; // 2~20
+            } else if (m.category === 'wand') {
+                uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
+            }
+
+            return { 
+                    uid: this.generateUid(), 
+                    id: m.id,
+                    ...m,
+                    modifier: mod, 
+                    marks: marks, 
+                    slots: m.slots||0, 
+                    stack: stack, 
+                    uses: uses, 
+                    isEquipped: false, 
+                    type: 'item' 
+                };
+        }
+
+        // 敵キャラエンティティの生成
         spawnEnemyAt(x, y, masterList = this.enemyMaster) {
             if(masterList.length === 0) return;
             const master = masterList[Math.floor(Math.random() * masterList.length)];
@@ -973,10 +1138,70 @@
                 // ▼追記：スポーン時に壁歩行・水歩行のフラグをコピーする
                 canWalkWall: master.canWalkWall || false,
                 canWalkWater: master.canWalkWater || false,
-                statuses: { asleep: 0, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 },
-                isAwake: awake, lastSeenPos: null, pastPositions: [], waitCount: 0, skipNextTurn: false,
+                statuses: { asleep: 1, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 },
+                isAwake: awake, isDeepSleep: false, lastSeenPos: null, pastPositions: [], waitCount: 0, skipNextTurn: false,
                 projectile: master.projectile
             });
+        }
+
+        // モンスターハウス内のエンティティ生成
+        spawnEntityMonsterHouse(){
+            const MONHOUSE = 'monsterhouse';
+            const mRoom = this.rooms.find(r => r.type === MONHOUSE);
+            if(!mRoom) return;
+
+            const monsterList = this.enemyMaster.filter(m => !m.spawn_floors || m.spawn_floors.includes(this.floor));
+            const trapList = this.trapMaster.filter(t => t.spawn_floors.includes(this.floor));
+
+            let spawnMCount = Math.min(Math.floor(mRoom.w * mRoom.h / 2), 30);
+            let spawnICount = Math.min(Math.floor(mRoom.w * mRoom.h / 3), 15);
+            let spawnTCount = Math.min(Math.floor(mRoom.w * mRoom.h / 3), 15);
+
+            // モンスターを配置する
+            for(let m = 0;m < spawnMCount; m++){
+                const mPos = this.getRandomPosInMonsterHouse(mRoom,'monster');
+                this.spawnEnemyMonsterHouse(mPos.x,mPos.y, monsterList);
+            }
+
+            // アイテムを配置する
+            for(let i = 0;i < spawnICount; i++){
+                // スポーンさせるアイテムを取得
+                const item = this.getSpawnItemInfo(false);
+                // スポーンさせるアイテムに、UID、補正値など設定しエンティティ化する
+                let itemEntity = this.addSpawnItemStatus(item);
+                // アイテムの配置場所を取得
+                const iPos = this.getRandomPosInMonsterHouse(mRoom,'item');
+
+                itemEntity.x = iPos.x;
+                itemEntity.y = iPos.y;
+                this.entities.items.push(itemEntity);
+            }
+
+            // 罠を配置する
+            this.spawnMonsterHouse(mRoom,trapList,spawnTCount);
+        }
+
+        // モンスターハウス用の敵キャラを配置する
+        spawnEnemyMonsterHouse(x, y, masterList = this.enemyMaster){
+
+            if(masterList.length === 0) return;
+            const master = masterList[Math.floor(Math.random() * masterList.length)];
+            const awake = false;
+            this.entities.enemies.push({
+                uid: this.generateUid(), id: master.id, type: 'enemy',
+                x: x, y: y, hp: master.hp , maxHp: master.hp ,
+                atk: master.atk, def: master.def, exp: master.exp, accuracy: master.accuracy || 90, drop_rate: master.drop_rate || 2, drop_item_id: master.drop_item_id,
+                name: master.name, emoji: master.emoji, color: master.color, imageSrc: master.imageSrc, behavior: master.behavior,
+                speed: master.speed || 1, attack_count: master.attack_count || 1,
+                evolve_id: master.evolve_id, devolve_id: master.devolve_id, attributes: master.attributes || [],
+                // ▼追記：スポーン時に壁歩行・水歩行のフラグをコピーする
+                canWalkWall: master.canWalkWall || false,
+                canWalkWater: master.canWalkWater || false,
+                statuses: { asleep: 0, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 },
+                isAwake: awake, isDeepSleep: true, lastSeenPos: null, pastPositions: [], waitCount: 0, skipNextTurn: false,
+                projectile: master.projectile
+            });
+
         }
 
         spawnTraps() {
@@ -1028,13 +1253,139 @@
             }
         }
 
+        // モンスターハウス専用の罠スポーン処理
+        spawnMonsterHouse(mRoom,trapList,trapCount) {
+            if (this.floor <= 2) return;
+            if (trapList.length === 0) return;
+            if (trapCount === 0) return;
+
+            let validSpots = [];
+
+            for (let y = mRoom.y; y < mRoom.y + mRoom.h; y++) {
+                for (let x = mRoom.x; x < mRoom.x + mRoom.w; x++) {
+                    let isDoor = this.doorTiles.has(`${x},${y}`);
+                    // 追加の出入り口判定（壁の切れ目）
+                    if (!isDoor && (x === mRoom.x || x === mRoom.x + mRoom.w - 1 || y === mRoom.y || y === mRoom.y + mRoom.h - 1)) {
+                        const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
+                        for (let [dx, dy] of dirs) {
+                            let nx = x + dx, ny = y + dy;
+                            if (nx >= 0 && nx < CONFIG.MAP_W && ny >= 0 && ny < CONFIG.MAP_H) {
+                                if (this.map[ny][nx] === CONFIG.TILES.FLOOR || this.map[ny][nx] === CONFIG.TILES.STAIRS) {
+                                    if (nx < mRoom.x || nx >= mRoom.x + mRoom.w || ny < mRoom.y || ny >= mRoom.y + mRoom.h) {
+                                        isDoor = true; break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!isDoor && this.map[y][x] === CONFIG.TILES.FLOOR && !this.entities.items.some(i => i.x===x && i.y===y) && this.map[y][x] !== CONFIG.TILES.STAIRS) {
+                        validSpots.push({x, y});
+                    }
+                }
+            }
+
+            validSpots.sort(() => Math.random() - 0.5);
+
+            let placed = 0;
+            for (let spot of validSpots) {
+                if (placed >= trapCount) break;
+                let tMaster = trapList[Math.floor(Math.random() * trapList.length)];
+                this.entities.traps.push({
+                    uid: this.generateUid(), id: tMaster.id,
+                    x: spot.x, y: spot.y,
+                    type: 'trap',
+                    master: tMaster,
+                    isVisible: false
+                });
+                placed++;
+            }
+        }
+
+        // 浮島用のエンティティ生成
+        spawnEntityIsland(){
+
+            const ISLAND = 'island';
+            const iRoom = this.rooms.find(r => r.type === ISLAND);
+            if(!iRoom) return;
+
+            // 浮島内のアイテムをクリアする
+            // 部屋の範囲内に「ない」アイテムだけを残す（＝部屋の中のアイテムを除去する）
+            this.entities.items = this.entities.items.filter(item => {
+                const inRoom = item.x >= iRoom.x+2 && 
+                            item.x < iRoom.x+2 + iRoom.w-4 && 
+                            item.y >= iRoom.y+2 && 
+                            item.y < iRoom.y+2 + iRoom.h-4;
+                
+                // 部屋の中にいない(inRoomがfalse)アイテムのみを保持する
+                return !inRoom;
+            });
+
+            // 浮島内の罠をクリアする
+            // 部屋の範囲内に「ない」罠だけを残す
+            this.entities.traps = this.entities.traps.filter(trap => {
+                const inRoom = trap.x >= iRoom.x+2 && 
+                            trap.x < iRoom.x+2 + iRoom.w-4 && 
+                            trap.y >= iRoom.y+2 && 
+                            trap.y < iRoom.y+2 + iRoom.h-4;
+                
+                // 部屋の中にいない(inRoomがfalse)罠のみを保持する
+                return !inRoom;
+            });            
+
+            // 浮島内の配置可能なマスを取得
+            let validSpots = [];
+            for (let y = iRoom.y+2; y < iRoom.y+2 + iRoom.h-4; y++) {
+                for (let x = iRoom.x+2; x < iRoom.x+2 + iRoom.w-4; x++) {
+                    if (this.map[y][x] === CONFIG.TILES.FLOOR) {
+                        validSpots.push({x, y});
+                    }
+                }
+            }
+            validSpots.sort(() => Math.random() - 0.5);
+
+            // 浮島内に配置するアイテム数を決定する
+            // 配置可能なマス数が6マス以下の場合、全部のマスが埋まるようアイテム数。7マスからは5個。
+            const itemCount = validSpots.length <= 6 ? validSpots.length-1 : 5;
+
+            let placed = 0;
+            for (let spot of validSpots) {
+
+                // アイテム配置（MAX5個）
+                if(placed < itemCount){
+                    // スポーンさせるアイテムを取得(豪華なアイテムのみ)
+                    const item = this.getSpawnItemInfo(true);
+                    // スポーンさせるアイテムに、UID、補正値など設定しエンティティ化する
+                    let itemEntity = this.addSpawnItemStatus(item);
+                    itemEntity.x = spot.x;
+                    itemEntity.y = spot.y;
+                    this.entities.items.push(itemEntity);
+
+                // 6マス目にバネを配置
+                } else if(placed === itemCount){
+                    const springTrap = this.trapMaster.filter(t => t.name==="バネの罠");
+
+                    this.entities.traps.push({
+                        uid: this.generateUid(), id: springTrap.id,
+                        x: spot.x, y: spot.y,
+                        type: 'trap',
+                        master: springTrap,
+                        isVisible: true
+                    });
+                    break;
+                }
+                placed++;
+            }
+        }
+
+
         // ドロップ共通処理（サビロボの罠、thiefの盗品、杖・指輪・矢の初期化含む）
         processEnemyDrop(enemy) {
             // サビロボの処理
             if (enemy.behavior === 'rustbot') {
                 const trapMaster = this.trapMaster.find(t => t.name === "サビの罠");
                 // 足元が床で、かつ、敵とアイテムが無い場合はサビの罠を配置する
-                if (trapMaster && this.map[enemy.y][enemy.x] === CONFIG.TILES.FLOOR && !this.entities.traps.some(t => t.x === enemy.x && t.y === enemy.y && !this.entities.items.some(t => t.x === enemy.x && t.y === enemy.y))) {
+                if (trapMaster && this.map[enemy.y][enemy.x] === CONFIG.TILES.FLOOR 
+                        && ( !this.entities.traps.some(t => t.x === enemy.x && t.y === enemy.y) && !this.entities.items.some(i => i.x === enemy.x && i.y === enemy.y) )) {
                     this.entities.traps.push({ uid: this.generateUid(), id: trapMaster.id, x: enemy.x, y: enemy.y, type: 'trap', master: trapMaster, isVisible: true });
                     //return; // 罠を設置した場合はアイテムドロップは無しとする
                 }
@@ -1051,13 +1402,16 @@
                 return;
             }
 
-            // 通常ドロップ判定
+            // ドロップ判定。
+            // 落とすアイテムIDの指定があれば、そのアイテムを。
+            // 指定が無ければそのフロアでスポーンするアイテムからランダムに選定
             if (Math.random() * 100 < (enemy.drop_rate || 2) && this.itemMaster.length > 0) {
                 let mId = enemy.drop_item_id;
-                m = mId ? this.itemMaster.find(i=>i.id===mId) : this.itemMaster[Math.floor(Math.random() * this.itemMaster.length)];
+                m = mId ? this.itemMaster.find(i=>i.id===mId) : this.getSpawnItemInfo(false);
             }
 
             if (m) {
+                /*
                 let mod = 0; let marks = []; let stack = 1; let uses = 0;
                 if (['weapon', 'shield'].includes(m.category)) {
                     if (m.mark) marks.push(m.mark);
@@ -1071,7 +1425,11 @@
                 } else if (m.category === 'wand') {
                     uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
                 }
+
                 const dItem = { uid: this.generateUid(), id: m.id, ...m, modifier: mod, marks: marks, slots: m.slots||0, stack: stack, uses: uses, isEquipped: false, type: 'item' };
+                */
+                // スポーンさせるアイテムに、UID、補正値など設定しエンティティ化する
+                const dItem = this.addSpawnItemStatus(m);
                 this.dropItemAt(dItem, enemy.x, enemy.y);
             }
         }
@@ -1308,6 +1666,7 @@
                     } else if (trap.master.type === 'alarm') {
                         this.log(`警報アラームが鳴り 全てのモンスターが目を覚ました`);
                         this.entities.enemies.forEach(e => e.isAwake = true);
+                        this.entities.enemies.forEach(e => e.isDeepSleep = false);
                     } else if (trap.master.type === 'mine' || trap.master.type === 'bigmine') {
 
                         let s = this.player.equipment.shield;
@@ -1403,11 +1762,15 @@
             if (hitEnemy) {
                 if (wand.name === "鈍足の杖") {
                     hitEnemy.statuses.slow = 10;
+                    hitEnemy.isAwake = true;
+                    hitEnemy.isDeepSleep = false;
                     this.log(`${this.fmtE(hitEnemy)}は 鈍足状態になった`);
                 } else if (wand.name === "場所替えの杖") {
                     let px = this.player.x, py = this.player.y;
                     this.player.x = hitEnemy.x; this.player.y = hitEnemy.y;
                     hitEnemy.x = px; hitEnemy.y = py;
+                    hitEnemy.isAwake = true;
+                    hitEnemy.isDeepSleep = false;
                     this.log(`${this.fmtP()}と ${this.fmtE(hitEnemy)}の 場所が入れ替わった`);
                 }
             } else {
@@ -1523,6 +1886,8 @@
                 enemy.hp -= dmg;
                 this.log(`炎が ${this.fmtE(enemy)}を包み込み ${dmg}ダメージを与えた`);
                 enemy.statuses.paralyzed = 0; // ダメージで解除
+                enemy.isAwake = true;
+                enemy.isDeepSleep = false;
                 if (enemy.hp <= 0) {
                     this.log(`${this.fmtE(enemy)}は 倒れた`);
                     this.entities.enemies = this.entities.enemies.filter(e => e.uid !== enemy.uid);
@@ -1538,7 +1903,7 @@
             this.checkTrapReveal(tx, ty);
  
             // ▼追記：使用（方向決定）が確定した時点で識別状態にする
-            if (this.fireballItem && !this.identifiedItemIDs.has(this.fireballItem.id)) {
+            if (this.config.unidentifyItems && this.fireballItem && !this.identifiedItemIDs.has(this.fireballItem.id)) {
                 this.identifiedItemIDs.add(this.fireballItem.id);
                 this.log(`${this.unidentifiedNames[this.fireballItem.id]}は ${this.fireballItem.name}だった`);
             }
@@ -1563,7 +1928,8 @@
             if (tile === CONFIG.TILES.STAIRS) {
                 this.showChoiceDialog("次のフロアに降りますか？", 
                     () => { this.floor++; this.initLevel(); }, 
-                    () => { this.gameState = 'PLAY'; } 
+                    () => { this.gameState = 'PLAY'; } ,
+                    () => { this.saveGame(); location.reload(); }
                 );
             } else if (item) {
                 this.showFeetItemMenu(item);
@@ -1631,9 +1997,7 @@
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
             }
 
-            if (this.player.hp <= 0) { 
-                alert("冒険失敗..."); location.reload(); return;
-            }
+
 
             let enemyMoves = 1;
             if (this.player.statuses.double_speed > 0) {
@@ -1669,7 +2033,23 @@
                 this.isOnStairs = false;
             }
 
+            // モンスターハウス入室処理
+            this.initMonsterHouse();
+
             this.draw();
+
+            if (this.player.hp <= 0) { 
+                const overlay = document.getElementById('floor-overlay');
+
+                this.log(`${this.fmtP()}は やられてしまった`);
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'block', 3000);
+                    alert("冒険失敗..."); location.reload(); return;
+                },1000);
+                
+            }
+
             if (this.gameState === 'ANIMATING') this.gameState = 'PLAY';
 
             if (this.isOnStairs) {
@@ -1790,16 +2170,21 @@
             if(isNaN(dmg)) dmg = 1;
             defEntity.hp -= dmg;
             defEntity.statuses.paralyzed = 0; 
-            
             this.log(`${atkName}は ${defName}に ${dmg}ダメージを与えた`);
 
-            if (defEntity.hp <= 0 && defEntity !== this.player) {
-                this.log(`${defName}は 倒れた`);
-                this.entities.enemies = this.entities.enemies.filter(e => e.uid !== defEntity.uid);
-                this.gainExp(defEntity.exp || 0);
-                
-                // アイテムドロップ
-                this.processEnemyDrop(defEntity);
+            // ダメージを与えた相手が敵キャラの場合、起こす
+            if (defEntity !== this.player) {
+                defEntity.isAwake = true; defEntity.isDeepSleep = false;       
+
+                // HPが0以下になったら、撃破処理＋アイテムドロップ
+                if (defEntity.hp <= 0) {
+                    this.log(`${defName}は 倒れた`);
+                    this.entities.enemies = this.entities.enemies.filter(e => e.uid !== defEntity.uid);
+                    this.gainExp(defEntity.exp || 0);
+                    
+                    // アイテムドロップ
+                    this.processEnemyDrop(defEntity);
+                }
             }
         }
 
@@ -1888,8 +2273,9 @@
                                         let otherEnemy = this.entities.enemies.find(oe => oe.x === cx && oe.y === cy && oe.uid !== e.uid);
                                         if (otherEnemy) {
                                             let arrowDmg = Math.max(1, Math.floor((e.atk + arrow.effects.atk - (otherEnemy.def||0) + 1) * (0.875 + Math.random() * 0.25)));
-                                            otherEnemy.hp -= arrowDmg;
+                                            otherEnemy.hp -= arrowDmg; otherEnemy.isAwake = true; otherEnemy.isDeepSleep = false;
                                             this.log(`${arrow.name}は ${this.fmtE(otherEnemy)}に 当たった`);
+                                            this.log(`${this.fmtE(otherEnemy)}は ${arrowDmg}ダメージを受けた`);
                                             if (otherEnemy.hp <= 0) {
                                                 this.log(`${this.fmtE(otherEnemy)}は 倒れた`);
                                                 this.entities.enemies = this.entities.enemies.filter(en => en.uid !== otherEnemy.uid);
@@ -1984,7 +2370,7 @@
                             }
                             break; 
                         }
-                    } else if (e.isAwake) {
+                    } else if (e.isAwake && !e.isDeepSleep) {
                         if (willMoveRandomly) {
                             this.executeRandomMove(e);
                         } else if (isFear && canSee) {
@@ -2367,10 +2753,12 @@
             // 使用した時点で未識別なら識別済みにする（草、巻物）
             // ▼修正: 対象選択・方向指定が必要なアイテムはここでは識別しない
             const requireTargetItems = ["識別の巻物", "パンの巻物", "合成の巻物", "天の恵みの巻物", "地の恵みの巻物", "メッキの巻物", "火炎草"];
-            if (['herb', 'scroll'].includes(item.category) && !requireTargetItems.includes(item.name)) {
-                if (!this.identifiedItemIDs.has(item.id)) {
-                    this.identifiedItemIDs.add(item.id);
-                    this.log(`${this.unidentifiedNames[item.id]}は ${item.name}だった`);
+            if (this.config.unidentifyItems){
+                if (['herb', 'scroll'].includes(item.category) && !requireTargetItems.includes(item.name)) {
+                    if (!this.identifiedItemIDs.has(item.id)) {
+                        this.identifiedItemIDs.add(item.id);
+                        this.log(`${this.unidentifiedNames[item.id]}は ${item.name}だった`);
+                    }
                 }
             }
 
@@ -2600,11 +2988,12 @@
                     const room = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
                     if (room) {
                         this.entities.enemies.forEach(e => {
-                            if (e.x >= room.x && e.x < room.x + room.w && e.y >= room.y && e.y < room.y + room.h) e.statuses.asleep = 10;
+                            if (e.x >= room.x && e.x < room.x + room.w && e.y >= room.y && e.y < room.y + room.h) e.statuses.asleep = 10; e.isAwake = true; e.isDeepSleep = false;
+
                         });
                     } else {
                         this.entities.enemies.forEach(e => {
-                            if (Math.abs(e.x - this.player.x) <= 1 && Math.abs(e.y - this.player.y) <= 1) e.statuses.asleep = 10;
+                            if (Math.abs(e.x - this.player.x) <= 1 && Math.abs(e.y - this.player.y) <= 1) e.statuses.asleep = 10; e.isAwake = true; e.isDeepSleep = false;
                         });
                     }
                     this.log(`周囲の敵は 眠りに落ちた`);
@@ -2630,6 +3019,8 @@
                             let dmg = Math.floor(Math.random() * 21) + 15;
                             e.hp -= dmg;
                             e.statuses.paralyzed = 0;
+                            e.isAwake = true; 
+                            e.isDeepSleep = false;
                             this.log(`真空の刃が ${this.fmtE(e)}に ${dmg}ダメージを与えた`);
                             if (e.hp <= 0) {
                                 this.log(`${this.fmtE(e)}は 倒れた`);
@@ -2702,8 +3093,12 @@
                     targetItem.isIdentified = true;
                     this.log(`${this.fmtI(targetItem)}が 識別された`);
                 } else {
-                    this.identifiedItemIDs.add(targetItem.id);
-                    this.log(`${this.unidentifiedNames[targetItem.id]}は ${targetItem.name}だった`);
+                    if (this.config.unidentifyItems){
+                        this.log(`${targetItem.name}は 識別済みだった`);    
+                    }else{
+                        this.identifiedItemIDs.add(targetItem.id);
+                        this.log(`${this.unidentifiedNames[targetItem.id]}は ${targetItem.name}だった`);
+                    }
                 }
                 success = true;
             } else if (scrollItem.name === "パンの巻物") {
@@ -2769,7 +3164,7 @@
             } 
 
             // ▼追記：効果が発動（確定）した場合に識別状態にする
-            if (success && scrollItem && !this.identifiedItemIDs.has(scrollItem.id)) {
+            if (this.config.unidentifyItems && success && scrollItem && !this.identifiedItemIDs.has(scrollItem.id)) {
                 this.identifiedItemIDs.add(scrollItem.id);
                 this.log(`${this.unidentifiedNames[scrollItem.id]}は ${scrollItem.name}だった`);
             }            
@@ -2854,7 +3249,7 @@
             }
 
             // ▼追記：合成が確定した場合に識別状態にする
-            if (success && this.synthScrollItem && !this.identifiedItemIDs.has(this.synthScrollItem.id)) {
+            if (this.config.unidentifyItems && success && this.synthScrollItem && !this.identifiedItemIDs.has(this.synthScrollItem.id)) {
                 this.identifiedItemIDs.add(this.synthScrollItem.id);
                 this.log(`${this.unidentifiedNames[this.synthScrollItem.id]}は ${this.synthScrollItem.name}だった`);
             }
@@ -3080,6 +3475,8 @@
                 for (let hit of hitEnemies) {
                     idx++;
                     let hitEnemy = hit.enemy;
+                    hitEnemy.isAwake = true;
+                    hitEnemy.isDeepSleep = false;
                     if (Math.random() < 0.15) {
                         this.log(`${thrownItem.emoji}${this.fmtI(thrownItem)}は 当たらなかった`);
                         if (!isPierce) this.dropItemAt(thrownItem, hit.x, hit.y);
