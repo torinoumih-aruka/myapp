@@ -186,7 +186,8 @@
             <ul>
                 <li>1～2階でも大部屋になるとモンハウになる不具合を修正</li>
                 <li>浮島とモンハウの発生確率を増やしました</li>
-
+                <li>浮島内にバネの罠が生成されない不具合を修正</li>
+            </ul>
             ==0.8.0==<br>
             <ul>
                 <li>モンスターハウスの概念追加。地下3階から5%の確率で生成します</li>
@@ -794,7 +795,7 @@
                             type = Math.random() < 0.15 ? MONHOUSE : NORMAL; 
                         // 2番目の部屋の縦幅、横幅がともに6マス以上であれば、30%の確率で浮島にする
                         } else if (roomCreatedCount === 1 && w >= 6 && h >= 6){
-                            type = Math.random() < 0.20 ? ISLAND : NORMAL; 
+                            type = Math.random() < 0.25 ? ISLAND : NORMAL; 
                         }
                     }
                     roomCreatedCount++;
@@ -1369,7 +1370,7 @@
 
                 // 6マス目にバネを配置
                 } else if(placed === itemCount){
-                    const springTrap = this.trapMaster.filter(t => t.name==="バネの罠");
+                    const springTrap = this.trapMaster.find(t => t.name==="バネの罠");
 
                     this.entities.traps.push({
                         uid: this.generateUid(), id: springTrap.id,
@@ -2920,7 +2921,7 @@
                     this.warpTarget(this.player); used = true;                   
                 } else if (item.name === "火炎草") {
                     this.gameState = 'FIREBALL_AIM';
-                    this.log("火炎を放つ方向を選んでください");
+                    this.log("使用する方向を選んでください");
                     document.getElementById('btn-center').innerHTML = '取消<br>❌';
                     used = true; 
                 } else if (item.name === "薬草") {
