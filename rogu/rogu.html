@@ -179,9 +179,13 @@
     <DIV id="release-note">
         <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
-        <h2>リリースノート v0.8.1</h2>
+        <h2>リリースノート v0.8.2</h2>
 
         <div id="release-note-scroll-area">
+            ==0.8.2==<br>
+            <ul>
+                <li>つづきからはじめて装備を変えたときに、セーブ前に装備していた装備品のEマークが取れない不具合を修正</li>
+            </ul>
             ==0.8.1==<br>
             <ul>
                 <li>1～2階でも大部屋になるとモンハウになる不具合を修正</li>
@@ -2746,12 +2750,20 @@
         equipItemLogic(item, isEquipping) {
             const cat = item.category;
             if (isEquipping) {
-                const currentEquip = this.player.equipment[cat];
+                const currentEquip = this.player.equipment[cat];              
                 if (currentEquip && currentEquip.marks && currentEquip.marks.includes("呪")) {
                     this.log(`${currentEquip.emoji}${this.fmtI(currentEquip)}は 呪われていて外せない`);
                     this.closeInventory(); return;
                 }
-                if (currentEquip) currentEquip.isEquipped = false;
+                if (currentEquip){
+                    const currentEquipInventory = this.player.inventory.find(i => i.uid === currentEquip.uid);  
+                    currentEquip.isEquipped = false;
+                    // セーブデータをロードした状態だと、
+                    // インベントリ内のアイテムと、Equipmentの中のアイテムが同じインスタンスじゃないため、
+                    // インベントリ内のアイテムに対しても明示的に装備フラグを解除する
+                    currentEquipInventory.isEquipped = false; 
+
+                } 
                 
                 item.isEquipped = true;
                 item.isIdentified = true; // 装備したら識別される
