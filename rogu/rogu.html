@@ -179,9 +179,19 @@
     <DIV id="release-note">
         <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
-        <h2>リリースノート v0.8.2</h2>
+        <h2>リリースノート v0.8.3</h2>
 
         <div id="release-note-scroll-area">
+            ==0.8.3==<br>
+            <ul>
+                <li>識別関連のバグ修正、メッセージの統一などを実施</li>
+                <li>杖の使用回数、武器、盾の補正値はUID単位で識別状態を管理するよう修正</li>
+                <li>使用回数が0以下の杖を使った時に、何も起こらずにターン経過するよう修正</li>
+                <li>使うことでインベントリを開くタイプの巻物をテストする為、全般的に出現確率を2倍に</li>
+                <li>「はじめから」を選んだ時に特定のアイテムを持った状態でスタートさせる機能を追加。今は識別の巻物×２</li>
+                <li>主人公の眠り状態を追加。また、睡眠草を追加。</li>
+                <li>主人公がかなしばり、眠り状態のときに勝手にターンが経過するように修正。モンスターが瞬間移動するけど、まあいいや</li>
+            </ul>
             ==0.8.2==<br>
             <ul>
                 <li>つづきからはじめて装備を変えたときに、セーブ前に装備していた装備品のEマークが取れない不具合を修正</li>
@@ -565,25 +575,26 @@
                     {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと別の部屋にワープする。<br>モンスターに当てても効果があるぞ"},
                     {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると怯える。"},
                     {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると混乱する。"},
-                    {id: "i413", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと罠が見えるようになる。"},
-                    {id: "i414", emoji: "🥬", name: "命の草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 4, description: "飲むと最大HPが5増える。"},
-                    {id: "i415", emoji: "🥬", name: "胃拡張の種", color: "cyan", category: "herb", effects: {hunger: 10}, consumable: true, spawn_rate: 4, description: "飲むと最大満腹度が10増える。"},
+                    {id: "i413", emoji: "🥬", name: "睡眠草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと眠る。敵に当てると眠る。"},
+                    {id: "i414", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと罠が見えるようになる。"},
+                    {id: "i415", emoji: "🥬", name: "命の草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 4, description: "飲むと最大HPが5増える。"},
+                    {id: "i416", emoji: "🥬", name: "胃拡張の種", color: "cyan", category: "herb", effects: {hunger: 10}, consumable: true, spawn_rate: 4, description: "飲むと最大満腹度が10増える。"},
 
-                    {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "武器を強化し、呪いを解く。"},
-                    {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "盾を強化し、呪いを解く。"},
+                    {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4+4, description: "武器を強化し、呪いを解く。"},
+                    {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4+4, description: "盾を強化し、呪いを解く。"},
                     {id: "i503", emoji: "📜", name: "バクスイの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵を眠らせる。"},
-                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, special_spawn:true,description: "ベースに素材を合成する。"},
+                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4+4, special_spawn:true,description: "ベースに素材を合成する。"},
                     {id: "i505", emoji: "📜", name: "かなしばりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "周囲の敵をかなしばりにする。"},
                     {id: "i506", emoji: "📜", name: "しんくうぎりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵にダメージを与える。"},
-                    {id: "i507", emoji: "📜", name: "メッキの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, description: "武器や盾がサビなくなる。"},
-                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムを識別する。"},
+                    {id: "i507", emoji: "📜", name: "メッキの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4+4, description: "武器や盾がサビなくなる。"},
+                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5+5, description: "アイテムを識別する。"},
                     {id: "i509", emoji: "📜", name: "地獄耳の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "敵の居場所がわかるようになる。フロア内のみ有効"},
                     {id: "i510", emoji: "📜", name: "千里眼の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムの場所がわかるようになる。フロア内のみ有効"},
                     {id: "i511", emoji: "📜", name: "水枯れの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "フロア中の水が枯れて、上を歩けるようになる。"},
                     {id: "i512", emoji: "📜", name: "大部屋の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 1,special_spawn:true, description: "フロア中の壁が崩れて大きな部屋になる。"},
-                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "選んだアイテムがパンになる。"},
+                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2+2, description: "選んだアイテムがパンになる。"},
 
-                    {id: "i601", emoji: "🪄", name: "鈍足の杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 5, spawn_rate: 4},
+                    {id: "i601", emoji: "🪄", name: "鈍足の杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 5+5, spawn_rate: 5},
                     {id: "i602", emoji: "🪄", name: "場所替えの杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 6, spawn_rate: 4}
                 ];
             }
@@ -705,7 +716,7 @@
                 maxHp: 15, hp: 15, maxHunger: 100, hunger: 100, 
                 maxStrength: 8, strength: 8, baseAtk: 5, baseDef: 0, 
                 atk: 0, def: 0,
-                statuses: { confused: 0, see_all: false, hear_all: false, double_speed: 0, slow: 0, paralyzed: 0 },
+                statuses: { confused: 0, see_all: false, hear_all: false, double_speed: 0, slow: 0, paralyzed: 0, asleep: 0 },
                 inventory: [], equipment: { weapon: null, shield: null, bracelet: null, projectile: null },
                 speed_extra_turn: false, speed_skip_turn: false
             };
@@ -747,6 +758,11 @@
             overlay.textContent = `地下 ${this.floor}階`;
             overlay.style.display = 'flex';
             overlay.style.opacity = '1';
+
+            // はじめからの場合にインベントリにアイテムを追加
+            if(isFirst){
+                this.initInventory();
+            }
             
             this.draw(true);
             
@@ -759,8 +775,72 @@
                 // モンスターハウス入室処理
                 this.initMonsterHouse();
             }, 100);
+        }
+
+        // ゲーム開始時にインベントリにアイテムを追加
+        initInventory() {
+
+            const itemM1 = this.itemMaster.find(b=>b.name==="識別の巻物");
+            const itemM2 = this.itemMaster.find(b=>b.name==="識別の巻物");
+
+            let mod = 0; let marks = []; let stack = 1;let uses = 0;let modifierIdentified = true;
+/*
+            if (['weapon', 'shield'].includes(m.category)) {
+                if (m.mark) marks.push(m.mark);
+                const r = Math.random() * 100;
+                if (r < 70) mod = 0; else if (r < 80) mod = 1; else if (r < 90) mod = 2; else if (r < 95) mod = 3; else mod = -1;
+                if (mod === -1 && !marks.includes("呪")) marks.push("呪");
+            } else if (m.category === 'bracelet') {
+                if (Math.random() < 0.3) marks.push("呪");
+            } else if (m.category === 'projectile') {
+                stack = Math.floor(Math.random() * 19) + 2; // 2~20
+            } else if (m.category === 'wand') {
+                uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
+            }
+
+            // ゲーム設定：装備が未識別
+            if(this.config.unidentifyEquip){
+                if (['weapon', 'shield'].includes(m.category)) {
+                    modifierIdentified = false;
+                }
+            }
+
+            // ゲームモードに関わらず、指輪、杖は補正値未識別とする
+            if (['bracelet', 'wand'].includes(m.category)) {
+                modifierIdentified = false;
+            }
+*/
+
+            this.player.inventory.push( { 
+                    uid: this.generateUid(), 
+                    id: itemM1.id,
+                    ...itemM1,
+                    modifier: mod, 
+                    marks: marks, 
+                    slots: itemM1.slots||0, 
+                    stack: stack, 
+                    uses: uses, 
+                    modifierIdentified: modifierIdentified,
+                    isEquipped: false, 
+                    type: 'item' 
+                });
+
+            this.player.inventory.push( { 
+                    uid: this.generateUid(), 
+                    id: itemM2.id,
+                    ...itemM2,
+                    modifier: mod, 
+                    marks: marks, 
+                    slots: itemM2.slots||0, 
+                    stack: stack, 
+                    uses: uses, 
+                    modifierIdentified: modifierIdentified,
+                    isEquipped: false, 
+                    type: 'item' 
+                });
 
         }
+
 
         // --- マップ・罠生成 ---
         generateMap() {
@@ -1107,7 +1187,7 @@
         // アイテムエンティティ情報として返却する。
         // 尚、位置情報はここでは付与しない。
         addSpawnItemStatus(m) {
-            let mod = 0; let marks = []; let stack = 1;let uses = 0;
+            let mod = 0; let marks = []; let stack = 1;let uses = 0;let modifierIdentified = true;
             if (['weapon', 'shield'].includes(m.category)) {
                 if (m.mark) marks.push(m.mark);
                 const r = Math.random() * 100;
@@ -1121,6 +1201,18 @@
                 uses = Math.floor(Math.random() * ((m.maxUses||6) - (m.minUses||3) + 1)) + (m.minUses||3);
             }
 
+            // ゲーム設定：装備が未識別
+            if(this.config.unidentifyEquip){
+                if (['weapon', 'shield'].includes(m.category)) {
+                    modifierIdentified = false;
+                }
+            }
+
+            // ゲームモードに関わらず、指輪、杖は補正値未識別とする
+            if (['bracelet', 'wand'].includes(m.category)) {
+                modifierIdentified = false;
+            }
+
             return { 
                     uid: this.generateUid(), 
                     id: m.id,
@@ -1130,6 +1222,7 @@
                     slots: m.slots||0, 
                     stack: stack, 
                     uses: uses, 
+                    modifierIdentified: modifierIdentified,
                     isEquipped: false, 
                     type: 'item' 
                 };
@@ -1771,16 +1864,16 @@
             document.getElementById('btn-center').innerHTML = '足踏み<br>⌛';
             
             const wand = this.wandItem;
-            wand.uses = (wand.uses || 0) - 1;
+            this.log(`${this.fmtP()}は ${this.fmtI(wand)}を振った`);
             
-            this.log(`${this.fmtP()}は ${this.fmtI(wand)}(${wand.uses >= 0 ? wand.uses : 0})を振った`);
-            
-            if (wand.uses < 0) {
+            if (wand.uses === 0) {
                 this.log(`しかし 何も起こらなかった`);
                 this.wandItem = null;
                 this.triggerTurn();
                 return;
             }
+
+            wand.uses = (wand.uses || 0) - 1;
 
             let cx = this.player.x, cy = this.player.y;
             let hitEnemy = null;
@@ -1846,7 +1939,7 @@
 
         handleCenterBtn() {
             if (this.isMsgAnimating) return;
-            if (['THROWING', 'SWINGING', 'FIREBALL_AIM'].includes(this.gameState)) {
+            if (['THROWING', 'SWINGING', 'FIREBALL_AIM', 'WAND_AIM'].includes(this.gameState)) {
                 this.endThrowMode();
             } else if (this.gameState === 'PLAY') {
                 if (this.player.statuses.paralyzed > 0) this.log(`${this.fmtP()}は かなしばりで動けない`);
@@ -1941,8 +2034,9 @@
  
             // ▼追記：使用（方向決定）が確定した時点で識別状態にする
             if (this.config.unidentifyItems && this.fireballItem && !this.identifiedItemIDs.has(this.fireballItem.id)) {
+                const unIdentifiedName = this.fmtI(this.fireballItem);
                 this.identifiedItemIDs.add(this.fireballItem.id);
-                this.log(`${this.unidentifiedNames[this.fireballItem.id]}は ${this.fireballItem.name}だった`);
+                this.log(`${this.fireballItem.emoji}${unIdentifiedName}は ${this.fireballItem.name}だった`);
             }
             this.fireballItem = null; // 使い終わったのでクリア
 
@@ -1980,122 +2074,135 @@
         async triggerTurn() {
             this.gameState = 'ANIMATING'; 
 
-            // 混乱の解除
-            if (this.player.statuses.confused > 0) {
-                this.player.statuses.confused--;
-                if (this.player.statuses.confused === 0) this.log(`${this.fmtP()}の 混乱が解けた`);
-            }
-            // かなしばりの解除
-            if (this.player.statuses.paralyzed > 0) {
-                this.player.statuses.paralyzed--;
-                if (this.player.statuses.paralyzed === 0) this.log(`${this.fmtP()}の かなしばりが解けた`);
-            }
-            // 倍速の解除
-            if (this.player.statuses.double_speed > 0) {
-                this.player.statuses.double_speed--;
-                if (this.player.statuses.double_speed === 0) this.log(`${this.fmtP()}の 倍速が解けた`);
-            }
-            // 鈍足の解除
-            if (this.player.statuses.slow > 0) {
-                this.player.statuses.slow--;
-                if (this.player.statuses.slow === 0) this.log(`${this.fmtP()}の 鈍足が解けた`);
-            }
+            do {
 
-            // 満腹度が減るターン数の設定
-            let hungerThreshold = 10;
-            // 皮の印：２倍にする
-            if (this.player.equipment.shield && this.player.equipment.shield.marks && this.player.equipment.shield.marks.includes("皮")) {
-                hungerThreshold *= 2;
-            }
-            // 重の印：1/2にする
-            if (this.player.equipment.shield && this.player.equipment.shield.marks && this.player.equipment.shield.marks.includes("重")) {
-                hungerThreshold = Math.floor(hungerThreshold/2);
-            }
+                // 混乱の解除
+                if (this.player.statuses.confused > 0) {
+                    this.player.statuses.confused--;
+                    if (this.player.statuses.confused === 0) this.log(`${this.fmtP()}の 混乱が解けた`);
+                }
+                // かなしばりの解除
+                if (this.player.statuses.paralyzed > 0) {
+                    this.player.statuses.paralyzed--;
+                    this.log(`${this.fmtP()}は かなしばりで動けない`);
+                    if (this.player.statuses.paralyzed === 0) this.log(`${this.fmtP()}の かなしばりが解けた`);   
+                }
+                // 睡眠の解除
+                if (this.player.statuses.asleep > 0) {
+                    this.player.statuses.asleep--;
+                    this.log(`${this.fmtP()}は 眠っている・・・`);
+                    if (this.player.statuses.asleep === 0) this.log(`${this.fmtP()}は 目が覚めた`);                    
+                }
+                // 倍速の解除
+                if (this.player.statuses.double_speed > 0) {
+                    this.player.statuses.double_speed--;
+                    if (this.player.statuses.double_speed === 0) this.log(`${this.fmtP()}の 倍速が解けた`);
+                }
+                // 鈍足の解除
+                if (this.player.statuses.slow > 0) {
+                    this.player.statuses.slow--;
+                    if (this.player.statuses.slow === 0) this.log(`${this.fmtP()}の 鈍足が解けた`);
+                }
 
-            this.hungerTurnCount++;
-            if (this.hungerTurnCount >= hungerThreshold) {
-                this.player.hunger--; this.hungerTurnCount = 0;
-            }
-            if (this.player.hunger <= 0) { 
-                this.player.hunger = 0; this.player.hp -= 1; this.log("お腹が空いて倒れそうだ...");
-            }
+                // 満腹度が減るターン数の設定
+                let hungerThreshold = 10;
+                // 皮の印：２倍にする
+                if (this.player.equipment.shield && this.player.equipment.shield.marks && this.player.equipment.shield.marks.includes("皮")) {
+                    hungerThreshold *= 2;
+                }
+                // 重の印：1/2にする
+                if (this.player.equipment.shield && this.player.equipment.shield.marks && this.player.equipment.shield.marks.includes("重")) {
+                    hungerThreshold = Math.floor(hungerThreshold/2);
+                }
 
-            this.hpRecoveryTurnCount++;
-            let healAmount = 0;
-            const lv = this.player.level;
-            if (lv <= 1 && this.hpRecoveryTurnCount >= 10) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
-            else if (lv >= 2 && lv <= 5 && this.hpRecoveryTurnCount >= 8) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
-            else if (lv >= 6 && lv <= 9 && this.hpRecoveryTurnCount >= 5) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
-            else if (lv >= 10 && lv <= 13) { healAmount = 1; this.hpRecoveryTurnCount = 0;}
-            else if (lv >= 14 && lv <= 17) { healAmount = 2; this.hpRecoveryTurnCount = 0;}
-            else if (lv >= 18) { healAmount = 3; this.hpRecoveryTurnCount = 0;}
-            
-            if (healAmount > 0 && this.player.hp < this.player.maxHp) {
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
-            }
+                this.hungerTurnCount++;
+                if (this.hungerTurnCount >= hungerThreshold) {
+                    this.player.hunger--; this.hungerTurnCount = 0;
+                }
+                if (this.player.hunger <= 0) { 
+                    this.player.hunger = 0; this.player.hp -= 1; this.log("お腹が空いて倒れそうだ...");
+                }
+
+                this.hpRecoveryTurnCount++;
+                let healAmount = 0;
+                const lv = this.player.level;
+                if (lv <= 1 && this.hpRecoveryTurnCount >= 10) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+                else if (lv >= 2 && lv <= 5 && this.hpRecoveryTurnCount >= 8) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+                else if (lv >= 6 && lv <= 9 && this.hpRecoveryTurnCount >= 5) { healAmount = 1; this.hpRecoveryTurnCount = 0; }
+                else if (lv >= 10 && lv <= 13) { healAmount = 1; this.hpRecoveryTurnCount = 0;}
+                else if (lv >= 14 && lv <= 17) { healAmount = 2; this.hpRecoveryTurnCount = 0;}
+                else if (lv >= 18) { healAmount = 3; this.hpRecoveryTurnCount = 0;}
+                
+                if (healAmount > 0 && this.player.hp < this.player.maxHp) {
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
+                }
 
 
 
-            let enemyMoves = 1;
-            if (this.player.statuses.double_speed > 0) {
-                this.player.speed_extra_turn = !this.player.speed_extra_turn;
-                if (this.player.speed_extra_turn) enemyMoves = 0; 
-            } else if (this.player.statuses.slow > 0) {
-                enemyMoves = 2; 
-            }
+                let enemyMoves = 1;
+                if (this.player.statuses.double_speed > 0) {
+                    this.player.speed_extra_turn = !this.player.speed_extra_turn;
+                    if (this.player.speed_extra_turn) enemyMoves = 0; 
+                } else if (this.player.statuses.slow > 0) {
+                    enemyMoves = 2; 
+                }
 
-            for(let i=0; i<enemyMoves; i++) {
-                this.turnCount++;
-                if (this.turnCount > this.config.respawnTurn && this.entities.enemies.length < this.config.maxEnemies && this.enemyMaster.length > 0) {
-                    this.turnCount = 0;
-                    let safe = false; let sx, sy;
-                    for(let j=0; j<20; j++){                   
-                        const pos = this.getRandomValidPos();
-                        if(Math.abs(pos.x - this.player.x) > 10 || Math.abs(pos.y - this.player.y) > 10) {
-                            sx = pos.x; sy = pos.y; safe = true; break;
+                for(let i=0; i<enemyMoves; i++) {
+                    this.turnCount++;
+                    if (this.turnCount > this.config.respawnTurn && this.entities.enemies.length < this.config.maxEnemies && this.enemyMaster.length > 0) {
+                        this.turnCount = 0;
+                        let safe = false; let sx, sy;
+                        for(let j=0; j<20; j++){                   
+                            const pos = this.getRandomValidPos();
+                            if(Math.abs(pos.x - this.player.x) > 10 || Math.abs(pos.y - this.player.y) > 10) {
+                                sx = pos.x; sy = pos.y; safe = true; break;
+                            }
+                        }
+                        if (safe) {
+                            const availableEnemies = this.enemyMaster.filter(m => !m.spawn_floors || m.spawn_floors.includes(this.floor));
+                            this.spawnEnemyAt(sx, sy, availableEnemies.length > 0 ? availableEnemies : this.enemyMaster);
                         }
                     }
-                    if (safe) {
-                        const availableEnemies = this.enemyMaster.filter(m => !m.spawn_floors || m.spawn_floors.includes(this.floor));
-                        this.spawnEnemyAt(sx, sy, availableEnemies.length > 0 ? availableEnemies : this.enemyMaster);
+                    await this.moveEnemies();
+                }
+
+                // 敵の移動後に階段判定
+                if (this.map[this.player.y][this.player.x] === CONFIG.TILES.STAIRS && this.player.hp > 0) {
+                    this.isOnStairs = true;
+                } else {
+                    this.isOnStairs = false;
+                }
+
+                // モンスターハウス入室処理
+                this.initMonsterHouse();
+
+                this.draw();
+
+                if (this.player.hp <= 0) { 
+                    const overlay = document.getElementById('floor-overlay');
+
+                    this.log(`${this.fmtP()}は やられてしまった`);
+                    setTimeout(() => {
+                        overlay.style.opacity = '0';
+                        setTimeout(() => overlay.style.display = 'block', 3000);
+                        alert("冒険失敗..."); location.reload(); return;
+                    },1000);
+                    
+                }
+
+                if (this.gameState === 'ANIMATING') this.gameState = 'PLAY';
+
+                if(this.player.statuses.paralyzed === 0 && this.player.statuses.asleep === 0){
+                    if (this.isOnStairs) {
+                        this.showChoiceDialog("次のフロアに降りますか？", 
+                            () => { this.floor++; this.initLevel(); }, 
+                            () => { this.gameState = 'PLAY'; },
+                            () => { this.saveGame(); location.reload(); } // セーブしてやめる
+                        );
                     }
                 }
-                await this.moveEnemies();
-            }
 
-            // 敵の移動後に階段判定
-            if (this.map[this.player.y][this.player.x] === CONFIG.TILES.STAIRS && this.player.hp > 0) {
-                this.isOnStairs = true;
-            } else {
-                this.isOnStairs = false;
-            }
-
-            // モンスターハウス入室処理
-            this.initMonsterHouse();
-
-            this.draw();
-
-            if (this.player.hp <= 0) { 
-                const overlay = document.getElementById('floor-overlay');
-
-                this.log(`${this.fmtP()}は やられてしまった`);
-                setTimeout(() => {
-                    overlay.style.opacity = '0';
-                    setTimeout(() => overlay.style.display = 'block', 3000);
-                    alert("冒険失敗..."); location.reload(); return;
-                },1000);
-                
-            }
-
-            if (this.gameState === 'ANIMATING') this.gameState = 'PLAY';
-
-            if (this.isOnStairs) {
-                this.showChoiceDialog("次のフロアに降りますか？", 
-                    () => { this.floor++; this.initLevel(); }, 
-                    () => { this.gameState = 'PLAY'; },
-                    () => { this.saveGame(); location.reload(); } // セーブしてやめる
-                );
-            }
+            } while (this.player.statuses.paralyzed > 0 || this.player.statuses.asleep > 0);
         }
 
         async playAttackAnim(attacker, tx, ty) {
@@ -2620,8 +2727,11 @@
                     name += `(未識別)`;
                     isUnidentified = true;
                 } else {
-                    if (item.modifier > 0) name += `+${item.modifier}`;
-                    else if (item.modifier < 0) name += `${item.modifier}`;
+                    // 補正値識別済みか
+                    if(item.modifierIdentified === true){
+                        if (item.modifier > 0) name += `+${item.modifier}`;
+                        else if (item.modifier < 0) name += `${item.modifier}`;
+                    }
                 }
             } else if (['herb', 'scroll', 'wand', 'bracelet'].includes(item.category)) {
                 if (this.config.unidentifyItems && !this.identifiedItemIDs.has(item.id)) {
@@ -2631,7 +2741,13 @@
             }
 
             if (item.category === 'projectile' && item.stack > 0) name += `(${item.stack})`;
-            if (item.category === 'wand') name += `(${item.uses || 0})`;
+
+            if(item.modifierIdentified === true){
+                if (item.category === 'wand') name += `(${item.uses || 0})`;
+            } else {
+                if (item.category === 'wand') name += `(?)`;
+                isUnidentified = true;
+            }
             
             let marksText = "";
             if (item.marks && item.marks.length > 0) {
@@ -2767,6 +2883,7 @@
                 
                 item.isEquipped = true;
                 item.isIdentified = true; // 装備したら識別される
+                item.modifierIdentified = true;
                 this.player.equipment[cat] = item;
                 
                 // 指輪装備時、水の上で外した判定のための事前準備
@@ -2801,8 +2918,9 @@
             if (this.config.unidentifyItems){
                 if (['herb', 'scroll'].includes(item.category) && !requireTargetItems.includes(item.name)) {
                     if (!this.identifiedItemIDs.has(item.id)) {
+                        const unIdentifiedName = this.fmtI(item);
                         this.identifiedItemIDs.add(item.id);
-                        this.log(`${this.unidentifiedNames[item.id]}は ${item.name}だった`);
+                        this.log(`${item.emoji}${unIdentifiedName}は ${this.fmtI(item)}だった`);
                     }
                 }
             }
@@ -2982,6 +3100,12 @@
                     this.player.maxHunger += 10;
                     this.log(`${this.fmtP()}の 最大満腹度が10増えた`);
                     used = true;
+                } else if (item.name === "睡眠草") {
+                    this.log(`${item.emoji}${this.fmtI(item)}を 飲んだ`);
+                    this.player.hunger = Math.min(this.player.maxHunger, this.player.hunger + (item.effects.hunger||0));
+                    this.player.statuses.asleep = 5;
+                    this.log(`${this.fmtP()}は 眠ってしまった`);
+                    used = true;
                 } else {
                     if (this.player.hp >= this.player.maxHp) this.player.maxHp += 1;
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + (item.effects.hp||0));
@@ -3134,21 +3258,49 @@
             let success = false;
             
             if (scrollItem.name === "識別の巻物") {
+
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
+
+                // 武器、盾の場合
                 if (['weapon', 'shield'].includes(targetItem.category)) {
                     targetItem.isIdentified = true;
-                    this.log(`${this.fmtI(targetItem)}が 識別された`);
+                    targetItem.modifierIdentified = true;
+                    this.log(`${targetItem.emoji}${this.fmtI(targetItem)}を 識別した`);
+                // 食べ物、投擲武器は識別不要の為てきとうなメッセージを出す
+                } else if(['food', 'projectile'].includes(targetItem.category)){
+                    targetItem.isIdentified = true;
+                    targetItem.modifierIdentified = true;
+                    this.log(`${targetItem.emoji}${this.fmtI(targetItem)}を 識別した`);
+                // 指輪、杖、草、巻物の場合
                 } else {
-                    if (this.config.unidentifyItems){
-                        this.log(`${targetItem.name}は 識別済みだった`);    
-                    }else{
+                    // ゲームモードがアイテム未識別で、未識別アイテムIDの場合
+                    if(this.config.unidentifyItems && !this.identifiedItemIDs.has(targetItem.id)){
+                        const unIdentifiedName = this.fmtI(targetItem);
                         this.identifiedItemIDs.add(targetItem.id);
-                        this.log(`${this.unidentifiedNames[targetItem.id]}は ${targetItem.name}だった`);
+                        targetItem.modifierIdentified = true;
+                        this.log(`${targetItem.emoji}${unIdentifiedName}は ${this.fmtI(targetItem)}だった`);
+                    // ゲームモードがアイテム未識別で、識別済みアイテムIDの場合
+                    } else if(this.config.unidentifyItems && this.identifiedItemIDs.has(targetItem.id)){
+                        // 補正値も識別済みの場合
+                        if(targetItem.modifierIdentified){
+                            this.log(`${targetItem.emoji}${this.fmtI(targetItem)}を 識別した`);
+                        // 補正値は未識別の場合
+                        } else {
+                            const unIdentifiedName = this.fmtI(targetItem);
+                            this.identifiedItemIDs.add(targetItem.id);
+                            targetItem.modifierIdentified = true;
+                            this.log(`${targetItem.emoji}${unIdentifiedName}は ${this.fmtI(targetItem)}だった`);
+                        }
+                    } else {
+                        this.log(`${targetItem.emoji}${this.fmtI(targetItem)}は 識別した`);
                     }
                 }
                 success = true;
             } else if (scrollItem.name === "パンの巻物") {
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
                 const panMaster = this.itemMaster.find(m => m.name === "パン");
                 const oldName = this.fmtI(targetItem);
+                const oldEmoji = targetItem.emoji;
                 
                 // パン化
                 targetItem.id = panMaster.id; targetItem.name = panMaster.name;
@@ -3160,9 +3312,12 @@
                     this.player.equipment[targetItem.category] = null;
                     this.recalculateStats();
                 }
-                this.log(`${oldName}は パンに変化した`);
+                this.log(`${oldEmoji}${oldName}は ${this.fmtI(targetItem)}に変化した`);
                 success = true;
             } else if (this.scrollTargetCategory === 'any_equip') { 
+
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
+
                 // メッキの巻物の指輪対応
                 if (targetItem.category === 'bracelet') {
                     if (targetItem.marks) {
@@ -3189,17 +3344,19 @@
                     }
                 }
             } else if (targetItem.category === this.scrollTargetCategory) {
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
                 let isCursed = targetItem.marks && targetItem.marks.includes("呪");
                 if (isCursed) {
                     targetItem.marks = targetItem.marks.filter(m => m !== "呪");
                     this.log(`${targetItem.emoji}${this.fmtI(targetItem)}の 呪いが解けた`);
                 }
                 const up = Math.random() < 0.05 ? 3 : 1;
-                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ ${targetItem.emoji}${this.fmtI(targetItem)}が+${up}された！`);
+                this.log(`${targetItem.emoji}${this.fmtI(targetItem)}が+${up}された！`);
                 targetItem.modifier += up;
                 this.recalculateStats();
                 success = true;
             } else {
+                this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
                 this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}は 効果が現れなかった`);
             }
             
@@ -3210,8 +3367,9 @@
 
             // ▼追記：効果が発動（確定）した場合に識別状態にする
             if (this.config.unidentifyItems && success && scrollItem && !this.identifiedItemIDs.has(scrollItem.id)) {
+                const unidentifiedName = this.fmtI(scrollItem);
                 this.identifiedItemIDs.add(scrollItem.id);
-                this.log(`${this.unidentifiedNames[scrollItem.id]}は ${scrollItem.name}だった`);
+                this.log(`${scrollItem.emoji}${unidentifiedName}は ${this.fmtI(scrollItem)}だった`);
             }            
 
             this.scrollItem = null;
@@ -3295,8 +3453,9 @@
 
             // ▼追記：合成が確定した場合に識別状態にする
             if (this.config.unidentifyItems && success && this.synthScrollItem && !this.identifiedItemIDs.has(this.synthScrollItem.id)) {
+                const unidentifiedName = this.fmtI(this.synthScrollItem);
                 this.identifiedItemIDs.add(this.synthScrollItem.id);
-                this.log(`${this.unidentifiedNames[this.synthScrollItem.id]}は ${this.synthScrollItem.name}だった`);
+                this.log(`${this.synthScrollItem.emoji}${unidentifiedName}は ${this.fmtI(this.synthScrollItem)}だった`);
             }
 
             this.synthScrollItem = null;
@@ -3422,6 +3581,10 @@
                 if (this.fireballSource === 'feet') this.entities.items.push(this.fireballItem);
                 this.fireballItem = null;
             }
+            if(this.wandItem) {
+                if (this.wandSource === 'feet') this.entities.items.push(this.wandItem);
+                this.wandItem = null;
+            } 
         }
 
         // 撃つ、投げるの実行処理
@@ -3533,8 +3696,13 @@
                                 this.devolveEnemy(hitEnemy);
                             } else if (thrownItem.name === "まどわし草") {
                                 hitEnemy.behavior = 'fear';
+                                this.log(`${this.fmtE(hitEnemy)}は 怯えだした`);
                             } else if (thrownItem.name === "混乱草") {
                                 hitEnemy.statuses.confused = 20;
+                                this.log(`${this.fmtE(hitEnemy)}は 混乱した`);
+                            } else if (thrownItem.name === "睡眠草") {
+                                hitEnemy.statuses.asleep = 5;
+                                this.log(`${this.fmtE(hitEnemy)}を 眠らせた`);
                             } else if (thrownItem.name === "毒草") {
                                 hitEnemy.hp -= 5;
                                 hitEnemy.statuses.slow = 10;
