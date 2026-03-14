@@ -179,9 +179,18 @@
     <DIV id="release-note">
         <button id="release-note-close-btn" onclick="closeReleaseNote()">&times;</button>
 
-        <h2>リリースノート v0.8.3</h2>
+        <h2>リリースノート v0.8.3.1</h2>
 
         <div id="release-note-scroll-area">
+            ==0.8.3.1==<br>
+            <ul>
+                <li>メッキ、天の恵み、地の恵みを使ったときに、効果が無い場合でも識別されるよう修正</li>
+                <li>全般的に道具の説明文を刷新</li>
+                <li>指輪の呪い状態が、未識別状態では表示されないよう修正</li>
+                <li>使用回数が未識別状態の杖に対して、識別の巻物を使うことで使用回数が開示されるよう修正</li>
+                <li>「はじめから」を選んだ時に特定のアイテムを持った状態でスタートさせる機能を追加。パン１つを持った状態で始まる。</li>
+                <li>合成をするときに、装備中の呪われている道具をベース／素材として選択できないよう修正</li>
+            </ul>
             ==0.8.3==<br>
             <ul>
                 <li>識別関連のバグ修正、メッセージの統一などを実施</li>
@@ -531,71 +540,71 @@
                     {id: "e092", emoji: "🕷️", name: "べに毒グモ", color: "red", overlay_color: "rgba(255,50,50,0.7)", hp: 35, exp: 28, atk: 19, def: 6, spawn_floors: [11,12],drop_rate: 5, behavior: "poisonspider", attributes: ["drain"]}
                 ];
                 this.itemMaster = [
-                    {id: "i001", emoji: "🗡️", name: "ダガー", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 3, accuracy: 95, consumable: false, spawn_rate: 15, description: "攻撃力+2<br>基本の武器。"},
-                    {id: "i002", emoji: "🗡️", name: "どうのつるぎ", color: "cyan", category: "weapon", effects: {atk: 5}, slots: 4, accuracy: 95, consumable: false, spawn_rate: 10, description: "攻撃力+5<br>基本の武器。"},
-                    {id: "i003", emoji: "🗡️", name: "はがねのつるぎ", color: "cyan", category: "weapon", effects: {atk: 9}, slots: 5, accuracy: 95, consumable: false, spawn_rate: 5, min_floor: 5 ,description: "攻撃力+9<br>基本の武器。"},
-                    {id: "i004", emoji: "🗡️", name: "おにたいじ", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "鬼", accuracy: 95, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>鬼に特効がある武器。"},
-                    {id: "i005", emoji: "🗡️", name: "ゾンビバスター", color: "cyan", category: "weapon", effects: {atk: 5}, slots: 2, mark: "仏", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+5<br>ゴースト系に特効がある武器。"},
-                    {id: "i006", emoji: "🗡️", name: "ドラゴンキラー", color: "cyan", category: "weapon", effects: {atk: 8}, slots: 2, mark: "竜", spawn_rate: 5, min_floor: 5 ,accuracy: 95, consumable: false, spawn_rate: 5, description: "攻撃力+8<br>ドラゴン系に特効がある武器。"},
-                    {id: "i007", emoji: "🗡️", name: "ドレインバスター", color: "cyan", category: "weapon", effects: {atk: 4}, slots: 2, mark: "ド", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+4<br>ドレイン系に特効がある武器。"},
-                    {id: "i008", emoji: "🗡️", name: "トライデント", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "水", spawn_rate: 5,accuracy: 85, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>水棲系に特効がある武器。"},
-                    {id: "i009", emoji: "🗡️", name: "妖刀かまいたち", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 2, mark: "三", spawn_rate: 5, min_floor: 5 , description: "攻撃力+2<br>前三方向に攻撃。"},
-                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 1, special_spawn:true, description: "攻撃力+3<br>スロット数が多い聖なるダガー"},
+                    {id: "i001", emoji: "🗡️", name: "ダガー", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 3, accuracy: 95, consumable: false, spawn_rate: 15, description: "攻撃力+2<br>小型の護身用のダガー。<br>メイン武器としては心もとない。"},
+                    {id: "i002", emoji: "🗡️", name: "どうのつるぎ", color: "cyan", category: "weapon", effects: {atk: 5}, slots: 4, accuracy: 95, consumable: false, spawn_rate: 10, description: "攻撃力+5<br>銅でできたスタンダードな短剣。"},
+                    {id: "i003", emoji: "🗡️", name: "はがねのつるぎ", color: "cyan", category: "weapon", effects: {atk: 9}, slots: 5, accuracy: 95, consumable: false, spawn_rate: 5, min_floor: 5 ,description: "攻撃力+9<br>鋼鉄でできた、多くの冒険者が愛用している剣。<br>高い攻撃力とスロット数が人気。"},
+                    {id: "i004", emoji: "🗡️", name: "おにたいじ", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "鬼", accuracy: 95, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>鬼属のモンスターに特に効果のある鉱石で作られた剣。"},
+                    {id: "i005", emoji: "🗡️", name: "ゾンビバスター", color: "cyan", category: "weapon", effects: {atk: 5}, slots: 2, mark: "仏", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+5<br>ゴースト属のモンスターが嫌う鉱石で作られた剣。"},
+                    {id: "i006", emoji: "🗡️", name: "ドラゴンキラー", color: "cyan", category: "weapon", effects: {atk: 8}, slots: 2, mark: "竜", spawn_rate: 5, min_floor: 5 ,accuracy: 95, consumable: false, spawn_rate: 5, description: "攻撃力+8<br>ドラゴン属の堅い皮膚をも貫く鋭さがある剣。"},
+                    {id: "i007", emoji: "🗡️", name: "ドレインバスター", color: "cyan", category: "weapon", effects: {atk: 4}, slots: 2, mark: "ド", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+4<br>ドレイン属のモンスターが苦手な鉱石を使用した剣。"},
+                    {id: "i008", emoji: "🗡️", name: "トライデント", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "水", spawn_rate: 5,accuracy: 85, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>水棲属のモンスターが恐れている、海底を統治する一族の武器。"},
+                    {id: "i009", emoji: "🗡️", name: "妖刀かまいたち", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 2, mark: "三", spawn_rate: 5, min_floor: 5 , description: "攻撃力+2<br>剣を振ると、周囲にかまいたちを発生させ、前三方向を同時に攻撃する妖剣。"},
+                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 1, special_spawn:true, description: "攻撃力+3<br>スロット数が多い聖なるダガー。"},
 
-                    {id: "i101", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, consumable: false, spawn_rate: 15, description: "防御力+2<br>基本の盾。"},
-                    {id: "i102", emoji: "🛡️", name: "青銅甲の盾", color: "cyan", category: "shield", effects: {def: 4}, slots: 4, consumable: false, spawn_rate: 10, description: "防御力+4<br>基本の盾。"},
-                    {id: "i103", emoji: "🛡️", name: "鉄甲の盾", color: "cyan", category: "shield", effects: {def: 6}, slots: 5, consumable: false, spawn_rate: 5, min_floor: 5 ,description: "防御力+6<br>基本の盾。"},
-                    {id: "i104", emoji: "🛡️", name: "皮の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 2, mark: "皮", consumable: false, spawn_rate: 10, description: "防御力+2<br>お腹が減りにくくなる盾。"},
+                    {id: "i101", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, consumable: false, spawn_rate: 15, description: "防御力+2<br>木製の簡易的な盾。"},
+                    {id: "i102", emoji: "🛡️", name: "青銅甲の盾", color: "cyan", category: "shield", effects: {def: 4}, slots: 4, consumable: false, spawn_rate: 10, description: "防御力+4<br>青銅でできた中型の盾。"},
+                    {id: "i103", emoji: "🛡️", name: "鉄甲の盾", color: "cyan", category: "shield", effects: {def: 6}, slots: 5, consumable: false, spawn_rate: 5, min_floor: 5 ,description: "防御力+6<br>鉄製の、多くの冒険者が愛用している盾。<br>高い防御力とスロット数が人気。"},
+                    {id: "i104", emoji: "🛡️", name: "皮の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 2, mark: "皮", consumable: false, spawn_rate: 10, description: "防御力+2<br>装備するとお腹が減りにくくなる盾。皮でできているものの、サビるため注意。"},
                     {id: "i105", emoji: "🛡️", name: "うろこの盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, mark: "鱗", spawn_rate: 5, description: "防御力+2<br>毒をふせぐ鱗で覆われた盾。"},
                     {id: "i106", emoji: "🛡️", name: "耐爆の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 2, mark: "爆", spawn_rate: 5, description: "防御力+2<br>爆発から身を守る盾。"},
                     {id: "i107", emoji: "🛡️", name: "重装の盾", color: "cyan", category: "shield", effects: {def: 9}, slots: 2, mark: "重", spawn_rate: 5, description: "防御力+9<br>お腹が減りやすいが優秀な防御力を誇る盾。"},
                     {id: "i110", emoji: "🛡️", name: "聖なる木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 8, consumable: false, spawn_rate: 1,special_spawn:true, description: "防御力+2<br>スロットの数が多い聖なる木甲の盾。"},
 
-                    {id: "i201", emoji: "💍", name: "水路の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 1,special_spawn:true, description: "水の上を歩けるようになる指輪。"},
-                    {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3, description: "投げたアイテムが敵や壁を貫通するようになる指輪。"},
+                    {id: "i201", emoji: "💍", name: "水路の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 1,special_spawn:true, description: "装備すると、水の上を歩けるようになるぞ。"},
+                    {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3, description: "装備すると、投げたアイテムがモンスターや壁を貫通するようになるぞ。"},
 
                     {id: "i251", emoji: "🏹", name: "木の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 10, description: "装備して撃つことができる矢。"},
-                    {id: "i252", emoji: "🏹", name: "鉄の矢", color: "cyan", category: "projectile", effects: {atk: 8}, consumable: true, spawn_rate: 7},
-                    {id: "i253", emoji: "🏹", name: "銀の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 4, pierce: true},
+                    {id: "i252", emoji: "🏹", name: "鉄の矢", color: "cyan", category: "projectile", effects: {atk: 8}, consumable: true, spawn_rate: 7, description: "装備して撃つことができる鉄製の矢。<br>木の矢よりは威力が高い。"},
+                    {id: "i253", emoji: "🏹", name: "銀の矢", color: "cyan", category: "projectile", effects: {atk: 3}, consumable: true, spawn_rate: 4, description: "装備して撃つことができる銀製の矢。<br>モンスターや壁を貫通しダメージを与えるぞ。" ,pierce: true},
 
-                    {id: "i301", emoji: "🥖", name: "パン", color: "cyan", category: "food", effects: {hunger: 50}, consumable: true, spawn_rate: 10, description: "満腹度が50回復する。"},
-                    {id: "i302", emoji: "🥖", name: "大きなパン", color: "cyan", category: "food", effects: {hunger: 100}, consumable: true, spawn_rate: 5, description: "満腹度が100回復する。"},
-                    {id: "i303", emoji: "🥖", name: "巨大なパン", color: "cyan", category: "food", effects: {hunger: 999}, consumable: true, spawn_rate: 2, special_spawn:true, description: "満腹度が最大まで回復する。"},
-                    {id: "i304", emoji: "🥖", name: "くさったパン", color: "cyan", category: "food", effects: {hunger: 20}, consumable: true, spawn_rate: 5, description: "満腹度は回復するがHPとちからが減る。"},
+                    {id: "i301", emoji: "🥖", name: "パン", color: "cyan", category: "food", effects: {hunger: 50}, consumable: true, spawn_rate: 10, description: "満腹度が50回復するぞ。"},
+                    {id: "i302", emoji: "🥖", name: "大きなパン", color: "cyan", category: "food", effects: {hunger: 100}, consumable: true, spawn_rate: 5, description: "満腹度が100回復するぞ。"},
+                    {id: "i303", emoji: "🥖", name: "巨大なパン", color: "cyan", category: "food", effects: {hunger: 999}, consumable: true, spawn_rate: 2, special_spawn:true, description: "満腹度が最大まで回復するぞ。"},
+                    {id: "i304", emoji: "🥖", name: "くさったパン", color: "cyan", category: "food", effects: {hunger: 20}, consumable: true, spawn_rate: 5, description: "満腹度は少し回復するがHPとちからが減るぞ。"},
 
-                    {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20, min_floor: 1, description: "HPが25回復する。<br>合成で「薬」印。"},
-                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "弟", consumable: true, spawn_rate: 10, description: "HPが100回復する。<br>合成で「弟」印。"},
-                    {id: "i403", emoji: "🥬", name: "しあわせ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 2, description: "飲むとレベルが上がる。"},
-                    {id: "i404", emoji: "🥬", name: "不幸の種", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 1, description: "飲むとレベルが下がる。"},
-                    {id: "i405", emoji: "🥬", name: "毒草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとHPとちからが減り、鈍足になる。"},
-                    {id: "i406", emoji: "🥬", name: "すばやさ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと倍速になる。"},
-                    {id: "i407", emoji: "🥬", name: "毒消し草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからが回復する。"},
-                    {id: "i408", emoji: "🥬", name: "ちからのたね", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからの最大値と現在値が上がる。"},
-                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "炎を放ち目の前に大ダメージを与える。"},
-                    {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと別の部屋にワープする。<br>モンスターに当てても効果があるぞ"},
-                    {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると怯える。"},
-                    {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと混乱する。敵に当てると混乱する。"},
-                    {id: "i413", emoji: "🥬", name: "睡眠草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと眠る。敵に当てると眠る。"},
-                    {id: "i414", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと罠が見えるようになる。"},
-                    {id: "i415", emoji: "🥬", name: "命の草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 4, description: "飲むと最大HPが5増える。"},
-                    {id: "i416", emoji: "🥬", name: "胃拡張の種", color: "cyan", category: "herb", effects: {hunger: 10}, consumable: true, spawn_rate: 4, description: "飲むと最大満腹度が10増える。"},
+                    {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20+80, min_floor: 1, description: "飲むとHPが25回復するぞ。<br>武器に合成することもできるぞ。"},
+                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "弟", consumable: true, spawn_rate: 10+90, description: "飲むとHPが100回復するぞ。<br>武器に合成することもできるぞ。"},
+                    {id: "i403", emoji: "🥬", name: "しあわせ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 2, description: "飲むとレベルが1上がるぞ。"},
+                    {id: "i404", emoji: "🥬", name: "不幸の種", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 1, description: "飲むとレベルが1下がるぞ。"},
+                    {id: "i405", emoji: "🥬", name: "毒草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとHPとちからが減り<br>一定ターン鈍足状態になるぞ。"},
+                    {id: "i406", emoji: "🥬", name: "すばやさ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと一定ターン倍速状態になるぞ。"},
+                    {id: "i407", emoji: "🥬", name: "毒消し草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからが最大値まで回復するぞ。"},
+                    {id: "i408", emoji: "🥬", name: "ちからのたね", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとちからが1増えるぞ。<br>ちからが最大値のときに飲むと 最大値も1増えるぞ。"},
+                    {id: "i409", emoji: "🥬", name: "火炎草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと、目の前のモンスターに炎で大ダメージを与えるぞ。<br>投げた場合は効果が少し減るぞ。"},
+                    {id: "i410", emoji: "🥬", name: "高とび草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとどこかの部屋にワープするぞ。"},
+                    {id: "i411", emoji: "🥬", name: "まどわし草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと一定ターン混乱するぞ。<br>モンスターに投げると、モンスターは怯えて逃げ出すぞ。"},
+                    {id: "i412", emoji: "🥬", name: "混乱草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと一定ターン混乱するぞ。"},
+                    {id: "i413", emoji: "🥬", name: "睡眠草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと一定ターン眠るぞ。"},
+                    {id: "i414", emoji: "🥬", name: "目薬草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むと罠が見えるようになるぞ。"},
+                    {id: "i415", emoji: "🥬", name: "命の草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 4, description: "飲むと最大HPが5増えるぞ。"},
+                    {id: "i416", emoji: "🥬", name: "胃拡張の種", color: "cyan", category: "herb", effects: {hunger: 10}, consumable: true, spawn_rate: 4, description: "飲むと最大満腹度が10増えるぞ。"},
 
-                    {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4+4, description: "武器を強化し、呪いを解く。"},
-                    {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4+4, description: "盾を強化し、呪いを解く。"},
-                    {id: "i503", emoji: "📜", name: "バクスイの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵を眠らせる。"},
-                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4+4, special_spawn:true,description: "ベースに素材を合成する。"},
-                    {id: "i505", emoji: "📜", name: "かなしばりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "周囲の敵をかなしばりにする。"},
-                    {id: "i506", emoji: "📜", name: "しんくうぎりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵にダメージを与える。"},
-                    {id: "i507", emoji: "📜", name: "メッキの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4+4, description: "武器や盾がサビなくなる。"},
-                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5+5, description: "アイテムを識別する。"},
-                    {id: "i509", emoji: "📜", name: "地獄耳の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "敵の居場所がわかるようになる。フロア内のみ有効"},
-                    {id: "i510", emoji: "📜", name: "千里眼の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムの場所がわかるようになる。フロア内のみ有効"},
-                    {id: "i511", emoji: "📜", name: "水枯れの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "フロア中の水が枯れて、上を歩けるようになる。"},
-                    {id: "i512", emoji: "📜", name: "大部屋の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 1,special_spawn:true, description: "フロア中の壁が崩れて大きな部屋になる。"},
-                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2+2, description: "選んだアイテムがパンになる。"},
+                    {id: "i501", emoji: "📜", name: "天の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "武器の強さを+1するぞ。まれに+3されることもあるぞ。<br>更に、武器が呪われている場合、呪いを解くこともできるぞ。"},
+                    {id: "i502", emoji: "📜", name: "地の恵みの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 4, description: "盾の強さを+1するぞ。まれに+3されることもあるぞ。<br>更に、盾が呪われている場合、呪いを解くこともできるぞ。"},
+                    {id: "i503", emoji: "📜", name: "バクスイの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵を眠らせるぞ。"},
+                    {id: "i504", emoji: "📜", name: "合成の巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, special_spawn:true,description: "武器や盾の合成を行うぞ。<br>ベースとなる武器・盾を選択し、その後に素材となる道具を選ぶことで、ベースの武器・盾に対して、素材の効果や[印]を追加することができるぞ。何が合成できるのか、いろいろ試してみよう。<br>同じ[印]は重複せず、また、手前に付いている[印]から優先的にスロットに追加されるぞ。スロットに空きが無い場合、その[印]は合成されずに消滅してしまうため注意しよう。<br>また、装備中の呪われている道具をベース/素材として選択することはできないので注意。"},
+                    {id: "i505", emoji: "📜", name: "かなしばりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "周囲の敵をかなしばりにするぞ。"},
+                    {id: "i506", emoji: "📜", name: "しんくうぎりの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 5, description: "部屋中の敵にダメージを与えるぞ。"},
+                    {id: "i507", emoji: "📜", name: "メッキの巻物", color: "cyan", category: "scroll", effects: {}, consumable: true, spawn_rate: 4, description: "武器や盾がサビなくなるぞ。<br>武器や盾が呪われている場合、呪いを解くこともできるぞ。<br>更に、指輪が呪われている場合の呪いの解除や、ヒビの修復も行うことができるぞ。"},
+                    {id: "i508", emoji: "📜", name: "識別の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムを識別するぞ。"},
+                    {id: "i509", emoji: "📜", name: "地獄耳の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "敵の居場所がわかるようになるぞ。フロア内のみ有効。"},
+                    {id: "i510", emoji: "📜", name: "千里眼の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 5, description: "アイテムの場所がわかるようになるぞ。フロア内のみ有効。"},
+                    {id: "i511", emoji: "📜", name: "水枯れの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "フロア中の水が枯れて、上を歩けるようになるぞ。"},
+                    {id: "i512", emoji: "📜", name: "大部屋の巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 1,special_spawn:true, description: "フロア中の壁が崩れて大きな部屋になるぞ。"},
+                    {id: "i513", emoji: "📜", name: "パンの巻物", color: "cyan", category: "scroll", consumable: true, spawn_rate: 2, description: "選んだ道具がパンになるぞ。"},
 
-                    {id: "i601", emoji: "🪄", name: "鈍足の杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 5+5, spawn_rate: 5},
-                    {id: "i602", emoji: "🪄", name: "場所替えの杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 6, spawn_rate: 4}
+                    {id: "i601", emoji: "🪄", name: "鈍足の杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 5, spawn_rate: 5, description: "当たると鈍足状態になる魔法弾を発射するぞ。"},
+                    {id: "i602", emoji: "🪄", name: "場所替えの杖", color: "cyan", category: "wand", consumable: false, minUses: 3, maxUses: 6, spawn_rate: 4, description: "当たったものと、位置を交換する魔法弾を発射するぞ。"}
                 ];
             }
             this.enemyMaster.forEach(e => {
@@ -780,8 +789,8 @@
         // ゲーム開始時にインベントリにアイテムを追加
         initInventory() {
 
-            const itemM1 = this.itemMaster.find(b=>b.name==="識別の巻物");
-            const itemM2 = this.itemMaster.find(b=>b.name==="識別の巻物");
+            const itemM1 = this.itemMaster.find(b=>b.name==="パン");
+            const itemM2 = this.itemMaster.find(b=>b.name==="合成の巻物");
 
             let mod = 0; let marks = []; let stack = 1;let uses = 0;let modifierIdentified = true;
 /*
@@ -824,7 +833,7 @@
                     isEquipped: false, 
                     type: 'item' 
                 });
-
+/*
             this.player.inventory.push( { 
                     uid: this.generateUid(), 
                     id: itemM2.id,
@@ -838,7 +847,7 @@
                     isEquipped: false, 
                     type: 'item' 
                 });
-
+*/
         }
 
 
@@ -1930,8 +1939,9 @@
 
                         }
                     } else {
-                        b.marks.push("ヒビ");
                         this.log(`${b.emoji}${this.fmtI(b)}に ヒビが入った`);
+                        b.marks.push("ヒビ");
+                        
                     }
                 }
             }
@@ -2036,7 +2046,7 @@
             if (this.config.unidentifyItems && this.fireballItem && !this.identifiedItemIDs.has(this.fireballItem.id)) {
                 const unIdentifiedName = this.fmtI(this.fireballItem);
                 this.identifiedItemIDs.add(this.fireballItem.id);
-                this.log(`${this.fireballItem.emoji}${unIdentifiedName}は ${this.fireballItem.name}だった`);
+                this.log(`${this.fireballItem.emoji}${unIdentifiedName}は ${this.fmtI(this.fireballItem)}だった`);
             }
             this.fireballItem = null; // 使い終わったのでクリア
 
@@ -2392,7 +2402,7 @@
                                 await this.playAttackAnim(e, this.player.x, this.player.y);
                                 
                                 const arrowMaster = this.itemMaster.find(m => m.id === e.projectile);
-                                let arrow = { ...arrowMaster, uid: this.generateUid(), stack: 1, type: 'item' };
+                                let arrow = { ...arrowMaster, uid: this.generateUid(), stack: 1, type: 'item', modifierIdentified:true };
                                 this.log(`${this.fmtE(e)}は ${arrow.name}を 撃ってきた`);
                                 
                                 // ▼修正: 軌道上の衝突判定
@@ -2752,7 +2762,7 @@
             let marksText = "";
             if (item.marks && item.marks.length > 0) {
                 // ▼修正: 表示条件を bracelet に限定
-                if (item.category === 'bracelet') {
+                if (item.category === 'bracelet' && item.modifierIdentified) {
                     if (item.marks.includes("呪")) marksText += "(呪)";
                     if (item.marks.includes("ヒビ")) marksText += "(ヒビ)";
                 }
@@ -3291,8 +3301,20 @@
                             targetItem.modifierIdentified = true;
                             this.log(`${targetItem.emoji}${unIdentifiedName}は ${this.fmtI(targetItem)}だった`);
                         }
+                    // ゲームモードがアイテム識別済みの場合
+                    } else if(!this.config.unidentifyItems){
+
+                        // 補正値は未識別の場合
+                        if(!targetItem.modifierIdentified){
+                            const unIdentifiedName = this.fmtI(targetItem);
+                            this.identifiedItemIDs.add(targetItem.id);
+                            targetItem.modifierIdentified = true;
+                            this.log(`${targetItem.emoji}${unIdentifiedName}は ${this.fmtI(targetItem)}だった`);                             
+                        } else {
+                            this.log(`${targetItem.emoji}${this.fmtI(targetItem)}を 識別した`);    
+                        }
                     } else {
-                        this.log(`${targetItem.emoji}${this.fmtI(targetItem)}は 識別した`);
+                        this.log(`${targetItem.emoji}${this.fmtI(targetItem)}を 識別した`);
                     }
                 }
                 success = true;
@@ -3306,6 +3328,7 @@
                 targetItem.id = panMaster.id; targetItem.name = panMaster.name;
                 targetItem.emoji = panMaster.emoji; targetItem.category = panMaster.category;
                 targetItem.effects = panMaster.effects; targetItem.consumable = panMaster.consumable;
+                targetItem.description = panMaster.description;
                 
                 if (targetItem.isEquipped) {
                     targetItem.isEquipped = false;
@@ -3342,6 +3365,8 @@
                     } else {
                         this.log(`しかし 効果が無かった`); success = true; 
                     }
+                } else {
+                    this.log(`しかし 効果が無かった`); success = true; 
                 }
             } else if (targetItem.category === this.scrollTargetCategory) {
                 this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
@@ -3358,6 +3383,7 @@
             } else {
                 this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}を読んだ`);
                 this.log(`${scrollItem.emoji}${this.fmtI(scrollItem)}は 効果が現れなかった`);
+                success = true;
             }
             
             if (this.scrollSource === 'inventory') {
@@ -3391,16 +3417,34 @@
             this.renderInventory();
         }
 
+        // 合成のベースと、合成する素材を選択する処理
         handleSynthSelection(index) {
             const item = this.player.inventory[index];
+            const equipWepon = this.player.equipment.weapon;
+            const equipShield = this.player.equipment.shield;
+            const equipRing = this.player.equipment.bracelet;
+
+            // 合成のベースを選択する処理
             if (this.gameState === 'SELECT_SYNTH_BASE') {
+
+                // 合成ベースとして、武器、盾以外を選んでいたら選択処理を先に進ませない
                 if (!['weapon', 'shield'].includes(item.category)) return;
+                // 呪われている装備中の武器、盾をベースに選んだ場合選択処理を先に進ませない
+                if (equipWepon && equipWepon.uid === item.uid && equipWepon.marks.includes("呪")) return;
+                if (equipShield && equipShield.uid === item.uid && equipShield.marks.includes("呪")) return;
                 this.synthBaseIndex = index;
                 this.gameState = 'SELECT_SYNTH_MAT';
                 document.getElementById('inv-title-text').innerText = '合成する素材を選ぶ';
                 this.renderInventory();
             } else if (this.gameState === 'SELECT_SYNTH_MAT') {
+                // ベースとして選んだ道具を、合成素材として選んだ場合、選択処理を先に進ませない
                 if (index === this.synthBaseIndex) return; 
+                // 呪われている装備中の武器、盾、指輪をベースに選んだ場合選択処理を先に進ませない
+                if (equipWepon && equipWepon.uid === item.uid && equipWepon.marks.includes("呪")) return;
+                if (equipShield && equipShield.uid === item.uid && equipShield.marks.includes("呪")) return;
+                if (equipRing && equipRing.uid === item.uid && equipRing.marks.includes("呪")) return;
+                // 現在の合成処理を行っている、合成の巻物自身を合成素材として選択した場合、選択処理を先に進ませない
+                if (item.uid === this.synthScrollItem.uid) return;
                 this.executeSynth(index);
             }
         }
@@ -3413,6 +3457,8 @@
             if (matItem.category === 'weapon' && baseItem.category === 'shield') success = false;
             if (matItem.category === 'shield' && baseItem.category === 'weapon') success = false;
             if (!['weapon', 'shield'].includes(matItem.category) && !matItem.mark) success = false;
+            if (['bracelet'].includes(matItem.category)) success = false;
+            if (baseItem.category === 'shield' && matItem.category === 'herb' && ["薬","弟"].includes(matItem.mark)) success = false;
 
             if (!success) {
                 this.log(`${baseItem.emoji}${this.fmtI(baseItem)}の 合成に失敗した`);
