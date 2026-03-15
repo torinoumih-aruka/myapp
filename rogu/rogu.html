@@ -518,7 +518,8 @@
                 { id: "t07", name: "警報スイッチ", emoji: "🚨", break_rate: 50, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "alarm" },
                 { id: "t08", name: "地雷", emoji: "🧨", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "mine" },
                 { id: "t09", name: "大型地雷", emoji: "💣", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "bigmine" },
-                { id: "t10", name: "毒の罠", emoji: "🩻", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "poison" }
+                { id: "t10", name: "毒の罠", emoji: "🩻", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "poison" },
+                { id: "t11", name: "装備外しの罠", emoji: "🧫", break_rate: 20, spawn_floors: Array.from({length: 98}, (_, i) => i + 3), type: "" }
             ];
 
             try {
@@ -561,7 +562,7 @@
                     {id: "i007", emoji: "🗡️", name: "ドレインバスター", color: "cyan", category: "weapon", effects: {atk: 4}, slots: 2, mark: "ド", spawn_rate: 5,accuracy: 98, consumable: false, spawn_rate: 5, description: "攻撃力+4<br>ドレイン属のモンスターが苦手な鉱石を使用した剣。"},
                     {id: "i008", emoji: "🗡️", name: "トライデント", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 2, mark: "水", spawn_rate: 5,accuracy: 85, consumable: false, spawn_rate: 5, description: "攻撃力+3<br>水棲属のモンスターが恐れている、海底を統治する一族の武器。"},
                     {id: "i009", emoji: "🗡️", name: "妖刀かまいたち", color: "cyan", category: "weapon", effects: {atk: 2}, slots: 2, mark: "三", spawn_rate: 5, min_floor: 5 , description: "攻撃力+2<br>剣を振ると、周囲にかまいたちを発生させ、前三方向を同時に攻撃する妖剣。"},
-                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 1, special_spawn:true, description: "攻撃力+3<br>スロット数が多い聖なるダガー。"},
+                    {id: "i010", emoji: "🗡️", name: "聖なるダガー", color: "cyan", category: "weapon", effects: {atk: 3}, slots: 8, accuracy: 95, consumable: false, spawn_rate: 0, special_spawn:true, description: "攻撃力+3<br>スロット数が多い聖なるダガー。"},
 
                     {id: "i101", emoji: "🛡️", name: "木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, consumable: false, spawn_rate: 15, description: "防御力+2<br>木製の簡易的な盾。"},
                     {id: "i102", emoji: "🛡️", name: "青銅甲の盾", color: "cyan", category: "shield", effects: {def: 4}, slots: 4, consumable: false, spawn_rate: 10, description: "防御力+4<br>青銅でできた中型の盾。"},
@@ -570,7 +571,7 @@
                     {id: "i105", emoji: "🛡️", name: "うろこの盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 3, mark: "鱗", spawn_rate: 5, description: "防御力+2<br>毒をふせぐ鱗で覆われた盾。"},
                     {id: "i106", emoji: "🛡️", name: "耐爆の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 2, mark: "爆", spawn_rate: 5, description: "防御力+2<br>爆発から身を守る盾。"},
                     {id: "i107", emoji: "🛡️", name: "重装の盾", color: "cyan", category: "shield", effects: {def: 9}, slots: 2, mark: "重", spawn_rate: 5, description: "防御力+9<br>お腹が減りやすいが優秀な防御力を誇る盾。"},
-                    {id: "i110", emoji: "🛡️", name: "聖なる木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 8, consumable: false, spawn_rate: 1,special_spawn:true, description: "防御力+2<br>スロットの数が多い聖なる木甲の盾。"},
+                    {id: "i110", emoji: "🛡️", name: "聖なる木甲の盾", color: "cyan", category: "shield", effects: {def: 2}, slots: 8, consumable: false, spawn_rate: 0,special_spawn:true, description: "防御力+2<br>スロットの数が多い聖なる木甲の盾。"},
 
                     {id: "i201", emoji: "💍", name: "水路の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 1,special_spawn:true, description: "装備すると、水の上を歩けるようになるぞ。"},
                     {id: "i202", emoji: "💍", name: "遠投の指輪", color: "cyan", category: "bracelet", consumable: false, spawn_rate: 3, description: "装備すると、投げたアイテムがモンスターや壁を貫通するようになるぞ。"},
@@ -584,8 +585,8 @@
                     {id: "i303", emoji: "🥖", name: "巨大なパン", color: "cyan", category: "food", effects: {hunger: 999}, consumable: true, spawn_rate: 2, special_spawn:true, description: "満腹度が最大まで回復するぞ。"},
                     {id: "i304", emoji: "🥖", name: "くさったパン", color: "cyan", category: "food", effects: {hunger: 20}, consumable: true, spawn_rate: 5, description: "満腹度は少し回復するがHPとちからが減るぞ。"},
 
-                    {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20+80, min_floor: 1, description: "飲むとHPが25回復するぞ。<br>武器に合成することもできるぞ。"},
-                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "弟", consumable: true, spawn_rate: 10+90, description: "飲むとHPが100回復するぞ。<br>武器に合成することもできるぞ。"},
+                    {id: "i401", emoji: "🥬", name: "薬草", color: "cyan", category: "herb", effects: {hp: 25, hunger: 2}, mark: "薬", consumable: true, spawn_rate: 20, min_floor: 1, description: "飲むとHPが25回復するぞ。<br>武器に合成することもできるぞ。"},
+                    {id: "i402", emoji: "🥬", name: "弟切草", color: "cyan", category: "herb", effects: {hp: 100, hunger: 2}, mark: "弟", consumable: true, spawn_rate: 10, description: "飲むとHPが100回復するぞ。<br>武器に合成することもできるぞ。"},
                     {id: "i403", emoji: "🥬", name: "しあわせ草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 2, description: "飲むとレベルが1上がるぞ。"},
                     {id: "i404", emoji: "🥬", name: "不幸の種", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 1, description: "飲むとレベルが1下がるぞ。"},
                     {id: "i405", emoji: "🥬", name: "毒草", color: "cyan", category: "herb", effects: {hunger: 2}, consumable: true, spawn_rate: 5, description: "飲むとHPとちからが減り<br>一定ターン鈍足状態になるぞ。"},
@@ -1254,6 +1255,7 @@
         getSpawnItemInfo(special) {
 
             let candidates;
+            let hosei=0;
             if(!special){
                 // 1. 出現条件（フロア数と出現率）を満たす候補を抽出
                 candidates = this.itemMaster.filter(item => {
@@ -1264,14 +1266,15 @@
                 // 豪華アイテムドロップ
                 candidates = this.itemMaster.filter(item => {
                     return item.special_spawn;
-                });                
+                });
+                hosei = 1;    
             }
 
             // 落とすべきアイテムが無ければ0番目のアイテムをドロップ
             if(candidates.length === 0) return this.itemMaster[0];
 
             // 2. 出現率（spawn_rate）の合計値を計算
-            const totalWeight = candidates.reduce((sum, item) => sum + item.spawn_rate, 0);
+            const totalWeight = candidates.reduce((sum, item) => sum + item.spawn_rate+hosei, 0);
 
             // 3. 0 〜 合計値の間でランダムな数値を決定（抽選の矢を放つ）
             let randomThreshold = Math.random() * totalWeight;                
@@ -1279,11 +1282,11 @@
             // 4. 矢がどのアイテムの範囲に刺さったかを判定
             let selectedItem = null;
             for (const item of candidates) {
-                if (randomThreshold < item.spawn_rate) {
+                if (randomThreshold < item.spawn_rate+hosei) {
                     selectedItem = item;
                     break;
                 }
-                randomThreshold -= item.spawn_rate;
+                randomThreshold -= item.spawn_rate+hosei;
             }
             return selectedItem;
         }
@@ -1349,7 +1352,7 @@
                 // ▼追記：スポーン時に壁歩行・水歩行のフラグをコピーする
                 canWalkWall: master.canWalkWall || false,
                 canWalkWater: master.canWalkWater || false,
-                statuses: { asleep: 1, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 },
+                statuses: { asleep: 1, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 ,scapeGoat: 0 },
                 isAwake: awake, isDeepSleep: false, lastSeenPos: null, pastPositions: [], waitCount: 0, skipNextTurn: false,
                 projectile: master.projectile
             });
@@ -1408,7 +1411,7 @@
                 // ▼追記：スポーン時に壁歩行・水歩行のフラグをコピーする
                 canWalkWall: master.canWalkWall || false,
                 canWalkWater: master.canWalkWater || false,
-                statuses: { asleep: 0, confused: 0, double_speed: 0, slow: 0, paralyzed: 0 },
+                statuses: { asleep: 0, confused: 0, double_speed: 0, slow: 0, paralyzed: 0, scapeGoat: 0},
                 isAwake: awake, isDeepSleep: true, lastSeenPos: null, pastPositions: [], waitCount: 0, skipNextTurn: false,
                 projectile: master.projectile
             });
@@ -1948,6 +1951,40 @@
                             this.player.strength = Math.max(0, this.player.strength - 1);
                             this.log(`${this.fmtP()}の ちからが1下がった`);
                         }
+                    } else if (trap.master.name === "装備外しの罠"){
+
+                        const eWeapon = this.player.equipment.weapon;
+                        const eShield = this.player.equipment.shield;
+                        const eRing = this.player.equipment.bracelet;
+                        const eProjectile = this.player.equipment.projectile;
+
+                        let item;
+                        if(eWeapon){
+                            item = this.player.inventory.find(i => i.uid === eWeapon.uid);
+                            item.isEquipped = false;
+                            this.player.equipment.weapon = null;
+                        }
+
+                        if(eShield){
+                            item = this.player.inventory.find(i => i.uid === eShield.uid);
+                            item.isEquipped = false;
+                            this.player.equipment.shield = null;
+                        }
+
+                        if(eRing){
+                            item = this.player.inventory.find(i => i.uid === eRing.uid);
+                            item.isEquipped = false;
+                            this.player.equipment.bracelet = null;
+                        }
+
+                        if(eProjectile){
+                            item = this.player.inventory.find(i => i.uid === eProjectile.uid);
+                            item.isEquipped = false;
+                            this.player.equipment.projectile = null;
+                        }
+
+                        this.recalculateStats();
+                        this.log(`装備がすべて外れてしまった！`);                        
                     }
                 } else {
                     this.log(`${trap.master.name}は 発動しなかった`);
@@ -2329,6 +2366,8 @@
 
         combat(atkEntity, defEntity) {
             const isPlayerAtk = (atkEntity === this.player);
+            // 敵同士の攻撃フラグ
+            const isEnemyVsEnemy = (atkEntity !== this.player && defEntity !== this.player);
             const accuracy = isPlayerAtk ? (this.player.equipment.weapon ? (this.player.equipment.weapon.accuracy || 98) : 98) : (atkEntity.accuracy || 90);
             const atkName = isPlayerAtk ? this.fmtP() : this.fmtE(atkEntity);
             const defName = defEntity === this.player ? this.fmtP() : this.fmtE(defEntity);
@@ -2407,20 +2446,28 @@
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + 4);
                 }
             } else {
+                // ダメージを受ける人が自キャラの場合
+                if(!isEnemyVsEnemy){
+                    // 防御力（盾の防御力＋補正値）
+                    let pDef = this.player.baseDef + (this.player.equipment.shield ? (this.player.equipment.shield.effects.def||0) + this.player.equipment.shield.modifier : 0);
 
-                // 防御力（盾の防御力＋補正値）
-                let pDef = this.player.baseDef + (this.player.equipment.shield ? (this.player.equipment.shield.effects.def||0) + this.player.equipment.shield.modifier : 0);
+                    const random = 0.875 + Math.random() * (1.125 - 0.875); //乱数
 
-                const random = 0.875 + Math.random() * (1.125 - 0.875); //乱数
+                    /*
+                    dmg = Math.max(1, (atkEntity.atk || 0) - pDef + Math.floor(Math.random() * 3));
+                    */
 
-                /*
-                dmg = Math.max(1, (atkEntity.atk || 0) - pDef + Math.floor(Math.random() * 3));
-                */
+                    // ダメージ＝敵の攻撃力-防御力+1×乱数
+                    dmg = Math.max(1, Math.floor(((atkEntity.atk || 0) - pDef + 1)*random));
+                // ダメージを受ける人が敵の場合
+                } else {
 
-                // ダメージ＝敵の攻撃力-防御力+1×乱数
-                dmg = Math.max(1, Math.floor(((atkEntity.atk || 0) - pDef + 1)*random));
+                    let pDef = defEntity.def;
+                    const random = 0.875 + Math.random() * (1.125 - 0.875); //乱数
+                    dmg = Math.max(1, Math.floor(((atkEntity.atk || 0) - pDef + 1)*random));
+                }
             }
-            
+
             if(isNaN(dmg)) dmg = 1;
             defEntity.hp -= dmg;
             defEntity.statuses.paralyzed = 0; 
@@ -2438,6 +2485,12 @@
                     
                     // アイテムドロップ
                     this.processEnemyDrop(defEntity);
+
+                    // 敵の同士討ちの場合
+                    if(isEnemyVsEnemy){
+                        // 攻撃側のレベル上げ処理
+                        this.evolveEnemy(atkEntity);
+                    }
                 }
             }
         }
@@ -2445,6 +2498,10 @@
         async moveEnemies() {
             const playerRoom = this.rooms.find(r => this.player.x >= r.x && this.player.x < r.x + r.w && this.player.y >= r.y && this.player.y < r.y + r.h);
             const sortedEnemies = [...this.entities.enemies].sort((a,b) => Math.max(Math.abs(a.x-this.player.x),Math.abs(a.y-this.player.y)) - Math.max(Math.abs(b.x-this.player.x),Math.abs(b.y-this.player.y)));      
+
+            //TODO 身代わり処理
+            //const scapeGoat = this.entities.enemies.find(sc => sc.)
+            //const scapegoatRoom
 
             for (let e of sortedEnemies) {
                 if (e.hp <= 0) continue;                 
@@ -2482,7 +2539,7 @@
                 }
 
                 let isConfused = e.statuses.confused > 0;
-                let willMoveRandomly = isConfused || (e.behavior === 'random' && Math.random() < 0.7);
+                let willMoveRandomly = isConfused || (e.behavior === 'random' && Math.random() < 0.5);
                 let isFear = e.behavior === 'fear';
 
                 let speed = e.speed || 1;
@@ -2579,7 +2636,7 @@
                                 }
                             }
                         } else if (e.behavior === 'breadfairy') {
-                            if (Math.random() < 0.2) {
+                            if (Math.random() < 0.1) {
                                 const unequipped = this.player.inventory.filter(i => !i.isEquipped);
                                 if (unequipped.length > 0) {
                                     const targetItem = unequipped[Math.floor(Math.random() * unequipped.length)];
