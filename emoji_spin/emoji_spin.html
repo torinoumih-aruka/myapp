@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Emoji Drop</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #0a0a0a;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: manipulation;
+    overflow-x: hidden;
+  }
+
+  #game-container {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: radial-gradient(circle at center, #222 0%, #000 100%);
+  }
+
+  #header {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    box-sizing: border-box;
+    z-index: 10;
+  }
+  
+  .panel {
+    background: rgba(0,0,0,0.8);
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 5px 15px;
+    text-align: center;
+  }
+  .panel div { font-size: 0.8rem; color: #aaa; }
+  .panel span { font-size: 1.4rem; font-weight: bold; color: #fff; }
+  
+  #bet-input {
+    width: 70px;
+    text-align: center;
+    background: #222;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 4px;
+    font-size: 1.3rem;
+    font-weight: bold;
+  }
+
+  /* ゲームエリア（グリッド＋倍率）の横並びレイアウト */
+  #game-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 15px;
+    margin-top: 20px;
+    width: 100%;
+  }
+
+  /* スロットグリッド領域 */
+  #grid-wrapper {
+    position: relative;
+    width: 260px;
+    height: 380px; 
+  }
+
+  #next-label {
+    position: absolute;
+    top: 30px; left: -45px; color: #0ff;
+    font-weight: bold; font-size: 1.2rem;
+    transform: rotate(-90deg);
+    text-shadow: 0 0 5px #0ff; letter-spacing: 2px;
+  }
+
+  .bg-slot {
+    position: absolute;
+    width: 80px; height: 80px;
+    border: 2px dashed #444; border-radius: 12px;
+    box-sizing: border-box; z-index: 2;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .symbol-cell {
+    position: absolute;
+    width: 80px; height: 80px;
+    background: #1a1a1a;
+    border: 2px solid #333; border-radius: 12px;
+    box-sizing: border-box; box-shadow: inset 0 0 15px #000;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 3.5rem;
+    transition: top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.8s ease;
+    z-index: 4;
+  }
+  
+  .highlight-bg { background-color: rgba(255, 255, 255, 0.7) !important; }
+  
+  .symbol-text {
+    transition: transform 0.8s ease-in, opacity 0.8s ease-in;
+    z-index: 5; position: relative;
+  }
+  .anim-fade-out {
+    transform: scale(0.2) rotate(720deg) !important;
+    opacity: 0.1 !important;
+  }
+
+  .frozen-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 150, 255, 0.5);
+    border: 3px solid rgba(0, 255, 255, 0.8);
+    border-radius: 10px; box-sizing: border-box;
+    z-index: 6; pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  
+  .wild-count {
+    position: absolute; bottom: -5px; right: -5px;
+    background: #ff0000; color: #fff;
+    font-size: 1.2rem; font-weight: bold;
+    border-radius: 50%; width: 30px; height: 30px;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 7; border: 2px solid #fff;
+  }
+
+  .next-glow {
+    box-shadow: 0 0 20px 5px #ffaa00, inset 0 0 15px #ff0;
+    border-color: #ffaa00;
+    animation: pulseGlow 0.8s infinite alternate;
+  }
+  @keyframes pulseGlow {
+    from { filter: brightness(1); } to { filter: brightness(1.4); }
+  }
+
+  /* 配当倍率の縦テーブル */
+  #multiplier-table-vertical {
+    position: relative;
+    width: 110px;
+    height: 380px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #ff00ff; border-radius: 5px;
+    overflow: hidden;
+  }
+  .mult-row-symbol {
+    position: absolute; left: 5px; width: 30px; height: 30px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.5rem; z-index: 1;
+  }
+  #mult-vals-container {
+    position: absolute; left: 40px; top: 0; width: 65px; height: 100%;
+  }
+  .mult-item-v {
+    position: absolute; left: 0; width: 100%; height: 30px;
+    display: flex; justify-content: center; align-items: center;
+    background: #333; border-radius: 4px;
+    color: #0ff; font-weight: bold; text-shadow: 0 0 5px #0ff;
+    transition: bottom 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+  }
+  .mult-item-v.active {
+    background: #ff00ff; color: #fff; text-shadow: 0 0 10px #fff;
+    transform: scale(1.1); z-index: 2; border: 1px solid #fff;
+  }
+
+  #fx-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 8; pointer-events: none;
+  }
+
+  #controls { margin-top: 20px; z-index: 10; display: flex; flex-direction: column; align-items: center;}
+  #spin-btn {
+    padding: 15px 60px; font-size: 1.8rem; font-weight: bold;
+    background: linear-gradient(135deg, #ff00aa, #aa00ff); color: white;
+    border: 2px solid #fff; border-radius: 30px;
+    box-shadow: 0 0 15px #ff00ff; cursor: pointer;
+  }
+  #spin-btn:disabled { background: #444; border-color: #666; box-shadow: none; color: #888; }
+  
+  #medal-display {
+    margin-top: 15px; font-size: 1.5rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 5px #ffaa00;
+  }
+
+  /* フリースピン帯の演出 */
+  .fs-banner {
+    position: fixed; left: 0; width: 100%; height: 40px;
+    background: linear-gradient(to bottom, #800000, #500000);
+    border-top: 2px solid #ffaa00; border-bottom: 2px solid #ffaa00;
+    z-index: 100; display: flex; align-items: center; overflow: hidden;
+    transition: transform 0.5s ease; pointer-events: none;
+  }
+  #fs-banner-top { top: 0; transform: translateY(-100%); }
+  #fs-banner-bottom { bottom: 0; transform: translateY(100%); }
+  
+  /* クラスでの上書きがIDに負けないようID指定でアニメーション状態を定義 */
+  #fs-banner-top.active-top { transform: translateY(0); }
+  #fs-banner-bottom.active-bottom { transform: translateY(0); }
+  
+  .fs-text {
+    white-space: nowrap; color: #ffaa00; font-weight: bold; font-size: 1.5rem;
+    animation: slideText 6s linear infinite; letter-spacing: 5px;
+  }
+  @keyframes slideText {
+    0% { transform: translateX(0); } 100% { transform: translateX(-50%); } 
+  }
+
+  .popup {
+    position: absolute; color: #ffff00; font-weight: bold; font-size: 2rem;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    pointer-events: none; z-index: 20; animation: floatUp 1s forwards;
+  }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-60px) scale(1.5); opacity: 0; } }
+
+  /* CHAIN演出用ポップアップ */
+  .chain-popup {
+    position: absolute; left: 0; top: 150px; width: 260px; text-align: center;
+    color: #00ffff; font-weight: bold; font-size: 2.5rem; white-space: pre-wrap;
+    text-shadow: 0 0 10px #00f, 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    pointer-events: none; z-index: 30; animation: chainScale 1.5s forwards;
+  }
+  @keyframes chainScale {
+    0% { transform: scale(0.5); opacity: 0; }
+    20% { transform: scale(1.2); opacity: 1; }
+    80% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  #total-win-banner {
+    position: absolute; top: 50%; left: 0; width: 100%; background: rgba(0,0,0,0.9);
+    color: #ffaa00; text-align: center; padding: 30px 0; transform: translateY(-50%);
+    z-index: 100; display: none; border-top: 4px solid #ffaa00; border-bottom: 4px solid #ffaa00;
+    box-shadow: 0 0 30px #ffaa00;
+  }
+  #total-win-banner h2 { font-size: 1.5rem; margin: 0; color: #fff; }
+  #total-win-banner h1 { font-size: 3.5rem; margin: 10px 0 0 0; text-shadow: 0 0 20px #ffaa00; }
+
+  /* デバッグ・バランス調整パネル */
+  #debug-panel {
+    margin-top: auto; margin-bottom: 10px; font-size: 0.7rem; color: #888;
+    text-align: center; width: 90%; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="fs-banner-top" class="fs-banner">
+  <div class="fs-text">FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨</div>
+</div>
+<div id="fs-banner-bottom" class="fs-banner">
+  <div class="fs-text">FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨</div>
+</div>
+
+<div id="game-container">
+  <div id="header">
+    <div class="panel">
+      <div>BET</div>
+      <input type="number" id="bet-input" value="10" min="1" max="50">
+    </div>
+    <div class="panel">
+      <div>WIN</div>
+      <span id="win-display">0</span>
+    </div>
+    <div class="panel" id="free-spin-panel" style="display:none; border-color:#0ff;">
+      <div style="color:#0ff;">FREE</div>
+      <span id="free-spin-display" style="color:#0ff;">0</span>
+    </div>
+  </div>
+
+  <div id="game-layout">
+    <div id="grid-wrapper">
+      <div id="next-label">NEXT</div>
+      <svg id="adj-lines" width="260" height="380" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none;">
+        <line x1="40" y1="150" x2="220" y2="150" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="40" y1="240" x2="220" y2="240" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="40" y1="330" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="40" y1="150" x2="40" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="130" y1="150" x2="130" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="220" y1="150" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="40" y1="150" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="220" y1="150" x2="40" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+      <div id="bg-slots-layer" style="position:absolute; width:100%; height:100%; z-index:2;"></div>
+      <canvas id="fx-canvas"></canvas>
+      <div id="symbols-layer" style="position:absolute; width:100%; height:100%; z-index:4;"></div>
+    </div>
+
+    <div id="multiplier-table-vertical">
+      <div id="mult-vals-container"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="spin-btn">SPIN</button>
+    <div id="medal-display">MEDALS: <span id="medal-count">50</span></div>
+  </div>
+
+  <div id="total-win-banner">
+    <h2>TOTAL WIN</h2>
+    <h1 id="total-win-amount">0</h1>
+  </div>
+
+  <div id="debug-panel">
+    [DEBUG / BALANCE]<br>
+    WINなし回数: <span id="dbg-loss">0</span> | 
+    FREE確率: <span id="dbg-free">1%</span> | 
+    WILD確率: <span id="dbg-wild">1%</span> | 
+    凍結確率: <span id="dbg-freeze">15%</span>
+  </div>
+</div>
+
+<script>
+const SYMBOLS = ['💎', '7️⃣', '🍰', '🍦', '🍭', '🔔', '🍈', '🍇', '🍊', '🍒'];
+const WILD = '🛑'; // ワイルドの図柄変更
+const FREE = '🆓';
+
+// 出現確率の重み付け (合計100)
+const SYMBOL_WEIGHTS = {
+  '💎': 5, '7️⃣': 5,     // -5%
+  '🍰': 7, '🍦': 7,     // -3%
+  '🍭': 10, '🔔': 10,   // 基準
+  '🍈': 13, '🍇': 13,   // +3%
+  '🍊': 15, '🍒': 15    // +5%
+};
+
+// 重み付けによるランダム抽選
+function getWeightedRandomSymbol() {
+  let rand = Math.random() * 100;
+  let sum = 0;
+  for (let sym of SYMBOLS) {
+    sum += SYMBOL_WEIGHTS[sym];
+    if (rand < sum) return sym;
+  }
+  return SYMBOLS[SYMBOLS.length - 1]; // フェールセーフ
+}
+
+// 配当倍率テーブルの固定図柄 (下から順: 0=🍒, 9=💎)
+const MULT_TABLE_SYMBOLS = ['🍒', '🍊', '🍇', '🍈', '🔔', '🍭', '🍦', '🍰', '7️⃣', '💎'];
+const INITIAL_MULTI = [1, 1, 2, 3, 4, 6, 8, 12, 15, 18];
+const QUEUE_MULTI = [25, 40, 80, 120, 240, 500];
+
+const BONUS_PAYOUTS = {
+  '💎': { min: 3, mult: 10 }, '7️⃣': { min: 3, mult: 7 },
+  '🍰': { min: 3, mult: 5 }, '🍦': { min: 3, mult: 4 },
+  '🍭': { min: 3, mult: 3 }, '🔔': { min: 3, mult: 2 },
+  '🍈': { min: 3, mult: 1 }, '🍇': { min: 3, mult: 0.5 },
+  '🍊': { min: 4, mult: 0.5 }, '🍒': { min: 5, mult: 0.5 }
+};
+
+let gameBalance = {
+  consecutiveLosses: 0,
+  freeSpinProb: 0.01,
+  wildProb: 0.01,
+  freezeProb: 0.15
+};
+
+let boardState = [[], [], []]; 
+let multipliers = [];
+let upcomingMultipliers = [];
+let multElements = []; 
+let currentBet = 10;
+let totalWin = 0;
+let medals = 50; 
+let freeSpinsLeft = 0;
+let isFreeSpinMode = false;
+let symIdCounter = 0;
+let didWinThisSpin = false;
+let currentChain = 0; // 連鎖カウント
+
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function getLeft(c) { return c * 90; } 
+function getTop(r) { return r === -1 ? 0 : 110 + r * 90; }
+
+function updateDebugUI() {
+  document.getElementById('dbg-loss').innerText = gameBalance.consecutiveLosses;
+  document.getElementById('dbg-free').innerText = (gameBalance.freeSpinProb * 100).toFixed(1) + '%';
+  document.getElementById('dbg-wild').innerText = (gameBalance.wildProb * 100).toFixed(1) + '%';
+  document.getElementById('dbg-freeze').innerText = (gameBalance.freezeProb * 100).toFixed(1) + '%';
+}
+
+function updateGameBalanceLogic() {
+  if (gameBalance.consecutiveLosses >= 10) {
+    gameBalance.freeSpinProb = 0.05;
+    gameBalance.wildProb = 0.05;
+  } else {
+    gameBalance.freeSpinProb = 0.01;
+    gameBalance.wildProb = 0.01;
+  }
+  updateDebugUI();
+}
+
+function initBackgroundSlots() {
+  const bgLayer = document.getElementById('bg-slots-layer');
+  bgLayer.innerHTML = '';
+  for(let c=0; c<3; c++) {
+    for(let r=-1; r<3; r++) {
+      let el = document.createElement('div');
+      el.className = 'bg-slot';
+      el.style.left = getLeft(c) + 'px'; el.style.top = getTop(r) + 'px';
+      if(r === -1) el.style.borderColor = '#0ff'; 
+      bgLayer.appendChild(el);
+    }
+  }
+}
+initBackgroundSlots();
+
+function resetGridColor() {
+  document.querySelectorAll('.bg-slot').forEach(el => {
+    el.style.backgroundColor = 'transparent';
+    el.style.boxShadow = 'none';
+  });
+}
+
+function initMultipliersDOM() {
+  multipliers = [...INITIAL_MULTI];
+  upcomingMultipliers = [...QUEUE_MULTI];
+  const table = document.getElementById('multiplier-table-vertical');
+  const container = document.getElementById('mult-vals-container');
+  container.innerHTML = '';
+  multElements = [];
+  
+  if (table.querySelectorAll('.mult-row-symbol').length === 0) {
+    for (let i = 0; i < 10; i++) {
+      let symEl = document.createElement('div');
+      symEl.className = 'mult-row-symbol';
+      symEl.innerText = MULT_TABLE_SYMBOLS[i];
+      symEl.style.bottom = (10 + i * 35) + 'px';
+      table.appendChild(symEl);
+    }
+  }
+
+  for (let i = 0; i < 10; i++) {
+    let el = document.createElement('div');
+    el.className = 'mult-item-v';
+    el.innerText = `x${multipliers[i]}`;
+    el.style.bottom = (10 + i * 35) + 'px';
+    container.appendChild(el);
+    multElements.push(el);
+  }
+}
+
+function consumeMultiplier(symbol) {
+  let index = MULT_TABLE_SYMBOLS.indexOf(symbol);
+  if (index === -1) index = 9; 
+
+  let multValue = multipliers[index];
+  multipliers.splice(index, 1);
+  let nextMult = upcomingMultipliers.length > 0 ? upcomingMultipliers.shift() : 999;
+  multipliers.push(nextMult);
+
+  let activeEl = multElements[index];
+  if(activeEl) {
+    activeEl.style.opacity = '0';
+    activeEl.style.transform = 'scale(0.5) translateX(20px)';
+    setTimeout(() => activeEl.remove(), 500);
+  }
+  multElements.splice(index, 1);
+
+  let newEl = document.createElement('div');
+  newEl.className = 'mult-item-v';
+  newEl.innerText = `x${nextMult}`;
+  newEl.style.bottom = (10 + 9 * 35 + 50) + 'px'; 
+  newEl.style.opacity = '0';
+  document.getElementById('mult-vals-container').appendChild(newEl);
+  multElements.push(newEl);
+  newEl.offsetHeight; 
+
+  for (let i = index; i < 10; i++) {
+    let el = multElements[i];
+    el.style.bottom = (10 + i * 35) + 'px';
+    el.style.opacity = '1';
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 500);
+  }
+
+  return multValue;
+}
+
+function updateUI() {
+  document.getElementById('win-display').innerText = totalWin;
+  document.getElementById('medal-count').innerText = medals;
+  const fsPanel = document.getElementById('free-spin-panel');
+  if (freeSpinsLeft > 0) {
+    fsPanel.style.display = 'block';
+    document.getElementById('free-spin-display').innerText = freeSpinsLeft;
+  } else {
+    fsPanel.style.display = 'none';
+  }
+}
+
+function getRandomSymbol(isInitialMainDrop, colIndex) {
+  let wildCount = 0; let freeCount = 0;
+  if (boardState[colIndex]) {
+    boardState[colIndex].forEach(cell => {
+      if (cell && cell.sym === WILD) wildCount++;
+      if (cell && cell.sym === FREE) freeCount++;
+    });
+  }
+
+  if (!isInitialMainDrop) {
+    let rand = Math.random();
+    if (rand < gameBalance.freeSpinProb && freeCount < 1) {
+      return { id: 's'+(symIdCounter++), sym: FREE, frozen: false, wild: 0 };
+    } else if (rand >= gameBalance.freeSpinProb && rand < (gameBalance.freeSpinProb + gameBalance.wildProb) && wildCount < 1) {
+      return { id: 's'+(symIdCounter++), sym: WILD, frozen: false, wild: 5 };
+    }
+  }
+
+  let sym = getWeightedRandomSymbol(); // 確率重み付け対応
+  let canFreeze = isInitialMainDrop && (!isFreeSpinMode);
+  let frozen = canFreeze ? (Math.random() < gameBalance.freezeProb) : false;
+  return { id: 's'+(symIdCounter++), sym, frozen, wild: 0 };
+}
+
+function createSymbolDOM(cellData) {
+  let el = document.createElement('div');
+  el.id = cellData.id;
+  el.className = 'symbol-cell';
+
+  let symEl = document.createElement('div');
+  symEl.className = 'symbol-text';
+  symEl.innerText = cellData.sym;
+  el.appendChild(symEl);
+
+  if (cellData.frozen) {
+    let fEl = document.createElement('div');
+    fEl.className = 'frozen-overlay';
+    el.appendChild(fEl);
+  }
+  if (cellData.sym === WILD && cellData.wild > 0) {
+    let wEl = document.createElement('div');
+    wEl.className = 'wild-count';
+    wEl.innerText = cellData.wild;
+    el.appendChild(wEl);
+  }
+  return el;
+}
+
+function updateSymbolDOM(cell) {
+  let el = document.getElementById(cell.id);
+  if (el) {
+    let wEl = el.querySelector('.wild-count');
+    if (wEl) wEl.innerText = cell.wild;
+  }
+}
+
+function renderBoard() {
+  const layer = document.getElementById('symbols-layer');
+  for (let c=0; c<3; c++) {
+    for (let i=0; i<4; i++) {
+      let r = i - 1;
+      let cellData = boardState[c][i];
+      if(!cellData) continue;
+
+      let el = document.getElementById(cellData.id);
+      if (!el) {
+        el = createSymbolDOM(cellData);
+        let startTop = cellData.tempTop !== undefined ? cellData.tempTop : getTop(r);
+        el.style.left = getLeft(c) + 'px';
+        el.style.top = startTop + 'px';
+        layer.appendChild(el);
+        el.offsetHeight; 
+        delete cellData.tempTop;
+      }
+
+      if (r === -1 && (cellData.sym === WILD || cellData.sym === FREE)) {
+        el.classList.add('next-glow');
+      } else {
+        el.classList.remove('next-glow');
+      }
+
+      el.style.top = getTop(r) + 'px';
+      el.style.left = getLeft(c) + 'px';
+    }
+  }
+}
+
+const canvas = document.getElementById('fx-canvas');
+const ctx = canvas.getContext('2d');
+let particles = []; let activeLines = [];
+
+function resizeCanvas() {
+  canvas.width = document.getElementById('grid-wrapper').clientWidth;
+  canvas.height = document.getElementById('grid-wrapper').clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = activeLines.length - 1; i >= 0; i--) {
+    let line = activeLines[i];
+    ctx.beginPath(); ctx.moveTo(line.points[0].x, line.points[0].y);
+    for (let j = 1; j < line.points.length; j++) ctx.lineTo(line.points[j].x, line.points[j].y);
+    ctx.strokeStyle = line.color; ctx.lineWidth = 15;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 20; ctx.shadowColor = line.color;
+    ctx.globalAlpha = line.alpha; ctx.stroke();
+    line.alpha -= 0.03; if (line.alpha <= 0) activeLines.splice(i, 1);
+  }
+  ctx.shadowBlur = 0;
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawCanvas);
+}
+drawCanvas();
+
+function addEffectLine(cells) {
+  let points = cells.map(([r, c]) => ({ x: getLeft(c) + 40, y: getTop(r) + 40 }));
+  let color = Math.random() > 0.5 ? '#ffff00' : '#ff00ff'; 
+  activeLines.push({ points, color, alpha: 1.0 });
+  cells.forEach(([r, c]) => {
+    for(let i=0; i<15; i++) particles.push({ x: getLeft(c)+40, y: getTop(r)+40, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, size: Math.random()*6+2, color: color, alpha: 1.0 });
+  });
+}
+
+function showPopup(r, c, text) {
+  const wrapper = document.getElementById('grid-wrapper');
+  let el = document.createElement('div'); el.className = 'popup'; el.innerText = text;
+  el.style.left = (getLeft(c) + 10) + 'px'; el.style.top = (getTop(r) + 10) + 'px';
+  wrapper.appendChild(el); setTimeout(() => el.remove(), 1000);
+}
+
+// CHAIN演出専用ポップアップ
+function showChainPopup(text) {
+  const wrapper = document.getElementById('grid-wrapper');
+  let el = document.createElement('div');
+  el.className = 'chain-popup';
+  el.innerText = text;
+  wrapper.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+function getNeighbors(r, c) {
+  const neighbors = [];
+  const dirs8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  const dirs4 = [[-1,0],[1,0],[0,-1],[0,1]];
+  const is8Dir = (r===0 && c===0) || (r===0 && c===2) || (r===2 && c===0) || (r===2 && c===2) || (r===1 && c===1);
+  const dirs = is8Dir ? dirs8 : dirs4;
+  for (let [dr, dc] of dirs) {
+    let nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) neighbors.push([nr, nc]);
+  }
+  return neighbors;
+}
+
+function findMatches() {
+  let matchedLines = [];
+  const lineDefs = [[[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]], [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]], [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]];
+  for (let line of lineDefs) {
+    let targetSym = null; let isMatch = true;
+    for (let [r, c] of line) {
+      let cell = boardState[c][r+1];
+      if (!cell || cell.frozen || cell.sym === FREE) { isMatch = false; break; }
+      if (cell.sym !== WILD) { if (!targetSym) targetSym = cell.sym; else if (targetSym !== cell.sym) { isMatch = false; break; } }
+    }
+    if (isMatch) matchedLines.push({ cells: line, sym: targetSym || SYMBOLS[0] });
+  }
+
+  let matchedClusters = [];
+  for (let testSym of SYMBOLS) {
+    let visited = Array(3).fill(0).map(() => Array(3).fill(false));
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        let cell = boardState[c][r+1];
+        if (!visited[r][c] && cell && !cell.frozen && (cell.sym === testSym || cell.sym === WILD)) {
+          let q = [[r, c]]; let cluster = []; visited[r][c] = true;
+          while (q.length > 0) {
+            let [cr, cc] = q.shift(); cluster.push([cr, cc]);
+            for (let [nr, nc] of getNeighbors(cr, cc)) {
+              let ncell = boardState[nc][nr+1];
+              if (!visited[nr][nc] && ncell && !ncell.frozen && (ncell.sym === testSym || ncell.sym === WILD)) {
+                visited[nr][nc] = true; q.push([nr, nc]);
+              }
+            }
+          }
+          if (cluster.length >= 3) matchedClusters.push({ cells: cluster, sym: testSym });
+        }
+      }
+    }
+  }
+  return { lines: matchedLines, clusters: matchedClusters };
+}
+
+async function evaluateMatches() {
+  let { lines, clusters } = findMatches();
+  let cellsToRemove = new Set();
+  let clearCounts = {};
+
+  for (let line of lines) {
+    let mult = consumeMultiplier(line.sym);
+    let win = Math.floor(mult * currentBet);
+    totalWin += win; didWinThisSpin = true;
+    addEffectLine(line.cells);
+    for (let pos of line.cells) {
+       cellsToRemove.add(`${pos[0]},${pos[1]}`);
+       let target = line.sym;
+       if (!clearCounts[target]) clearCounts[target] = new Set();
+       clearCounts[target].add(`${pos[0]},${pos[1]}`);
+    }
+  }
+
+  for (let cluster of clusters) {
+    for (let pos of cluster.cells) {
+       cellsToRemove.add(`${pos[0]},${pos[1]}`);
+       let target = cluster.sym;
+       if (!clearCounts[target]) clearCounts[target] = new Set();
+       clearCounts[target].add(`${pos[0]},${pos[1]}`);
+    }
+  }
+
+  if (cellsToRemove.size > 0) {
+    // CHAINシステム処理
+    currentChain++;
+    if (currentChain >= 2) {
+      // 背景を青白く発光
+      let blueAlpha = Math.min((currentChain - 1) * 0.15, 0.6);
+      document.querySelectorAll('.bg-slot').forEach(el => {
+        el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`;
+        el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`;
+      });
+
+      let chainText = `${currentChain} CHAIN!`;
+      if (currentChain >= 3) {
+        // 3chain以降は 0.5倍ずつ配当ボーナスを追加
+        let bonusMult = 0.5 * (currentChain - 2);
+        let bonusWin = Math.floor(bonusMult * currentBet);
+        if (bonusWin > 0) {
+          totalWin += bonusWin;
+          didWinThisSpin = true;
+          chainText += `\n+${bonusWin}`;
+        }
+      }
+      showChainPopup(chainText);
+    }
+
+    for (let sym in clearCounts) {
+       let count = clearCounts[sym].size;
+       if (BONUS_PAYOUTS[sym] && count >= BONUS_PAYOUTS[sym].min) {
+           let bonus = Math.floor(BONUS_PAYOUTS[sym].mult * currentBet);
+           totalWin += bonus; didWinThisSpin = true;
+           let [r, c] = Array.from(clearCounts[sym])[0].split(',').map(Number);
+           showPopup(r, c, `+${bonus}`);
+       }
+    }
+    updateUI();
+
+    cellsToRemove.forEach(posStr => {
+      let [r, c] = posStr.split(',').map(Number);
+      let cell = boardState[c][r+1];
+      if (cell) {
+        let el = document.getElementById(cell.id);
+        if (el) { el.classList.add('highlight-bg'); let symEl = el.querySelector('.symbol-text'); if (symEl) symEl.classList.add('anim-fade-out'); }
+      }
+    });
+
+    await delay(800); 
+    
+    let actualRemove = [];
+    cellsToRemove.forEach(posStr => {
+      let [r, c] = posStr.split(',').map(Number);
+      let cell = boardState[c][r+1];
+      if (cell.sym === WILD) {
+         cell.wild--; updateSymbolDOM(cell);
+         if (cell.wild <= 0) actualRemove.push([r, c]);
+      } else {
+         actualRemove.push([r, c]);
+      }
+    });
+
+    actualRemove.forEach(([r, c]) => {
+      getNeighbors(r, c).forEach(([nr, nc]) => {
+         let neighbor = boardState[nc][nr+1];
+         if (neighbor && neighbor.frozen) {
+             neighbor.frozen = false;
+             let el = document.getElementById(neighbor.id);
+             if(el) {
+                 let fEl = el.querySelector('.frozen-overlay');
+                 if(fEl) {
+                     fEl.style.opacity = '0'; 
+                     setTimeout(() => fEl.remove(), 500);
+                 }
+             }
+         }
+      });
+      let cell = boardState[c][r+1];
+      if(cell) { let el = document.getElementById(cell.id); if(el) el.remove(); boardState[c][r+1] = null; }
+    });
+
+    cascade();
+  } else {
+    // スピン終了：チェインと背景色をリセット
+    currentChain = 0;
+    resetGridColor();
+    checkFreeSpins();
+  }
+}
+
+function cascade() {
+  for (let c = 0; c < 3; c++) {
+    boardState[c] = boardState[c].filter(sym => sym !== null); 
+    let missing = 4 - boardState[c].length;
+    for (let i = 0; i < missing; i++) {
+      let newSym = getRandomSymbol(false, c);
+      newSym.tempTop = getTop(-1) - (missing - i) * 90;
+      boardState[c].unshift(newSym);
+    }
+  }
+  renderBoard(); 
+  setTimeout(evaluateMatches, 850);
+}
+
+function checkFreeSpins() {
+  let freeCount = 0;
+  for (let c = 0; c < 3; c++) {
+    for (let r = 0; r < 3; r++) {
+      let cell = boardState[c][r+1];
+      if (cell && cell.sym === FREE) {
+        freeCount++;
+        let el = document.getElementById(cell.id);
+        if(el) { el.style.transform = "scale(0) rotate(720deg)"; setTimeout(() => el.remove(), 800); }
+        boardState[c][r+1] = null;
+      }
+    }
+  }
+  
+  if (freeCount > 0) {
+    isFreeSpinMode = true;
+    freeSpinsLeft += freeCount * 3;
+    document.getElementById('fs-banner-top').classList.add('active-top');
+    document.getElementById('fs-banner-bottom').classList.add('active-bottom');
+    updateUI();
+    setTimeout(cascade, 850);
+  } else {
+    if (freeSpinsLeft > 0) {
+       freeSpinsLeft--;
+       updateUI();
+       setTimeout(() => startSpin(true), 1000);
+    } else {
+       isFreeSpinMode = false;
+       document.getElementById('fs-banner-top').classList.remove('active-top');
+       document.getElementById('fs-banner-bottom').classList.remove('active-bottom');
+       
+       if (totalWin > 0) {
+          medals += totalWin; 
+          document.getElementById('total-win-amount').innerText = totalWin;
+          document.getElementById('total-win-banner').style.display = 'block';
+       }
+
+       if (!didWinThisSpin) {
+          gameBalance.consecutiveLosses++;
+       } else {
+          gameBalance.consecutiveLosses = 0;
+       }
+       updateGameBalanceLogic();
+
+       updateUI();
+       document.getElementById('spin-btn').disabled = false;
+    }
+  }
+}
+
+function startSpin(isFreeMode = false) {
+  let inputBet = parseInt(document.getElementById('bet-input').value) || 10;
+  inputBet = Math.min(Math.max(inputBet, 1), 50); 
+  
+  if (!isFreeMode) {
+    if (medals < inputBet) { alert("メダルが足りません！"); return; }
+    currentBet = inputBet;
+    document.getElementById('bet-input').value = currentBet;
+    medals -= currentBet; 
+    totalWin = 0;
+    didWinThisSpin = false;
+    initMultipliersDOM();
+    isFreeSpinMode = false;
+  }
+  
+  // 新しいスピン開始時にチェインと背景色をリセット
+  currentChain = 0;
+  resetGridColor();
+  updateUI();
+  
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('total-win-banner').style.display = 'none';
+
+  let shuffles = 15;
+  let shuffleInterval = setInterval(() => {
+    for(let c=0; c<3; c++) {
+      for(let i=0; i<4; i++) {
+        let cell = boardState[c][i];
+        if(cell) {
+          let el = document.getElementById(cell.id);
+          // シャッフル中も重み付けを使用（視覚的な一貫性）
+          if(el) el.querySelector('.symbol-text').innerText = getWeightedRandomSymbol();
+        }
+      }
+    }
+    shuffles--;
+    if(shuffles <= 0) {
+      clearInterval(shuffleInterval);
+      finalizeInitialSpin(isFreeMode);
+    }
+  }, 60);
+}
+
+function finalizeInitialSpin(isFreeMode) {
+  document.getElementById('symbols-layer').innerHTML = '';
+  for(let c=0; c<3; c++) {
+    boardState[c] = [];
+    for(let i=0; i<4; i++) {
+      let newSym = getRandomSymbol(i > 0, c); 
+      boardState[c].push(newSym);
+    }
+  }
+  renderBoard();
+  setTimeout(evaluateMatches, 500);
+}
+
+document.getElementById('spin-btn').addEventListener('click', () => startSpin(false));
+initMultipliersDOM();
+updateGameBalanceLogic();
+finalizeInitialSpin(false); 
+
+</script>
+</body>
+</html>
