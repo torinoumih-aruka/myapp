@@ -29,48 +29,49 @@
     background: radial-gradient(circle at center, #222 0%, #000 100%);
   }
 
+  /* 上部レイアウトの隙間・サイズ調整 */
   #header {
     width: 100%;
     display: flex;
     justify-content: space-around;
-    padding: 10px;
+    padding: 5px;
     box-sizing: border-box;
     z-index: 10;
+    gap: 5px;
   }
   
   .panel {
     background: rgba(0,0,0,0.8);
     border: 2px solid #444;
     border-radius: 8px;
-    padding: 5px 15px;
+    padding: 5px 10px;
     text-align: center;
+    min-width: 60px;
   }
-  .panel div { font-size: 0.8rem; color: #aaa; }
-  .panel span { font-size: 1.4rem; font-weight: bold; color: #fff; }
+  .panel div { font-size: 0.7rem; color: #aaa; }
+  .panel span { font-size: 1.2rem; font-weight: bold; color: #fff; }
   
   #bet-input {
-    width: 70px;
+    width: 50px;
     text-align: center;
     background: #222;
     color: #fff;
     border: 1px solid #666;
     border-radius: 4px;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
   }
 
-  /* ゲームエリア（グリッド＋倍率）の横並びレイアウト */
   #game-layout {
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    gap: 15px;
-    margin-top: 20px;
+    gap: 10px;
+    margin-top: 5px;
     width: 100%;
   }
 
-  /* スロットグリッド領域 */
   #grid-wrapper {
     position: relative;
     width: 260px;
@@ -90,7 +91,7 @@
     width: 80px; height: 80px;
     border: 2px dashed #444; border-radius: 12px;
     box-sizing: border-box; z-index: 2;
-    transition: background-color 0.5s ease, box-shadow 0.5s ease;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
   }
 
   .symbol-cell {
@@ -143,7 +144,6 @@
     from { filter: brightness(1); } to { filter: brightness(1.4); }
   }
 
-  /* 配当倍率の縦テーブル */
   #multiplier-table-vertical {
     position: relative;
     width: 110px;
@@ -177,20 +177,33 @@
     z-index: 8; pointer-events: none;
   }
 
-  #controls { margin-top: 20px; z-index: 10; display: flex; flex-direction: column; align-items: center;}
+  /* コントロール（メダルとスピンボタン）の横並び配置 */
+  #controls-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 380px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    margin-top: 5px;
+    z-index: 10;
+  }
+  
+  #medal-display {
+    font-size: 1.3rem; color: #ffd700; font-weight: bold;
+    text-shadow: 0 0 5px #ffaa00; text-align: left; min-width: 140px;
+  }
+
   #spin-btn {
-    padding: 15px 60px; font-size: 1.8rem; font-weight: bold;
+    padding: 10px 40px; font-size: 1.5rem; font-weight: bold;
     background: linear-gradient(135deg, #ff00aa, #aa00ff); color: white;
     border: 2px solid #fff; border-radius: 30px;
     box-shadow: 0 0 15px #ff00ff; cursor: pointer;
   }
   #spin-btn:disabled { background: #444; border-color: #666; box-shadow: none; color: #888; }
   
-  #medal-display {
-    margin-top: 15px; font-size: 1.5rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 5px #ffaa00;
-  }
-
-  /* フリースピン帯の演出 */
   .fs-banner {
     position: fixed; left: 0; width: 100%; height: 40px;
     background: linear-gradient(to bottom, #800000, #500000);
@@ -201,7 +214,6 @@
   #fs-banner-top { top: 0; transform: translateY(-100%); }
   #fs-banner-bottom { bottom: 0; transform: translateY(100%); }
   
-  /* クラスでの上書きがIDに負けないようID指定でアニメーション状態を定義 */
   #fs-banner-top.active-top { transform: translateY(0); }
   #fs-banner-bottom.active-bottom { transform: translateY(0); }
   
@@ -209,9 +221,7 @@
     white-space: nowrap; color: #ffaa00; font-weight: bold; font-size: 1.5rem;
     animation: slideText 6s linear infinite; letter-spacing: 5px;
   }
-  @keyframes slideText {
-    0% { transform: translateX(0); } 100% { transform: translateX(-50%); } 
-  }
+  @keyframes slideText { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
   .popup {
     position: absolute; color: #ffff00; font-weight: bold; font-size: 2rem;
@@ -220,7 +230,6 @@
   }
   @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-60px) scale(1.5); opacity: 0; } }
 
-  /* CHAIN演出用ポップアップ */
   .chain-popup {
     position: absolute; left: 0; top: 150px; width: 260px; text-align: center;
     color: #00ffff; font-weight: bold; font-size: 2.5rem; white-space: pre-wrap;
@@ -234,18 +243,27 @@
     100% { transform: scale(1.5); opacity: 0; }
   }
 
+  /* TOTAL WIN の動的サイズ調整クラス */
   #total-win-banner {
     position: absolute; top: 50%; left: 0; width: 100%; background: rgba(0,0,0,0.9);
-    color: #ffaa00; text-align: center; padding: 30px 0; transform: translateY(-50%);
+    color: #ffaa00; text-align: center; padding: 20px 0; transform: translateY(-50%);
     z-index: 100; display: none; border-top: 4px solid #ffaa00; border-bottom: 4px solid #ffaa00;
     box-shadow: 0 0 30px #ffaa00;
   }
-  #total-win-banner h2 { font-size: 1.5rem; margin: 0; color: #fff; }
-  #total-win-banner h1 { font-size: 3.5rem; margin: 10px 0 0 0; text-shadow: 0 0 20px #ffaa00; }
+  #total-win-banner h2 { font-size: 1.2rem; margin: 0; color: #fff; }
+  #total-win-banner h1 { margin: 10px 0 0 0; text-shadow: 0 0 20px #ffaa00; transition: font-size 0.5s; line-height: 1.1;}
+  
+  .win-small h1 { font-size: 2rem !important; }
+  .win-normal h1 { font-size: 3.5rem !important; }
+  .win-large h1 { font-size: 4.5rem !important; text-shadow: 0 0 30px #ffaa00, 0 0 10px #fff !important; }
+  .win-huge h1 { font-size: 7rem !important; text-shadow: 0 0 50px #ffaa00, 0 0 20px #fff !important; }
 
-  /* デバッグ・バランス調整パネル */
+  #global-fx-canvas {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99; pointer-events: none;
+  }
+
   #debug-panel {
-    margin-top: auto; margin-bottom: 10px; font-size: 0.7rem; color: #888;
+    margin-top: auto; margin-bottom: 5px; font-size: 0.7rem; color: #888;
     text-align: center; width: 90%; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;
   }
 
@@ -260,11 +278,11 @@
   <div class="fs-text">FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨</div>
 </div>
 
-<div id="game-container">
+<canvas id="global-fx-canvas"></canvas> <div id="game-container">
   <div id="header">
     <div class="panel">
       <div>BET</div>
-      <input type="number" id="bet-input" value="10" min="1" max="50">
+      <input type="number" id="bet-input" value="1" min="1" max="50">
     </div>
     <div class="panel">
       <div>WIN</div>
@@ -299,9 +317,9 @@
     </div>
   </div>
 
-  <div id="controls">
+  <div id="controls-row">
+    <div id="medal-display">MEDALS: <br><span id="medal-count">50</span></div>
     <button id="spin-btn">SPIN</button>
-    <div id="medal-display">MEDALS: <span id="medal-count">50</span></div>
   </div>
 
   <div id="total-win-banner">
@@ -320,19 +338,17 @@
 
 <script>
 const SYMBOLS = ['💎', '7️⃣', '🍰', '🍦', '🍭', '🔔', '🍈', '🍇', '🍊', '🍒'];
-const WILD = '🛑'; // ワイルドの図柄変更
+const WILD = '🛑';
 const FREE = '🆓';
 
-// 出現確率の重み付け (合計100)
 const SYMBOL_WEIGHTS = {
-  '💎': 5, '7️⃣': 5,     // -5%
-  '🍰': 7, '🍦': 7,     // -3%
-  '🍭': 10, '🔔': 10,   // 基準
-  '🍈': 13, '🍇': 13,   // +3%
-  '🍊': 15, '🍒': 15    // +5%
+  '💎': 5, '7️⃣': 5,
+  '🍰': 7, '🍦': 7,
+  '🍭': 10, '🔔': 10,
+  '🍈': 13, '🍇': 13,
+  '🍊': 15, '🍒': 15
 };
 
-// 重み付けによるランダム抽選
 function getWeightedRandomSymbol() {
   let rand = Math.random() * 100;
   let sum = 0;
@@ -340,41 +356,49 @@ function getWeightedRandomSymbol() {
     sum += SYMBOL_WEIGHTS[sym];
     if (rand < sum) return sym;
   }
-  return SYMBOLS[SYMBOLS.length - 1]; // フェールセーフ
+  return SYMBOLS[SYMBOLS.length - 1];
 }
 
-// 配当倍率テーブルの固定図柄 (下から順: 0=🍒, 9=💎)
 const MULT_TABLE_SYMBOLS = ['🍒', '🍊', '🍇', '🍈', '🔔', '🍭', '🍦', '🍰', '7️⃣', '💎'];
 const INITIAL_MULTI = [1, 1, 2, 3, 4, 6, 8, 12, 15, 18];
 const QUEUE_MULTI = [25, 40, 80, 120, 240, 500];
 
-const BONUS_PAYOUTS = {
-  '💎': { min: 3, mult: 10 }, '7️⃣': { min: 3, mult: 7 },
-  '🍰': { min: 3, mult: 5 }, '🍦': { min: 3, mult: 4 },
-  '🍭': { min: 3, mult: 3 }, '🔔': { min: 3, mult: 2 },
-  '🍈': { min: 3, mult: 1 }, '🍇': { min: 3, mult: 0.5 },
-  '🍊': { min: 4, mult: 0.5 }, '🍒': { min: 5, mult: 0.5 }
-};
+function getBonusMult(sym, count) {
+  const rules = {
+    '💎': {3:10, 4:15, 5:20, 6:40, 7:70, 8:110, 9:510},
+    '7️⃣': {3:7, 4:11, 5:15, 6:22, 7:37, 8:67, 9:107},
+    '🍰': {3:5, 4:8, 5:11, 6:15, 7:20, 8:35, 9:65},
+    '🍦': {3:4, 4:6, 5:8, 6:12, 7:16, 8:20, 9:24},
+    '🍭': {3:3, 4:5, 5:6, 6:7, 7:9, 8:11, 9:13},
+    '🔔': {3:2, 4:3.5, 5:5, 6:6.5, 7:8, 8:9.5, 9:11},
+    '🍈': {3:1, 4:2.5, 5:3, 6:4, 7:5, 8:6, 9:7},
+    '🍇': {3:0.5, 4:1.5, 5:2.5, 6:3.5, 7:4.5, 8:5.5, 9:6.5},
+    '🍊': {4:0.5, 5:1.5, 6:2.5, 7:3.5, 8:4.5, 9:5.5},
+    '🍒': {6:1, 7:2, 8:3, 9:5}
+  };
+  if(rules[sym]) {
+      let applicableCount = count;
+      while(applicableCount > 0 && rules[sym][applicableCount] === undefined) applicableCount--;
+      if(applicableCount > 0) return rules[sym][applicableCount];
+  }
+  return 0;
+}
 
-let gameBalance = {
-  consecutiveLosses: 0,
-  freeSpinProb: 0.01,
-  wildProb: 0.01,
-  freezeProb: 0.15
-};
+let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.15 };
 
 let boardState = [[], [], []]; 
 let multipliers = [];
 let upcomingMultipliers = [];
 let multElements = []; 
-let currentBet = 10;
+let currentBet = 1;
 let totalWin = 0;
 let medals = 50; 
 let freeSpinsLeft = 0;
 let isFreeSpinMode = false;
 let symIdCounter = 0;
 let didWinThisSpin = false;
-let currentChain = 0; // 連鎖カウント
+let currentChain = 0; 
+let guaranteedWildQueue = [];
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 function getLeft(c) { return c * 90; } 
@@ -389,11 +413,9 @@ function updateDebugUI() {
 
 function updateGameBalanceLogic() {
   if (gameBalance.consecutiveLosses >= 10) {
-    gameBalance.freeSpinProb = 0.05;
-    gameBalance.wildProb = 0.05;
+    gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05;
   } else {
-    gameBalance.freeSpinProb = 0.01;
-    gameBalance.wildProb = 0.01;
+    gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
   }
   updateDebugUI();
 }
@@ -404,7 +426,7 @@ function initBackgroundSlots() {
   for(let c=0; c<3; c++) {
     for(let r=-1; r<3; r++) {
       let el = document.createElement('div');
-      el.className = 'bg-slot';
+      el.className = 'bg-slot' + (r === -1 ? ' bg-slot-next' : '');
       el.style.left = getLeft(c) + 'px'; el.style.top = getTop(r) + 'px';
       if(r === -1) el.style.borderColor = '#0ff'; 
       bgLayer.appendChild(el);
@@ -415,36 +437,38 @@ initBackgroundSlots();
 
 function resetGridColor() {
   document.querySelectorAll('.bg-slot').forEach(el => {
-    el.style.backgroundColor = 'transparent';
-    el.style.boxShadow = 'none';
+    if (isFreeSpinMode) {
+      el.style.backgroundColor = 'rgba(255, 50, 50, 0.2)';
+      el.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.5)';
+      el.style.borderColor = 'rgba(255, 100, 100, 0.8)';
+    } else {
+      el.style.backgroundColor = 'transparent';
+      el.style.boxShadow = 'none';
+      el.style.borderColor = '#444';
+    }
   });
+  if (!isFreeSpinMode) {
+    document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
+  }
 }
 
 function initMultipliersDOM() {
-  multipliers = [...INITIAL_MULTI];
-  upcomingMultipliers = [...QUEUE_MULTI];
+  multipliers = [...INITIAL_MULTI]; upcomingMultipliers = [...QUEUE_MULTI];
   const table = document.getElementById('multiplier-table-vertical');
   const container = document.getElementById('mult-vals-container');
-  container.innerHTML = '';
-  multElements = [];
+  container.innerHTML = ''; multElements = [];
   
   if (table.querySelectorAll('.mult-row-symbol').length === 0) {
     for (let i = 0; i < 10; i++) {
       let symEl = document.createElement('div');
-      symEl.className = 'mult-row-symbol';
-      symEl.innerText = MULT_TABLE_SYMBOLS[i];
-      symEl.style.bottom = (10 + i * 35) + 'px';
-      table.appendChild(symEl);
+      symEl.className = 'mult-row-symbol'; symEl.innerText = MULT_TABLE_SYMBOLS[i];
+      symEl.style.bottom = (10 + i * 35) + 'px'; table.appendChild(symEl);
     }
   }
-
   for (let i = 0; i < 10; i++) {
-    let el = document.createElement('div');
-    el.className = 'mult-item-v';
-    el.innerText = `x${multipliers[i]}`;
-    el.style.bottom = (10 + i * 35) + 'px';
-    container.appendChild(el);
-    multElements.push(el);
+    let el = document.createElement('div'); el.className = 'mult-item-v';
+    el.innerText = `x${multipliers[i]}`; el.style.bottom = (10 + i * 35) + 'px';
+    container.appendChild(el); multElements.push(el);
   }
 }
 
@@ -459,29 +483,22 @@ function consumeMultiplier(symbol) {
 
   let activeEl = multElements[index];
   if(activeEl) {
-    activeEl.style.opacity = '0';
-    activeEl.style.transform = 'scale(0.5) translateX(20px)';
+    activeEl.style.opacity = '0'; activeEl.style.transform = 'scale(0.5) translateX(20px)';
     setTimeout(() => activeEl.remove(), 500);
   }
   multElements.splice(index, 1);
 
   let newEl = document.createElement('div');
-  newEl.className = 'mult-item-v';
-  newEl.innerText = `x${nextMult}`;
-  newEl.style.bottom = (10 + 9 * 35 + 50) + 'px'; 
-  newEl.style.opacity = '0';
+  newEl.className = 'mult-item-v'; newEl.innerText = `x${nextMult}`;
+  newEl.style.bottom = (10 + 9 * 35 + 50) + 'px'; newEl.style.opacity = '0';
   document.getElementById('mult-vals-container').appendChild(newEl);
-  multElements.push(newEl);
-  newEl.offsetHeight; 
+  multElements.push(newEl); newEl.offsetHeight; 
 
   for (let i = index; i < 10; i++) {
     let el = multElements[i];
-    el.style.bottom = (10 + i * 35) + 'px';
-    el.style.opacity = '1';
-    el.classList.add('active');
-    setTimeout(() => el.classList.remove('active'), 500);
+    el.style.bottom = (10 + i * 35) + 'px'; el.style.opacity = '1';
+    el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 500);
   }
-
   return multValue;
 }
 
@@ -490,8 +507,7 @@ function updateUI() {
   document.getElementById('medal-count').innerText = medals;
   const fsPanel = document.getElementById('free-spin-panel');
   if (freeSpinsLeft > 0) {
-    fsPanel.style.display = 'block';
-    document.getElementById('free-spin-display').innerText = freeSpinsLeft;
+    fsPanel.style.display = 'block'; document.getElementById('free-spin-display').innerText = freeSpinsLeft;
   } else {
     fsPanel.style.display = 'none';
   }
@@ -505,95 +521,57 @@ function getRandomSymbol(isInitialMainDrop, colIndex) {
       if (cell && cell.sym === FREE) freeCount++;
     });
   }
-
   if (!isInitialMainDrop) {
     let rand = Math.random();
-    if (rand < gameBalance.freeSpinProb && freeCount < 1) {
-      return { id: 's'+(symIdCounter++), sym: FREE, frozen: false, wild: 0 };
-    } else if (rand >= gameBalance.freeSpinProb && rand < (gameBalance.freeSpinProb + gameBalance.wildProb) && wildCount < 1) {
-      return { id: 's'+(symIdCounter++), sym: WILD, frozen: false, wild: 5 };
-    }
+    if (rand < gameBalance.freeSpinProb && freeCount < 1) return { id: 's'+(symIdCounter++), sym: FREE, frozen: false, wild: 0 };
+    else if (rand >= gameBalance.freeSpinProb && rand < (gameBalance.freeSpinProb + gameBalance.wildProb) && wildCount < 1) return { id: 's'+(symIdCounter++), sym: WILD, frozen: false, wild: 5 };
   }
 
-  let sym = getWeightedRandomSymbol(); // 確率重み付け対応
+  let sym = getWeightedRandomSymbol(); 
   let canFreeze = isInitialMainDrop && (!isFreeSpinMode);
   let frozen = canFreeze ? (Math.random() < gameBalance.freezeProb) : false;
   return { id: 's'+(symIdCounter++), sym, frozen, wild: 0 };
 }
 
 function createSymbolDOM(cellData) {
-  let el = document.createElement('div');
-  el.id = cellData.id;
-  el.className = 'symbol-cell';
-
-  let symEl = document.createElement('div');
-  symEl.className = 'symbol-text';
-  symEl.innerText = cellData.sym;
+  let el = document.createElement('div'); el.id = cellData.id; el.className = 'symbol-cell';
+  let symEl = document.createElement('div'); symEl.className = 'symbol-text'; symEl.innerText = cellData.sym;
   el.appendChild(symEl);
-
-  if (cellData.frozen) {
-    let fEl = document.createElement('div');
-    fEl.className = 'frozen-overlay';
-    el.appendChild(fEl);
-  }
+  if (cellData.frozen) { let fEl = document.createElement('div'); fEl.className = 'frozen-overlay'; el.appendChild(fEl); }
   if (cellData.sym === WILD && cellData.wild > 0) {
-    let wEl = document.createElement('div');
-    wEl.className = 'wild-count';
-    wEl.innerText = cellData.wild;
-    el.appendChild(wEl);
+    let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = cellData.wild; el.appendChild(wEl);
   }
   return el;
 }
 
 function updateSymbolDOM(cell) {
   let el = document.getElementById(cell.id);
-  if (el) {
-    let wEl = el.querySelector('.wild-count');
-    if (wEl) wEl.innerText = cell.wild;
-  }
+  if (el) { let wEl = el.querySelector('.wild-count'); if (wEl) wEl.innerText = cell.wild; }
 }
 
 function renderBoard() {
   const layer = document.getElementById('symbols-layer');
   for (let c=0; c<3; c++) {
     for (let i=0; i<4; i++) {
-      let r = i - 1;
-      let cellData = boardState[c][i];
-      if(!cellData) continue;
-
+      let r = i - 1; let cellData = boardState[c][i]; if(!cellData) continue;
       let el = document.getElementById(cellData.id);
       if (!el) {
         el = createSymbolDOM(cellData);
         let startTop = cellData.tempTop !== undefined ? cellData.tempTop : getTop(r);
-        el.style.left = getLeft(c) + 'px';
-        el.style.top = startTop + 'px';
-        layer.appendChild(el);
-        el.offsetHeight; 
-        delete cellData.tempTop;
+        el.style.left = getLeft(c) + 'px'; el.style.top = startTop + 'px';
+        layer.appendChild(el); el.offsetHeight; delete cellData.tempTop;
       }
-
-      if (r === -1 && (cellData.sym === WILD || cellData.sym === FREE)) {
-        el.classList.add('next-glow');
-      } else {
-        el.classList.remove('next-glow');
-      }
-
-      el.style.top = getTop(r) + 'px';
-      el.style.left = getLeft(c) + 'px';
+      if (r === -1 && (cellData.sym === WILD || cellData.sym === FREE)) el.classList.add('next-glow');
+      else el.classList.remove('next-glow');
+      el.style.top = getTop(r) + 'px'; el.style.left = getLeft(c) + 'px';
     }
   }
 }
 
-const canvas = document.getElementById('fx-canvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('fx-canvas'); const ctx = canvas.getContext('2d');
 let particles = []; let activeLines = [];
-
-function resizeCanvas() {
-  canvas.width = document.getElementById('grid-wrapper').clientWidth;
-  canvas.height = document.getElementById('grid-wrapper').clientHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+function resizeCanvas() { canvas.width = document.getElementById('grid-wrapper').clientWidth; canvas.height = document.getElementById('grid-wrapper').clientHeight; }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -601,9 +579,7 @@ function drawCanvas() {
     let line = activeLines[i];
     ctx.beginPath(); ctx.moveTo(line.points[0].x, line.points[0].y);
     for (let j = 1; j < line.points.length; j++) ctx.lineTo(line.points[j].x, line.points[j].y);
-    ctx.strokeStyle = line.color; ctx.lineWidth = 15;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 20; ctx.shadowColor = line.color;
-    ctx.globalAlpha = line.alpha; ctx.stroke();
+    ctx.strokeStyle = line.color; ctx.lineWidth = 15; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 20; ctx.shadowColor = line.color; ctx.globalAlpha = line.alpha; ctx.stroke();
     line.alpha -= 0.03; if (line.alpha <= 0) activeLines.splice(i, 1);
   }
   ctx.shadowBlur = 0;
@@ -611,11 +587,9 @@ function drawCanvas() {
     let p = particles[i];
     ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-    p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
-    if (p.alpha <= 0) particles.splice(i, 1);
+    p.x += p.vx; p.y += p.vy; p.alpha -= 0.02; if (p.alpha <= 0) particles.splice(i, 1);
   }
-  ctx.globalAlpha = 1;
-  requestAnimationFrame(drawCanvas);
+  ctx.globalAlpha = 1; requestAnimationFrame(drawCanvas);
 }
 drawCanvas();
 
@@ -628,6 +602,37 @@ function addEffectLine(cells) {
   });
 }
 
+const globalCanvas = document.getElementById('global-fx-canvas');
+const gctx = globalCanvas.getContext('2d');
+let globalParticles = [];
+function resizeGlobalCanvas() { globalCanvas.width = window.innerWidth; globalCanvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeGlobalCanvas); resizeGlobalCanvas();
+
+function drawGlobalCanvas() {
+    gctx.clearRect(0, 0, globalCanvas.width, globalCanvas.height);
+    for (let i = globalParticles.length - 1; i >= 0; i--) {
+        let p = globalParticles[i];
+        gctx.fillStyle = p.color; gctx.globalAlpha = p.alpha;
+        gctx.beginPath(); gctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); gctx.fill();
+        p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.alpha -= p.decay;
+        if (p.alpha <= 0) globalParticles.splice(i, 1);
+    }
+    gctx.globalAlpha = 1; requestAnimationFrame(drawGlobalCanvas);
+}
+drawGlobalCanvas();
+
+function fireWinParticles(intensity) {
+    let colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
+    let cx = window.innerWidth / 2; let cy = window.innerHeight / 2;
+    for(let i=0; i<intensity; i++) {
+        globalParticles.push({
+            x: cx + (Math.random()-0.5)*150, y: cy + (Math.random()-0.5)*150,
+            vx: (Math.random()-0.5)*25, vy: (Math.random()-0.5)*25 - 5,
+            size: Math.random()*8+4, color: colors[Math.floor(Math.random()*colors.length)], alpha: 1, decay: Math.random()*0.02 + 0.005
+        });
+    }
+}
+
 function showPopup(r, c, text) {
   const wrapper = document.getElementById('grid-wrapper');
   let el = document.createElement('div'); el.className = 'popup'; el.innerText = text;
@@ -635,14 +640,10 @@ function showPopup(r, c, text) {
   wrapper.appendChild(el); setTimeout(() => el.remove(), 1000);
 }
 
-// CHAIN演出専用ポップアップ
 function showChainPopup(text) {
   const wrapper = document.getElementById('grid-wrapper');
-  let el = document.createElement('div');
-  el.className = 'chain-popup';
-  el.innerText = text;
-  wrapper.appendChild(el);
-  setTimeout(() => el.remove(), 1500);
+  let el = document.createElement('div'); el.className = 'chain-popup'; el.innerText = text;
+  wrapper.appendChild(el); setTimeout(() => el.remove(), 1500);
 }
 
 function getNeighbors(r, c) {
@@ -652,8 +653,7 @@ function getNeighbors(r, c) {
   const is8Dir = (r===0 && c===0) || (r===0 && c===2) || (r===2 && c===0) || (r===2 && c===2) || (r===1 && c===1);
   const dirs = is8Dir ? dirs8 : dirs4;
   for (let [dr, dc] of dirs) {
-    let nr = r + dr, nc = c + dc;
-    if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) neighbors.push([nr, nc]);
+    let nr = r + dr, nc = c + dc; if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) neighbors.push([nr, nc]);
   }
   return neighbors;
 }
@@ -704,54 +704,40 @@ async function evaluateMatches() {
   for (let line of lines) {
     let mult = consumeMultiplier(line.sym);
     let win = Math.floor(mult * currentBet);
-    totalWin += win; didWinThisSpin = true;
-    addEffectLine(line.cells);
+    totalWin += win; didWinThisSpin = true; addEffectLine(line.cells);
     for (let pos of line.cells) {
-       cellsToRemove.add(`${pos[0]},${pos[1]}`);
-       let target = line.sym;
-       if (!clearCounts[target]) clearCounts[target] = new Set();
-       clearCounts[target].add(`${pos[0]},${pos[1]}`);
+       cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = line.sym;
+       if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`);
     }
   }
 
   for (let cluster of clusters) {
     for (let pos of cluster.cells) {
-       cellsToRemove.add(`${pos[0]},${pos[1]}`);
-       let target = cluster.sym;
-       if (!clearCounts[target]) clearCounts[target] = new Set();
-       clearCounts[target].add(`${pos[0]},${pos[1]}`);
+       cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = cluster.sym;
+       if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`);
     }
   }
 
   if (cellsToRemove.size > 0) {
-    // CHAINシステム処理
     currentChain++;
     if (currentChain >= 2) {
-      // 背景を青白く発光
       let blueAlpha = Math.min((currentChain - 1) * 0.15, 0.6);
       document.querySelectorAll('.bg-slot').forEach(el => {
-        el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`;
-        el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`;
+        el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`; el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`;
       });
-
       let chainText = `${currentChain} CHAIN!`;
       if (currentChain >= 3) {
-        // 3chain以降は 0.5倍ずつ配当ボーナスを追加
-        let bonusMult = 0.5 * (currentChain - 2);
-        let bonusWin = Math.floor(bonusMult * currentBet);
-        if (bonusWin > 0) {
-          totalWin += bonusWin;
-          didWinThisSpin = true;
-          chainText += `\n+${bonusWin}`;
-        }
+        let bonusWin = Math.floor((0.5 * (currentChain - 2)) * currentBet);
+        if (bonusWin > 0) { totalWin += bonusWin; didWinThisSpin = true; chainText += `\n+${bonusWin}`; }
       }
       showChainPopup(chainText);
     }
 
     for (let sym in clearCounts) {
        let count = clearCounts[sym].size;
-       if (BONUS_PAYOUTS[sym] && count >= BONUS_PAYOUTS[sym].min) {
-           let bonus = Math.floor(BONUS_PAYOUTS[sym].mult * currentBet);
+       let bonusMult = getBonusMult(sym, count);
+       if (bonusMult > 0) {
+           let bonus = Math.floor(bonusMult * currentBet);
            totalWin += bonus; didWinThisSpin = true;
            let [r, c] = Array.from(clearCounts[sym])[0].split(',').map(Number);
            showPopup(r, c, `+${bonus}`);
@@ -760,53 +746,32 @@ async function evaluateMatches() {
     updateUI();
 
     cellsToRemove.forEach(posStr => {
-      let [r, c] = posStr.split(',').map(Number);
-      let cell = boardState[c][r+1];
-      if (cell) {
-        let el = document.getElementById(cell.id);
-        if (el) { el.classList.add('highlight-bg'); let symEl = el.querySelector('.symbol-text'); if (symEl) symEl.classList.add('anim-fade-out'); }
-      }
+      let [r, c] = posStr.split(',').map(Number); let cell = boardState[c][r+1];
+      if (cell) { let el = document.getElementById(cell.id); if (el) { el.classList.add('highlight-bg'); let symEl = el.querySelector('.symbol-text'); if (symEl) symEl.classList.add('anim-fade-out'); } }
     });
-
     await delay(800); 
     
     let actualRemove = [];
     cellsToRemove.forEach(posStr => {
-      let [r, c] = posStr.split(',').map(Number);
-      let cell = boardState[c][r+1];
-      if (cell.sym === WILD) {
-         cell.wild--; updateSymbolDOM(cell);
-         if (cell.wild <= 0) actualRemove.push([r, c]);
-      } else {
-         actualRemove.push([r, c]);
-      }
+      let [r, c] = posStr.split(',').map(Number); let cell = boardState[c][r+1];
+      if (cell.sym === WILD) { cell.wild--; updateSymbolDOM(cell); if (cell.wild <= 0) actualRemove.push([r, c]); } 
+      else { actualRemove.push([r, c]); }
     });
 
     actualRemove.forEach(([r, c]) => {
       getNeighbors(r, c).forEach(([nr, nc]) => {
          let neighbor = boardState[nc][nr+1];
          if (neighbor && neighbor.frozen) {
-             neighbor.frozen = false;
-             let el = document.getElementById(neighbor.id);
-             if(el) {
-                 let fEl = el.querySelector('.frozen-overlay');
-                 if(fEl) {
-                     fEl.style.opacity = '0'; 
-                     setTimeout(() => fEl.remove(), 500);
-                 }
-             }
+             neighbor.frozen = false; let el = document.getElementById(neighbor.id);
+             if(el) { let fEl = el.querySelector('.frozen-overlay'); if(fEl) { fEl.style.opacity = '0'; setTimeout(() => fEl.remove(), 500); } }
          }
       });
       let cell = boardState[c][r+1];
       if(cell) { let el = document.getElementById(cell.id); if(el) el.remove(); boardState[c][r+1] = null; }
     });
-
     cascade();
   } else {
-    // スピン終了：チェインと背景色をリセット
-    currentChain = 0;
-    resetGridColor();
-    checkFreeSpins();
+    currentChain = 0; resetGridColor(); checkFreeSpins();
   }
 }
 
@@ -820,17 +785,16 @@ function cascade() {
       boardState[c].unshift(newSym);
     }
   }
-  renderBoard(); 
-  setTimeout(evaluateMatches, 850);
+  renderBoard(); setTimeout(evaluateMatches, 850);
 }
 
 function checkFreeSpins() {
-  let freeCount = 0;
+  let newFreeCells = [];
   for (let c = 0; c < 3; c++) {
     for (let r = 0; r < 3; r++) {
       let cell = boardState[c][r+1];
       if (cell && cell.sym === FREE) {
-        freeCount++;
+        newFreeCells.push({c: c, r: r});
         let el = document.getElementById(cell.id);
         if(el) { el.style.transform = "scale(0) rotate(720deg)"; setTimeout(() => el.remove(), 800); }
         boardState[c][r+1] = null;
@@ -838,103 +802,200 @@ function checkFreeSpins() {
     }
   }
   
-  if (freeCount > 0) {
+  if (newFreeCells.length > 0) {
+    for(let fc of newFreeCells) {
+       guaranteedWildQueue.push({c: fc.c, r: fc.r});
+       guaranteedWildQueue.push({c: fc.c, r: fc.r});
+       guaranteedWildQueue.push({c: fc.c, r: fc.r});
+    }
     isFreeSpinMode = true;
-    freeSpinsLeft += freeCount * 3;
+    freeSpinsLeft += newFreeCells.length * 3;
     document.getElementById('fs-banner-top').classList.add('active-top');
     document.getElementById('fs-banner-bottom').classList.add('active-bottom');
+    resetGridColor(); 
     updateUI();
     setTimeout(cascade, 850);
   } else {
     if (freeSpinsLeft > 0) {
-       freeSpinsLeft--;
-       updateUI();
-       setTimeout(() => startSpin(true), 1000);
+       freeSpinsLeft--; updateUI(); setTimeout(() => startSpin(true), 1000);
     } else {
        isFreeSpinMode = false;
+       guaranteedWildQueue = []; 
        document.getElementById('fs-banner-top').classList.remove('active-top');
        document.getElementById('fs-banner-bottom').classList.remove('active-bottom');
+       resetGridColor();
        
        if (totalWin > 0) {
           medals += totalWin; 
-          document.getElementById('total-win-amount').innerText = totalWin;
-          document.getElementById('total-win-banner').style.display = 'block';
+          let banner = document.getElementById('total-win-amount');
+          let totalMult = (totalWin / currentBet).toFixed(1).replace('.0', ''); 
+          banner.innerHTML = `${totalWin} <br><span style="font-size:0.4em; color:#fff;">(${totalMult}倍)</span>`;
+          
+          let winContainer = document.getElementById('total-win-banner');
+          winContainer.className = '';
+          if (totalWin < 50) { winContainer.classList.add('win-small'); }
+          else if (totalWin < 500) { winContainer.classList.add('win-normal'); }
+          else if (totalWin < 1000) { winContainer.classList.add('win-large'); fireWinParticles(60); }
+          else { winContainer.classList.add('win-huge'); fireWinParticles(150); }
+          
+          winContainer.style.display = 'block';
        }
 
-       if (!didWinThisSpin) {
-          gameBalance.consecutiveLosses++;
-       } else {
-          gameBalance.consecutiveLosses = 0;
-       }
-       updateGameBalanceLogic();
-
-       updateUI();
+       if (!didWinThisSpin) gameBalance.consecutiveLosses++;
+       else gameBalance.consecutiveLosses = 0;
+       updateGameBalanceLogic(); updateUI();
        document.getElementById('spin-btn').disabled = false;
     }
   }
 }
 
 function startSpin(isFreeMode = false) {
-  let inputBet = parseInt(document.getElementById('bet-input').value) || 10;
+  let inputBet = parseInt(document.getElementById('bet-input').value) || 1;
   inputBet = Math.min(Math.max(inputBet, 1), 50); 
   
   if (!isFreeMode) {
     if (medals < inputBet) { alert("メダルが足りません！"); return; }
-    currentBet = inputBet;
-    document.getElementById('bet-input').value = currentBet;
-    medals -= currentBet; 
-    totalWin = 0;
-    didWinThisSpin = false;
-    initMultipliersDOM();
-    isFreeSpinMode = false;
+    currentBet = inputBet; document.getElementById('bet-input').value = currentBet;
+    medals -= currentBet; totalWin = 0; didWinThisSpin = false;
+    initMultipliersDOM(); isFreeSpinMode = false;
   }
   
-  // 新しいスピン開始時にチェインと背景色をリセット
-  currentChain = 0;
-  resetGridColor();
-  updateUI();
-  
+  currentChain = 0; resetGridColor(); updateUI();
   document.getElementById('spin-btn').disabled = true;
   document.getElementById('total-win-banner').style.display = 'none';
 
-  let shuffles = 15;
-  let shuffleInterval = setInterval(() => {
-    for(let c=0; c<3; c++) {
-      for(let i=0; i<4; i++) {
-        let cell = boardState[c][i];
-        if(cell) {
-          let el = document.getElementById(cell.id);
-          // シャッフル中も重み付けを使用（視覚的な一貫性）
-          if(el) el.querySelector('.symbol-text').innerText = getWeightedRandomSymbol();
-        }
-      }
+  let finalSyms = [[],[],[]];
+  for(let c=0; c<3; c++) {
+    for(let i=0; i<4; i++) {
+      finalSyms[c].push(getRandomSymbol(i > 0, c));
     }
-    shuffles--;
-    if(shuffles <= 0) {
-      clearInterval(shuffleInterval);
-      finalizeInitialSpin(isFreeMode);
-    }
-  }, 60);
-}
+  }
 
-function finalizeInitialSpin(isFreeMode) {
+  if (isFreeMode && guaranteedWildQueue.length > 0) {
+      let wildPos = guaranteedWildQueue.shift();
+      finalSyms[wildPos.c][wildPos.r + 1] = { id: 's'+(symIdCounter++), sym: WILD, frozen: false, wild: 1 };
+  }
+
   document.getElementById('symbols-layer').innerHTML = '';
   for(let c=0; c<3; c++) {
     boardState[c] = [];
     for(let i=0; i<4; i++) {
-      let newSym = getRandomSymbol(i > 0, c); 
-      boardState[c].push(newSym);
+      let dummySym = { id: 's'+(symIdCounter++), sym: getWeightedRandomSymbol(), frozen: false, wild: 0 };
+      boardState[c].push(dummySym);
+      // 最終図柄のIDとダミー図柄のIDを同期させ、DOMの再生成（ゴーストバグ）を防ぐ
+      finalSyms[c][i].id = dummySym.id; 
     }
   }
   renderBoard();
-  setTimeout(evaluateMatches, 500);
+
+  let patternIdx = isFreeMode ? 0 : Math.floor(Math.random() * 6) + 1;
+  let steps = [[0,0,0], [0,0,0], [0,0,0]]; 
+  if(patternIdx === 2) { 
+     steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[2][1]=3; steps[2][2]=4; steps[1][2]=5; steps[0][2]=6; steps[0][1]=7; steps[1][1]=8;
+  } else if(patternIdx === 3) { 
+     steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[0][1]=3; steps[1][1]=4; steps[2][1]=5; steps[0][2]=6; steps[1][2]=7; steps[2][2]=8;
+  } else if(patternIdx === 4) { 
+     let arr = [0,1,2,3,4,5,6,7,8].sort(()=>Math.random()-0.5);
+     let i=0; for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = arr[i++];
+  } else if(patternIdx === 5) { 
+     steps[0][0]=0; steps[0][1]=1; steps[0][2]=2; steps[1][0]=3; steps[1][1]=4; steps[1][2]=5; steps[2][0]=6; steps[2][1]=7; steps[2][2]=8;
+  } else if(patternIdx === 6) { 
+     for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = (r===1&&c===1)?1:0;
+  }
+
+  let maxStep = 0;
+  for(let r=0; r<3; r++) for(let c=0; c<3; c++) maxStep = Math.max(maxStep, steps[c][r]);
+
+  let duration = isFreeMode ? 500 : 2500;
+  // 最初の0.5秒は確定で回転。2.5秒(2500ms)の間の残り2000msでパターン停止を割り振る
+  let delayPerStep = maxStep > 0 ? (2000 / maxStep) : 0; 
+  let startTime = performance.now();
+  let cellStopped = [[false,false,false,false],[false,false,false,false],[false,false,false,false]];
+  let lastTick = 0;
+
+  function spinAnim(now) {
+     let elapsed = now - startTime;
+     let allStopped = true;
+     let tick = Math.floor(elapsed / 60);
+
+     for(let c=0; c<3; c++) {
+       for(let i=0; i<4; i++) {
+         if(cellStopped[c][i]) continue;
+         allStopped = false;
+         
+         let stepVal = i === 0 ? steps[c][0] : steps[c][i-1];
+         let stopTime;
+         if (isFreeMode) {
+             stopTime = 500;
+         } else if (maxStep === 0) {
+             // パターン1（すべて同時に止まる）：2500ms時点で一斉停止
+             stopTime = 2500;
+         } else {
+             // その他のパターン：500ms経過後から順番に停止
+             stopTime = 500 + (stepVal * delayPerStep);
+         }
+
+         if (elapsed >= stopTime) {
+            cellStopped[c][i] = true;
+            boardState[c][i] = finalSyms[c][i]; 
+            // 停止時に要素の中身を完全に書き換え、凍結状態などの表示を即座に反映させる
+            let el = document.getElementById(boardState[c][i].id);
+            if(el) {
+                el.innerHTML = '';
+                let symEl = document.createElement('div');
+                symEl.className = 'symbol-text';
+                symEl.innerText = boardState[c][i].sym;
+                el.appendChild(symEl);
+                if (boardState[c][i].frozen) {
+                    let fEl = document.createElement('div');
+                    fEl.className = 'frozen-overlay';
+                    el.appendChild(fEl);
+                }
+                if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) {
+                    let wEl = document.createElement('div');
+                    wEl.className = 'wild-count';
+                    wEl.innerText = boardState[c][i].wild;
+                    el.appendChild(wEl);
+                }
+            }
+         } else {
+            if (tick > lastTick) {
+               let el = document.getElementById(boardState[c][i].id);
+               if(el) el.querySelector('.symbol-text').innerText = getWeightedRandomSymbol();
+            }
+         }
+       }
+     }
+     lastTick = tick;
+
+     if (!allStopped && elapsed < duration + 500) {
+        requestAnimationFrame(spinAnim);
+     } else {
+        for(let c=0; c<3; c++) {
+          for(let i=0; i<4; i++) {
+            if(!cellStopped[c][i]) boardState[c][i] = finalSyms[c][i];
+          }
+        }
+        renderBoard(); 
+        setTimeout(evaluateMatches, 400);
+     }
+  }
+  requestAnimationFrame(spinAnim);
 }
 
 document.getElementById('spin-btn').addEventListener('click', () => startSpin(false));
 initMultipliersDOM();
 updateGameBalanceLogic();
-finalizeInitialSpin(false); 
 
+function initFirstBoard() {
+  document.getElementById('symbols-layer').innerHTML = '';
+  for(let c=0; c<3; c++) {
+    boardState[c] = [];
+    for(let i=0; i<4; i++) boardState[c].push(getRandomSymbol(i > 0, c));
+  }
+  renderBoard();
+}
+initFirstBoard();
 </script>
 </body>
 </html>
