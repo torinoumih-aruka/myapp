@@ -156,12 +156,11 @@
     position: fixed; left: 0; width: 100%; height: 40px;
     background: linear-gradient(to bottom, #800000, #500000);
     border-top: 2px solid #ffaa00; border-bottom: 2px solid #ffaa00;
-    /* z-index指定を削除し、下の個別IDで上書きするように変更 */
     display: flex; align-items: center; overflow: hidden;
     transition: transform 0.5s ease; pointer-events: none;
   }
-  #fs-banner-top { top: 0; transform: translateY(-100%); z-index: 100; } /* #header(110)の下に配置 */
-  #fs-banner-bottom { bottom: 0; transform: translateY(100%); z-index: 210; } /* #controls-row(200)の上に配置 */
+  #fs-banner-top { top: 0; transform: translateY(-100%); z-index: 100; } 
+  #fs-banner-bottom { bottom: 0; transform: translateY(100%); z-index: 210; } 
   #fs-banner-top.active-top { transform: translateY(0); }
   #fs-banner-bottom.active-bottom { transform: translateY(0); }
   
@@ -216,55 +215,6 @@
 <body>
 
 <script>
-/*
-// ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.1 (with auto-resume & array param fix)
-let zzfxV = 0.3; // マスターボリューム
-let zzfxX = new (window.AudioContext || window.webkitAudioContext)(); // AudioContext
-
-const zzfx = (...p) => {
-  // ブラウザの音声再生制限を解除
-  if (zzfxX.state === 'suspended') zzfxX.resume();
-  
-  // パラメータが配列で渡された場合の展開
-  const params = Array.isArray(p[0]) ? p[0] : p;
-  
-  // 正規のZzFX生成エンジンにパラメータを渡す
-  return zzfxP(zzfxG(...params));
-};
-
-const zzfxP = (...t) => {
-  let e = zzfxX.createBufferSource(),
-      f = zzfxX.createBuffer(t.length, t[0].length, 44100);
-  t.map((d, i) => f.getChannelData(i).set(d));
-  e.buffer = f;
-  e.connect(zzfxX.destination);
-  e.start();
-  return e;
-};
-
-// ここが公式サイトと同じ音声を合成するコア計算ロジックです
-const zzfxG = (q=1,k=.05,c=220,e=0,t=0,u=.1,r=0,F=1,v=0,z=0,w=0,A=0,l=0,B=0,x=0,m=0,d=0,y=1,n=0,C=0) => {
-  let b=2*Math.PI,H=v*=500*b/44100**2,I=(0<x?1:-1)*b/4,S=0,U=0,a=0,h=1,s=0,D=0,f=0,g=0,p=0,L=0;
-  r*=b/44100;c*=b/44100;e*=44100;t*=44100;u*=44100;d*=44100;z*=500*b/44100**3;
-  x*=b/44100;w*=b/44100;A*=44100;l=44100*l|0;
-  for(h=e+t+u+d,S=new Float32Array(h),U=0;U<h;++U){
-    a=U<e?U/e:U<e+t?1:U<h-d?1-(U-e-t)/u:0;
-    s=++D%(1E4*y|0)?s:m?1<m?2<m?3<m?Math.sin((U%44100/44100)*b):Math.max(Math.min(Math.tan(U*b/44100),1),-1):1-(2*U/44100%2+2)%2:1-4*Math.abs(Math.round(U/44100)-U/44100):Math.sin(U*b/44100);
-    f=r?1-Math.sin(U*r):1;
-    c+=v+=z;
-    g=c+v;
-    p+=g*=f;
-    g*=s;
-    L=Math.sin(p);
-    S[U]=a*f*q*zzfxV*(L=1<F?0<L?1:-1:2<F?p%b/Math.PI-1:3<F?L*L*L:4<F?p%b<b/2?1:-1:5<F?p%b<b/2?-1:1:6<F?(p%b)/b:7<F?L<.5?L:-L:8<F?L<.5?-1:1:9<F?Math.random():L);
-    if(U>A)p+=w,p+=I;if(l&&U>l)p+=B;if(n&&U>n)p+=C;
-  }
-  return [S];
-};
-
-zzfx.context = zzfxX;
-*/
-
 // --- ZzFXMicro 修正版 ---
 let zzfxV = 0.3,
     zzfxX = new (window.AudioContext || window.webkitAudioContext)(),
@@ -297,7 +247,7 @@ let zzfxV = 0.3,
   <div id="header">
     <div class="panel">
       <div>BET</div>
-      <input type="number" id="bet-input" value="1" min="1" max="50">
+      <input type="number" id="bet-input" value="1" min="1" max="100">
     </div>
     <div class="panel">
       <div>WIN</div>
@@ -377,20 +327,60 @@ function saveGameData() {
 }
 
 let soundEnabled = true;
+
+// --- 効果音関連のプレースホルダー ---
 function playSoundSpin() {
   if (!soundEnabled) return;
   zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]);
 }
 
-// リール停止時の効果音追加
 function playSoundStop() {
   if (!soundEnabled) return;
   zzfx(...[1.0,.1,523.2511,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]);
 }
 
+function playSoundFreeSpinNext() {
+  if (!soundEnabled) return;
+  // TODO: フリースピンの図柄が、NEXTグリッドに抽選されたときの効果音
+  zzfx(...[.5,0,523.2511,,.05,.5,2,0,1,.5,400,,.02,.1,,,.15,.5,.2,.3]);
+}
+
+function playSoundSymbolBounce() {
+  if (!soundEnabled) return;
+  // TODO: 図柄が落下して、落下後にバウンドしたときの効果音
+  zzfx(...[.8,.1,65.40639,,,.04,4,2,,3,,,,,,.3,.15,,.03,,259]); // 図柄落下時
+}
+
+function playSoundMatch() {
+  if (!soundEnabled) return;
+  // TODO: 一列揃って図柄が消えるときの効果音
+  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); // 一列揃った時
+}
+
+function playSoundTotalWin() {
+  if (!soundEnabled) return;
+  // TODO: TOTAL WINが表示されるときの効果音
+  zzfx(...[.4,0,245,,.1,.25,1,0,,,300,,.05,,,,,.8,,,117]);
+}
+
+function playSoundChain() {
+  if (!soundEnabled) return;
+  // TODO: 連鎖（chain）が4を超えて発生するとき（図柄が消える瞬間）の効果音
+  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); // 一列揃った時
+}
+
+function playSoundStartFreeSpin() {
+  if (!soundEnabled) return;
+  // TODO: フリースピン開始時
+  zzfx(...[.9,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); // フリースピン開始時
+}
+
+// ----------------------------------
+
 window.onload = () => {
   let savedMedals = getCookie("emojiDrop_medals");
-  if (savedMedals !== null) {
+  // 保存されたメダル数が0より大きい場合のみ「つづきから」を表示
+  if (savedMedals !== null && parseInt(savedMedals) > 0) {
     document.getElementById('btn-continue').style.display = 'block';
   }
 };
@@ -501,7 +491,6 @@ function initBackgroundSlots() {
 initBackgroundSlots();
 
 function resetGridColor() {
-  // リール背景のリセット
   document.querySelectorAll('.bg-slot').forEach(el => {
     if (isFreeSpinMode) {
       el.style.backgroundColor = 'rgba(255, 50, 50, 0.2)'; el.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.5)'; el.style.borderColor = 'rgba(255, 100, 100, 0.8)';
@@ -511,7 +500,6 @@ function resetGridColor() {
   });
   if (!isFreeSpinMode) document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
   
-  // シンボルの枠線のリセット
   document.querySelectorAll('.symbol-cell').forEach(el => {
     el.style.borderColor = '#333';
     el.style.borderStyle = 'solid';
@@ -709,6 +697,14 @@ async function evaluateMatches() {
 
   if (cellsToRemove.size > 0) {
     currentChain++;
+    
+    // 効果音トリガー：4連鎖超え(>4) か 通常の消滅音か
+    if (currentChain > 4) {
+      playSoundChain();
+    } else {
+      playSoundMatch();
+    }
+    
     if (currentChain >= 2) {
       let blueAlpha = Math.min((currentChain - 1) * 0.15, 0.6);
       document.querySelectorAll('.bg-slot').forEach(el => { el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`; el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`; });
@@ -722,7 +718,6 @@ async function evaluateMatches() {
     }
     updateUI();
     
-    // 消滅アニメーション設定
     cellsToRemove.forEach(posStr => {
       let [r, c] = posStr.split(',').map(Number); let cell = boardState[c][r+1];
       if (cell) { 
@@ -730,7 +725,6 @@ async function evaluateMatches() {
         if (el) { 
           el.classList.add('highlight-bg'); 
           let symEl = el.querySelector('.symbol-text'); 
-          // 修正: WILDは回数が1以下（次に消滅する）場合のみフェードアウトさせる
           if (symEl && (cell.sym !== WILD || cell.wild <= 1)) { 
             symEl.classList.add('anim-fade-out'); 
           } 
@@ -765,11 +759,33 @@ async function evaluateMatches() {
 }
 
 function cascade() {
+  let dropped = false;
   for (let c = 0; c < 3; c++) {
-    boardState[c] = boardState[c].filter(sym => sym !== null); let missing = 4 - boardState[c].length;
-    for (let i = 0; i < missing; i++) { let newSym = getRandomSymbol(false, c); newSym.tempTop = getTop(-1) - (missing - i) * 90; boardState[c].unshift(newSym); }
+    let prevLen = boardState[c].length;
+    boardState[c] = boardState[c].filter(sym => sym !== null); 
+    let missing = 4 - boardState[c].length;
+    
+    if (missing > 0 || prevLen !== boardState[c].length) dropped = true;
+    
+    for (let i = 0; i < missing; i++) { 
+        let newSym = getRandomSymbol(false, c); 
+        newSym.tempTop = getTop(-1) - (missing - i) * 90; 
+        boardState[c].unshift(newSym); 
+    }
+    
+    // NEXTグリッド(boardState[c][0])にFREEが抽選された時の効果音トリガー
+    if (missing > 0 && boardState[c][0].sym === FREE) {
+        playSoundFreeSpinNext();
+    }
   }
-  renderBoard(); setTimeout(evaluateMatches, 850);
+  renderBoard(); 
+  
+  // 落下(バウンド)効果音のトリガー: transition: top 0.8s に合わせて800ms後
+  if (dropped) {
+      setTimeout(playSoundSymbolBounce, 800);
+  }
+  
+  setTimeout(evaluateMatches, 850);
 }
 
 function finishTurn() {
@@ -778,6 +794,8 @@ function finishTurn() {
   resetGridColor();
   
   if (totalWin > 0) {
+     playSoundTotalWin(); // TOTAL WIN表示の効果音トリガー
+     
      medals += totalWin; 
      let banner = document.getElementById('total-win-amount');
      let totalMult = (totalWin / currentBet).toFixed(1).replace('.0', ''); 
@@ -802,7 +820,6 @@ function checkFreeSpins() {
       if (cell && cell.sym === FREE) {
         newFreeCells.push({c: c, r: r});
         
-        // 修正: 盤面から消さずに演出だけを行い、そのままフリースピン開始に繋ぐ
         let el = document.getElementById(cell.id);
         if (el) {
            el.style.transform = "scale(1.1)";
@@ -819,9 +836,10 @@ function checkFreeSpins() {
     gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
     updateDebugUI();
     
+    playSoundStartFreeSpin();
+    
     document.getElementById('fs-banner-top').classList.add('active-top'); document.getElementById('fs-banner-bottom').classList.add('active-bottom');
     resetGridColor(); updateUI();
-    // カスケードさせず、間を置いてそのまま次(フリースピン)の回転へ
     setTimeout(() => startSpin(true), 1500); 
   } else {
     if (freeSpinsLeft > 0) { freeSpinsLeft--; updateUI(); setTimeout(() => startSpin(true), 1000); } 
@@ -832,8 +850,9 @@ function checkFreeSpins() {
 function startSpin(isFreeMode = false) {
   if(!isFreeMode) playSoundSpin(); 
 
+  // BET数の上限を100に引き上げ
   let inputBet = parseInt(document.getElementById('bet-input').value) || 1;
-  inputBet = Math.min(Math.max(inputBet, 1), 50); 
+  inputBet = Math.min(Math.max(inputBet, 1), 100); 
   
   if (!isFreeMode) {
     if (medals < inputBet) { alert("メダルが足りません！"); return; }
@@ -866,7 +885,6 @@ function startSpin(isFreeMode = false) {
   }
   renderBoard();
   
-  // 回転開始時にすべての枠を暗めの破線にする (CSSで制御)
   document.querySelectorAll('.symbol-cell').forEach(el => {
       el.style.borderColor = '#444';
       el.style.borderStyle = 'dashed';
@@ -883,7 +901,6 @@ function startSpin(isFreeMode = false) {
   let maxStep = 0; for(let r=0; r<3; r++) for(let c=0; c<3; c++) maxStep = Math.max(maxStep, steps[c][r]);
 
   let duration = isFreeMode ? 500 : 2500;
-  // 修正: 最初の0.5秒は確定で回転させ、残りの2000msを使って時間差で止める
   let delayPerStep = maxStep > 0 ? (2000 / maxStep) : 0; 
   let startTime = performance.now();
   let cellStopped = [[false,false,false,false],[false,false,false,false],[false,false,false,false]];
@@ -891,7 +908,7 @@ function startSpin(isFreeMode = false) {
 
   function spinAnim(now) {
      let elapsed = now - startTime; let allStopped = true; let tick = Math.floor(elapsed / 60);
-     let soundPlayedThisFrame = false; // 修正: 1フレーム内のサウンド重複再生を防止
+     let soundPlayedThisFrame = false; 
 
      for(let c=0; c<3; c++) {
        for(let i=0; i<4; i++) {
@@ -907,7 +924,6 @@ function startSpin(isFreeMode = false) {
          if (elapsed >= stopTime) {
             cellStopped[c][i] = true;
             
-            // 修正: 停止サウンドの再生
             if (!soundPlayedThisFrame && !isFreeMode) {
                 playSoundStop();
                 soundPlayedThisFrame = true;
@@ -915,7 +931,6 @@ function startSpin(isFreeMode = false) {
 
             boardState[c][i] = finalSyms[c][i]; 
             
-            // 修正: 枠色を明るい実線に変更 (停止合図)
             let el = document.getElementById(boardState[c][i].id);
             if(el) {
                 el.style.borderColor = '#888';
@@ -925,6 +940,12 @@ function startSpin(isFreeMode = false) {
                 if (boardState[c][i].frozen) { let fEl = document.createElement('div'); fEl.className = 'frozen-overlay'; el.appendChild(fEl); }
                 if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) { let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = boardState[c][i].wild; el.appendChild(wEl); }
             }
+            
+            // 初回のスピンでNEXT(0)にFREEが抽選されていた場合の効果音トリガー
+            if (i === 0 && boardState[c][i].sym === FREE && !isFreeMode) {
+                playSoundFreeSpinNext();
+            }
+            
          } else {
             if (tick > lastTick) { 
                 let el = document.getElementById(boardState[c][i].id); 
@@ -959,8 +980,8 @@ function startSpin(isFreeMode = false) {
 }
 
 document.getElementById('spin-btn').addEventListener('click', () => {
-	if (zzfx.context && zzfx.context.state === 'suspended') {
-		zzfx.context.resume();
+	if (zzfxX && zzfxX.state === 'suspended') {
+		zzfxX.resume();
 	}
 	startSpin(false);
 });
