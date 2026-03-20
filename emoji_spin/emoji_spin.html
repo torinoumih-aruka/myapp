@@ -816,6 +816,9 @@ function checkFreeSpins() {
   if (newFreeCells.length > 0) {
     for(let fc of newFreeCells) { guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); }
     isFreeSpinMode = true; freeSpinsLeft += newFreeCells.length * 3;
+    gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
+    updateDebugUI();
+    
     document.getElementById('fs-banner-top').classList.add('active-top'); document.getElementById('fs-banner-bottom').classList.add('active-bottom');
     resetGridColor(); updateUI();
     // カスケードさせず、間を置いてそのまま次(フリースピン)の回転へ
