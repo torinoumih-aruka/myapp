@@ -16,154 +16,112 @@
     align-items: center;
     touch-action: manipulation;
     overflow-x: hidden;
+    padding-bottom: 80px; /* 固定コントロールエリア用の余白 */
   }
 
+  /* --- スタートメニュー --- */
+  #start-menu {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 1000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+  }
+  #start-menu h1 {
+    color: #ffaa00; font-size: 3rem; margin-bottom: 40px; text-shadow: 0 0 20px #ffaa00;
+  }
+  .menu-btn {
+    padding: 15px 40px; margin: 10px; font-size: 1.5rem; font-weight: bold;
+    background: linear-gradient(135deg, #222, #444); color: white;
+    border: 2px solid #ff00ff; border-radius: 30px; cursor: pointer;
+    box-shadow: 0 0 10px #ff00ff; transition: transform 0.2s;
+  }
+  .menu-btn:active { transform: scale(0.95); }
+  .sound-toggle { margin-top: 20px; font-size: 1.2rem; }
+  .sound-toggle label { cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .sound-toggle input { width: 20px; height: 20px; }
+
   #game-container {
-    position: relative;
-    width: 100%;
-    max-width: 450px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    position: relative; width: 100%; max-width: 450px;
+    display: flex; flex-direction: column; align-items: center;
     background: radial-gradient(circle at center, #222 0%, #000 100%);
   }
 
   /* 上部レイアウトの隙間・サイズ調整 */
   #header {
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    padding: 5px;
-    box-sizing: border-box;
-    z-index: 10;
-    gap: 5px;
+    width: 100%; display: flex; justify-content: space-around;
+    padding: 5px; box-sizing: border-box; z-index: 110; 
+    gap: 5px; position: relative;
   }
   
   .panel {
-    background: rgba(0,0,0,0.8);
-    border: 2px solid #444;
-    border-radius: 8px;
-    padding: 5px 10px;
-    text-align: center;
-    min-width: 60px;
+    background: rgba(0,0,0,0.9); border: 2px solid #444; border-radius: 8px;
+    padding: 5px 10px; text-align: center; min-width: 60px;
   }
   .panel div { font-size: 0.7rem; color: #aaa; }
   .panel span { font-size: 1.2rem; font-weight: bold; color: #fff; }
   
   #bet-input {
-    width: 50px;
-    text-align: center;
-    background: #222;
-    color: #fff;
-    border: 1px solid #666;
-    border-radius: 4px;
-    font-size: 1.2rem;
-    font-weight: bold;
+    width: 50px; text-align: center; background: #222; color: #fff;
+    border: 1px solid #666; border-radius: 4px; font-size: 1.2rem; font-weight: bold;
   }
 
   #game-layout {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 10px;
-    margin-top: 5px;
-    width: 100%;
+    display: flex; flex-direction: row; justify-content: center; align-items: flex-start;
+    gap: 10px; margin-top: 5px; width: 100%;
   }
 
-  #grid-wrapper {
-    position: relative;
-    width: 260px;
-    height: 380px; 
-  }
+  #grid-wrapper { position: relative; width: 260px; height: 380px; }
 
   #next-label {
-    position: absolute;
-    top: 30px; left: -45px; color: #0ff;
-    font-weight: bold; font-size: 1.2rem;
-    transform: rotate(-90deg);
+    position: absolute; top: 30px; left: -45px; color: #0ff;
+    font-weight: bold; font-size: 1.2rem; transform: rotate(-90deg);
     text-shadow: 0 0 5px #0ff; letter-spacing: 2px;
   }
 
   .bg-slot {
-    position: absolute;
-    width: 80px; height: 80px;
-    border: 2px dashed #444; border-radius: 12px;
-    box-sizing: border-box; z-index: 2;
-    transition: background-color 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
+    position: absolute; width: 80px; height: 80px;
+    border: 2px dashed #444; border-radius: 12px; box-sizing: border-box; z-index: 2;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease, border-color 0.2s ease;
   }
 
   .symbol-cell {
-    position: absolute;
-    width: 80px; height: 80px;
-    background: #1a1a1a;
-    border: 2px solid #333; border-radius: 12px;
-    box-sizing: border-box; box-shadow: inset 0 0 15px #000;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 3.5rem;
-    transition: top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.8s ease;
-    z-index: 4;
+    position: absolute; width: 80px; height: 80px; background: #1a1a1a;
+    border: 2px solid #333; border-radius: 12px; box-sizing: border-box; box-shadow: inset 0 0 15px #000;
+    display: flex; justify-content: center; align-items: center; font-size: 3.5rem;
+    transition: top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.8s ease; z-index: 4;
   }
-  
   .highlight-bg { background-color: rgba(255, 255, 255, 0.7) !important; }
-  
-  .symbol-text {
-    transition: transform 0.8s ease-in, opacity 0.8s ease-in;
-    z-index: 5; position: relative;
-  }
-  .anim-fade-out {
-    transform: scale(0.2) rotate(720deg) !important;
-    opacity: 0.1 !important;
-  }
+  .symbol-text { transition: transform 0.8s ease-in, opacity 0.8s ease-in; z-index: 5; position: relative; }
+  .anim-fade-out { transform: scale(0.2) rotate(720deg) !important; opacity: 0.1 !important; }
 
   .frozen-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 150, 255, 0.5);
-    border: 3px solid rgba(0, 255, 255, 0.8);
-    border-radius: 10px; box-sizing: border-box;
-    z-index: 6; pointer-events: none;
-    transition: opacity 0.5s ease;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 150, 255, 0.5);
+    border: 3px solid rgba(0, 255, 255, 0.8); border-radius: 10px; box-sizing: border-box;
+    z-index: 6; pointer-events: none; transition: opacity 0.5s ease;
   }
-  
   .wild-count {
-    position: absolute; bottom: -5px; right: -5px;
-    background: #ff0000; color: #fff;
-    font-size: 1.2rem; font-weight: bold;
-    border-radius: 50%; width: 30px; height: 30px;
-    display: flex; justify-content: center; align-items: center;
-    z-index: 7; border: 2px solid #fff;
+    position: absolute; bottom: -5px; right: -5px; background: #ff0000; color: #fff;
+    font-size: 1.2rem; font-weight: bold; border-radius: 50%; width: 30px; height: 30px;
+    display: flex; justify-content: center; align-items: center; z-index: 7; border: 2px solid #fff;
   }
 
   .next-glow {
-    box-shadow: 0 0 20px 5px #ffaa00, inset 0 0 15px #ff0;
-    border-color: #ffaa00;
+    box-shadow: 0 0 20px 5px #ffaa00, inset 0 0 15px #ff0; border-color: #ffaa00;
     animation: pulseGlow 0.8s infinite alternate;
   }
-  @keyframes pulseGlow {
-    from { filter: brightness(1); } to { filter: brightness(1.4); }
-  }
+  @keyframes pulseGlow { from { filter: brightness(1); } to { filter: brightness(1.4); } }
 
   #multiplier-table-vertical {
-    position: relative;
-    width: 110px;
-    height: 380px;
-    background: rgba(0,0,0,0.6);
-    border: 2px solid #ff00ff; border-radius: 5px;
-    overflow: hidden;
+    position: relative; width: 110px; height: 380px; background: rgba(0,0,0,0.6);
+    border: 2px solid #ff00ff; border-radius: 5px; overflow: hidden;
   }
   .mult-row-symbol {
     position: absolute; left: 5px; width: 30px; height: 30px;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 1.5rem; z-index: 1;
+    display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1;
   }
-  #mult-vals-container {
-    position: absolute; left: 40px; top: 0; width: 65px; height: 100%;
-  }
+  #mult-vals-container { position: absolute; left: 40px; top: 0; width: 65px; height: 100%; }
   .mult-item-v {
     position: absolute; left: 0; width: 100%; height: 30px;
-    display: flex; justify-content: center; align-items: center;
-    background: #333; border-radius: 4px;
+    display: flex; justify-content: center; align-items: center; background: #333; border-radius: 4px;
     color: #0ff; font-weight: bold; text-shadow: 0 0 5px #0ff;
     transition: bottom 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
   }
@@ -172,23 +130,14 @@
     transform: scale(1.1); z-index: 2; border: 1px solid #fff;
   }
 
-  #fx-canvas {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 8; pointer-events: none;
-  }
+  #fx-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 8; pointer-events: none; }
 
-  /* コントロール（メダルとスピンボタン）の横並び配置 */
+  /* コントロール（メダルとスピンボタン）の固定配置 */
   #controls-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    max-width: 380px;
-    padding: 0 10px;
-    box-sizing: border-box;
-    margin-top: 5px;
-    z-index: 10;
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: row; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 450px; padding: 10px 20px; box-sizing: border-box;
+    background: rgba(0,0,0,0.9); border-top: 2px solid #444; z-index: 200;
   }
   
   #medal-display {
@@ -199,8 +148,7 @@
   #spin-btn {
     padding: 10px 40px; font-size: 1.5rem; font-weight: bold;
     background: linear-gradient(135deg, #ff00aa, #aa00ff); color: white;
-    border: 2px solid #fff; border-radius: 30px;
-    box-shadow: 0 0 15px #ff00ff; cursor: pointer;
+    border: 2px solid #fff; border-radius: 30px; box-shadow: 0 0 15px #ff00ff; cursor: pointer;
   }
   #spin-btn:disabled { background: #444; border-color: #666; box-shadow: none; color: #888; }
   
@@ -208,12 +156,12 @@
     position: fixed; left: 0; width: 100%; height: 40px;
     background: linear-gradient(to bottom, #800000, #500000);
     border-top: 2px solid #ffaa00; border-bottom: 2px solid #ffaa00;
-    z-index: 100; display: flex; align-items: center; overflow: hidden;
+    /* z-index指定を削除し、下の個別IDで上書きするように変更 */
+    display: flex; align-items: center; overflow: hidden;
     transition: transform 0.5s ease; pointer-events: none;
   }
-  #fs-banner-top { top: 0; transform: translateY(-100%); }
-  #fs-banner-bottom { bottom: 0; transform: translateY(100%); }
-  
+  #fs-banner-top { top: 0; transform: translateY(-100%); z-index: 100; } /* #header(110)の下に配置 */
+  #fs-banner-bottom { bottom: 0; transform: translateY(100%); z-index: 210; } /* #controls-row(200)の上に配置 */
   #fs-banner-top.active-top { transform: translateY(0); }
   #fs-banner-bottom.active-bottom { transform: translateY(0); }
   
@@ -243,24 +191,20 @@
     100% { transform: scale(1.5); opacity: 0; }
   }
 
-  /* TOTAL WIN の動的サイズ調整クラス */
   #total-win-banner {
-    position: absolute; top: 50%; left: 0; width: 100%; background: rgba(0,0,0,0.9);
-    color: #ffaa00; text-align: center; padding: 20px 0; transform: translateY(-50%);
-    z-index: 100; display: none; border-top: 4px solid #ffaa00; border-bottom: 4px solid #ffaa00;
+    position: fixed; top: 50%; left: 50%; width: 100%; max-width: 450px; background: rgba(0,0,0,0.9);
+    color: #ffaa00; text-align: center; padding: 20px 0; transform: translate(-50%, -50%);
+    z-index: 150; display: none; border-top: 4px solid #ffaa00; border-bottom: 4px solid #ffaa00;
     box-shadow: 0 0 30px #ffaa00;
   }
   #total-win-banner h2 { font-size: 1.2rem; margin: 0; color: #fff; }
   #total-win-banner h1 { margin: 10px 0 0 0; text-shadow: 0 0 20px #ffaa00; transition: font-size 0.5s; line-height: 1.1;}
-  
   .win-small h1 { font-size: 2rem !important; }
   .win-normal h1 { font-size: 3.5rem !important; }
   .win-large h1 { font-size: 4.5rem !important; text-shadow: 0 0 30px #ffaa00, 0 0 10px #fff !important; }
   .win-huge h1 { font-size: 7rem !important; text-shadow: 0 0 50px #ffaa00, 0 0 20px #fff !important; }
 
-  #global-fx-canvas {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99; pointer-events: none;
-  }
+  #global-fx-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 140; pointer-events: none; }
 
   #debug-panel {
     margin-top: auto; margin-bottom: 5px; font-size: 0.7rem; color: #888;
@@ -271,6 +215,75 @@
 </head>
 <body>
 
+<script>
+/*
+// ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.1 (with auto-resume & array param fix)
+let zzfxV = 0.3; // マスターボリューム
+let zzfxX = new (window.AudioContext || window.webkitAudioContext)(); // AudioContext
+
+const zzfx = (...p) => {
+  // ブラウザの音声再生制限を解除
+  if (zzfxX.state === 'suspended') zzfxX.resume();
+  
+  // パラメータが配列で渡された場合の展開
+  const params = Array.isArray(p[0]) ? p[0] : p;
+  
+  // 正規のZzFX生成エンジンにパラメータを渡す
+  return zzfxP(zzfxG(...params));
+};
+
+const zzfxP = (...t) => {
+  let e = zzfxX.createBufferSource(),
+      f = zzfxX.createBuffer(t.length, t[0].length, 44100);
+  t.map((d, i) => f.getChannelData(i).set(d));
+  e.buffer = f;
+  e.connect(zzfxX.destination);
+  e.start();
+  return e;
+};
+
+// ここが公式サイトと同じ音声を合成するコア計算ロジックです
+const zzfxG = (q=1,k=.05,c=220,e=0,t=0,u=.1,r=0,F=1,v=0,z=0,w=0,A=0,l=0,B=0,x=0,m=0,d=0,y=1,n=0,C=0) => {
+  let b=2*Math.PI,H=v*=500*b/44100**2,I=(0<x?1:-1)*b/4,S=0,U=0,a=0,h=1,s=0,D=0,f=0,g=0,p=0,L=0;
+  r*=b/44100;c*=b/44100;e*=44100;t*=44100;u*=44100;d*=44100;z*=500*b/44100**3;
+  x*=b/44100;w*=b/44100;A*=44100;l=44100*l|0;
+  for(h=e+t+u+d,S=new Float32Array(h),U=0;U<h;++U){
+    a=U<e?U/e:U<e+t?1:U<h-d?1-(U-e-t)/u:0;
+    s=++D%(1E4*y|0)?s:m?1<m?2<m?3<m?Math.sin((U%44100/44100)*b):Math.max(Math.min(Math.tan(U*b/44100),1),-1):1-(2*U/44100%2+2)%2:1-4*Math.abs(Math.round(U/44100)-U/44100):Math.sin(U*b/44100);
+    f=r?1-Math.sin(U*r):1;
+    c+=v+=z;
+    g=c+v;
+    p+=g*=f;
+    g*=s;
+    L=Math.sin(p);
+    S[U]=a*f*q*zzfxV*(L=1<F?0<L?1:-1:2<F?p%b/Math.PI-1:3<F?L*L*L:4<F?p%b<b/2?1:-1:5<F?p%b<b/2?-1:1:6<F?(p%b)/b:7<F?L<.5?L:-L:8<F?L<.5?-1:1:9<F?Math.random():L);
+    if(U>A)p+=w,p+=I;if(l&&U>l)p+=B;if(n&&U>n)p+=C;
+  }
+  return [S];
+};
+
+zzfx.context = zzfxX;
+*/
+
+// --- ZzFXMicro 修正版 ---
+let zzfxV = 0.3,
+    zzfxX = new (window.AudioContext || window.webkitAudioContext)(),
+    zzfx = (p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0,N=0)=>{
+        if (zzfxX.state === 'suspended') zzfxX.resume();
+        let M=Math,d=2*M.PI,R=44100,G=u*=500*d/R/R,C=b*=(1-k+2*k*M.random(k=[]))*d/R,g=0,H=0,a=0,n=1,I=0,J=0,f=0,h=N<0?-1:1,x=d*h*N*2/R,L=M.cos(x),Z=M.sin,K=Z(x)/4,O=1+K,X=-2*L/O,Y=(1-K)/O,P=(1+h*L)/2/O,Q=-(h+L)/O,S=P,T=0,U=0,V=0,W=0;e=R*e+9;m*=R;r*=R;t*=R;c*=R;y*=500*d/R**3;A*=d/R;v*=d/R;z*=R;l=R*l|0;p*=zzfxV;for(h=e+m+r+t+c|0;a<h;k[a++]=f*p)++J%(100*F|0)||(f=q?1<q?2<q?3<q?4<q?(g/d%1<D/2)*2-1:Z(g**3):M.max(M.min(M.tan(g),1),-1):1-(2*g/d%2+2)%2:1-4*M.abs(M.round(g/d)-g/d):Z(g),f=(l?1-B+B*Z(d*a/l):1)*(4<q?S:(f<0?-1:1)*M.abs(f)**D)*(a<e?a/e:a<e+m?1-(a-e)/m*(1-w):a<e+m+r?w:a<h-c?(h-a-c)/t*w:0),f=c?f/2+(c>a?0:(a<h-c?1:(h-a)/c)*k[a-c|0]/2/p):f,N?f=W=S*T+Q*(T=U)+P*(U=f)-Y*V-X*(V=W):0),x=(b+=u+=y)*M.cos(A*H++),g+=x+x*E*Z(a**5),n&&++n>z&&(b+=v,C+=v,n=0),!l||++I%l||(b=C,u=G,n=n||1);X=zzfxX,p=X.createBuffer(1,h,R);p.getChannelData(0).set(k);b=X.createBufferSource();b.buffer=p;b.connect(X.destination);b.start()
+    };
+</script>
+
+<div id="start-menu">
+  <h1>Emoji Drop</h1>
+  <button class="menu-btn" id="btn-newgame">はじめから</button>
+  <button class="menu-btn" id="btn-continue" style="display:none;">つづきから</button>
+  
+  <div class="sound-toggle">
+    <label><input type="checkbox" id="sound-checkbox" checked> 効果音をオンにする</label>
+  </div>
+</div>
+
 <div id="fs-banner-top" class="fs-banner">
   <div class="fs-text">FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨</div>
 </div>
@@ -278,7 +291,9 @@
   <div class="fs-text">FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨</div>
 </div>
 
-<canvas id="global-fx-canvas"></canvas> <div id="game-container">
+<canvas id="global-fx-canvas"></canvas> 
+
+<div id="game-container" style="display:none;">
   <div id="header">
     <div class="panel">
       <div>BET</div>
@@ -317,16 +332,6 @@
     </div>
   </div>
 
-  <div id="controls-row">
-    <div id="medal-display">MEDALS: <br><span id="medal-count">50</span></div>
-    <button id="spin-btn">SPIN</button>
-  </div>
-
-  <div id="total-win-banner">
-    <h2>TOTAL WIN</h2>
-    <h1 id="total-win-amount">0</h1>
-  </div>
-
   <div id="debug-panel">
     [DEBUG / BALANCE]<br>
     WINなし回数: <span id="dbg-loss">0</span> | 
@@ -336,7 +341,83 @@
   </div>
 </div>
 
+<div id="controls-row" style="display:none;">
+  <div id="medal-display">MEDALS: <br><span id="medal-count">50</span></div>
+  <button id="spin-btn">SPIN</button>
+</div>
+
+<div id="total-win-banner">
+  <h2>TOTAL WIN</h2>
+  <h1 id="total-win-amount">0</h1>
+</div>
+
 <script>
+function setCookie(name, value, days) {
+  let expires = "";
+  if (days) {
+    let date = new Date();
+    date.setTime(date.getTime() + (days*24*60*60*1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+}
+function getCookie(name) {
+  let nameEQ = name + "=";
+  let ca = document.cookie.split(';');
+  for(let i=0;i < ca.length;i++) {
+    let c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1,c.length);
+    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+  }
+  return null;
+}
+function saveGameData() {
+  setCookie("emojiDrop_medals", medals, 30);
+  setCookie("emojiDrop_bet", currentBet, 30);
+}
+
+let soundEnabled = true;
+function playSoundSpin() {
+  if (!soundEnabled) return;
+  zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]);
+}
+
+// リール停止時の効果音追加
+function playSoundStop() {
+  if (!soundEnabled) return;
+  zzfx(...[1.0,.1,523.2511,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]);
+}
+
+window.onload = () => {
+  let savedMedals = getCookie("emojiDrop_medals");
+  if (savedMedals !== null) {
+    document.getElementById('btn-continue').style.display = 'block';
+  }
+};
+
+document.getElementById('btn-newgame').addEventListener('click', () => {
+  soundEnabled = document.getElementById('sound-checkbox').checked;
+  medals = 50; currentBet = 1; document.getElementById('bet-input').value = currentBet;
+  startGameUI();
+});
+
+document.getElementById('btn-continue').addEventListener('click', () => {
+  soundEnabled = document.getElementById('sound-checkbox').checked;
+  let savedMedals = getCookie("emojiDrop_medals");
+  let savedBet = getCookie("emojiDrop_bet");
+  medals = savedMedals !== null ? parseInt(savedMedals) : 50;
+  currentBet = savedBet !== null ? parseInt(savedBet) : 1;
+  document.getElementById('bet-input').value = currentBet;
+  startGameUI();
+});
+
+function startGameUI() {
+  document.getElementById('start-menu').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+  document.getElementById('controls-row').style.display = 'flex';
+  updateUI();
+}
+
 const SYMBOLS = ['💎', '7️⃣', '🍰', '🍦', '🍭', '🔔', '🍈', '🍇', '🍊', '🍒'];
 const WILD = '🛑';
 const FREE = '🆓';
@@ -350,12 +431,8 @@ const SYMBOL_WEIGHTS = {
 };
 
 function getWeightedRandomSymbol() {
-  let rand = Math.random() * 100;
-  let sum = 0;
-  for (let sym of SYMBOLS) {
-    sum += SYMBOL_WEIGHTS[sym];
-    if (rand < sum) return sym;
-  }
+  let rand = Math.random() * 100; let sum = 0;
+  for (let sym of SYMBOLS) { sum += SYMBOL_WEIGHTS[sym]; if (rand < sum) return sym; }
   return SYMBOLS[SYMBOLS.length - 1];
 }
 
@@ -385,20 +462,11 @@ function getBonusMult(sym, count) {
 }
 
 let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.15 };
-
 let boardState = [[], [], []]; 
-let multipliers = [];
-let upcomingMultipliers = [];
-let multElements = []; 
-let currentBet = 1;
-let totalWin = 0;
-let medals = 50; 
-let freeSpinsLeft = 0;
-let isFreeSpinMode = false;
-let symIdCounter = 0;
-let didWinThisSpin = false;
-let currentChain = 0; 
-let guaranteedWildQueue = [];
+let multipliers = []; let upcomingMultipliers = []; let multElements = []; 
+let currentBet = 1; let totalWin = 0; let medals = 50; 
+let freeSpinsLeft = 0; let isFreeSpinMode = false; let symIdCounter = 0;
+let didWinThisSpin = false; let currentChain = 0; let guaranteedWildQueue = [];
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 function getLeft(c) { return c * 90; } 
@@ -412,20 +480,17 @@ function updateDebugUI() {
 }
 
 function updateGameBalanceLogic() {
-  if (gameBalance.consecutiveLosses >= 10) {
-    gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05;
-  } else {
-    gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
-  }
+  if (gameBalance.consecutiveLosses >= 10) { gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05; }
+  else { gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01; }
   updateDebugUI();
 }
 
 function initBackgroundSlots() {
-  const bgLayer = document.getElementById('bg-slots-layer');
-  bgLayer.innerHTML = '';
+  const bgLayer = document.getElementById('bg-slots-layer'); bgLayer.innerHTML = '';
   for(let c=0; c<3; c++) {
     for(let r=-1; r<3; r++) {
       let el = document.createElement('div');
+      el.id = `bg-${c}-${r}`;
       el.className = 'bg-slot' + (r === -1 ? ' bg-slot-next' : '');
       el.style.left = getLeft(c) + 'px'; el.style.top = getTop(r) + 'px';
       if(r === -1) el.style.borderColor = '#0ff'; 
@@ -436,118 +501,83 @@ function initBackgroundSlots() {
 initBackgroundSlots();
 
 function resetGridColor() {
+  // リール背景のリセット
   document.querySelectorAll('.bg-slot').forEach(el => {
     if (isFreeSpinMode) {
-      el.style.backgroundColor = 'rgba(255, 50, 50, 0.2)';
-      el.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.5)';
-      el.style.borderColor = 'rgba(255, 100, 100, 0.8)';
+      el.style.backgroundColor = 'rgba(255, 50, 50, 0.2)'; el.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.5)'; el.style.borderColor = 'rgba(255, 100, 100, 0.8)';
     } else {
-      el.style.backgroundColor = 'transparent';
-      el.style.boxShadow = 'none';
-      el.style.borderColor = '#444';
+      el.style.backgroundColor = 'transparent'; el.style.boxShadow = 'none'; el.style.borderColor = '#444';
     }
   });
-  if (!isFreeSpinMode) {
-    document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
-  }
+  if (!isFreeSpinMode) document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
+  
+  // シンボルの枠線のリセット
+  document.querySelectorAll('.symbol-cell').forEach(el => {
+    el.style.borderColor = '#333';
+    el.style.borderStyle = 'solid';
+  });
 }
 
 function initMultipliersDOM() {
   multipliers = [...INITIAL_MULTI]; upcomingMultipliers = [...QUEUE_MULTI];
-  const table = document.getElementById('multiplier-table-vertical');
-  const container = document.getElementById('mult-vals-container');
+  const table = document.getElementById('multiplier-table-vertical'); const container = document.getElementById('mult-vals-container');
   container.innerHTML = ''; multElements = [];
-  
   if (table.querySelectorAll('.mult-row-symbol').length === 0) {
     for (let i = 0; i < 10; i++) {
-      let symEl = document.createElement('div');
-      symEl.className = 'mult-row-symbol'; symEl.innerText = MULT_TABLE_SYMBOLS[i];
+      let symEl = document.createElement('div'); symEl.className = 'mult-row-symbol'; symEl.innerText = MULT_TABLE_SYMBOLS[i];
       symEl.style.bottom = (10 + i * 35) + 'px'; table.appendChild(symEl);
     }
   }
   for (let i = 0; i < 10; i++) {
-    let el = document.createElement('div'); el.className = 'mult-item-v';
-    el.innerText = `x${multipliers[i]}`; el.style.bottom = (10 + i * 35) + 'px';
+    let el = document.createElement('div'); el.className = 'mult-item-v'; el.innerText = `x${multipliers[i]}`; el.style.bottom = (10 + i * 35) + 'px';
     container.appendChild(el); multElements.push(el);
   }
 }
 
 function consumeMultiplier(symbol) {
-  let index = MULT_TABLE_SYMBOLS.indexOf(symbol);
-  if (index === -1) index = 9; 
-
-  let multValue = multipliers[index];
-  multipliers.splice(index, 1);
-  let nextMult = upcomingMultipliers.length > 0 ? upcomingMultipliers.shift() : 999;
-  multipliers.push(nextMult);
-
+  let index = MULT_TABLE_SYMBOLS.indexOf(symbol); if (index === -1) index = 9; 
+  let multValue = multipliers[index]; multipliers.splice(index, 1);
+  let nextMult = upcomingMultipliers.length > 0 ? upcomingMultipliers.shift() : 999; multipliers.push(nextMult);
   let activeEl = multElements[index];
-  if(activeEl) {
-    activeEl.style.opacity = '0'; activeEl.style.transform = 'scale(0.5) translateX(20px)';
-    setTimeout(() => activeEl.remove(), 500);
-  }
+  if(activeEl) { activeEl.style.opacity = '0'; activeEl.style.transform = 'scale(0.5) translateX(20px)'; setTimeout(() => activeEl.remove(), 500); }
   multElements.splice(index, 1);
-
-  let newEl = document.createElement('div');
-  newEl.className = 'mult-item-v'; newEl.innerText = `x${nextMult}`;
-  newEl.style.bottom = (10 + 9 * 35 + 50) + 'px'; newEl.style.opacity = '0';
-  document.getElementById('mult-vals-container').appendChild(newEl);
-  multElements.push(newEl); newEl.offsetHeight; 
-
+  let newEl = document.createElement('div'); newEl.className = 'mult-item-v'; newEl.innerText = `x${nextMult}`; newEl.style.bottom = (10 + 9 * 35 + 50) + 'px'; newEl.style.opacity = '0';
+  document.getElementById('mult-vals-container').appendChild(newEl); multElements.push(newEl); newEl.offsetHeight; 
   for (let i = index; i < 10; i++) {
-    let el = multElements[i];
-    el.style.bottom = (10 + i * 35) + 'px'; el.style.opacity = '1';
+    let el = multElements[i]; el.style.bottom = (10 + i * 35) + 'px'; el.style.opacity = '1';
     el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 500);
   }
   return multValue;
 }
 
 function updateUI() {
-  document.getElementById('win-display').innerText = totalWin;
-  document.getElementById('medal-count').innerText = medals;
+  document.getElementById('win-display').innerText = totalWin; document.getElementById('medal-count').innerText = medals;
   const fsPanel = document.getElementById('free-spin-panel');
-  if (freeSpinsLeft > 0) {
-    fsPanel.style.display = 'block'; document.getElementById('free-spin-display').innerText = freeSpinsLeft;
-  } else {
-    fsPanel.style.display = 'none';
-  }
+  if (freeSpinsLeft > 0) { fsPanel.style.display = 'block'; document.getElementById('free-spin-display').innerText = freeSpinsLeft; } 
+  else { fsPanel.style.display = 'none'; }
 }
 
 function getRandomSymbol(isInitialMainDrop, colIndex) {
   let wildCount = 0; let freeCount = 0;
-  if (boardState[colIndex]) {
-    boardState[colIndex].forEach(cell => {
-      if (cell && cell.sym === WILD) wildCount++;
-      if (cell && cell.sym === FREE) freeCount++;
-    });
-  }
+  if (boardState[colIndex]) { boardState[colIndex].forEach(cell => { if (cell && cell.sym === WILD) wildCount++; if (cell && cell.sym === FREE) freeCount++; }); }
   if (!isInitialMainDrop) {
     let rand = Math.random();
     if (rand < gameBalance.freeSpinProb && freeCount < 1) return { id: 's'+(symIdCounter++), sym: FREE, frozen: false, wild: 0 };
     else if (rand >= gameBalance.freeSpinProb && rand < (gameBalance.freeSpinProb + gameBalance.wildProb) && wildCount < 1) return { id: 's'+(symIdCounter++), sym: WILD, frozen: false, wild: 5 };
   }
-
   let sym = getWeightedRandomSymbol(); 
-  let canFreeze = isInitialMainDrop && (!isFreeSpinMode);
-  let frozen = canFreeze ? (Math.random() < gameBalance.freezeProb) : false;
+  let canFreeze = isInitialMainDrop && (!isFreeSpinMode); let frozen = canFreeze ? (Math.random() < gameBalance.freezeProb) : false;
   return { id: 's'+(symIdCounter++), sym, frozen, wild: 0 };
 }
 
 function createSymbolDOM(cellData) {
   let el = document.createElement('div'); el.id = cellData.id; el.className = 'symbol-cell';
-  let symEl = document.createElement('div'); symEl.className = 'symbol-text'; symEl.innerText = cellData.sym;
-  el.appendChild(symEl);
+  let symEl = document.createElement('div'); symEl.className = 'symbol-text'; symEl.innerText = cellData.sym; el.appendChild(symEl);
   if (cellData.frozen) { let fEl = document.createElement('div'); fEl.className = 'frozen-overlay'; el.appendChild(fEl); }
-  if (cellData.sym === WILD && cellData.wild > 0) {
-    let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = cellData.wild; el.appendChild(wEl);
-  }
+  if (cellData.sym === WILD && cellData.wild > 0) { let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = cellData.wild; el.appendChild(wEl); }
   return el;
 }
-
-function updateSymbolDOM(cell) {
-  let el = document.getElementById(cell.id);
-  if (el) { let wEl = el.querySelector('.wild-count'); if (wEl) wEl.innerText = cell.wild; }
-}
+function updateSymbolDOM(cell) { let el = document.getElementById(cell.id); if (el) { let wEl = el.querySelector('.wild-count'); if (wEl) wEl.innerText = cell.wild; } }
 
 function renderBoard() {
   const layer = document.getElementById('symbols-layer');
@@ -556,13 +586,11 @@ function renderBoard() {
       let r = i - 1; let cellData = boardState[c][i]; if(!cellData) continue;
       let el = document.getElementById(cellData.id);
       if (!el) {
-        el = createSymbolDOM(cellData);
-        let startTop = cellData.tempTop !== undefined ? cellData.tempTop : getTop(r);
+        el = createSymbolDOM(cellData); let startTop = cellData.tempTop !== undefined ? cellData.tempTop : getTop(r);
         el.style.left = getLeft(c) + 'px'; el.style.top = startTop + 'px';
         layer.appendChild(el); el.offsetHeight; delete cellData.tempTop;
       }
-      if (r === -1 && (cellData.sym === WILD || cellData.sym === FREE)) el.classList.add('next-glow');
-      else el.classList.remove('next-glow');
+      if (r === -1 && (cellData.sym === WILD || cellData.sym === FREE)) el.classList.add('next-glow'); else el.classList.remove('next-glow');
       el.style.top = getTop(r) + 'px'; el.style.left = getLeft(c) + 'px';
     }
   }
@@ -576,17 +604,14 @@ window.addEventListener('resize', resizeCanvas); resizeCanvas();
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (let i = activeLines.length - 1; i >= 0; i--) {
-    let line = activeLines[i];
-    ctx.beginPath(); ctx.moveTo(line.points[0].x, line.points[0].y);
+    let line = activeLines[i]; ctx.beginPath(); ctx.moveTo(line.points[0].x, line.points[0].y);
     for (let j = 1; j < line.points.length; j++) ctx.lineTo(line.points[j].x, line.points[j].y);
     ctx.strokeStyle = line.color; ctx.lineWidth = 15; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowBlur = 20; ctx.shadowColor = line.color; ctx.globalAlpha = line.alpha; ctx.stroke();
     line.alpha -= 0.03; if (line.alpha <= 0) activeLines.splice(i, 1);
   }
   ctx.shadowBlur = 0;
   for (let i = particles.length - 1; i >= 0; i--) {
-    let p = particles[i];
-    ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    let p = particles[i]; ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
     p.x += p.vx; p.y += p.vy; p.alpha -= 0.02; if (p.alpha <= 0) particles.splice(i, 1);
   }
   ctx.globalAlpha = 1; requestAnimationFrame(drawCanvas);
@@ -594,28 +619,20 @@ function drawCanvas() {
 drawCanvas();
 
 function addEffectLine(cells) {
-  let points = cells.map(([r, c]) => ({ x: getLeft(c) + 40, y: getTop(r) + 40 }));
-  let color = Math.random() > 0.5 ? '#ffff00' : '#ff00ff'; 
+  let points = cells.map(([r, c]) => ({ x: getLeft(c) + 40, y: getTop(r) + 40 })); let color = Math.random() > 0.5 ? '#ffff00' : '#ff00ff'; 
   activeLines.push({ points, color, alpha: 1.0 });
-  cells.forEach(([r, c]) => {
-    for(let i=0; i<15; i++) particles.push({ x: getLeft(c)+40, y: getTop(r)+40, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, size: Math.random()*6+2, color: color, alpha: 1.0 });
-  });
+  cells.forEach(([r, c]) => { for(let i=0; i<15; i++) particles.push({ x: getLeft(c)+40, y: getTop(r)+40, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, size: Math.random()*6+2, color: color, alpha: 1.0 }); });
 }
 
-const globalCanvas = document.getElementById('global-fx-canvas');
-const gctx = globalCanvas.getContext('2d');
-let globalParticles = [];
+const globalCanvas = document.getElementById('global-fx-canvas'); const gctx = globalCanvas.getContext('2d'); let globalParticles = [];
 function resizeGlobalCanvas() { globalCanvas.width = window.innerWidth; globalCanvas.height = window.innerHeight; }
 window.addEventListener('resize', resizeGlobalCanvas); resizeGlobalCanvas();
 
 function drawGlobalCanvas() {
     gctx.clearRect(0, 0, globalCanvas.width, globalCanvas.height);
     for (let i = globalParticles.length - 1; i >= 0; i--) {
-        let p = globalParticles[i];
-        gctx.fillStyle = p.color; gctx.globalAlpha = p.alpha;
-        gctx.beginPath(); gctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); gctx.fill();
-        p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.alpha -= p.decay;
-        if (p.alpha <= 0) globalParticles.splice(i, 1);
+        let p = globalParticles[i]; gctx.fillStyle = p.color; gctx.globalAlpha = p.alpha; gctx.beginPath(); gctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); gctx.fill();
+        p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.alpha -= p.decay; if (p.alpha <= 0) globalParticles.splice(i, 1);
     }
     gctx.globalAlpha = 1; requestAnimationFrame(drawGlobalCanvas);
 }
@@ -625,52 +642,38 @@ function fireWinParticles(intensity) {
     let colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
     let cx = window.innerWidth / 2; let cy = window.innerHeight / 2;
     for(let i=0; i<intensity; i++) {
-        globalParticles.push({
-            x: cx + (Math.random()-0.5)*150, y: cy + (Math.random()-0.5)*150,
-            vx: (Math.random()-0.5)*25, vy: (Math.random()-0.5)*25 - 5,
-            size: Math.random()*8+4, color: colors[Math.floor(Math.random()*colors.length)], alpha: 1, decay: Math.random()*0.02 + 0.005
-        });
+        globalParticles.push({ x: cx + (Math.random()-0.5)*150, y: cy + (Math.random()-0.5)*150, vx: (Math.random()-0.5)*25, vy: (Math.random()-0.5)*25 - 5, size: Math.random()*8+4, color: colors[Math.floor(Math.random()*colors.length)], alpha: 1, decay: Math.random()*0.02 + 0.005 });
     }
 }
 
 function showPopup(r, c, text) {
-  const wrapper = document.getElementById('grid-wrapper');
-  let el = document.createElement('div'); el.className = 'popup'; el.innerText = text;
-  el.style.left = (getLeft(c) + 10) + 'px'; el.style.top = (getTop(r) + 10) + 'px';
-  wrapper.appendChild(el); setTimeout(() => el.remove(), 1000);
+  const wrapper = document.getElementById('grid-wrapper'); let el = document.createElement('div'); el.className = 'popup'; el.innerText = text;
+  el.style.left = (getLeft(c) + 10) + 'px'; el.style.top = (getTop(r) + 10) + 'px'; wrapper.appendChild(el); setTimeout(() => el.remove(), 1000);
 }
 
 function showChainPopup(text) {
-  const wrapper = document.getElementById('grid-wrapper');
-  let el = document.createElement('div'); el.className = 'chain-popup'; el.innerText = text;
+  const wrapper = document.getElementById('grid-wrapper'); let el = document.createElement('div'); el.className = 'chain-popup'; el.innerText = text;
   wrapper.appendChild(el); setTimeout(() => el.remove(), 1500);
 }
 
 function getNeighbors(r, c) {
-  const neighbors = [];
-  const dirs8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-  const dirs4 = [[-1,0],[1,0],[0,-1],[0,1]];
+  const neighbors = []; const dirs8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]; const dirs4 = [[-1,0],[1,0],[0,-1],[0,1]];
   const is8Dir = (r===0 && c===0) || (r===0 && c===2) || (r===2 && c===0) || (r===2 && c===2) || (r===1 && c===1);
   const dirs = is8Dir ? dirs8 : dirs4;
-  for (let [dr, dc] of dirs) {
-    let nr = r + dr, nc = c + dc; if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) neighbors.push([nr, nc]);
-  }
+  for (let [dr, dc] of dirs) { let nr = r + dr, nc = c + dc; if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) neighbors.push([nr, nc]); }
   return neighbors;
 }
 
 function findMatches() {
-  let matchedLines = [];
-  const lineDefs = [[[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]], [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]], [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]];
+  let matchedLines = []; const lineDefs = [[[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]], [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]], [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]];
   for (let line of lineDefs) {
     let targetSym = null; let isMatch = true;
     for (let [r, c] of line) {
-      let cell = boardState[c][r+1];
-      if (!cell || cell.frozen || cell.sym === FREE) { isMatch = false; break; }
+      let cell = boardState[c][r+1]; if (!cell || cell.frozen || cell.sym === FREE) { isMatch = false; break; }
       if (cell.sym !== WILD) { if (!targetSym) targetSym = cell.sym; else if (targetSym !== cell.sym) { isMatch = false; break; } }
     }
     if (isMatch) matchedLines.push({ cells: line, sym: targetSym || SYMBOLS[0] });
   }
-
   let matchedClusters = [];
   for (let testSym of SYMBOLS) {
     let visited = Array(3).fill(0).map(() => Array(3).fill(false));
@@ -683,9 +686,7 @@ function findMatches() {
             let [cr, cc] = q.shift(); cluster.push([cr, cc]);
             for (let [nr, nc] of getNeighbors(cr, cc)) {
               let ncell = boardState[nc][nr+1];
-              if (!visited[nr][nc] && ncell && !ncell.frozen && (ncell.sym === testSym || ncell.sym === WILD)) {
-                visited[nr][nc] = true; q.push([nr, nc]);
-              }
+              if (!visited[nr][nc] && ncell && !ncell.frozen && (ncell.sym === testSym || ncell.sym === WILD)) { visited[nr][nc] = true; q.push([nr, nc]); }
             }
           }
           if (cluster.length >= 3) matchedClusters.push({ cells: cluster, sym: testSym });
@@ -697,77 +698,65 @@ function findMatches() {
 }
 
 async function evaluateMatches() {
-  let { lines, clusters } = findMatches();
-  let cellsToRemove = new Set();
-  let clearCounts = {};
-
+  let { lines, clusters } = findMatches(); let cellsToRemove = new Set(); let clearCounts = {};
   for (let line of lines) {
-    let mult = consumeMultiplier(line.sym);
-    let win = Math.floor(mult * currentBet);
-    totalWin += win; didWinThisSpin = true; addEffectLine(line.cells);
-    for (let pos of line.cells) {
-       cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = line.sym;
-       if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`);
-    }
+    let mult = consumeMultiplier(line.sym); let win = Math.floor(mult * currentBet); totalWin += win; didWinThisSpin = true; addEffectLine(line.cells);
+    for (let pos of line.cells) { cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = line.sym; if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`); }
   }
-
   for (let cluster of clusters) {
-    for (let pos of cluster.cells) {
-       cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = cluster.sym;
-       if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`);
-    }
+    for (let pos of cluster.cells) { cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = cluster.sym; if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`); }
   }
 
   if (cellsToRemove.size > 0) {
     currentChain++;
     if (currentChain >= 2) {
       let blueAlpha = Math.min((currentChain - 1) * 0.15, 0.6);
-      document.querySelectorAll('.bg-slot').forEach(el => {
-        el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`; el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`;
-      });
+      document.querySelectorAll('.bg-slot').forEach(el => { el.style.backgroundColor = `rgba(100, 150, 255, ${blueAlpha})`; el.style.boxShadow = `0 0 15px rgba(100, 150, 255, ${blueAlpha})`; });
       let chainText = `${currentChain} CHAIN!`;
-      if (currentChain >= 3) {
-        let bonusWin = Math.floor((0.5 * (currentChain - 2)) * currentBet);
-        if (bonusWin > 0) { totalWin += bonusWin; didWinThisSpin = true; chainText += `\n+${bonusWin}`; }
-      }
+      if (currentChain >= 3) { let bonusWin = Math.floor((0.5 * (currentChain - 2)) * currentBet); if (bonusWin > 0) { totalWin += bonusWin; didWinThisSpin = true; chainText += `\n+${bonusWin}`; } }
       showChainPopup(chainText);
     }
-
     for (let sym in clearCounts) {
-       let count = clearCounts[sym].size;
-       let bonusMult = getBonusMult(sym, count);
-       if (bonusMult > 0) {
-           let bonus = Math.floor(bonusMult * currentBet);
-           totalWin += bonus; didWinThisSpin = true;
-           let [r, c] = Array.from(clearCounts[sym])[0].split(',').map(Number);
-           showPopup(r, c, `+${bonus}`);
-       }
+       let count = clearCounts[sym].size; let bonusMult = getBonusMult(sym, count);
+       if (bonusMult > 0) { let bonus = Math.floor(bonusMult * currentBet); totalWin += bonus; didWinThisSpin = true; let [r, c] = Array.from(clearCounts[sym])[0].split(',').map(Number); showPopup(r, c, `+${bonus}`); }
     }
     updateUI();
-
+    
+    // 消滅アニメーション設定
     cellsToRemove.forEach(posStr => {
       let [r, c] = posStr.split(',').map(Number); let cell = boardState[c][r+1];
-      if (cell) { let el = document.getElementById(cell.id); if (el) { el.classList.add('highlight-bg'); let symEl = el.querySelector('.symbol-text'); if (symEl) symEl.classList.add('anim-fade-out'); } }
+      if (cell) { 
+        let el = document.getElementById(cell.id); 
+        if (el) { 
+          el.classList.add('highlight-bg'); 
+          let symEl = el.querySelector('.symbol-text'); 
+          // 修正: WILDは回数が1以下（次に消滅する）場合のみフェードアウトさせる
+          if (symEl && (cell.sym !== WILD || cell.wild <= 1)) { 
+            symEl.classList.add('anim-fade-out'); 
+          } 
+        } 
+      }
     });
+    
     await delay(800); 
     
     let actualRemove = [];
     cellsToRemove.forEach(posStr => {
       let [r, c] = posStr.split(',').map(Number); let cell = boardState[c][r+1];
-      if (cell.sym === WILD) { cell.wild--; updateSymbolDOM(cell); if (cell.wild <= 0) actualRemove.push([r, c]); } 
-      else { actualRemove.push([r, c]); }
+      if (cell.sym === WILD) { 
+         cell.wild--; updateSymbolDOM(cell); 
+         if (cell.wild <= 0) actualRemove.push([r, c]); 
+      } else { 
+         actualRemove.push([r, c]); 
+      }
     });
-
+    
     actualRemove.forEach(([r, c]) => {
       getNeighbors(r, c).forEach(([nr, nc]) => {
          let neighbor = boardState[nc][nr+1];
-         if (neighbor && neighbor.frozen) {
-             neighbor.frozen = false; let el = document.getElementById(neighbor.id);
-             if(el) { let fEl = el.querySelector('.frozen-overlay'); if(fEl) { fEl.style.opacity = '0'; setTimeout(() => fEl.remove(), 500); } }
-         }
+         if (neighbor && neighbor.frozen) { neighbor.frozen = false; let el = document.getElementById(neighbor.id); if(el) { let fEl = el.querySelector('.frozen-overlay'); if(fEl) { fEl.style.opacity = '0'; setTimeout(() => fEl.remove(), 500); } } }
       });
-      let cell = boardState[c][r+1];
-      if(cell) { let el = document.getElementById(cell.id); if(el) el.remove(); boardState[c][r+1] = null; }
+      let cell = boardState[c][r+1]; if(cell) { let el = document.getElementById(cell.id); if(el) el.remove(); boardState[c][r+1] = null; }
     });
     cascade();
   } else {
@@ -777,15 +766,32 @@ async function evaluateMatches() {
 
 function cascade() {
   for (let c = 0; c < 3; c++) {
-    boardState[c] = boardState[c].filter(sym => sym !== null); 
-    let missing = 4 - boardState[c].length;
-    for (let i = 0; i < missing; i++) {
-      let newSym = getRandomSymbol(false, c);
-      newSym.tempTop = getTop(-1) - (missing - i) * 90;
-      boardState[c].unshift(newSym);
-    }
+    boardState[c] = boardState[c].filter(sym => sym !== null); let missing = 4 - boardState[c].length;
+    for (let i = 0; i < missing; i++) { let newSym = getRandomSymbol(false, c); newSym.tempTop = getTop(-1) - (missing - i) * 90; boardState[c].unshift(newSym); }
   }
   renderBoard(); setTimeout(evaluateMatches, 850);
+}
+
+function finishTurn() {
+  isFreeSpinMode = false; guaranteedWildQueue = []; 
+  document.getElementById('fs-banner-top').classList.remove('active-top'); document.getElementById('fs-banner-bottom').classList.remove('active-bottom');
+  resetGridColor();
+  
+  if (totalWin > 0) {
+     medals += totalWin; 
+     let banner = document.getElementById('total-win-amount');
+     let totalMult = (totalWin / currentBet).toFixed(1).replace('.0', ''); 
+     banner.innerHTML = `${totalWin} <br><span style="font-size:0.4em; color:#fff;">(${totalMult}倍)</span>`;
+     let winContainer = document.getElementById('total-win-banner'); winContainer.className = '';
+     if (totalWin < 50) { winContainer.classList.add('win-small'); } else if (totalWin < 500) { winContainer.classList.add('win-normal'); } else if (totalWin < 1000) { winContainer.classList.add('win-large'); fireWinParticles(60); } else { winContainer.classList.add('win-huge'); fireWinParticles(150); }
+     winContainer.style.display = 'block';
+  }
+
+  if (!didWinThisSpin) gameBalance.consecutiveLosses++; else gameBalance.consecutiveLosses = 0;
+  updateGameBalanceLogic(); updateUI();
+  
+  saveGameData(); 
+  document.getElementById('spin-btn').disabled = false;
 }
 
 function checkFreeSpins() {
@@ -795,61 +801,34 @@ function checkFreeSpins() {
       let cell = boardState[c][r+1];
       if (cell && cell.sym === FREE) {
         newFreeCells.push({c: c, r: r});
+        
+        // 修正: 盤面から消さずに演出だけを行い、そのままフリースピン開始に繋ぐ
         let el = document.getElementById(cell.id);
-        if(el) { el.style.transform = "scale(0) rotate(720deg)"; setTimeout(() => el.remove(), 800); }
-        boardState[c][r+1] = null;
+        if (el) {
+           el.style.transform = "scale(1.1)";
+           el.style.boxShadow = "0 0 20px #0ff";
+           el.style.zIndex = "10";
+        }
       }
     }
   }
   
   if (newFreeCells.length > 0) {
-    for(let fc of newFreeCells) {
-       guaranteedWildQueue.push({c: fc.c, r: fc.r});
-       guaranteedWildQueue.push({c: fc.c, r: fc.r});
-       guaranteedWildQueue.push({c: fc.c, r: fc.r});
-    }
-    isFreeSpinMode = true;
-    freeSpinsLeft += newFreeCells.length * 3;
-    document.getElementById('fs-banner-top').classList.add('active-top');
-    document.getElementById('fs-banner-bottom').classList.add('active-bottom');
-    resetGridColor(); 
-    updateUI();
-    setTimeout(cascade, 850);
+    for(let fc of newFreeCells) { guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); }
+    isFreeSpinMode = true; freeSpinsLeft += newFreeCells.length * 3;
+    document.getElementById('fs-banner-top').classList.add('active-top'); document.getElementById('fs-banner-bottom').classList.add('active-bottom');
+    resetGridColor(); updateUI();
+    // カスケードさせず、間を置いてそのまま次(フリースピン)の回転へ
+    setTimeout(() => startSpin(true), 1500); 
   } else {
-    if (freeSpinsLeft > 0) {
-       freeSpinsLeft--; updateUI(); setTimeout(() => startSpin(true), 1000);
-    } else {
-       isFreeSpinMode = false;
-       guaranteedWildQueue = []; 
-       document.getElementById('fs-banner-top').classList.remove('active-top');
-       document.getElementById('fs-banner-bottom').classList.remove('active-bottom');
-       resetGridColor();
-       
-       if (totalWin > 0) {
-          medals += totalWin; 
-          let banner = document.getElementById('total-win-amount');
-          let totalMult = (totalWin / currentBet).toFixed(1).replace('.0', ''); 
-          banner.innerHTML = `${totalWin} <br><span style="font-size:0.4em; color:#fff;">(${totalMult}倍)</span>`;
-          
-          let winContainer = document.getElementById('total-win-banner');
-          winContainer.className = '';
-          if (totalWin < 50) { winContainer.classList.add('win-small'); }
-          else if (totalWin < 500) { winContainer.classList.add('win-normal'); }
-          else if (totalWin < 1000) { winContainer.classList.add('win-large'); fireWinParticles(60); }
-          else { winContainer.classList.add('win-huge'); fireWinParticles(150); }
-          
-          winContainer.style.display = 'block';
-       }
-
-       if (!didWinThisSpin) gameBalance.consecutiveLosses++;
-       else gameBalance.consecutiveLosses = 0;
-       updateGameBalanceLogic(); updateUI();
-       document.getElementById('spin-btn').disabled = false;
-    }
+    if (freeSpinsLeft > 0) { freeSpinsLeft--; updateUI(); setTimeout(() => startSpin(true), 1000); } 
+    else { finishTurn(); }
   }
 }
 
 function startSpin(isFreeMode = false) {
+  if(!isFreeMode) playSoundSpin(); 
+
   let inputBet = parseInt(document.getElementById('bet-input').value) || 1;
   inputBet = Math.min(Math.max(inputBet, 1), 50); 
   
@@ -866,9 +845,7 @@ function startSpin(isFreeMode = false) {
 
   let finalSyms = [[],[],[]];
   for(let c=0; c<3; c++) {
-    for(let i=0; i<4; i++) {
-      finalSyms[c].push(getRandomSymbol(i > 0, c));
-    }
+    for(let i=0; i<4; i++) { finalSyms[c].push(getRandomSymbol(i > 0, c)); }
   }
 
   if (isFreeMode && guaranteedWildQueue.length > 0) {
@@ -881,42 +858,37 @@ function startSpin(isFreeMode = false) {
     boardState[c] = [];
     for(let i=0; i<4; i++) {
       let dummySym = { id: 's'+(symIdCounter++), sym: getWeightedRandomSymbol(), frozen: false, wild: 0 };
-      boardState[c].push(dummySym);
-      // 最終図柄のIDとダミー図柄のIDを同期させ、DOMの再生成（ゴーストバグ）を防ぐ
-      finalSyms[c][i].id = dummySym.id; 
+      boardState[c].push(dummySym); finalSyms[c][i].id = dummySym.id; 
     }
   }
   renderBoard();
+  
+  // 回転開始時にすべての枠を暗めの破線にする (CSSで制御)
+  document.querySelectorAll('.symbol-cell').forEach(el => {
+      el.style.borderColor = '#444';
+      el.style.borderStyle = 'dashed';
+  });
 
   let patternIdx = isFreeMode ? 0 : Math.floor(Math.random() * 6) + 1;
   let steps = [[0,0,0], [0,0,0], [0,0,0]]; 
-  if(patternIdx === 2) { 
-     steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[2][1]=3; steps[2][2]=4; steps[1][2]=5; steps[0][2]=6; steps[0][1]=7; steps[1][1]=8;
-  } else if(patternIdx === 3) { 
-     steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[0][1]=3; steps[1][1]=4; steps[2][1]=5; steps[0][2]=6; steps[1][2]=7; steps[2][2]=8;
-  } else if(patternIdx === 4) { 
-     let arr = [0,1,2,3,4,5,6,7,8].sort(()=>Math.random()-0.5);
-     let i=0; for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = arr[i++];
-  } else if(patternIdx === 5) { 
-     steps[0][0]=0; steps[0][1]=1; steps[0][2]=2; steps[1][0]=3; steps[1][1]=4; steps[1][2]=5; steps[2][0]=6; steps[2][1]=7; steps[2][2]=8;
-  } else if(patternIdx === 6) { 
-     for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = (r===1&&c===1)?1:0;
-  }
+  if(patternIdx === 2) { steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[2][1]=3; steps[2][2]=4; steps[1][2]=5; steps[0][2]=6; steps[0][1]=7; steps[1][1]=8; } 
+  else if(patternIdx === 3) { steps[0][0]=0; steps[1][0]=1; steps[2][0]=2; steps[0][1]=3; steps[1][1]=4; steps[2][1]=5; steps[0][2]=6; steps[1][2]=7; steps[2][2]=8; } 
+  else if(patternIdx === 4) { let arr = [0,1,2,3,4,5,6,7,8].sort(()=>Math.random()-0.5); let i=0; for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = arr[i++]; } 
+  else if(patternIdx === 5) { steps[0][0]=0; steps[0][1]=1; steps[0][2]=2; steps[1][0]=3; steps[1][1]=4; steps[1][2]=5; steps[2][0]=6; steps[2][1]=7; steps[2][2]=8; } 
+  else if(patternIdx === 6) { for(let r=0; r<3; r++) for(let c=0; c<3; c++) steps[c][r] = (r===1&&c===1)?1:0; }
 
-  let maxStep = 0;
-  for(let r=0; r<3; r++) for(let c=0; c<3; c++) maxStep = Math.max(maxStep, steps[c][r]);
+  let maxStep = 0; for(let r=0; r<3; r++) for(let c=0; c<3; c++) maxStep = Math.max(maxStep, steps[c][r]);
 
   let duration = isFreeMode ? 500 : 2500;
-  // 最初の0.5秒は確定で回転。2.5秒(2500ms)の間の残り2000msでパターン停止を割り振る
+  // 修正: 最初の0.5秒は確定で回転させ、残りの2000msを使って時間差で止める
   let delayPerStep = maxStep > 0 ? (2000 / maxStep) : 0; 
   let startTime = performance.now();
   let cellStopped = [[false,false,false,false],[false,false,false,false],[false,false,false,false]];
   let lastTick = 0;
 
   function spinAnim(now) {
-     let elapsed = now - startTime;
-     let allStopped = true;
-     let tick = Math.floor(elapsed / 60);
+     let elapsed = now - startTime; let allStopped = true; let tick = Math.floor(elapsed / 60);
+     let soundPlayedThisFrame = false; // 修正: 1フレーム内のサウンド重複再生を防止
 
      for(let c=0; c<3; c++) {
        for(let i=0; i<4; i++) {
@@ -925,67 +897,70 @@ function startSpin(isFreeMode = false) {
          
          let stepVal = i === 0 ? steps[c][0] : steps[c][i-1];
          let stopTime;
-         if (isFreeMode) {
-             stopTime = 500;
-         } else if (maxStep === 0) {
-             // パターン1（すべて同時に止まる）：2500ms時点で一斉停止
-             stopTime = 2500;
-         } else {
-             // その他のパターン：500ms経過後から順番に停止
-             stopTime = 500 + (stepVal * delayPerStep);
-         }
+         if (isFreeMode) stopTime = 500;
+         else if (maxStep === 0) stopTime = 2500;
+         else stopTime = 500 + (stepVal * delayPerStep);
 
          if (elapsed >= stopTime) {
             cellStopped[c][i] = true;
+            
+            // 修正: 停止サウンドの再生
+            if (!soundPlayedThisFrame && !isFreeMode) {
+                playSoundStop();
+                soundPlayedThisFrame = true;
+            }
+
             boardState[c][i] = finalSyms[c][i]; 
-            // 停止時に要素の中身を完全に書き換え、凍結状態などの表示を即座に反映させる
+            
+            // 修正: 枠色を明るい実線に変更 (停止合図)
             let el = document.getElementById(boardState[c][i].id);
             if(el) {
-                el.innerHTML = '';
-                let symEl = document.createElement('div');
-                symEl.className = 'symbol-text';
-                symEl.innerText = boardState[c][i].sym;
-                el.appendChild(symEl);
-                if (boardState[c][i].frozen) {
-                    let fEl = document.createElement('div');
-                    fEl.className = 'frozen-overlay';
-                    el.appendChild(fEl);
-                }
-                if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) {
-                    let wEl = document.createElement('div');
-                    wEl.className = 'wild-count';
-                    wEl.innerText = boardState[c][i].wild;
-                    el.appendChild(wEl);
-                }
+                el.style.borderColor = '#888';
+                el.style.borderStyle = 'solid';
+                
+                el.innerHTML = ''; let symEl = document.createElement('div'); symEl.className = 'symbol-text'; symEl.innerText = boardState[c][i].sym; el.appendChild(symEl);
+                if (boardState[c][i].frozen) { let fEl = document.createElement('div'); fEl.className = 'frozen-overlay'; el.appendChild(fEl); }
+                if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) { let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = boardState[c][i].wild; el.appendChild(wEl); }
             }
          } else {
-            if (tick > lastTick) {
-               let el = document.getElementById(boardState[c][i].id);
-               if(el) el.querySelector('.symbol-text').innerText = getWeightedRandomSymbol();
+            if (tick > lastTick) { 
+                let el = document.getElementById(boardState[c][i].id); 
+                if(el) {
+                    let symEl = el.querySelector('.symbol-text');
+                    if (symEl) symEl.innerText = getWeightedRandomSymbol(); 
+                }
             }
          }
        }
      }
      lastTick = tick;
 
-     if (!allStopped && elapsed < duration + 500) {
-        requestAnimationFrame(spinAnim);
-     } else {
+     if (!allStopped && elapsed < duration + 500) { requestAnimationFrame(spinAnim); } 
+     else {
         for(let c=0; c<3; c++) {
           for(let i=0; i<4; i++) {
-            if(!cellStopped[c][i]) boardState[c][i] = finalSyms[c][i];
+            if(!cellStopped[c][i]) {
+                boardState[c][i] = finalSyms[c][i];
+                let el = document.getElementById(boardState[c][i].id);
+                if (el) {
+                    el.style.borderColor = '#888';
+                    el.style.borderStyle = 'solid';
+                }
+            }
           }
         }
-        renderBoard(); 
-        setTimeout(evaluateMatches, 400);
+        renderBoard(); setTimeout(evaluateMatches, 400);
      }
   }
   requestAnimationFrame(spinAnim);
 }
 
-document.getElementById('spin-btn').addEventListener('click', () => startSpin(false));
-initMultipliersDOM();
-updateGameBalanceLogic();
+document.getElementById('spin-btn').addEventListener('click', () => {
+	if (zzfx.context && zzfx.context.state === 'suspended') {
+		zzfx.context.resume();
+	}
+	startSpin(false);
+});
 
 function initFirstBoard() {
   document.getElementById('symbols-layer').innerHTML = '';
