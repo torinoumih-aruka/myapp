@@ -263,14 +263,14 @@ let zzfxV = 0.3,
     <div id="grid-wrapper">
       <div id="next-label">NEXT</div>
       <svg id="adj-lines" width="260" height="380" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none;">
-        <line x1="40" y1="150" x2="220" y2="150" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="40" y1="240" x2="220" y2="240" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="40" y1="330" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="40" y1="150" x2="40" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="130" y1="150" x2="130" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="220" y1="150" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="40" y1="150" x2="220" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
-        <line x1="220" y1="150" x2="40" y2="330" stroke="#444" stroke-width="8" stroke-linecap="round"/>
+        <line x1="40" y1="150" x2="220" y2="150" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="40" y1="240" x2="220" y2="240" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="40" y1="330" x2="220" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="40" y1="150" x2="40" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="130" y1="150" x2="130" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="220" y1="150" x2="220" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="40" y1="150" x2="220" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
+        <line x1="220" y1="150" x2="40" y2="330" stroke="#777" stroke-width="10" stroke-linecap="round"/>
       </svg>
       <div id="bg-slots-layer" style="position:absolute; width:100%; height:100%; z-index:2;"></div>
       <canvas id="fx-canvas"></canvas>
@@ -501,7 +501,7 @@ function resetGridColor() {
   if (!isFreeSpinMode) document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
   
   document.querySelectorAll('.symbol-cell').forEach(el => {
-    el.style.borderColor = '#333';
+    el.style.borderColor = '#666';
     el.style.borderStyle = 'solid';
   });
 }
