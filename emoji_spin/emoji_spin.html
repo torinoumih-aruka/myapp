@@ -60,7 +60,7 @@
   .panel span { font-size: 1.2rem; font-weight: bold; color: #fff; }
   
   #bet-input {
-    width: 50px; text-align: center; background: #222; color: #fff;
+    width: 40px; text-align: center; background: #222; color: #fff;
     border: 1px solid #666; border-radius: 4px; font-size: 1.2rem; font-weight: bold;
   }
 
@@ -112,7 +112,7 @@
 
   #multiplier-table-vertical {
     position: relative; width: 110px; height: 380px; background: rgba(0,0,0,0.6);
-    border: 2px solid #ff00ff; border-radius: 5px; overflow: hidden;
+    border: 2px solid #ff00ff; border-radius: 5px; overflow: hidden; cursor: pointer;
   }
   .mult-row-symbol {
     position: absolute; left: 5px; width: 30px; height: 30px;
@@ -209,7 +209,24 @@
     margin-top: auto; margin-bottom: 5px; font-size: 0.7rem; color: #888;
     text-align: center; width: 90%; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;
   }
-
+  
+  /* ポップアップモーダル用 */
+  #multiplier-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center;
+  }
+  #multiplier-modal-content {
+    position: relative; width: 90%; max-width: 400px; max-height: 80vh; background: #111;
+    border: 2px solid #ff00ff; border-radius: 10px; padding: 20px; overflow-y: auto;
+    box-sizing: border-box; color: #fff; font-size: 0.85rem; pointer-events: auto;
+  }
+  #multiplier-modal-content h3 { text-align: center; margin-top: 0; color: #0ff; }
+  #multiplier-modal-content table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; }
+  #multiplier-modal-content th, #multiplier-modal-content td { padding: 5px; border-bottom: 1px solid #444; }
+  #close-modal {
+    position: absolute; top: 10px; right: 15px; font-size: 1.5rem; font-weight: bold;
+    cursor: pointer; color: #ff00ff;
+  }
 </style>
 </head>
 <body>
@@ -243,11 +260,72 @@ let zzfxV = 0.3,
 
 <canvas id="global-fx-canvas"></canvas> 
 
+<div id="multiplier-modal">
+  <div id="multiplier-modal-content">
+    <div id="close-modal">&times;</div>
+
+    <h3>配当ルール</h3>
+    
+    <p style="color:#aaa;">揃った図柄の、現在の倍率×BET数が基本配当となります。
+    <br>揃った図柄に対応する倍率はリストから除外されて、更に高い倍率が設定されます。
+    <br>倍率リストは次の順番に倍率が設定されます。</p>
+    <p>x1→x1→x2→x3→x4→x6→x8→x12→x15→x18<br>
+    →x25→x40→x50→x100→x150→x200→x300<br>→x450→x700→x999…</p>
+
+    <h3>同時消しボーナス</h3>
+    <p style="color:#aaa;">同じ図柄が一度に消えた個数に応じて、下記の倍率×BET数が配当に追加されます。</p>
+    <table>
+    	<tr style="background:#333;"><th>.</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th></tr>
+    	<tr>                         <td>💎</td><td>x10</td><td>x15</td><td>x30</td><td>x80</td><td>x150</td><td>x400</td><td>x999</td></tr>
+    	<tr style="background:#222;"><td>7️⃣</td><td>x7</td><td>x12</td><td>x25</td><td>x50</td><td>x100</td><td>x200</td><td>x700</td></tr>
+    	<tr>                         <td>🍰</td><td>x5</td><td>x9</td><td>x16</td><td>x25</td><td>x60</td><td>x100</td><td>x450</td></tr>
+    	<tr style="background:#222;"><td>🍦</td><td>x4</td><td>x6</td><td>x10</td><td>x16</td><td>x30</td><td>x60</td><td>x300</td></tr>
+    	<tr>                         <td>🍭</td><td>x3</td><td>x5</td><td>x8</td><td>x13</td><td>x20</td><td>x45</td><td>x200</td></tr>
+    	<tr style="background:#222;"><td>🔔</td><td>x2</td><td>x3</td><td>x6</td><td>x10</td><td>x15</td><td>x25</td><td>x150</td></tr>
+    	<tr>                         <td>🍈</td><td>x1</td><td>x2</td><td>x4</td><td>x6</td><td>x9</td><td>x15</td><td>x100</td></tr>
+    	<tr style="background:#222;"><td>🍇</td><td>x0.5</td><td>x1</td><td>x2</td><td>x4</td><td>x6</td><td>x10</td><td>x70</td></tr>
+    	<tr>                         <td>🍊</td><td>-</td><td>x0.5</td><td>x1</td><td>x2</td><td>x3</td><td>x5</td><td>x40</td></tr>
+    	<tr style="background:#222;"><td>🍒</td><td>-</td><td>-</td><td>x0.5</td><td>x1</td><td>x2</td><td>x3</td><td>x20</td></tr>
+    </table>
+
+	<br>
+    <h3>連鎖ボーナス</h3>
+    <p style="color:#aaa;">図柄が揃って消えた後、落ちてきた図柄によって更に図柄が消えることを「連鎖」といいます。
+    <br>連鎖を繰り返すことで以下の倍率×BET数が配当に追加されます。</p>
+    <p>((連鎖数-2)×0.5)倍</p>
+    
+    <p style="color:#f00;">配当メダル数の計算（配当倍率×BET数）は、小数点以下を切り捨てて計算します。</p>
+
+
+<!--
+    <table>
+      <tr style="background:#333;"><th>図柄</th><th>同時消し条件</th><th>追加倍率ボーナス</th></tr>
+      <tr><td>💎</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+10倍</font><br>+15倍<br>+20倍<br>+40倍<br>+70倍<br>+110倍<br><font color="#ff00ff">+510倍</font></td></tr>
+      <tr style="background:#222;"><td>7️⃣</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+7倍</font><br>+11倍<br>+15倍<br>+22倍<br>+37倍<br>+67倍<br><font color="#ff00ff">+107倍</font></td></tr>
+      <tr><td>🍰</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+5倍</font><br>+8倍<br>+11倍<br>+15倍<br>+20倍<br>+35倍<br><font color="#ff00ff">+65倍</font></td></tr>
+      <tr style="background:#222;"><td>🍦</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+4倍</font><br>+6倍<br>+8倍<br>+12倍<br>+16倍<br>+20倍<br>+24倍</td></tr>
+      <tr><td>🍭</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+3倍</font><br>+5倍<br>+6倍<br>+7倍<br>+9倍<br>+11倍<br>+13倍</td></tr>
+      <tr style="background:#222;"><td>🔔</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+2倍</font><br>+3.5倍<br>+5倍<br>+6.5倍<br>+8倍<br>+9.5倍<br>+11倍</td></tr>
+      <tr><td>🍈</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+1倍</font><br>+2.5倍<br>+3倍<br>+4倍<br>+5倍<br>+6倍<br>+7倍</td></tr>
+      <tr style="background:#222;"><td>🍇</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+0.5倍</font><br>+1.5倍<br>+2.5倍<br>+3.5倍<br>+4.5倍<br>+5.5倍<br>+6.5倍</td></tr>
+      <tr><td>🍊</td><td>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+0.5倍</font><br>+1.5倍<br>+2.5倍<br>+3.5倍<br>+4.5倍<br>+5.5倍</td></tr>
+      <tr style="background:#222;"><td>🍒</td><td>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+1倍</font><br>+2倍<br>+3倍<br>+5倍</td></tr>
+    </table>
+-->
+  </div>
+</div>
+
 <div id="game-container" style="display:none;">
   <div id="header">
-    <div class="panel">
-      <div>BET</div>
-      <input type="number" id="bet-input" value="1" min="1" max="100">
+    <div class="panel" style="display:flex; justify-content:center; gap:8px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div>BET</div>
+        <input type="number" id="bet-input" value="1" min="1" max="100">
+      </div>
+      <div id="spin-counter-btn" style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
+        <div>CNT</div>
+        <span id="spin-counter">0</span>
+      </div>
     </div>
     <div class="panel">
       <div>WIN</div>
@@ -283,7 +361,7 @@ let zzfxV = 0.3,
   </div>
 
   <div id="debug-panel">
-    [DEBUG / BALANCE]<br>
+    [DEBUG / BALANCE] <span id="dbg-kakuhen" style="color:#ff00ff; font-weight:bold;"></span><br>
     WINなし回数: <span id="dbg-loss">0</span> | 
     FREE確率: <span id="dbg-free">1%</span> | 
     WILD確率: <span id="dbg-wild">1%</span> | 
@@ -324,6 +402,7 @@ function getCookie(name) {
 function saveGameData() {
   setCookie("emojiDrop_medals", medals, 30);
   setCookie("emojiDrop_bet", currentBet, 30);
+  setCookie("emojiDrop_spinCount", spinCount, 30);
 }
 
 let soundEnabled = true;
@@ -379,7 +458,6 @@ function playSoundStartFreeSpin() {
 
 window.onload = () => {
   let savedMedals = getCookie("emojiDrop_medals");
-  // 保存されたメダル数が0より大きい場合のみ「つづきから」を表示
   if (savedMedals !== null && parseInt(savedMedals) > 0) {
     document.getElementById('btn-continue').style.display = 'block';
   }
@@ -387,7 +465,8 @@ window.onload = () => {
 
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
-  medals = 50; currentBet = 1; document.getElementById('bet-input').value = currentBet;
+  medals = 50; currentBet = 1; spinCount = 0; 
+  document.getElementById('bet-input').value = currentBet;
   startGameUI();
 });
 
@@ -395,8 +474,10 @@ document.getElementById('btn-continue').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   let savedMedals = getCookie("emojiDrop_medals");
   let savedBet = getCookie("emojiDrop_bet");
+  let savedSpinCount = getCookie("emojiDrop_spinCount");
   medals = savedMedals !== null ? parseInt(savedMedals) : 50;
   currentBet = savedBet !== null ? parseInt(savedBet) : 1;
+  spinCount = savedSpinCount !== null ? parseInt(savedSpinCount) : 0;
   document.getElementById('bet-input').value = currentBet;
   startGameUI();
 });
@@ -408,40 +489,76 @@ function startGameUI() {
   updateUI();
 }
 
+// モーダル操作とダブルタップ検知
+let lastTapMult = 0;
+const multTableEl = document.getElementById('multiplier-table-vertical');
+multTableEl.addEventListener('touchstart', (e) => {
+    let now = new Date().getTime();
+    if (now - lastTapMult < 500 && (now - lastTapMult > 0)) {
+        document.getElementById('multiplier-modal').style.display = 'flex';
+        e.preventDefault();
+    }
+    lastTapMult = now;
+});
+multTableEl.addEventListener('dblclick', () => {
+    document.getElementById('multiplier-modal').style.display = 'flex';
+});
+document.getElementById('close-modal').addEventListener('click', () => {
+    document.getElementById('multiplier-modal').style.display = 'none';
+});
+
+// スピンカウンターリセット
+document.getElementById('spin-counter-btn').addEventListener('click', () => {
+    spinCount = 0; updateUI();
+});
+
 const SYMBOLS = ['💎', '7️⃣', '🍰', '🍦', '🍭', '🔔', '🍈', '🍇', '🍊', '🍒'];
 const WILD = '🛑';
 const FREE = '🆓';
 
 const SYMBOL_WEIGHTS = {
-  '💎': 5, '7️⃣': 5,
-  '🍰': 7, '🍦': 7,
-  '🍭': 10, '🔔': 10,
-  '🍈': 13, '🍇': 13,
-  '🍊': 15, '🍒': 15
+  '💎': 2, '7️⃣': 5,
+  '🍰': 7, '🍦': 8,
+  '🍭': 9, '🔔': 11,
+  '🍈': 12, '🍇': 13,
+  '🍊': 15, '🍒': 18
 };
 
 function getWeightedRandomSymbol() {
-  let rand = Math.random() * 100; let sum = 0;
-  for (let sym of SYMBOLS) { sum += SYMBOL_WEIGHTS[sym]; if (rand < sum) return sym; }
+  let weights = SYMBOL_WEIGHTS;
+  if (kakuhenState.active && kakuhenState.type === 1) {
+      weights = {
+          '💎': 0, '7️⃣': 0, '🍰': 0, '🍦': 0, '🍭': 0, '🔔': 0,
+          '🍈': 15, '🍇': 25, '🍊': 25, '🍒': 35
+      };
+  }
+  let sum = 0;
+  for (let sym in weights) sum += weights[sym];
+  let rand = Math.random() * sum;
+  sum = 0;
+  for (let sym of SYMBOLS) {
+      sum += weights[sym] || 0;
+      if (rand < sum && (weights[sym] || 0) > 0) return sym;
+  }
   return SYMBOLS[SYMBOLS.length - 1];
 }
 
 const MULT_TABLE_SYMBOLS = ['🍒', '🍊', '🍇', '🍈', '🔔', '🍭', '🍦', '🍰', '7️⃣', '💎'];
 const INITIAL_MULTI = [1, 1, 2, 3, 4, 6, 8, 12, 15, 18];
-const QUEUE_MULTI = [25, 40, 80, 120, 240, 500];
+const QUEUE_MULTI = [25,40,50,100,150,200,300,450,700];
 
 function getBonusMult(sym, count) {
   const rules = {
-    '💎': {3:10, 4:15, 5:20, 6:40, 7:70, 8:110, 9:510},
-    '7️⃣': {3:7, 4:11, 5:15, 6:22, 7:37, 8:67, 9:107},
-    '🍰': {3:5, 4:8, 5:11, 6:15, 7:20, 8:35, 9:65},
-    '🍦': {3:4, 4:6, 5:8, 6:12, 7:16, 8:20, 9:24},
-    '🍭': {3:3, 4:5, 5:6, 6:7, 7:9, 8:11, 9:13},
-    '🔔': {3:2, 4:3.5, 5:5, 6:6.5, 7:8, 8:9.5, 9:11},
-    '🍈': {3:1, 4:2.5, 5:3, 6:4, 7:5, 8:6, 9:7},
-    '🍇': {3:0.5, 4:1.5, 5:2.5, 6:3.5, 7:4.5, 8:5.5, 9:6.5},
-    '🍊': {4:0.5, 5:1.5, 6:2.5, 7:3.5, 8:4.5, 9:5.5},
-    '🍒': {6:1, 7:2, 8:3, 9:5}
+    '💎': {3:10,  4:15,  5:30,  6:80,  7:150, 8:400, 9:999},
+    '7️⃣':{3:7,   4:12,  5:25,  6:50,  7:100, 8:200, 9:700},
+    '🍰': {3:5,   4:9,   5:16,  6:25,  7:60,  8:100, 9:450},
+    '🍦': {3:4,   4:6,   5:10,  6:16,  7:30,  8:60,  9:300},
+    '🍭': {3:3,   4:5,   5:8,   6:13,  7:20,  8:45,  9:200},
+    '🔔': {3:2,   4:3,   5:6,   6:10,  7:15,  8:25,  9:150},
+    '🍈': {3:1,   4:2,   5:4,   6:6,   7:9,   8:15,  9:100},
+    '🍇': {3:0.5, 4:1,   5:2,   6:4,   7:6,   8:10,  9:70},
+    '🍊': {4:0.5, 5:1,   6:2,   7:3,   8:5,   9:40},
+    '🍒': {5:0.5, 6:1,   7:2,   8:3,   9:20}
   };
   if(rules[sym]) {
       let applicableCount = count;
@@ -452,9 +569,10 @@ function getBonusMult(sym, count) {
 }
 
 let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.15 };
+let kakuhenState = { active: false, type: 0 };
 let boardState = [[], [], []]; 
 let multipliers = []; let upcomingMultipliers = []; let multElements = []; 
-let currentBet = 1; let totalWin = 0; let medals = 50; 
+let currentBet = 1; let totalWin = 0; let medals = 50; let spinCount = 0;
 let freeSpinsLeft = 0; let isFreeSpinMode = false; let symIdCounter = 0;
 let didWinThisSpin = false; let currentChain = 0; let guaranteedWildQueue = [];
 
@@ -467,11 +585,33 @@ function updateDebugUI() {
   document.getElementById('dbg-free').innerText = (gameBalance.freeSpinProb * 100).toFixed(1) + '%';
   document.getElementById('dbg-wild').innerText = (gameBalance.wildProb * 100).toFixed(1) + '%';
   document.getElementById('dbg-freeze').innerText = (gameBalance.freezeProb * 100).toFixed(1) + '%';
+  document.getElementById('dbg-kakuhen').innerText = kakuhenState.active ? "【確変中】" : "";
 }
 
 function updateGameBalanceLogic() {
-  if (gameBalance.consecutiveLosses >= 10) { gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05; }
-  else { gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01; }
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  gameBalance.freeSpinProb = 0.01;
+  gameBalance.wildProb = 0.01;
+  gameBalance.freezeProb = 0.15;
+  kakuhenState.active = false;
+  kakuhenState.type = 0;
+
+  if (h === m) {
+      kakuhenState.active = true;
+      kakuhenState.type = 1;
+      gameBalance.freezeProb = 0.0;
+      gameBalance.freeSpinProb = 0.00;
+      gameBalance.wildProb = 0.02;
+  } 
+  else if (gameBalance.consecutiveLosses >= 10) {
+      kakuhenState.active = true;
+      kakuhenState.type = 2;
+      gameBalance.freeSpinProb = 0.05;
+      gameBalance.wildProb = 0.05;
+  }
   updateDebugUI();
 }
 
@@ -501,7 +641,7 @@ function resetGridColor() {
   if (!isFreeSpinMode) document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
   
   document.querySelectorAll('.symbol-cell').forEach(el => {
-    el.style.borderColor = '#666';
+    el.style.borderColor = '#333';
     el.style.borderStyle = 'solid';
   });
 }
@@ -539,7 +679,9 @@ function consumeMultiplier(symbol) {
 }
 
 function updateUI() {
-  document.getElementById('win-display').innerText = totalWin; document.getElementById('medal-count').innerText = medals;
+  document.getElementById('win-display').innerText = totalWin; 
+  document.getElementById('medal-count').innerText = medals;
+  document.getElementById('spin-counter').innerText = spinCount;
   const fsPanel = document.getElementById('free-spin-panel');
   if (freeSpinsLeft > 0) { fsPanel.style.display = 'block'; document.getElementById('free-spin-display').innerText = freeSpinsLeft; } 
   else { fsPanel.style.display = 'none'; }
@@ -687,18 +829,31 @@ function findMatches() {
 
 async function evaluateMatches() {
   let { lines, clusters } = findMatches(); let cellsToRemove = new Set(); let clearCounts = {};
+  
+  let symbolsToConsume = new Set();
+  for (let line of lines) symbolsToConsume.add(line.sym);
+  
+  let appliedMultipliers = {};
+  symbolsToConsume.forEach(sym => {
+      let index = MULT_TABLE_SYMBOLS.indexOf(sym);
+      if (index === -1) index = 9;
+      appliedMultipliers[sym] = multipliers[index];
+  });
+
   for (let line of lines) {
-    let mult = consumeMultiplier(line.sym); let win = Math.floor(mult * currentBet); totalWin += win; didWinThisSpin = true; addEffectLine(line.cells);
+    let mult = appliedMultipliers[line.sym];
+    let win = Math.floor(mult * currentBet); totalWin += win; didWinThisSpin = true; addEffectLine(line.cells);
     for (let pos of line.cells) { cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = line.sym; if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`); }
   }
   for (let cluster of clusters) {
     for (let pos of cluster.cells) { cellsToRemove.add(`${pos[0]},${pos[1]}`); let target = cluster.sym; if (!clearCounts[target]) clearCounts[target] = new Set(); clearCounts[target].add(`${pos[0]},${pos[1]}`); }
   }
 
+  symbolsToConsume.forEach(sym => consumeMultiplier(sym));
+
   if (cellsToRemove.size > 0) {
     currentChain++;
     
-    // 効果音トリガー：4連鎖超え(>4) か 通常の消滅音か
     if (currentChain > 4) {
       playSoundChain();
     } else {
@@ -773,14 +928,12 @@ function cascade() {
         boardState[c].unshift(newSym); 
     }
     
-    // NEXTグリッド(boardState[c][0])にFREEが抽選された時の効果音トリガー
     if (missing > 0 && boardState[c][0].sym === FREE) {
         playSoundFreeSpinNext();
     }
   }
   renderBoard(); 
   
-  // 落下(バウンド)効果音のトリガー: transition: top 0.8s に合わせて800ms後
   if (dropped) {
       setTimeout(playSoundSymbolBounce, 800);
   }
@@ -789,12 +942,15 @@ function cascade() {
 }
 
 function finishTurn() {
+  if (isFreeSpinMode) {
+      gameBalance.consecutiveLosses = 0;
+  }
   isFreeSpinMode = false; guaranteedWildQueue = []; 
   document.getElementById('fs-banner-top').classList.remove('active-top'); document.getElementById('fs-banner-bottom').classList.remove('active-bottom');
   resetGridColor();
   
   if (totalWin > 0) {
-     playSoundTotalWin(); // TOTAL WIN表示の効果音トリガー
+     playSoundTotalWin(); 
      
      medals += totalWin; 
      let banner = document.getElementById('total-win-amount');
@@ -831,10 +987,21 @@ function checkFreeSpins() {
   }
   
   if (newFreeCells.length > 0) {
+    if (kakuhenState.type === 2 && Math.random() < 0.95) {
+        gameBalance.consecutiveLosses = 0;
+    }
+    updateGameBalanceLogic();
+
     for(let fc of newFreeCells) { guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); }
     isFreeSpinMode = true; freeSpinsLeft += newFreeCells.length * 3;
-    gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
-    updateDebugUI();
+    freeSpinsLeft--;
+
+    if (kakuhenState.type === 2 && Math.random() < 0.95) {
+        //gameBalance.consecutiveLosses = 0;
+        gameBalance.freeSpinProb = 0.01;
+        gameBalance.wildProb = 0.01;
+	    updateGameBalanceLogic();
+    }
     
     playSoundStartFreeSpin();
     
@@ -850,7 +1017,6 @@ function checkFreeSpins() {
 function startSpin(isFreeMode = false) {
   if(!isFreeMode) playSoundSpin(); 
 
-  // BET数の上限を100に引き上げ
   let inputBet = parseInt(document.getElementById('bet-input').value) || 1;
   inputBet = Math.min(Math.max(inputBet, 1), 100); 
   
@@ -858,6 +1024,8 @@ function startSpin(isFreeMode = false) {
     if (medals < inputBet) { alert("メダルが足りません！"); return; }
     currentBet = inputBet; document.getElementById('bet-input').value = currentBet;
     medals -= currentBet; totalWin = 0; didWinThisSpin = false;
+    spinCount++;
+    if (spinCount > 999) spinCount = 0;
     initMultipliersDOM(); isFreeSpinMode = false;
   }
   
@@ -941,7 +1109,6 @@ function startSpin(isFreeMode = false) {
                 if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) { let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = boardState[c][i].wild; el.appendChild(wEl); }
             }
             
-            // 初回のスピンでNEXT(0)にFREEが抽選されていた場合の効果音トリガー
             if (i === 0 && boardState[c][i].sym === FREE && !isFreeMode) {
                 playSoundFreeSpinNext();
             }
