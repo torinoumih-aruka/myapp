@@ -318,22 +318,12 @@ let zzfxV = 0.3,
     
     <p style="color:#f00;">配当メダル数の計算（配当倍率×BET数）は、小数点以下を切り捨てて計算します。</p>
 
+    <h3>🍈🍇🍊🍒お知らせ🍒🍊🍇🍈</h3>
+    <p>毎日、6時～12時と12時～23時の間、それぞれにフルーツ盛りだくさんなイベントを1分間限定で開催中！
+    <br>開催の通知は、開始時間の120分前、90分前、60分前、30分前、15分前、10分前、5分前、1分前に画面上部に表示されます！
+    <br>全プレイヤー同時に開催されるので、通知が出てきたら他のプレイヤーに教えてあげよう！</p>
+    <p style="color:#aaa;">開催時間は毎日ランダムです。</p>
 
-<!--
-    <table>
-      <tr style="background:#333;"><th>図柄</th><th>同時消し条件</th><th>追加倍率ボーナス</th></tr>
-      <tr><td>💎</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+10倍</font><br>+15倍<br>+20倍<br>+40倍<br>+70倍<br>+110倍<br><font color="#ff00ff">+510倍</font></td></tr>
-      <tr style="background:#222;"><td>7️⃣</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+7倍</font><br>+11倍<br>+15倍<br>+22倍<br>+37倍<br>+67倍<br><font color="#ff00ff">+107倍</font></td></tr>
-      <tr><td>🍰</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+5倍</font><br>+8倍<br>+11倍<br>+15倍<br>+20倍<br>+35倍<br><font color="#ff00ff">+65倍</font></td></tr>
-      <tr style="background:#222;"><td>🍦</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+4倍</font><br>+6倍<br>+8倍<br>+12倍<br>+16倍<br>+20倍<br>+24倍</td></tr>
-      <tr><td>🍭</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+3倍</font><br>+5倍<br>+6倍<br>+7倍<br>+9倍<br>+11倍<br>+13倍</td></tr>
-      <tr style="background:#222;"><td>🔔</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+2倍</font><br>+3.5倍<br>+5倍<br>+6.5倍<br>+8倍<br>+9.5倍<br>+11倍</td></tr>
-      <tr><td>🍈</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+1倍</font><br>+2.5倍<br>+3倍<br>+4倍<br>+5倍<br>+6倍<br>+7倍</td></tr>
-      <tr style="background:#222;"><td>🍇</td><td>3個<br>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+0.5倍</font><br>+1.5倍<br>+2.5倍<br>+3.5倍<br>+4.5倍<br>+5.5倍<br>+6.5倍</td></tr>
-      <tr><td>🍊</td><td>4個<br>5個<br>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+0.5倍</font><br>+1.5倍<br>+2.5倍<br>+3.5倍<br>+4.5倍<br>+5.5倍</td></tr>
-      <tr style="background:#222;"><td>🍒</td><td>6個<br>7個<br>8個<br>9個</td><td><font color="#ffff00">+1倍</font><br>+2倍<br>+3倍<br>+5倍</td></tr>
-    </table>
--->
   </div>
 </div>
 
@@ -554,6 +544,50 @@ const SYMBOL_WEIGHTS = {
   '🍊': 15, '🍒': 18
 };
 
+// --- 日付ベースのイベント生成システム ---
+// シード値付き乱数生成器 (Mulberry32)
+function getSeededRandom(seed) {
+    return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+// 今日のイベントスケジュールを生成する関数
+function generateDailyEvents() {
+    const now = new Date();
+    const yyyymmdd = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    
+    // 日付をシードにして乱数生成器を初期化
+    const rng = getSeededRandom(yyyymmdd ^ 0xABCDEF);
+
+    // 1. 午前（05:00 ～ 11:59）の時間を決定
+    // 6時(360分)から12時直前(719分)までの間でランダム
+    const amStartMinutes = 360 + Math.floor(rng() * 360);
+    
+    // 2. 午後（12:00 ～ 22:59）の時間を決定
+    // 12時(720分)から23時直前(1379分)までの間でランダム
+    const pmStartMinutes = 720 + Math.floor(rng() * 660);
+
+    const toHHMM = (totalMinutes) => {
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        return h.toString().padStart(2, '0') + m.toString().padStart(2, '0');
+    };
+
+    const amTime = toHHMM(amStartMinutes);
+    const pmTime = toHHMM(pmStartMinutes);
+
+    return [
+        { time: amTime, message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" },
+        { time: pmTime, message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" }
+    ];
+}
+
+let currentDailyEvents = generateDailyEvents();
+let lastProcessedDate = new Date().getDate();
 function getWeightedRandomSymbol() {
   let weights = SYMBOL_WEIGHTS;
   if (kakuhenState.active && kakuhenState.type === 1) {
@@ -600,10 +634,7 @@ function getBonusMult(sym, count) {
 
 let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.15 };
 let kakuhenState = { active: false, type: 0 };
-const EVENT_SCHEDULES = [
-  { time: "2235", message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" },
-  { time: "1635", message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" }
-];
+
 let lastNotifiedMinute = -1;
 let eventNotifTimer = null;
 
@@ -638,6 +669,11 @@ function updateDebugUI() {
 
 function updateGameBalanceLogic() {
   let now = new Date();
+  
+  if (now.getDate() !== lastProcessedDate) {
+      currentDailyEvents = generateDailyEvents();
+      lastProcessedDate = now.getDate();
+  }
   let h = now.getHours(); let m = now.getMinutes();
   let currentTotalMinutes = h * 60 + m;
   
@@ -647,7 +683,7 @@ function updateGameBalanceLogic() {
   gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01; gameBalance.freezeProb = 0.15;
   kakuhenState.active = false; kakuhenState.type = 0;
 
-  for (let ev of EVENT_SCHEDULES) {
+  for (let ev of currentDailyEvents) {
     let evH = parseInt(ev.time.substring(0, 2)); let evM = parseInt(ev.time.substring(2, 4));
     let evTotalMinutes = evH * 60 + evM;
     
@@ -658,7 +694,7 @@ function updateGameBalanceLogic() {
     // イベント前通知
     let diff = evTotalMinutes - currentTotalMinutes;
     if (diff < 0) diff += 1440; // 日またぎ
-    if ([15, 10, 5, 1].includes(diff)) {
+    if ([120,90,60,30,15, 10, 5, 1].includes(diff)) {
       tickerMessage = `【まもなくイベント】 あと${diff}分で開始！ ${ev.message}`;
       if (lastNotifiedMinute !== currentTotalMinutes) {
         showEventNotification(`あと${diff}分でイベント開始！ ${ev.message}`);
