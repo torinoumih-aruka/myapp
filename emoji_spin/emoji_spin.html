@@ -16,7 +16,22 @@
     align-items: center;
     touch-action: manipulation;
     overflow-x: hidden;
-    padding-bottom: 60px; /* 固定コントロールエリア用の余白を少し縮小 */
+    padding-bottom: 60px;
+  }
+
+  /* --- モーダル共通スタイル --- */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center;
+  }
+  .modal-content {
+    position: relative; width: 90%; max-width: 400px; max-height: 80vh; background: #111;
+    border: 2px solid #ff00ff; border-radius: 10px; padding: 20px; overflow-y: auto;
+    box-sizing: border-box; color: #fff; font-size: 0.85rem; pointer-events: auto;
+  }
+  .close-modal {
+    position: absolute; top: 10px; right: 15px; font-size: 1.5rem; font-weight: bold;
+    cursor: pointer; color: #ff00ff;
   }
 
   /* --- スタートメニュー --- */
@@ -26,7 +41,10 @@
     display: flex; flex-direction: column; justify-content: center; align-items: center;
   }
   #start-menu h1 {
-    color: #ffaa00; font-size: 3rem; margin-bottom: 40px; text-shadow: 0 0 20px #ffaa00;
+    color: #ffaa00; font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px #ffaa00;
+  }
+  #max-mult-container {
+    color: #0ff; font-size: 1.2rem; font-weight: bold; margin-bottom: 30px; text-shadow: 0 0 10px #0ff;
   }
   .menu-btn {
     padding: 15px 40px; margin: 10px; font-size: 1.5rem; font-weight: bold;
@@ -68,21 +86,29 @@
 
   /* 上部レイアウトの隙間・サイズ調整 */
   #header {
-    width: 100%; display: flex; justify-content: space-around;
+    width: 100%; display: flex; justify-content: center; align-items: stretch;
     padding: 5px; box-sizing: border-box; z-index: 110; 
-    gap: 5px; position: relative;
+    gap: 4px; position: relative;
   }
   
   .panel {
     background: rgba(0,0,0,0.9); border: 2px solid #444; border-radius: 8px;
-    padding: 5px 10px; text-align: center; min-width: 60px;
+    padding: 4px; text-align: center; display: flex; flex-direction: column; justify-content: center;
   }
-  .panel div { font-size: 0.7rem; color: #aaa; }
-  .panel span { font-size: 1.2rem; font-weight: bold; color: #fff; }
+  .panel div { font-size: 0.6rem; color: #aaa; line-height: 1; margin-bottom: 2px; }
+  .panel span { font-size: 1.1rem; font-weight: bold; color: #fff; line-height: 1; }
   
+  #btn-chart { cursor: pointer; background: #222; font-size: 1.2rem; margin-right: 15px; }
+  
+  /* ヘッダー幅固定 */
+  .p-bet { width: 45px; }
+  .p-cnt { width: 45px; cursor: pointer; }
+  .p-win { width: 75px; }
+  .p-free { width: 45px; border-color: #444; transition: border-color 0.3s; }
+
   #bet-input {
-    width: 40px; text-align: center; background: #222; color: #fff;
-    border: 1px solid #666; border-radius: 4px; font-size: 1.2rem; font-weight: bold;
+    width: 100%; text-align: center; background: transparent; color: #fff;
+    border: none; font-size: 1.1rem; font-weight: bold; outline: none; padding: 0;
   }
 
   #game-layout {
@@ -153,7 +179,7 @@
 
   #fx-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 8; pointer-events: none; }
 
-  /* コントロール（メダルとスピンボタン）の固定配置・縮小 */
+  /* コントロール */
   #controls-row {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
     display: flex; flex-direction: row; justify-content: space-between; align-items: center;
@@ -162,24 +188,29 @@
   }
   
   #medal-display {
-    font-size: 1.1rem; color: #ffd700; font-weight: bold; /* フォントサイズ縮小 */
+    font-size: 1.1rem; color: #ffd700; font-weight: bold;
     text-shadow: 0 0 5px #ffaa00; text-align: left; min-width: 120px;
   }
 
   #spin-btn {
-    padding: 8px 30px; font-size: 1.3rem; font-weight: bold; /* パディング・フォント縮小 */
+    padding: 8px 30px; font-size: 1.3rem; font-weight: bold;
     background: linear-gradient(135deg, #ff00aa, #aa00ff); color: white;
     border: 2px solid #fff; border-radius: 25px; box-shadow: 0 0 10px #ff00ff; cursor: pointer;
   }
   #spin-btn:disabled { background: #444; border-color: #666; box-shadow: none; color: #888; }
   
+  /* JACKPOT時の帯色変更 */
   .fs-banner {
     position: fixed; left: 0; width: 100%; height: 40px;
     background: linear-gradient(to bottom, #800000, #500000);
     border-top: 2px solid #ffaa00; border-bottom: 2px solid #ffaa00;
     display: flex; align-items: center; overflow: hidden;
-    transition: transform 0.5s ease; pointer-events: none;
+    transition: transform 0.5s ease, background 0.5s; pointer-events: none;
   }
+  .fs-banner.jackpot-banner {
+    background: linear-gradient(to bottom, #008000, #005000); border-color: #00ff00;
+  }
+  
   #fs-banner-top { top: 25px; transform: translateY(-150%); z-index: 100; } 
   #fs-banner-bottom { bottom: 0; transform: translateY(100%); z-index: 210; } 
   #fs-banner-top.active-top { transform: translateY(0); }
@@ -187,8 +218,10 @@
   
   .fs-text {
     white-space: nowrap; color: #ffaa00; font-weight: bold; font-size: 1.5rem;
-    animation: slideText 6s linear infinite; letter-spacing: 5px;
+    animation: slideText 6s linear infinite; letter-spacing: 5px; transition: color 0.5s;
   }
+  .fs-text.jackpot-text { color: #00ff00; }
+
   @keyframes slideText { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
   .popup {
@@ -204,12 +237,7 @@
     text-shadow: 0 0 10px #00f, 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     pointer-events: none; z-index: 30; animation: chainScale 1.5s forwards;
   }
-  @keyframes chainScale {
-    0% { transform: scale(0.5); opacity: 0; }
-    20% { transform: scale(1.2); opacity: 1; }
-    80% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
-  }
+  @keyframes chainScale { 0% { transform: scale(0.5); opacity: 0; } 20% { transform: scale(1.2); opacity: 1; } 80% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
 
   #total-win-banner {
     position: fixed; top: 50%; left: 50%; width: 100%; max-width: 450px; background: rgba(0,0,0,0.9);
@@ -230,30 +258,20 @@
     margin-top: auto; margin-bottom: 5px; font-size: 0.7rem; color: #888;
     text-align: center; width: 90%; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;
   }
-  
-  /* ポップアップモーダル用 */
-  #multiplier-modal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center;
+
+  /* チャートキャンバス */
+  #chart-canvas {
+    width: 100%; height: 250px; background: #000; border: 1px solid #444; margin-top: 10px;
   }
-  #multiplier-modal-content {
-    position: relative; width: 90%; max-width: 400px; max-height: 80vh; background: #111;
-    border: 2px solid #ff00ff; border-radius: 10px; padding: 20px; overflow-y: auto;
-    box-sizing: border-box; color: #fff; font-size: 0.85rem; pointer-events: auto;
-  }
-  #multiplier-modal-content h3 { text-align: center; margin-top: 0; color: #0ff; }
-  #multiplier-modal-content table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; }
-  #multiplier-modal-content th, #multiplier-modal-content td { padding: 5px; border-bottom: 1px solid #444; }
-  #close-modal {
-    position: absolute; top: 10px; right: 15px; font-size: 1.5rem; font-weight: bold;
-    cursor: pointer; color: #ff00ff;
-  }
+  .chart-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+  .chart-controls button { background: #333; color: #fff; border: 1px solid #666; padding: 5px 15px; cursor: pointer; border-radius: 4px; }
+  .chart-controls button.active { background: #ff00ff; border-color: #fff; }
 </style>
 </head>
 <body>
 
 <script>
-// --- ZzFXMicro 修正版（完全動作・自動再生ブロック回避付き） ---
+// --- ZzFXMicro 修正版 ---
 let zzfxV = 0.3,
     zzfxX = new (window.AudioContext || window.webkitAudioContext)(),
     zzfx = (p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0,N=0)=>{
@@ -262,9 +280,9 @@ let zzfxV = 0.3,
     };
 </script>
 
-
 <div id="start-menu">
   <h1>Emoji Drop</h1>
+  <div id="max-mult-container">過去に獲得した最高倍率：<span id="max-mult-display">0</span>倍</div>
   <button class="menu-btn" id="btn-newgame">はじめから</button>
   <button class="menu-btn" id="btn-continue" style="display:none;">つづきから</button>
   
@@ -282,21 +300,15 @@ let zzfxV = 0.3,
 
 <canvas id="global-fx-canvas"></canvas>
 
-<div id="multiplier-modal">
-  <div id="multiplier-modal-content">
-    <div id="close-modal">&times;</div>
-
+<div id="multiplier-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="close-modal" id="close-mult-modal">&times;</div>
     <h3>配当ルール</h3>
-    
-    <p style="color:#aaa;">揃った図柄の、現在の倍率×BET数が基本配当となります。
-    <br>揃った図柄に対応する倍率はリストから除外されて、更に高い倍率が設定されます。
-    <br>倍率リストは次の順番に倍率が設定されます。</p>
-    <p>x1→x1→x2→x3→x4→x6→x8→x12→x15→x18<br>
-    →x25→x40→x50→x100→x150→x200→x300<br>→x450→x700→x999…</p>
-
+    <p style="color:#aaa;">揃った図柄の、現在の倍率×BET数が基本配当となります。<br>揃った図柄に対応する倍率はリストから除外されて、更に高い倍率が設定されます。<br>倍率リストは次の順番に倍率が設定されます。</p>
+    <p>x1→x1→x2→x3→x4→x6→x8→x12→x15→x18<br>→x25→x40→x50→x100→x150→x200→x300<br>→x450→x700→x999…</p>
     <h3>同時消しボーナス</h3>
     <p style="color:#aaa;">同じ図柄が一度に消えた個数に応じて、下記の倍率×BET数が配当に追加されます。</p>
-    <table>
+    <table style="width:100%; text-align:center; font-size:0.8rem; border-collapse:collapse;">
     	<tr style="background:#333;"><th>.</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th></tr>
     	<tr>                         <td>💎</td><td>x10</td><td>x15</td><td>x30</td><td>x80</td><td>x150</td><td>x400</td><td>x999</td></tr>
     	<tr style="background:#222;"><td>7️⃣</td><td>x7</td><td>x12</td><td>x25</td><td>x50</td><td>x100</td><td>x200</td><td>x700</td></tr>
@@ -309,13 +321,10 @@ let zzfxV = 0.3,
     	<tr>                         <td>🍊</td><td>-</td><td>x0.5</td><td>x1</td><td>x2</td><td>x3</td><td>x5</td><td>x40</td></tr>
     	<tr style="background:#222;"><td>🍒</td><td>-</td><td>-</td><td>x0.5</td><td>x1</td><td>x2</td><td>x3</td><td>x20</td></tr>
     </table>
-
 	<br>
     <h3>連鎖ボーナス</h3>
-    <p style="color:#aaa;">図柄が揃って消えた後、落ちてきた図柄によって更に図柄が消えることを「連鎖」といいます。
-    <br>連鎖を繰り返すことで以下の倍率×BET数が配当に追加されます。</p>
+    <p style="color:#aaa;">図柄が揃って消えた後、落ちてきた図柄によって更に図柄が消えることを「連鎖」といいます。<br>連鎖を繰り返すことで以下の倍率×BET数が配当に追加されます。</p>
     <p>((連鎖数-2)×0.5)倍</p>
-    
     <p style="color:#f00;">配当メダル数の計算（配当倍率×BET数）は、小数点以下を切り捨てて計算します。</p>
 
     <h3>🍈🍇🍊🍒お知らせ🍒🍊🍇🍈</h3>
@@ -323,7 +332,38 @@ let zzfxV = 0.3,
     <br>開催の通知は、開始時間の120分前、90分前、60分前、30分前、15分前、10分前、5分前、1分前に画面上部に表示されます！
     <br>全プレイヤー同時に開催されるので、通知が出てきたら他のプレイヤーに教えてあげよう！</p>
     <p style="color:#aaa;">開催時間は毎日ランダムです。</p>
+  </div>
+</div>
 
+<div id="release-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="close-modal" id="close-release-modal">&times;</div>
+    <h3>リリースノート (v1.1.0)</h3>
+    <div id="release-text" style="color:#ddd; line-height: 1.5;">
+      【追加機能】<br>
+      ・タイトル画面でのリリースノート表示機能を追加。<br>
+      ・過去に獲得した「最高倍率」を記録・表示する機能を追加。<br>
+      ・毎日のメダル獲得履歴を確認できる機能（💹ボタン）を追加。<br>
+      ・画面上部のステータスバーの横幅を固定化し、レイアウトを安定化。<br>
+      <br>
+      【ゲームバランス・演出調整】<br>
+      ・凍結確率、FREE確率、WILD確率がプレイ状況に応じて変動するシステムを導入。<br>
+      ・FREE確率またはWILD確率がMAX(5%)の状態でフリースピンに突入すると、帯が緑色に光る「JACKPOT FREE SPIN」演出を追加。<br>
+      ・ワイルドカード出現時およびフリースピン中のリール停止時に効果音が鳴るよう修正。
+    </div>
+  </div>
+</div>
+
+<div id="chart-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="close-modal" id="close-chart-modal">&times;</div>
+    <h3 style="margin-top:0;">本日のメダル獲得履歴</h3>
+    <canvas id="chart-canvas"></canvas>
+    <div class="chart-controls">
+      <button id="btn-chart-1m">1分足</button>
+      <button id="btn-chart-5m" class="active">5分足</button>
+      <button id="btn-chart-60m">60分足</button>
+    </div>
   </div>
 </div>
 
@@ -337,21 +377,20 @@ let zzfxV = 0.3,
   </div>
 
   <div id="header">
-    <div class="panel" style="display:flex; justify-content:center; gap:8px;">
-      <div style="display:flex; flex-direction:column; align-items:center;">
-        <div>BET</div>
-        <input type="number" id="bet-input" value="1" min="1" max="100">
-      </div>
-      <div id="spin-counter-btn" style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
-        <div>CNT</div>
-        <span id="spin-counter">0</span>
-      </div>
+    <div class="panel" id="btn-chart" title="履歴チャート">💹</div>
+    <div class="panel p-bet">
+      <div>BET</div>
+      <input type="number" id="bet-input" value="1" min="1" max="100">
     </div>
-    <div class="panel">
+    <div class="panel p-cnt" id="spin-counter-btn">
+      <div>CNT</div>
+      <span id="spin-counter">0</span>
+    </div>
+    <div class="panel p-win">
       <div>WIN</div>
       <span id="win-display">0</span>
     </div>
-    <div class="panel" id="free-spin-panel" style="display:none; border-color:#0ff;">
+    <div class="panel p-free" id="free-spin-panel">
       <div style="color:#0ff;">FREE</div>
       <span id="free-spin-display" style="color:#0ff;">0</span>
     </div>
@@ -385,7 +424,7 @@ let zzfxV = 0.3,
     WINなし回数: <span id="dbg-loss">0</span> | 
     FREE確率: <span id="dbg-free">1%</span> | 
     WILD確率: <span id="dbg-wild">1%</span> | 
-    凍結確率: <span id="dbg-freeze">15%</span>
+    凍結確率: <span id="dbg-freeze">20%</span>
   </div>
 </div>
 
@@ -400,6 +439,7 @@ let zzfxV = 0.3,
 </div>
 
 <script>
+// --- ストレージ・履歴管理 ---
 function setCookie(name, value, days) {
   let expires = "";
   if (days) {
@@ -425,63 +465,80 @@ function saveGameData() {
   setCookie("emojiDrop_spinCount", spinCount, 30);
 }
 
+// 最高倍率
+let maxMultiplier = parseFloat(getCookie("emojiDrop_maxMult")) || 0;
+
+// メダル履歴 (日次クリア)
+let medalLog = JSON.parse(localStorage.getItem('emojiDrop_log') || '[]');
+let logDate = localStorage.getItem('emojiDrop_logDate');
+let todayStr = new Date().toDateString();
+if (logDate !== todayStr) {
+    medalLog = [];
+    localStorage.setItem('emojiDrop_logDate', todayStr);
+    localStorage.setItem('emojiDrop_log', JSON.stringify(medalLog));
+}
+
+function recordMedalLog(currentMedals) {
+    medalLog.push({ time: new Date().getTime(), medals: currentMedals });
+    localStorage.setItem('emojiDrop_log', JSON.stringify(medalLog));
+}
+
+// --- サウンド ---
 let soundEnabled = true;
 
-// --- 効果音関連のプレースホルダー ---
 function playSoundSpin() {
   if (!soundEnabled) return;
   zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]);
 }
-
 function playSoundStop() {
   if (!soundEnabled) return;
   zzfx(...[1.0,.1,523.2511,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]);
 }
-
 function playSoundFreeSpinNext() {
   if (!soundEnabled) return;
-  // TODO: フリースピンの図柄が、NEXTグリッドに抽選されたときの効果音
   zzfx(...[.5,0,523.2511,,.05,.5,2,0,1,.5,400,,.02,.1,,,.15,.5,.2,.3]);
 }
-
+function playSoundWildNext() {
+  if (!soundEnabled) return;
+  // TODO: ワイルド出現時の効果音差し替え用
+  zzfx(...[1.2,0,800,,.1,.3,1,3,,,200,.05,,,,,,.4,.1,.05]); 
+}
 function playSoundSymbolBounce() {
   if (!soundEnabled) return;
-  // TODO: 図柄が落下して、落下後にバウンドしたときの効果音
-  zzfx(...[.8,.1,65.40639,,,.04,4,2,,3,,,,,,.3,.15,,.03,,259]); // 図柄落下時
+  zzfx(...[.8,.1,65.40639,,,.04,4,2,,3,,,,,,.3,.15,,.03,,259]); 
 }
-
 function playSoundMatch() {
   if (!soundEnabled) return;
-  // TODO: 一列揃って図柄が消えるときの効果音
-  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); // 一列揃った時
+  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); 
 }
-
 function playSoundTotalWin() {
   if (!soundEnabled) return;
-  // TODO: TOTAL WINが表示されるときの効果音
   zzfx(...[.4,0,245,,.1,.25,1,0,,,300,,.05,,,,,.8,,,117]);
 }
-
 function playSoundChain() {
   if (!soundEnabled) return;
-  // TODO: 連鎖（chain）が4を超えて発生するとき（図柄が消える瞬間）の効果音
-  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); // 一列揃った時
+  zzfx(...[1.1,0,261.6256,,.05,.25,1,4,,,250,.03,.05,,,,.1,,.05]); 
 }
-
 function playSoundStartFreeSpin() {
   if (!soundEnabled) return;
-  // TODO: フリースピン開始時
-  zzfx(...[.9,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); // フリースピン開始時
+  zzfx(...[.9,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); 
 }
 
-// ----------------------------------
-
+// --- 初期化 ---
 window.onload = () => {
   let savedMedals = getCookie("emojiDrop_medals");
   if (savedMedals !== null && parseInt(savedMedals) > 0) {
     document.getElementById('btn-continue').style.display = 'block';
   }
+  document.getElementById('max-mult-display').innerText = maxMultiplier;
+  
+  // ページロード時にリリースノート表示
+  document.getElementById('release-modal').style.display = 'flex';
 };
+
+document.getElementById('close-release-modal').addEventListener('click', () => {
+    document.getElementById('release-modal').style.display = 'none';
+});
 
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
@@ -507,45 +564,165 @@ function startGameUI() {
   document.getElementById('game-container').style.display = 'flex';
   document.getElementById('controls-row').style.display = 'flex';
   updateUI();
+  if(medalLog.length === 0) recordMedalLog(medals); // 初期ログ
 }
 
-// モーダル操作とダブルタップ検知
+// --- 各種UIモーダルイベント ---
 let lastTapMult = 0;
 const multTableEl = document.getElementById('multiplier-table-vertical');
 multTableEl.addEventListener('touchstart', (e) => {
     let now = new Date().getTime();
     if (now - lastTapMult < 500 && (now - lastTapMult > 0)) {
-        document.getElementById('multiplier-modal').style.display = 'flex';
-        e.preventDefault();
+        document.getElementById('multiplier-modal').style.display = 'flex'; e.preventDefault();
     }
     lastTapMult = now;
 });
-multTableEl.addEventListener('dblclick', () => {
-    document.getElementById('multiplier-modal').style.display = 'flex';
-});
-document.getElementById('close-modal').addEventListener('click', () => {
-    document.getElementById('multiplier-modal').style.display = 'none';
-});
+multTableEl.addEventListener('dblclick', () => { document.getElementById('multiplier-modal').style.display = 'flex'; });
+document.getElementById('close-mult-modal').addEventListener('click', () => { document.getElementById('multiplier-modal').style.display = 'none'; });
 
-// スピンカウンターリセット
-document.getElementById('spin-counter-btn').addEventListener('click', () => {
-    spinCount = 0; updateUI();
+document.getElementById('spin-counter-btn').addEventListener('click', () => { spinCount = 0; updateUI(); });
+
+// チャートモーダル
+let chartInterval = 5; // 初期5分足
+document.getElementById('btn-chart').addEventListener('click', () => {
+    document.getElementById('chart-modal').style.display = 'flex';
+    drawChart();
 });
+document.getElementById('close-chart-modal').addEventListener('click', () => { document.getElementById('chart-modal').style.display = 'none'; });
+
+document.getElementById('btn-chart-1m').addEventListener('click', (e) => { chartInterval = 1; updateChartBtns(e.target); drawChart(); });
+document.getElementById('btn-chart-5m').addEventListener('click', (e) => { chartInterval = 5; updateChartBtns(e.target); drawChart(); });
+document.getElementById('btn-chart-60m').addEventListener('click', (e) => { chartInterval = 60; updateChartBtns(e.target); drawChart(); });
+
+function updateChartBtns(activeBtn) {
+    document.getElementById('btn-chart-1m').classList.remove('active'); 
+    document.getElementById('btn-chart-5m').classList.remove('active'); 
+    document.getElementById('btn-chart-60m').classList.remove('active');
+    activeBtn.classList.add('active');
+}
+
+function drawChart() {
+    const canvas = document.getElementById('chart-canvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.parentElement.clientWidth - 40;
+    const h = canvas.height = 250;
+    ctx.clearRect(0,0,w,h);
+    
+    if (medalLog.length === 0) {
+        ctx.fillStyle = '#fff'; ctx.fillText("データがありません", w/2 - 40, h/2); return;
+    }
+
+    let intervalMs = chartInterval * 60 * 1000;
+    let baseTime = new Date().setHours(0,0,0,0); // 今日の0時起点
+    let candles = [];
+    
+    let curIdx = 0;
+    let cTime = Math.floor((medalLog[0].time - baseTime)/intervalMs) * intervalMs + baseTime;
+    let lastClose = medalLog[0].medals;
+
+    while(curIdx < medalLog.length) {
+        let logsInPeriod = [];
+        while(curIdx < medalLog.length && medalLog[curIdx].time < cTime + intervalMs) {
+            logsInPeriod.push(medalLog[curIdx]); curIdx++;
+        }
+        if(logsInPeriod.length > 0) {
+            let open = lastClose; // 直前の終値を開値とする
+            let close = logsInPeriod[logsInPeriod.length-1].medals;
+            let high = Math.max(open, ...logsInPeriod.map(l=>l.medals));
+            let low = Math.min(open, ...logsInPeriod.map(l=>l.medals));
+            candles.push({ open, high, low, close });
+            lastClose = close;
+        }
+        if(curIdx < medalLog.length) {
+            cTime = Math.floor((medalLog[curIdx].time - baseTime)/intervalMs) * intervalMs + baseTime;
+        }
+    }
+
+    if (candles.length === 0) return;
+
+    let maxLog = Math.max(...candles.map(c=>c.high)); 
+    let minLog = Math.min(...candles.map(c=>c.low));
+
+    if (maxLog === minLog) { maxLog += 10; minLog = Math.max(0, minLog - 10); }
+    
+    let maxM = maxLog;
+    let minM = minLog;
+    let range = maxM - minM;
+    
+    let v100 = maxM;
+    let v75 = Math.floor(minM + range * 0.75);
+    let v50 = Math.floor(minM + range * 0.50);
+    let v25 = Math.floor(minM + range * 0.25);
+    let v0 = minM;
+
+    const leftMargin = 40; // 縦軸のテキスト表示幅
+    const chartW = w - leftMargin;
+
+    // 縦軸（メダル枚数）とグリッド線の描画
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+
+    const drawAxis = (val) => {
+        let y = h - ((val - minM) / range) * h;
+        // 上下に少し余裕を持たせてテキストが切れないようにする
+        let textY = y;
+        if(textY < 6) textY = 6;
+        if(textY > h - 6) textY = h - 6;
+
+        ctx.fillText(val, leftMargin - 5, textY);
+
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(leftMargin, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+    };
+
+    drawAxis(v100);
+    drawAxis(v75);
+    drawAxis(v50);
+    drawAxis(v25);
+    drawAxis(v0);
+    
+    let candleWidth = Math.min(15, chartW / candles.length);
+    let gap = candleWidth * 0.2;
+    let bodyWidth = Math.max(1, candleWidth - gap);
+
+    // ローソク足の描画
+    candles.forEach((c, i) => {
+        let x = leftMargin + 2 + i * candleWidth;
+        
+        let yHigh = h - ((c.high - minM) / range) * h;
+        let yLow = h - ((c.low - minM) / range) * h;
+        let yOpen = h - ((c.open - minM) / range) * h;
+        let yClose = h - ((c.close - minM) / range) * h;
+
+        ctx.strokeStyle = c.close >= c.open ? '#ff4444' : '#44ff44'; 
+        ctx.fillStyle = ctx.strokeStyle;
+        
+        ctx.lineWidth = 1;
+        ctx.beginPath(); 
+        ctx.moveTo(x + bodyWidth/2, yHigh); 
+        ctx.lineTo(x + bodyWidth/2, yLow); 
+        ctx.stroke();
+        
+        let rectY = Math.min(yOpen, yClose); 
+        let rectH = Math.max(1, Math.abs(yOpen - yClose));
+        ctx.fillRect(x, rectY, bodyWidth, rectH);
+    });
+}
+
 
 const SYMBOLS = ['💎', '7️⃣', '🍰', '🍦', '🍭', '🔔', '🍈', '🍇', '🍊', '🍒'];
 const WILD = '🛑';
 const FREE = '🆓';
 
-const SYMBOL_WEIGHTS = {
-  '💎': 2, '7️⃣': 5,
-  '🍰': 7, '🍦': 8,
-  '🍭': 9, '🔔': 11,
-  '🍈': 12, '🍇': 13,
-  '🍊': 15, '🍒': 18
-};
+const SYMBOL_WEIGHTS = { '💎': 2, '7️⃣': 5, '🍰': 7, '🍦': 8, '🍭': 9, '🔔': 11, '🍈': 12, '🍇': 13, '🍊': 15, '🍒': 18 };
 
 // --- 日付ベースのイベント生成システム ---
-// シード値付き乱数生成器 (Mulberry32)
 function getSeededRandom(seed) {
     return function() {
         let t = seed += 0x6D2B79F5;
@@ -554,52 +731,32 @@ function getSeededRandom(seed) {
         return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
 }
-
-// 今日のイベントスケジュールを生成する関数
 function generateDailyEvents() {
     const now = new Date();
     const yyyymmdd = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-    
-    // 日付をシードにして乱数生成器を初期化
     const rng = getSeededRandom(yyyymmdd ^ 0xABCDEF);
-
-    // 1. 午前（05:00 ～ 11:59）の時間を決定
-    // 6時(360分)から12時直前(719分)までの間でランダム
     const amStartMinutes = 360 + Math.floor(rng() * 360);
-    
-    // 2. 午後（12:00 ～ 22:59）の時間を決定
-    // 12時(720分)から23時直前(1379分)までの間でランダム
     const pmStartMinutes = 720 + Math.floor(rng() * 660);
-
     const toHHMM = (totalMinutes) => {
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
+        const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60;
         return h.toString().padStart(2, '0') + m.toString().padStart(2, '0');
     };
-
-    const amTime = toHHMM(amStartMinutes);
-    const pmTime = toHHMM(pmStartMinutes);
-
     return [
-        { time: amTime, message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" },
-        { time: pmTime, message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" }
+        { time: toHHMM(amStartMinutes), message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" },
+        { time: toHHMM(pmStartMinutes), message: "１分間フルーツ祭りイベント開催！フルーツだけが１分の間、大量に出てくるぞ！" }
     ];
 }
 
 let currentDailyEvents = generateDailyEvents();
 let lastProcessedDate = new Date().getDate();
+
 function getWeightedRandomSymbol() {
   let weights = SYMBOL_WEIGHTS;
   if (kakuhenState.active && kakuhenState.type === 1) {
-      weights = {
-          '💎': 0, '7️⃣': 0, '🍰': 0, '🍦': 0, '🍭': 0, '🔔': 0,
-          '🍈': 15, '🍇': 25, '🍊': 25, '🍒': 35
-      };
+      weights = { '💎': 0, '7️⃣': 0, '🍰': 0, '🍦': 0, '🍭': 0, '🔔': 0, '🍈': 15, '🍇': 25, '🍊': 25, '🍒': 35 };
   }
-  let sum = 0;
-  for (let sym in weights) sum += weights[sym];
-  let rand = Math.random() * sum;
-  sum = 0;
+  let sum = 0; for (let sym in weights) sum += weights[sym];
+  let rand = Math.random() * sum; sum = 0;
   for (let sym of SYMBOLS) {
       sum += weights[sym] || 0;
       if (rand < sum && (weights[sym] || 0) > 0) return sym;
@@ -632,13 +789,12 @@ function getBonusMult(sym, count) {
   return 0;
 }
 
-let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.15 };
+let gameBalance = { consecutiveLosses: 0, freeSpinProb: 0.01, wildProb: 0.01, freezeProb: 0.20 };
 let kakuhenState = { active: false, type: 0 };
 
 let lastNotifiedMinute = -1;
 let eventNotifTimer = null;
 
-// 通知表示メソッド
 function showEventNotification(text) {
   let el = document.getElementById('event-notification');
   let txtEl = document.getElementById('event-notification-text');
@@ -680,7 +836,6 @@ function updateGameBalanceLogic() {
   let isEventActive = false;
   let tickerMessage = "Welcome to Emoji Drop! スピンして絵文字を揃えよう！";
 
-  gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01; gameBalance.freezeProb = 0.15;
   kakuhenState.active = false; kakuhenState.type = 0;
 
   for (let ev of currentDailyEvents) {
@@ -693,7 +848,7 @@ function updateGameBalanceLogic() {
     }
     // イベント前通知
     let diff = evTotalMinutes - currentTotalMinutes;
-    if (diff < 0) diff += 1440; // 日またぎ
+    if (diff < 0) diff += 1440;
     if ([120,90,60,30,15, 10, 5, 1].includes(diff)) {
       tickerMessage = `【まもなくイベント】 あと${diff}分で開始！ ${ev.message}`;
       if (lastNotifiedMinute !== currentTotalMinutes) {
@@ -704,30 +859,22 @@ function updateGameBalanceLogic() {
   }
 
   if (isEventActive) {
-      kakuhenState.active = true; kakuhenState.type = 1; gameBalance.freeSpinProb = 0.00; gameBalance.wildProb = 0.01; gameBalance.freezeProb = 0.0;
-  } else if (gameBalance.consecutiveLosses >= 10) {
-      kakuhenState.active = true; kakuhenState.type = 2; gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05;
+      kakuhenState.active = true; kakuhenState.type = 1; gameBalance.freezeProb = 0.0;
   }
   
   let tickerEl = document.getElementById('ticker-text');
   if (tickerEl && tickerEl.innerText !== tickerMessage) tickerEl.innerText = tickerMessage;
   
-  document.getElementById('dbg-loss').innerText = gameBalance.consecutiveLosses;
-  document.getElementById('dbg-free').innerText = (gameBalance.freeSpinProb * 100).toFixed(1) + '%';
-  document.getElementById('dbg-wild').innerText = (gameBalance.wildProb * 100).toFixed(1) + '%';
-  document.getElementById('dbg-freeze').innerText = (gameBalance.freezeProb * 100).toFixed(1) + '%';
-  document.getElementById('dbg-kakuhen').innerText = kakuhenState.active ? "【確変中】" : "";
+  updateDebugUI();
 }
 
-// 1秒ごとにスケジュールを監視させるための一文を追加
 setInterval(updateGameBalanceLogic, 1000);
 
 function initBackgroundSlots() {
   const bgLayer = document.getElementById('bg-slots-layer'); bgLayer.innerHTML = '';
   for(let c=0; c<3; c++) {
     for(let r=-1; r<3; r++) {
-      let el = document.createElement('div');
-      el.id = `bg-${c}-${r}`;
+      let el = document.createElement('div'); el.id = `bg-${c}-${r}`;
       el.className = 'bg-slot' + (r === -1 ? ' bg-slot-next' : '');
       el.style.left = getLeft(c) + 'px'; el.style.top = getTop(r) + 'px';
       if(r === -1) el.style.borderColor = '#0ff'; 
@@ -748,8 +895,7 @@ function resetGridColor() {
   if (!isFreeSpinMode) document.querySelectorAll('.bg-slot-next').forEach(el => el.style.borderColor = '#0ff');
   
   document.querySelectorAll('.symbol-cell').forEach(el => {
-    el.style.borderColor = '#333';
-    el.style.borderStyle = 'solid';
+    el.style.borderColor = '#333'; el.style.borderStyle = 'solid';
   });
 }
 
@@ -789,9 +935,14 @@ function updateUI() {
   document.getElementById('win-display').innerText = totalWin; 
   document.getElementById('medal-count').innerText = medals;
   document.getElementById('spin-counter').innerText = spinCount;
+  
   const fsPanel = document.getElementById('free-spin-panel');
-  if (freeSpinsLeft > 0) { fsPanel.style.display = 'block'; document.getElementById('free-spin-display').innerText = freeSpinsLeft; } 
-  else { fsPanel.style.display = 'none'; }
+  document.getElementById('free-spin-display').innerText = freeSpinsLeft;
+  if (freeSpinsLeft > 0) { 
+      fsPanel.style.borderColor = '#0ff'; 
+  } else { 
+      fsPanel.style.borderColor = '#444'; 
+  }
 }
 
 function getRandomSymbol(isInitialMainDrop, colIndex) {
@@ -1035,8 +1186,9 @@ function cascade() {
         boardState[c].unshift(newSym); 
     }
     
-    if (missing > 0 && boardState[c][0].sym === FREE) {
-        playSoundFreeSpinNext();
+    if (missing > 0) {
+        if (boardState[c][0].sym === FREE) playSoundFreeSpinNext();
+        if (boardState[c][0].sym === WILD) playSoundWildNext();
     }
   }
   renderBoard(); 
@@ -1059,6 +1211,13 @@ function finishTurn() {
   if (totalWin > 0) {
      playSoundTotalWin(); 
      
+     let currentMultiplier = totalWin / currentBet;
+     if (currentMultiplier > maxMultiplier) {
+         maxMultiplier = currentMultiplier;
+         setCookie("emojiDrop_maxMult", maxMultiplier, 30);
+         document.getElementById('max-mult-display').innerText = maxMultiplier;
+     }
+
      medals += totalWin; 
      let banner = document.getElementById('total-win-amount');
      let totalMult = (totalWin / currentBet).toFixed(1).replace('.0', ''); 
@@ -1069,8 +1228,31 @@ function finishTurn() {
   }
 
   if (!didWinThisSpin) gameBalance.consecutiveLosses++; else gameBalance.consecutiveLosses = 0;
-  updateGameBalanceLogic(); updateUI();
   
+  if (!kakuhenState.active) {
+      let r = Math.random();
+      if (gameBalance.consecutiveLosses > 10) {
+          if (r < 0.70) gameBalance.freezeProb -= 0.01;
+          else if (r < 0.80) gameBalance.freezeProb += 0.01;
+      } else {
+          if (r < 0.30) gameBalance.freezeProb += 0.01;
+          else if (r < 0.40) gameBalance.freezeProb -= 0.01;
+      }
+      gameBalance.freezeProb = Math.max(0.05, Math.min(0.30, gameBalance.freezeProb));
+      
+      if (gameBalance.consecutiveLosses > 50) {
+          gameBalance.freeSpinProb = 0.05; gameBalance.wildProb = 0.05;
+      } else if (gameBalance.consecutiveLosses > 10) {
+          let opts = [0.01, 0.03, 0.05];
+          gameBalance.freeSpinProb = opts[Math.floor(Math.random() * 3)];
+          gameBalance.wildProb = opts[Math.floor(Math.random() * 3)];
+      } else {
+          gameBalance.freeSpinProb = 0.01; gameBalance.wildProb = 0.01;
+      }
+  }
+
+  updateGameBalanceLogic(); updateUI();
+  recordMedalLog(medals); 
   saveGameData(); 
   document.getElementById('spin-btn').disabled = false;
 }
@@ -1082,13 +1264,8 @@ function checkFreeSpins() {
       let cell = boardState[c][r+1];
       if (cell && cell.sym === FREE) {
         newFreeCells.push({c: c, r: r});
-        
         let el = document.getElementById(cell.id);
-        if (el) {
-           el.style.transform = "scale(1.1)";
-           el.style.boxShadow = "0 0 20px #0ff";
-           el.style.zIndex = "10";
-        }
+        if (el) { el.style.transform = "scale(1.1)"; el.style.boxShadow = "0 0 20px #0ff"; el.style.zIndex = "10"; }
       }
     }
   }
@@ -1097,19 +1274,33 @@ function checkFreeSpins() {
     if (kakuhenState.type === 2 && Math.random() < 0.95) {
         gameBalance.consecutiveLosses = 0;
     }
+    
+    if (Math.random() < 0.95) {
+        gameBalance.freeSpinProb = 0.01;
+        gameBalance.wildProb = 0.01;
+        gameBalance.freezeProb = 0.20;
+    }
+
     updateGameBalanceLogic();
 
     for(let fc of newFreeCells) { guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); guaranteedWildQueue.push({c: fc.c, r: fc.r}); }
     isFreeSpinMode = true; freeSpinsLeft += newFreeCells.length * 3;
     freeSpinsLeft--;
-
-    if (kakuhenState.type === 2 && Math.random() < 0.95) {
-        //gameBalance.consecutiveLosses = 0;
-        gameBalance.freeSpinProb = 0.01;
-        gameBalance.wildProb = 0.01;
-	    updateGameBalanceLogic();
-    }
     
+    let isJackpot = (gameBalance.freeSpinProb >= 0.05 || gameBalance.wildProb >= 0.05);
+    document.querySelectorAll('.fs-banner').forEach(el => {
+        if(isJackpot) el.classList.add('jackpot-banner'); else el.classList.remove('jackpot-banner');
+    });
+    document.querySelectorAll('.fs-text').forEach(el => {
+        if(isJackpot) {
+            el.innerText = "JACKPOT FREE SPIN ✨ JACKPOT FREE SPIN ✨ JACKPOT FREE SPIN ✨ JACKPOT FREE SPIN ✨";
+            el.classList.add('jackpot-text');
+        } else {
+            el.innerText = "FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨ FREE SPIN ✨";
+            el.classList.remove('jackpot-text');
+        }
+    });
+
     playSoundStartFreeSpin();
     
     document.getElementById('fs-banner-top').classList.add('active-top'); document.getElementById('fs-banner-bottom').classList.add('active-bottom');
@@ -1161,8 +1352,7 @@ function startSpin(isFreeMode = false) {
   renderBoard();
   
   document.querySelectorAll('.symbol-cell').forEach(el => {
-      el.style.borderColor = '#444';
-      el.style.borderStyle = 'dashed';
+      el.style.borderColor = '#444'; el.style.borderStyle = 'dashed';
   });
 
   let patternIdx = isFreeMode ? 0 : Math.floor(Math.random() * 6) + 1;
@@ -1199,7 +1389,7 @@ function startSpin(isFreeMode = false) {
          if (elapsed >= stopTime) {
             cellStopped[c][i] = true;
             
-            if (!soundPlayedThisFrame && !isFreeMode) {
+            if (!soundPlayedThisFrame) {
                 playSoundStop();
                 soundPlayedThisFrame = true;
             }
@@ -1208,16 +1398,15 @@ function startSpin(isFreeMode = false) {
             
             let el = document.getElementById(boardState[c][i].id);
             if(el) {
-                el.style.borderColor = '#888';
-                el.style.borderStyle = 'solid';
-                
+                el.style.borderColor = '#888'; el.style.borderStyle = 'solid';
                 el.innerHTML = ''; let symEl = document.createElement('div'); symEl.className = 'symbol-text'; symEl.innerText = boardState[c][i].sym; el.appendChild(symEl);
                 if (boardState[c][i].frozen) { let fEl = document.createElement('div'); fEl.className = 'frozen-overlay'; el.appendChild(fEl); }
                 if (boardState[c][i].sym === WILD && boardState[c][i].wild > 0) { let wEl = document.createElement('div'); wEl.className = 'wild-count'; wEl.innerText = boardState[c][i].wild; el.appendChild(wEl); }
             }
             
-            if (i === 0 && boardState[c][i].sym === FREE && !isFreeMode) {
-                playSoundFreeSpinNext();
+            if (i === 0 && !isFreeMode) {
+                if (boardState[c][i].sym === FREE) playSoundFreeSpinNext();
+                if (boardState[c][i].sym === WILD) playSoundWildNext();
             }
             
          } else {
@@ -1240,10 +1429,7 @@ function startSpin(isFreeMode = false) {
             if(!cellStopped[c][i]) {
                 boardState[c][i] = finalSyms[c][i];
                 let el = document.getElementById(boardState[c][i].id);
-                if (el) {
-                    el.style.borderColor = '#888';
-                    el.style.borderStyle = 'solid';
-                }
+                if (el) { el.style.borderColor = '#888'; el.style.borderStyle = 'solid'; }
             }
           }
         }
@@ -1254,9 +1440,7 @@ function startSpin(isFreeMode = false) {
 }
 
 document.getElementById('spin-btn').addEventListener('click', () => {
-	if (zzfxX && zzfxX.state === 'suspended') {
-		zzfxX.resume();
-	}
+	if (zzfxX && zzfxX.state === 'suspended') zzfxX.resume();
 	startSpin(false);
 });
 
