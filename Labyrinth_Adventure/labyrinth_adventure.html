@@ -6,13 +6,19 @@
 <title>Labyrinth Adventure</title>
 <style>
   /* =========================================
-     1. 全体共通スタイル (ベース維持)
+     1. 全体共通スタイル
      ========================================= */
+  :root {
+    --cell-bg: #111;
+    --cell-glow: #ff0;
+  }
+
   body {
     margin: 0; padding: 0; background-color: #0a0a0a; color: #fff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Courier New', monospace;
     display: flex; flex-direction: column; align-items: center;
     touch-action: manipulation; overflow-x: hidden; padding-bottom: 60px;
+    letter-spacing: -11px;
   }
 
   .modal-overlay {
@@ -81,22 +87,51 @@
   #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
   
   /* スロット（迷路）エリア */
-  #slot-area { position: relative; width: 330px; height: 265px; margin-top: 10px; z-index: 10; padding: 5px; background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 5px; }
-  #grid-wrapper { display: grid; grid-template-columns: repeat(5, 60px); grid-template-rows: repeat(4, 60px); gap: 2px; position: relative; }
-  .grid-cell { width: 60px; height: 60px; background: #111; border: 1px solid #333; display: flex; justify-content: center; align-items: center; font-size: 2rem; position: relative; box-sizing: border-box; overflow: hidden; }
-  .col-0 { border-right: 2px solid #fff; background: #222; } /* キャラ登場マス */
+  #slot-area { 
+    position: relative; margin-top: 10px; z-index: 10; 
+    padding: 47px 47px 47px 5px; /* 上・右・下に1マス(47px)分の余白を持たせる */
+    background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 5px; 
+  }
+  
+  /* GOALの表示 */
+  #goal-text {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    writing-mode: vertical-rl; text-orientation: upright;
+    color: #444; font-size: 1.8rem; font-weight: bold; z-index: 1; pointer-events: none;
+  }
+
+  #grid-wrapper { display: grid; grid-template-columns: repeat(5, 45px); grid-template-rows: repeat(4, 45px); gap: 2px; position: relative; }
+  
+  .grid-cell { width: 45px; height: 45px; background: var(--cell-bg); border: 1px solid #333; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; position: relative; box-sizing: border-box; transition: background-color 0.3s, box-shadow 0.3s; }
+  .col-0 { border-right: 2px solid #fff; background: rgba(255,255,255,0.1); } /* キャラ登場マス */
   .cell-symbol { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; transition: top 0.1s; }
   canvas.arrow-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
   
+  /* 発光表現 */
+  .cell-glow { background-color: var(--cell-glow) !important; box-shadow: 0 0 15px var(--cell-glow); }
+
+  /* アイテム重ね（フィーバー用） */
+  .item-stack { position: relative; width: 100%; height: 100%; }
+  .item-stack span:nth-child(1) { position: absolute; top: -3px; left: -3px; font-size: 1.1rem; }
+  .item-stack span:nth-child(2) { position: absolute; bottom: -3px; right: -3px; font-size: 1.1rem; z-index: 2; }
+
   /* 主人公の移動用要素 */
-  #hero-sprite { position: absolute; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; font-size: 2.2rem; z-index: 20; transition: all linear; pointer-events: none; display: none; text-shadow: 0 0 10px #fff; }
+  .hero-sprite { position: absolute; width: 45px; height: 45px; display: none; justify-content: center; align-items: center; font-size: 1.8rem; z-index: 20; text-shadow: 0 0 10px #fff; }
 
   /* 戦闘アニメーション表示エリア */
-  #combat-area { position: relative; width: 340px; margin-top: 10px; background: #000; border: 2px solid #fff; border-radius: 5px; padding: 10px; box-sizing: border-box; display: flex; justify-content: space-around; align-items: center; z-index: 10; font-family: monospace; }
-  .char-box { display: flex; flex-direction: column; align-items: center; width: 100px; }
-  .char-emoji { font-size: 3rem; margin-bottom: 5px; transition: transform 0.1s; }
+  #combat-area { position: relative; width: 340px; margin-top: 35px; background: #000; border: 2px solid #fff; border-radius: 5px; padding: 10px; box-sizing: border-box; display: flex; justify-content: space-around; align-items: center; z-index: 10; font-family: monospace; }
+  
+  /* フィーバーバナー */
+  #fever-banner { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); color: #ff00aa; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #fff; display: none; white-space: nowrap; animation: pulseGlow 0.8s infinite alternate; }
+  @keyframes pulseGlow { from { filter: brightness(1); } to { filter: brightness(1.5); } }
+
+  .char-box { display: flex; flex-direction: column; align-items: center; width: 120px; }
+  .char-emoji { font-size: 2.5rem; margin-bottom: 5px; transition: transform 0.1s; }
   .char-stats { font-size: 0.8rem; text-align: center; }
   .vs-text { font-size: 1.5rem; font-weight: bold; font-style: italic; color: #f00; text-shadow: 2px 2px 0 #fff; }
+  
+  /* ステータスの絵文字サイズを1段階下げた設定（8pt） */
+  .emoji-stats { font-size: 8pt; line-height: 1.2; letter-spacing: -11px; display: inline-block; vertical-align: middle; }
 
   /* RPG風メッセージウィンドウ */
   #rpg-message-box {
@@ -141,13 +176,12 @@ let zzfxV = 0.3,
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v1.0)</h3>
+    <h3>リリースノート (Labyrinth Adventure v1.2)</h3>
     <div style="color:#ddd; line-height: 1.5;">
-      【新作追加】<br>
-      迷路探索とバトルが融合した新感覚スロット登場！<br>
-      ・スピンで生成される迷路を主人公が進む！<br>
-      ・アイテムを集めて報酬とステータスを強化！<br>
-      ・最奥部で待ち受けるヌシを倒して特大ボーナスをゲット！<br>
+      【アップデート情報】<br>
+      ・主人公が歩いたマスがすべて発光するようになりました。<br>
+      ・ステータス絵文字のサイズを調整し、UIを見やすく改善しました。<br>
+      ・右側に「GOAL」の背景文字を追加しました。<br>
     </div>
   </div>
 </div>
@@ -177,20 +211,30 @@ let zzfxV = 0.3,
   </div>
 
   <div id="slot-area">
-    <div id="grid-wrapper"></div>
-    <div id="hero-sprite">😀</div>
+    <div id="goal-text">GOAL</div>
+    <div id="grid-wrapper">
+      </div>
     <div id="rpg-message-box"></div>
   </div>
 
   <div id="combat-area">
+    <div id="fever-banner">FEVER MODE!!</div>
     <div class="char-box">
       <div id="hero-emoji" class="char-emoji">😀</div>
-      <div class="char-stats">HP: <span id="hero-hp-disp">5</span>/<span id="hero-maxhp-disp">5</span><br>ATK: <span id="hero-atk-disp">1</span><br>EXP: <span id="hero-exp-disp">0</span></div>
+      <div class="char-stats">
+        HP:<span id="hero-hp-disp" class="emoji-stats"></span><br>
+        ATK:<span id="hero-atk-disp" class="emoji-stats"></span><br>
+        EXP:<span id="hero-exp-disp" class="emoji-stats"></span>
+      </div>
     </div>
     <div class="vs-text">VS</div>
     <div class="char-box">
       <div id="boss-emoji" class="char-emoji">🐊</div>
-      <div class="char-stats" id="boss-stats-container">HP: <span id="boss-hp-disp">3</span><br>ATK: <span id="boss-atk-disp">1</span><br><span id="boss-name-disp">オオワニ</span></div>
+      <div class="char-stats" id="boss-stats-container">
+        HP:<span id="boss-hp-disp" class="emoji-stats"></span><br>
+        ATK:<span id="boss-atk-disp" class="emoji-stats"></span><br>
+        <span id="boss-name-disp">オオワニ</span>
+      </div>
     </div>
   </div>
 </div>
@@ -211,12 +255,12 @@ let zzfxV = 0.3,
 // ゲームバランス調整用コンフィグ（ここで確率や速度を調整可能）
 // =============================================================================
 const GAME_CONFIG = {
-    moveSpeed: 400,          // 主人公の移動速度（ミリ秒）
+    moveSpeed: 300,          // 主人公の移動速度（ミリ秒）
     turnSpeed: 2000,         // バトルの1ターンの時間（ミリ秒）
     spinDuration: 1500,      // スピンアニメーションの基本時間
     arrowCountMin: 4,        // 迷路に配置される矢印の最小数
     arrowCountMax: 16,       // 迷路に配置される矢印の最大数
-    freeSpinProb: 0.01,      // 空きマスがフリースピンになる確率(1%)
+    freeSpinProb: 0.05,      // 空きマスがフリースピンになる確率(5%に変更)
     items: [
         { sym: '🍒', weight: 30,  mult: 0.5, type: 'reward', name: 'チェリー' },
         { sym: '🍇', weight: 25,  mult: 1.0, type: 'reward', name: 'ブドウ' },
@@ -224,7 +268,7 @@ const GAME_CONFIG = {
         { sym: '🍖', weight: 15,  mult: 1.0, type: 'heal',   name: 'お肉(HP+1)' },
         { sym: '🗡️', weight:  5,  mult: 1.0, type: 'buff',   name: '剣(ATK+1)' },
         { sym: '💎', weight:  2,  mult: 10.0,type: 'reward', name: 'ダイヤ' },
-        { sym: '',   weight: 40,  mult: 0,   type: 'blank',  name: '空き地' } // ブランク
+        { sym: '',   weight: 40,  mult: 0,   type: 'blank',  name: '空き地' } 
     ],
     bosses: {
         1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'オオワニ' },
@@ -240,6 +284,9 @@ let medals = 50;
 let currentBet = 1; 
 let spinCount = 0;
 let soundEnabled = true;
+
+let feverSpinsLeft = 0;
+let isFeverMode = false;
 
 // セーブ・ロード関数
 function setCookie(name, value, days) {
@@ -281,6 +328,10 @@ let isFreeSpinMode = false;
 let isSpinning = false;
 let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0 };
 
+function resetHero() {
+    hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
+}
+
 // =============================================================================
 // サウンド関数
 // =============================================================================
@@ -305,14 +356,14 @@ window.onload = () => {
 document.getElementById('close-release-modal').addEventListener('click', () => { document.getElementById('release-modal').style.display = 'none'; });
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
-  hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 }; stage = 1; medals = 50; currentBet = 1; spinCount = 0;
+  resetHero(); stage = 1; medals = 50; currentBet = 1; spinCount = 0; feverSpinsLeft = 0;
   startGameUI();
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   medals = parseInt(getCookie("labyrinth_medals") || 50); currentBet = parseInt(getCookie("labyrinth_bet") || 1); spinCount = parseInt(getCookie("labyrinth_spinCount") || 0);
   let savedHero = getCookie("labyrinth_hero"); if(savedHero) hero = JSON.parse(savedHero);
-  stage = parseInt(getCookie("labyrinth_stage") || 1);
+  stage = parseInt(getCookie("labyrinth_stage") || 1); feverSpinsLeft = 0; // つづきからはフィーバーリセット
   startGameUI();
 });
 
@@ -330,14 +381,22 @@ function updateUI() {
 }
 
 function updateCombatUI() {
-  document.getElementById('hero-hp-disp').innerText = hero.hp; document.getElementById('hero-maxhp-disp').innerText = hero.maxHp;
-  document.getElementById('hero-atk-disp').innerText = hero.atk; document.getElementById('hero-exp-disp').innerText = hero.exp;
+  document.getElementById('hero-hp-disp').innerText = '🩷'.repeat(hero.hp);
+  document.getElementById('hero-atk-disp').innerText = '🗡️'.repeat(hero.atk);
+  document.getElementById('hero-exp-disp').innerText = '⭐'.repeat(hero.exp);
   
   currentBoss = GAME_CONFIG.bosses[stage];
   document.getElementById('boss-emoji').innerText = currentBoss.sym;
-  document.getElementById('boss-hp-disp').innerText = currentBoss.hp;
-  document.getElementById('boss-atk-disp').innerText = currentBoss.atk;
+  document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(currentBoss.hp);
+  document.getElementById('boss-atk-disp').innerText = '🗡️'.repeat(currentBoss.atk);
   document.getElementById('boss-name-disp').innerText = currentBoss.name;
+  
+  // ステージカラー更新
+  let root = document.documentElement;
+  if(stage === 1) { root.style.setProperty('--cell-bg', '#021'); root.style.setProperty('--cell-glow', '#4f4'); }
+  else if(stage === 2) { root.style.setProperty('--cell-bg', '#013'); root.style.setProperty('--cell-glow', '#0ff'); }
+  else { root.style.setProperty('--cell-bg', '#300'); root.style.setProperty('--cell-glow', '#f44'); }
+
   drawBackground();
 }
 
@@ -405,6 +464,11 @@ window.addEventListener('resize', drawBackground);
 function initGrid() {
   const wrapper = document.getElementById('grid-wrapper');
   wrapper.innerHTML = '';
+  
+  // ヒーロースプライト2体を事前に配置（Fever用）
+  let s0 = document.createElement('div'); s0.id = 'hero-sprite-0'; s0.className = 'hero-sprite'; s0.innerText = '😀'; wrapper.appendChild(s0);
+  let s1 = document.createElement('div'); s1.id = 'hero-sprite-1'; s1.className = 'hero-sprite'; s1.innerText = '😀'; wrapper.appendChild(s1);
+
   for(let r=0; r<4; r++) {
     boardState[r] = [];
     for(let c=0; c<5; c++) {
@@ -413,7 +477,7 @@ function initGrid() {
       cell.id = `cell-${c}-${r}`;
       
       let canvas = document.createElement('canvas');
-      canvas.width = 60; canvas.height = 60; canvas.className = 'arrow-canvas';
+      canvas.width = 45; canvas.height = 45; canvas.className = 'arrow-canvas';
       cell.appendChild(canvas);
       
       let symDiv = document.createElement('div');
@@ -426,29 +490,51 @@ function initGrid() {
   }
 }
 
-// 矢印をCanvasで描画
+// 矢印をCanvasで描画 (45x45サイズに縮小)
 function drawArrowOnCanvas(c, r, dir, color='#888') {
   const canvas = document.querySelector(`#cell-${c}-${r} .arrow-canvas`);
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,60,60);
+  ctx.clearRect(0,0,45,45);
   if(dir === null) return;
   
   ctx.fillStyle = color;
+  ctx.save();
+  ctx.scale(45/60, 45/60); // 60px用座標を45px用にスケールダウン
   ctx.beginPath();
-  // 0:Up, 1:Right, 2:Down, 3:Left
   if(dir === 0) { ctx.moveTo(30,10); ctx.lineTo(50,30); ctx.lineTo(40,30); ctx.lineTo(40,50); ctx.lineTo(20,50); ctx.lineTo(20,30); ctx.lineTo(10,30); }
   if(dir === 1) { ctx.moveTo(50,30); ctx.lineTo(30,10); ctx.lineTo(30,20); ctx.lineTo(10,20); ctx.lineTo(10,40); ctx.lineTo(30,40); ctx.lineTo(30,50); }
   if(dir === 2) { ctx.moveTo(30,50); ctx.lineTo(10,30); ctx.lineTo(20,30); ctx.lineTo(20,10); ctx.lineTo(40,10); ctx.lineTo(40,30); ctx.lineTo(50,30); }
   if(dir === 3) { ctx.moveTo(10,30); ctx.lineTo(30,50); ctx.lineTo(30,40); ctx.lineTo(50,40); ctx.lineTo(50,20); ctx.lineTo(30,20); ctx.lineTo(30,10); }
   ctx.fill();
+  ctx.restore();
 }
 
 function updateCellDOM(c, r, cellData) {
   let symDiv = document.getElementById(`sym-${c}-${r}`);
-  if(symDiv) symDiv.innerText = cellData.type === 'item' ? cellData.sym : (cellData.type === 'free' ? '🆓' : '');
-  drawArrowOnCanvas(c, r, cellData.type === 'arrow' ? cellData.dir : null, cellData.collected ? '#333' : '#888');
-  if(cellData.collected && cellData.type !== 'arrow') symDiv.innerText = '';
+  if(symDiv) {
+      if(cellData.type === 'item') {
+          if (isFeverMode) {
+              symDiv.innerHTML = `<div class="item-stack"><span>${cellData.sym}</span><span>${cellData.sym}</span></div>`;
+          } else {
+              symDiv.innerText = cellData.sym;
+          }
+      } else if (cellData.type === 'free') {
+          symDiv.innerText = '🆓';
+      } else {
+          symDiv.innerText = '';
+      }
+  }
+  
+  // マスの発光クリアと矢印描画
+  let cellEl = document.getElementById(`cell-${c}-${r}`);
+  if (cellEl) cellEl.classList.remove('cell-glow');
+  
+  // 矢印描画（黄色ではなくグレーで描き、通過時にセル背景を光らせる形に変更）
+  drawArrowOnCanvas(c, r, cellData.type === 'arrow' ? cellData.dir : null, '#888');
+  if(cellData.collected && cellData.type !== 'arrow') {
+      if(symDiv) symDiv.innerHTML = '';
+  }
 }
 
 // ランダム抽選
@@ -474,14 +560,33 @@ function startSpin(isFree) {
     if (medals < betVal) { alert("メダルが足りません！"); return; }
     currentBet = betVal; medals -= currentBet; spinCount++;
   }
+
+  // フィーバーモード判定
+  if (!isFree && spinCount > 0 && spinCount % 100 === 0 && !isFeverMode && feverSpinsLeft === 0) {
+      feverSpinsLeft = 3;
+  }
+  if (feverSpinsLeft > 0) {
+      isFeverMode = true; feverSpinsLeft--;
+  } else {
+      isFeverMode = false;
+  }
+  document.getElementById('fever-banner').style.display = isFeverMode ? 'block' : 'none';
+
   isFreeSpinMode = isFree; isSpinning = true;
   document.getElementById('spin-btn').disabled = true;
   document.getElementById('total-win-banner').style.display = 'none';
-  document.getElementById('hero-sprite').style.display = 'none';
+  
+  // 主人公スプライトを隠す
+  document.getElementById('hero-sprite-0').style.display = 'none';
+  document.getElementById('hero-sprite-1').style.display = 'none';
+  
   updateUI(); playSoundSpin();
 
   // マップ生成
-  let heroSpawnRow = Math.floor(Math.random() * 4);
+  let possibleRows = [0,1,2,3]; possibleRows.sort(()=>Math.random()-0.5);
+  let heroSpawnRows = [possibleRows.pop()];
+  if (isFeverMode) heroSpawnRows.push(possibleRows.pop()); // フィーバーは主人公2体
+
   let mazeCells = [];
   for(let c=1; c<5; c++) for(let r=0; r<4; r++) mazeCells.push({c, r});
   mazeCells.sort(() => Math.random() - 0.5); // シャッフル
@@ -494,7 +599,7 @@ function startSpin(isFree) {
     nextBoard[r] = [];
     for(let c=0; c<5; c++) {
       if(c === 0) {
-         nextBoard[r][c] = (r === heroSpawnRow) ? { type: 'hero', sym: '😀' } : { type: 'blank' };
+         nextBoard[r][c] = (heroSpawnRows.includes(r)) ? { type: 'hero', sym: '😀' } : { type: 'blank' };
       } else {
          nextBoard[r][c] = { type: 'pending' };
       }
@@ -527,96 +632,146 @@ function startSpin(isFree) {
         if(c===0) symDiv.innerText = Math.random()>0.8 ? '😀' : '';
         else {
            let rType = Math.random();
-           if(rType<0.5) { symDiv.innerText=''; drawArrowOnCanvas(c,r,Math.floor(Math.random()*4)); }
-           else { symDiv.innerText = GAME_CONFIG.items[Math.floor(Math.random()*(GAME_CONFIG.items.length-1))].sym; drawArrowOnCanvas(c,r,null); }
+           if(rType<0.5) { symDiv.innerHTML=''; drawArrowOnCanvas(c,r,Math.floor(Math.random()*4)); }
+           else { 
+               let itmSym = GAME_CONFIG.items[Math.floor(Math.random()*(GAME_CONFIG.items.length-1))].sym;
+               if (isFeverMode) { symDiv.innerHTML = `<div class="item-stack"><span>${itmSym}</span><span>${itmSym}</span></div>`; }
+               else { symDiv.innerText = itmSym; }
+               drawArrowOnCanvas(c,r,null); 
+           }
         }
       }
     }
     if (ticks > 25) {
       clearInterval(animInterval); playSoundStop();
-      setTimeout(() => startRunPhase(heroSpawnRow), 500);
+      setTimeout(() => startRunPhase(heroSpawnRows), 500);
     }
   }, 50);
 }
 
 // =============================================================================
-// 移動フェーズ
+// 移動フェーズ (スムーズスライド対応・複数体対応)
 // =============================================================================
-function startRunPhase(startRow) {
+function startRunPhase(spawnRows) {
   runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0 };
-  let heroX = 0; let heroY = startRow;
-  let currentDir = 1; // 1: Right
-  let visited = Array(4).fill(0).map(() => Array(5).fill(false));
   
-  const sprite = document.getElementById('hero-sprite');
-  sprite.style.display = 'flex'; sprite.innerText = '😀';
-  sprite.style.transform = 'scale(1)';
-  updateSpritePos(heroX, heroY);
+  let activeHeroes = spawnRows.map((row, idx) => ({
+      id: idx, x: 0, y: row, dir: 1, active: true,
+      visited: Array(4).fill(0).map(() => Array(5).fill(false)) // visitedは主人公毎に独立
+  }));
+
+  // スプライトの初期位置設定と表示
+  activeHeroes.forEach(h => {
+      let sprite = document.getElementById(`hero-sprite-${h.id}`);
+      sprite.style.display = 'flex';
+      sprite.style.transition = 'none'; // テレポート時はtransitionを切る
+      updateSpritePos(h.id, h.x, h.y);
+      
+      // reflowを強制して即座に適用させる
+      void sprite.offsetWidth; 
+      
+      // 移動用のtransition設定
+      sprite.style.transition = `left ${GAME_CONFIG.moveSpeed}ms linear, top ${GAME_CONFIG.moveSpeed}ms linear`;
+  });
 
   function step() {
-    playSoundStep();
-    visited[heroY][heroX] = true;
+    let someoneMoved = false;
 
-    // 現在マスの効果処理
-    let cell = boardState[heroY][heroX];
-    if (heroX > 0 && !cell.collected) {
-       cell.collected = true;
-       if (cell.type === 'arrow') {
-           currentDir = cell.dir;
-           drawArrowOnCanvas(heroX, heroY, cell.dir, '#ff0'); // 通った矢印をハイライト
-       } else if (cell.type === 'item') {
-           playSoundItem(); showPopupText(heroX, heroY, cell.sym);
-           runResult.items.push(cell.ref);
-           if (cell.ref.type === 'heal') hero.hp = Math.min(hero.maxHp + 1, hero.hp + 1); // 一時的に最大値超え可能とするか、最大値も上げるか。RPGっぽく最大値も上げる
-           if (cell.ref.type === 'heal') hero.maxHp++;
-           if (cell.ref.type === 'buff') hero.atk++;
-           if (cell.ref.type === 'reward') runResult.rewards += (cell.ref.mult * currentBet);
-           updateCombatUI(); updateCellDOM(heroX, heroY, cell);
-       } else if (cell.type === 'free') {
-           playSoundWin(); showPopupText(heroX, heroY, 'FREE+3');
-           freeSpinsLeft += 3; updateUI(); updateCellDOM(heroX, heroY, cell);
-       }
-    }
+    activeHeroes.forEach(h => {
+        if (!h.active) return;
+        
+        h.visited[h.y][h.x] = true;
+        let cell = boardState[h.y][h.x];
 
-    // 次の座標計算
-    let nextX = heroX; let nextY = heroY;
-    if(currentDir === 0) nextY--; else if(currentDir === 1) nextX++; else if(currentDir === 2) nextY++; else if(currentDir === 3) nextX--;
-    
-    // 終了判定
-    if (nextX > 4) {
-       // 右に抜けた -> 迷宮踏破！
-       runResult.steps++; runResult.mazeCleared = true;
-       setTimeout(() => handleDeepMaze(), 500);
-       return;
-    }
-    if (nextX < 1 || nextY < 0 || nextY > 3 || visited[nextY][nextX]) {
-       // 行き止まり・逆走・ループ
-       setTimeout(() => handleRewardCalc(), 500);
-       return;
-    }
+        // 通過マスの発光処理（矢印・アイテム・ブランク問わず光らせる）
+        if (h.x > 0 && cell) {
+            let cellEl = document.getElementById(`cell-${h.x}-${h.y}`);
+            if (cellEl) cellEl.classList.add('cell-glow');
+        }
 
-    // 次へ移動
-    heroX = nextX; heroY = nextY; runResult.steps++;
-    updateSpritePos(heroX, heroY);
-    setTimeout(step, GAME_CONFIG.moveSpeed);
+        // 現在マスの効果処理
+        if (h.x > 0 && cell && !cell.collected) {
+           cell.collected = true; // 共有のグリッドアイテムを取得済みにする
+           if (cell.type === 'arrow') {
+               h.dir = cell.dir;
+           } else if (cell.type === 'item') {
+               playSoundItem(); showPopupText(h.x, h.y, cell.sym);
+               runResult.items.push(cell.ref);
+               
+               // フィーバー中は獲得量2倍
+               let amount = isFeverMode ? 2 : 1; 
+               let mult = cell.ref.mult * amount;
+
+               if (cell.ref.type === 'heal') { hero.maxHp += amount; hero.hp = Math.min(hero.maxHp, hero.hp + amount); }
+               if (cell.ref.type === 'buff') { hero.atk += amount; }
+               if (cell.ref.type === 'reward') { runResult.rewards += (mult * currentBet); }
+               
+               updateCombatUI(); updateCellDOM(h.x, h.y, cell);
+           } else if (cell.type === 'free') {
+               playSoundWin(); showPopupText(h.x, h.y, 'FREE+3');
+               freeSpinsLeft += 3; updateUI(); updateCellDOM(h.x, h.y, cell);
+           }
+        }
+        
+        // すでに通過済みの矢印を再度踏んだ場合の処理（別キャラ用）
+        if (cell && cell.type === 'arrow') {
+            h.dir = cell.dir; 
+        }
+
+        // 次の座標計算
+        let nx = h.x, ny = h.y;
+        if(h.dir === 0) ny--; else if(h.dir === 1) nx++; else if(h.dir === 2) ny++; else if(h.dir === 3) nx--;
+        
+        // 終了・移動判定
+        if (nx > 4) {
+           // 右に抜けた -> 迷宮踏破！
+           h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
+           runResult.steps++; runResult.mazeCleared = true;
+           updateSpritePos(h.id, nx, ny);
+           setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
+        }
+        else if (nx < 1 || ny < 0 || ny > 3 || h.visited[ny][nx]) {
+           // 行き止まり・逆走・ループ
+           h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
+           updateSpritePos(h.id, nx, ny);
+           setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
+        }
+        else {
+           // 通常移動
+           h.x = nx; h.y = ny; someoneMoved = true; runResult.steps++;
+           updateSpritePos(h.id, nx, ny);
+        }
+    });
+
+    if (someoneMoved) {
+        playSoundStep();
+        setTimeout(step, GAME_CONFIG.moveSpeed);
+    } else {
+        // 全員停止後
+        if (runResult.mazeCleared) setTimeout(handleDeepMaze, 500);
+        else setTimeout(handleRewardCalc, 500);
+    }
   }
 
-  // 最初の1歩（Col0 -> Col1）
+  // 最初の1歩（Col0 -> Col1へ全員一斉移動）
   setTimeout(() => {
-      heroX = 1; updateSpritePos(heroX, heroY); runResult.steps++;
+      activeHeroes.forEach(h => { h.x = 1; updateSpritePos(h.id, h.x, h.y); runResult.steps++; });
+      playSoundStep();
       setTimeout(step, GAME_CONFIG.moveSpeed);
   }, GAME_CONFIG.moveSpeed);
 }
 
-function updateSpritePos(c, r) {
-  const sprite = document.getElementById('hero-sprite');
-  sprite.style.left = (c * 62 + 2) + 'px'; // grid gap考慮
-  sprite.style.top = (r * 62 + 2) + 'px';
+// 47px単位(45pxセル幅 + 2px隙間)でスプライトを動かす。
+// paddingによって余白が担保されているため、枠外へのはみ出しも綺麗に描画されます。
+function updateSpritePos(id, c, r) {
+  const sprite = document.getElementById(`hero-sprite-${id}`);
+  sprite.style.left = (c * 47) + 'px'; 
+  sprite.style.top = (r * 47) + 'px';
 }
 
 function showPopupText(c, r, text) {
   let pop = document.createElement('div');
-  pop.innerText = text; pop.style.position = 'absolute'; pop.style.left = (c * 62) + 'px'; pop.style.top = (r * 62) + 'px';
+  pop.innerText = text; pop.style.position = 'absolute'; pop.style.left = (c * 47) + 'px'; pop.style.top = (r * 47) + 'px';
   pop.style.color = '#ff0'; pop.style.fontWeight = 'bold'; pop.style.zIndex = '30'; pop.style.textShadow = '2px 2px 0 #000';
   pop.style.animation = 'floatUp 1s forwards';
   document.getElementById('slot-area').appendChild(pop);
@@ -665,7 +820,11 @@ function bossTurnHero() {
           playSoundWin();
           runResult.defeatBoss = true;
           runResult.rewards += (currentBoss.mult * currentBet);
-          showRpgMessage(`${currentBoss.name} をたおした！\n特大ボーナス獲得！`, () => { stage = stage===3 ? 1 : stage+1; hero.exp = 0; handleRewardCalc(); });
+          showRpgMessage(`${currentBoss.name} をたおした！\n特大ボーナス獲得！`, () => { 
+              resetHero(); // ステータス初期化
+              stage = stage===3 ? 1 : stage+1; 
+              handleRewardCalc(); 
+          });
       } else {
           setTimeout(bossTurnEnemy, GAME_CONFIG.turnSpeed / 2);
       }
@@ -680,7 +839,9 @@ function bossTurnEnemy() {
       if (hero.hp <= 0) {
           playSoundLose();
           showRpgMessage(`😀 は たおれてしまった...\nステージ１からやりなおしだ。`, () => {
-              hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 }; stage = 1; handleRewardCalc();
+              resetHero(); // ステータス初期化
+              stage = 1; 
+              handleRewardCalc();
           });
       } else {
           setTimeout(bossTurnHero, GAME_CONFIG.turnSpeed / 2);
@@ -716,7 +877,8 @@ function handleRewardCalc() {
 
 function finishTurn() {
   document.getElementById('total-win-banner').style.display = 'none';
-  document.getElementById('hero-sprite').style.display = 'none';
+  document.getElementById('hero-sprite-0').style.display = 'none';
+  document.getElementById('hero-sprite-1').style.display = 'none';
   saveGameData(); recordMedalLog(medals);
   
   if (freeSpinsLeft > 0) {
@@ -728,7 +890,6 @@ function finishTurn() {
       updateCombatUI(); updateUI();
   }
 }
-
 </script>
 </body>
 </html>
