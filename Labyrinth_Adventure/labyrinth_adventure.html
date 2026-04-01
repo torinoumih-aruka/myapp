@@ -88,7 +88,7 @@
   /* スロット（迷路）エリア */
   #slot-area { 
     position: relative; margin-top: 10px; z-index: 10; 
-    padding: 30px 47px 30px 5px; /* 上・下に30px、右に1マス(47px)分の余白を持たせる */
+    padding: 15px 47px 15px 5px; /* 上・下に15px（少し縮小）、右に1マス(47px)分の余白を持たせる */
     background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 5px; 
   }
   
@@ -138,6 +138,7 @@
     width: 320px; background: #000; border: 2px solid #fff; border-radius: 5px; padding: 15px;
     color: #fff; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 1.5;
     z-index: 50; display: none; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    white-space: pre-wrap; /* 改行を有効にする */
   }
   
   /* TOTAL WIN */
@@ -176,15 +177,14 @@ let zzfxV = 0.3,
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v1.3)</h3>
+    <h3>リリースノート (Labyrinth Adventure v1.4)</h3>
     <div style="color:#ddd; line-height: 1.5;">
       【アップデート情報】<br>
-      ・アイテムを獲得したマスも発光するように演出を強化しました。<br>
-      ・リール回転開始時に、前回の発光エフェクトをリセットするように修正しました。<br>
-      ・ヌシを倒した際にゲームが進行しなくなる不具合を修正しました。<br>
-      ・TOTAL WIN画面に、今回獲得したアイテムを一覧で表示するように改善しました。<br>
-      ・ステータス表示の絵文字サイズを小さくし、重なるように調整しました。<br>
-      ・グリッド表示エリアの上下の余白を少し縮小しました。<br>
+      ・報酬獲得の仕様を変更し、欄外（上下左右）に脱出した場合のみ獲得可能になりました。<br>
+      ・フィーバーモードの突入条件を変更。確率で出現する仲間アイテムを取得して脱出すると突入します。<br>
+      ・メッセージウィンドウの文字表示を改行ごとにウェイトをかけるように改善しました。<br>
+      ・ボス戦に関するHP進行の不具合を修正しました。<br>
+      ・ステータス絵文字やリザルト画面、マスの発光エフェクトの各種バグ・レイアウトを修正しました。<br>
     </div>
   </div>
 </div>
@@ -256,15 +256,15 @@ let zzfxV = 0.3,
 
 <script>
 // =============================================================================
-// ゲームバランス調整用コンフィグ（ここで確率や速度を調整可能）
+// ゲームバランス調整用コンフィグ
 // =============================================================================
 const GAME_CONFIG = {
-    moveSpeed: 300,          // 主人公の移動速度（ミリ秒）
-    turnSpeed: 2000,         // バトルの1ターンの時間（ミリ秒）
-    spinDuration: 1500,      // スピンアニメーションの基本時間
-    arrowCountMin: 4,        // 迷路に配置される矢印の最小数
-    arrowCountMax: 16,       // 迷路に配置される矢印の最大数
-    freeSpinProb: 0.05,      // 空きマスがフリースピンになる確率(5%に変更)
+    moveSpeed: 300,          
+    turnSpeed: 2000,         
+    spinDuration: 1500,      
+    arrowCountMin: 4,        
+    arrowCountMax: 16,       
+    freeSpinProb: 0.05,      
     items: [
         { sym: '🍒', weight: 30,  mult: 0.5, type: 'reward', name: 'チェリー' },
         { sym: '🍇', weight: 25,  mult: 1.0, type: 'reward', name: 'ブドウ' },
@@ -289,6 +289,7 @@ let currentBet = 1;
 let spinCount = 0;
 let soundEnabled = true;
 
+let feverHeroes = 1;
 let feverSpinsLeft = 0;
 let isFeverMode = false;
 
@@ -326,7 +327,7 @@ function recordMedalLog(currentMedals) {
 let hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
 let stage = 1;
 let currentBoss = null;
-let boardState = []; // 5x4のグリッド情報
+let boardState = []; 
 let freeSpinsLeft = 0;
 let isFreeSpinMode = false;
 let isSpinning = false;
@@ -334,6 +335,7 @@ let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleare
 
 function resetHero() {
     hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
+    currentBoss = null; // ボスの情報も確実にリセット
 }
 
 // =============================================================================
@@ -360,14 +362,14 @@ window.onload = () => {
 document.getElementById('close-release-modal').addEventListener('click', () => { document.getElementById('release-modal').style.display = 'none'; });
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
-  resetHero(); stage = 1; medals = 50; currentBet = 1; spinCount = 0; feverSpinsLeft = 0;
+  resetHero(); stage = 1; medals = 50; currentBet = 1; spinCount = 0; feverSpinsLeft = 0; feverHeroes = 1;
   startGameUI();
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   medals = parseInt(getCookie("labyrinth_medals") || 50); currentBet = parseInt(getCookie("labyrinth_bet") || 1); spinCount = parseInt(getCookie("labyrinth_spinCount") || 0);
   let savedHero = getCookie("labyrinth_hero"); if(savedHero) hero = JSON.parse(savedHero);
-  stage = parseInt(getCookie("labyrinth_stage") || 1); feverSpinsLeft = 0; // つづきからはフィーバーリセット
+  stage = parseInt(getCookie("labyrinth_stage") || 1); feverSpinsLeft = 0; feverHeroes = 1;
   startGameUI();
 });
 
@@ -389,8 +391,11 @@ function updateCombatUI() {
   document.getElementById('hero-atk-disp').innerText = '🗡️'.repeat(hero.atk);
   document.getElementById('hero-exp-disp').innerText = '⭐'.repeat(hero.exp);
   
-  // データの深いコピーを作成し、元データへの影響を遮断
-  currentBoss = { ...GAME_CONFIG.bosses[stage] };
+  // ボス情報が未初期化の場合のみセット（HPを減らした時にリセットされるのを防ぐ）
+  if (!currentBoss) {
+      currentBoss = { ...GAME_CONFIG.bosses[stage] };
+  }
+  
   document.getElementById('boss-emoji').innerText = currentBoss.sym;
   document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(currentBoss.hp);
   document.getElementById('boss-atk-disp').innerText = '🗡️'.repeat(currentBoss.atk);
@@ -470,9 +475,12 @@ function initGrid() {
   const wrapper = document.getElementById('grid-wrapper');
   wrapper.innerHTML = '';
   
-  // ヒーロースプライト2体を事前に配置（Fever用）
-  let s0 = document.createElement('div'); s0.id = 'hero-sprite-0'; s0.className = 'hero-sprite'; s0.innerText = '😀'; wrapper.appendChild(s0);
-  let s1 = document.createElement('div'); s1.id = 'hero-sprite-1'; s1.className = 'hero-sprite'; s1.innerText = '😀'; wrapper.appendChild(s1);
+  // ヒーロースプライトを最大4体事前に配置
+  for(let i=0; i<4; i++) {
+    let s = document.createElement('div');
+    s.id = `hero-sprite-${i}`; s.className = 'hero-sprite'; s.innerText = '😀';
+    wrapper.appendChild(s);
+  }
 
   for(let r=0; r<4; r++) {
     boardState[r] = [];
@@ -495,7 +503,6 @@ function initGrid() {
   }
 }
 
-// 矢印をCanvasで描画 (45x45サイズに縮小)
 function drawArrowOnCanvas(c, r, dir, color='#888') {
   const canvas = document.querySelector(`#cell-${c}-${r} .arrow-canvas`);
   if(!canvas) return;
@@ -505,7 +512,7 @@ function drawArrowOnCanvas(c, r, dir, color='#888') {
   
   ctx.fillStyle = color;
   ctx.save();
-  ctx.scale(45/60, 45/60); // 60px用座標を45px用にスケールダウン
+  ctx.scale(45/60, 45/60); 
   ctx.beginPath();
   if(dir === 0) { ctx.moveTo(30,10); ctx.lineTo(50,30); ctx.lineTo(40,30); ctx.lineTo(40,50); ctx.lineTo(20,50); ctx.lineTo(20,30); ctx.lineTo(10,30); }
   if(dir === 1) { ctx.moveTo(50,30); ctx.lineTo(30,10); ctx.lineTo(30,20); ctx.lineTo(10,20); ctx.lineTo(10,40); ctx.lineTo(30,40); ctx.lineTo(30,50); }
@@ -530,17 +537,20 @@ function updateCellDOM(c, r, cellData) {
           symDiv.innerText = '';
       }
   }
-  
-  // 矢印描画（黄色ではなくグレーで描き、通過時にセル背景を光らせる形）
+  // ※発光のリセット（remove）は行わず、通過した際の光をそのまま残します
   drawArrowOnCanvas(c, r, cellData.type === 'arrow' ? cellData.dir : null, '#888');
   if(cellData.collected && cellData.type !== 'arrow') {
       if(symDiv) symDiv.innerHTML = '';
   }
 }
 
-// ランダム抽選
+// ランダム抽選（仲間追加アイテムの抽選を含む）
 function getRandomItem() {
   if (Math.random() < GAME_CONFIG.freeSpinProb) return { type: 'free', sym: '🆓' };
+  
+  // 主人公の顔文字抽選（4人未満の場合のみ5%）
+  if (feverHeroes < 4 && Math.random() < 0.05) return { type: 'item', sym: '😀', ref: { type: 'fever_trigger', name: '仲間' } };
+
   let totalW = GAME_CONFIG.items.reduce((sum, item) => sum + item.weight, 0);
   let r = Math.random() * totalW; let sum = 0;
   for(let item of GAME_CONFIG.items) {
@@ -565,14 +575,12 @@ function startSpin(isFree) {
   // リール開始時に全マスの発光をクリア
   document.querySelectorAll('.cell-glow').forEach(el => el.classList.remove('cell-glow'));
 
-  // フィーバーモード判定
-  if (!isFree && spinCount > 0 && spinCount % 100 === 0 && !isFeverMode && feverSpinsLeft === 0) {
-      feverSpinsLeft = 3;
-  }
+  // フィーバーモードの継続管理
   if (feverSpinsLeft > 0) {
       isFeverMode = true; feverSpinsLeft--;
   } else {
       isFeverMode = false;
+      feverHeroes = 1;
   }
   document.getElementById('fever-banner').style.display = isFeverMode ? 'block' : 'none';
 
@@ -580,20 +588,22 @@ function startSpin(isFree) {
   document.getElementById('spin-btn').disabled = true;
   document.getElementById('total-win-banner').style.display = 'none';
   
-  // 主人公スプライトを隠す
-  document.getElementById('hero-sprite-0').style.display = 'none';
-  document.getElementById('hero-sprite-1').style.display = 'none';
+  // 主人公スプライトを一旦すべて隠す
+  for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
   
   updateUI(); playSoundSpin();
 
-  // マップ生成
+  // マップ生成（仲間の数だけ出現行を抽選）
   let possibleRows = [0,1,2,3]; possibleRows.sort(()=>Math.random()-0.5);
-  let heroSpawnRows = [possibleRows.pop()];
-  if (isFeverMode) heroSpawnRows.push(possibleRows.pop()); // フィーバーは主人公2体
+  let heroSpawnRows = [];
+  let numHeroesToSpawn = isFeverMode ? feverHeroes : 1;
+  for(let i=0; i<numHeroesToSpawn; i++) {
+      heroSpawnRows.push(possibleRows.pop());
+  }
 
   let mazeCells = [];
   for(let c=1; c<5; c++) for(let r=0; r<4; r++) mazeCells.push({c, r});
-  mazeCells.sort(() => Math.random() - 0.5); // シャッフル
+  mazeCells.sort(() => Math.random() - 0.5); 
   
   let arrowCount = Math.floor(Math.random() * (GAME_CONFIG.arrowCountMax - GAME_CONFIG.arrowCountMin + 1)) + GAME_CONFIG.arrowCountMin;
   
@@ -627,14 +637,13 @@ function startSpin(isFree) {
     ticks++;
     for(let c=0; c<5; c++) {
       for(let r=0; r<4; r++) {
-        // Col0は早く止める
         if (c === 0 && ticks > 10) { boardState[r][c] = nextBoard[r][c]; updateCellDOM(c, r, boardState[r][c]); continue; }
         if (c > 0 && ticks > 25) { boardState[r][c] = nextBoard[r][c]; updateCellDOM(c, r, boardState[r][c]); continue; }
         
-        // 回転中演出
         let symDiv = document.getElementById(`sym-${c}-${r}`);
-        if(c===0) symDiv.innerText = Math.random()>0.8 ? '😀' : '';
-        else {
+        if(c===0) {
+            symDiv.innerText = Math.random()>0.8 ? '😀' : '';
+        } else {
            let rType = Math.random();
            if(rType<0.5) { symDiv.innerHTML=''; drawArrowOnCanvas(c,r,Math.floor(Math.random()*4)); }
            else { 
@@ -654,27 +663,23 @@ function startSpin(isFree) {
 }
 
 // =============================================================================
-// 移動フェーズ (スムーズスライド対応・複数体対応)
+// 移動フェーズ
 // =============================================================================
 function startRunPhase(spawnRows) {
   runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0 };
   
   let activeHeroes = spawnRows.map((row, idx) => ({
       id: idx, x: 0, y: row, dir: 1, active: true,
-      visited: Array(4).fill(0).map(() => Array(5).fill(false)) // visitedは主人公毎に独立
+      escaped: false, cleared: false,
+      visited: Array(4).fill(0).map(() => Array(5).fill(false)) 
   }));
 
-  // スプライトの初期位置設定と表示
   activeHeroes.forEach(h => {
       let sprite = document.getElementById(`hero-sprite-${h.id}`);
       sprite.style.display = 'flex';
-      sprite.style.transition = 'none'; // テレポート時はtransitionを切る
+      sprite.style.transition = 'none'; 
       updateSpritePos(h.id, h.x, h.y);
-      
-      // reflowを強制して即座に適用させる
       void sprite.offsetWidth; 
-      
-      // 移動用のtransition設定
       sprite.style.transition = `left ${GAME_CONFIG.moveSpeed}ms linear, top ${GAME_CONFIG.moveSpeed}ms linear`;
   });
 
@@ -687,62 +692,61 @@ function startRunPhase(spawnRows) {
         h.visited[h.y][h.x] = true;
         let cell = boardState[h.y][h.x];
 
-        // 通過マスの発光処理（アイテム・ブランク問わず光らせる）
+        // 矢印・アイテム問わず、通過したマスを発光させる
         if (h.x > 0 && cell) {
             let cellEl = document.getElementById(`cell-${h.x}-${h.y}`);
             if (cellEl) cellEl.classList.add('cell-glow');
         }
 
-        // 現在マスの効果処理
+        // 現在マスの効果（アイテムの表示は行うがステータス付与は保留）
         if (h.x > 0 && cell && !cell.collected) {
-           cell.collected = true; // 共有のグリッドアイテムを取得済みにする
+           cell.collected = true; 
            if (cell.type === 'arrow') {
                h.dir = cell.dir;
-           } else if (cell.type === 'item') {
-               playSoundItem(); showPopupText(h.x, h.y, cell.sym);
-               runResult.items.push(cell.ref);
-               
-               // フィーバー中は獲得量2倍
-               let amount = isFeverMode ? 2 : 1; 
-               let mult = cell.ref.mult * amount;
-
-               if (cell.ref.type === 'heal') { hero.maxHp += amount; hero.hp = Math.min(hero.maxHp, hero.hp + amount); }
-               if (cell.ref.type === 'buff') { hero.atk += amount; }
-               if (cell.ref.type === 'reward') { runResult.rewards += (mult * currentBet); }
-               
-               updateCombatUI(); updateCellDOM(h.x, h.y, cell);
-           } else if (cell.type === 'free') {
-               playSoundWin(); showPopupText(h.x, h.y, 'FREE+3');
-               freeSpinsLeft += 3; updateUI(); updateCellDOM(h.x, h.y, cell);
+           } else if (cell.type === 'item' || cell.type === 'free') {
+               playSoundItem(); 
+               showPopupText(h.x, h.y, cell.sym);
+               if(cell.type === 'free') {
+                   runResult.items.push({type: 'free', sym: '🆓'});
+               } else {
+                   runResult.items.push(cell.ref);
+               }
+               updateCellDOM(h.x, h.y, cell);
            }
         }
         
-        // すでに通過済みの矢印を再度踏んだ場合の処理（別キャラ用）
-        if (cell && cell.type === 'arrow') {
-            h.dir = cell.dir; 
-        }
+        if (cell && cell.type === 'arrow') h.dir = cell.dir; 
 
-        // 次の座標計算
+        // 次の座標
         let nx = h.x, ny = h.y;
         if(h.dir === 0) ny--; else if(h.dir === 1) nx++; else if(h.dir === 2) ny++; else if(h.dir === 3) nx--;
         
-        // 終了・移動判定
+        // 移動と終了の判定
         if (nx > 4) {
-           // 右に抜けた -> 迷宮踏破！
+           // 右抜け（GOAL）
            h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
-           runResult.steps++; runResult.mazeCleared = true;
+           h.escaped = true; h.cleared = true;
+           runResult.steps++;
            updateSpritePos(h.id, nx, ny);
            setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
         }
-        else if (nx < 1 || ny < 0 || ny > 3 || h.visited[ny][nx]) {
-           // 行き止まり・逆走・ループ
+        else if (nx < 1 || ny < 0 || ny > 3) {
+           // 上下左抜け（欄外）
            h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
+           h.escaped = true; h.cleared = false;
+           runResult.steps++;
            updateSpritePos(h.id, nx, ny);
            setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
+        }
+        else if (h.visited[ny][nx]) {
+           // 行き止まり・迷子（移動せず停止）
+           h.active = false; 
+           h.escaped = false; h.cleared = false;
         }
         else {
            // 通常移動
-           h.x = nx; h.y = ny; someoneMoved = true; runResult.steps++;
+           h.x = nx; h.y = ny; h.active = true; someoneMoved = true;
+           runResult.steps++;
            updateSpritePos(h.id, nx, ny);
         }
     });
@@ -751,13 +755,11 @@ function startRunPhase(spawnRows) {
         playSoundStep();
         setTimeout(step, GAME_CONFIG.moveSpeed);
     } else {
-        // 全員停止後
-        if (runResult.mazeCleared) setTimeout(handleDeepMaze, 500);
-        else setTimeout(handleRewardCalc, 500);
+        // 全員停止後に結果を評価
+        evaluateRun(activeHeroes);
     }
   }
 
-  // 最初の1歩（Col0 -> Col1へ全員一斉移動）
   setTimeout(() => {
       activeHeroes.forEach(h => { h.x = 1; updateSpritePos(h.id, h.x, h.y); runResult.steps++; });
       playSoundStep();
@@ -765,7 +767,6 @@ function startRunPhase(spawnRows) {
   }, GAME_CONFIG.moveSpeed);
 }
 
-// 47px単位(45pxセル幅 + 2px隙間)でスプライトを動かす。
 function updateSpritePos(id, c, r) {
   const sprite = document.getElementById(`hero-sprite-${id}`);
   sprite.style.left = (c * 47) + 'px'; 
@@ -780,21 +781,81 @@ function showPopupText(c, r, text) {
   document.getElementById('slot-area').appendChild(pop);
   setTimeout(() => pop.remove(), 1000);
 }
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `@keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-30px); opacity: 0; } }`;
-document.head.appendChild(styleSheet);
+
+// 評価とリザルト算出
+function evaluateRun(activeHeroes) {
+    let anyCleared = activeHeroes.some(h => h.cleared);
+    let anyEscaped = activeHeroes.some(h => h.escaped);
+
+    let processEnd = () => {
+        if (anyCleared) {
+            setTimeout(handleDeepMaze, 500); 
+        } else if (anyEscaped) {
+            showRpgMessage("あなたは迷宮から帰還した", () => handleRewardCalc());
+        } else {
+            showRpgMessage("あなたは迷宮内で迷子になった・・・", () => {
+                runResult.rewards = 0;
+                runResult.items = []; // 迷子の場合はアイテム全没収
+                runResult.steps = 0;  // 距離ボーナスも没収
+                handleRewardCalc();
+            });
+        }
+    };
+
+    // 誰か1人でも脱出していれば、取得したアイテムを反映
+    if (anyEscaped) {
+        let gainedFever = false;
+        runResult.items.forEach(item => {
+            if (item.type === 'free') {
+                freeSpinsLeft += 3;
+            } else if (item.type === 'fever_trigger') {
+                gainedFever = true;
+                feverHeroes = Math.min(4, feverHeroes + 1);
+                feverSpinsLeft += Math.floor(Math.random() * 3) + 3; // 3〜5ターン追加
+                isFeverMode = true;
+            } else {
+                let amount = isFeverMode ? 2 : 1; 
+                let mult = item.mult * amount;
+                if (item.type === 'heal') { hero.maxHp += amount; hero.hp = Math.min(hero.maxHp, hero.hp + amount); }
+                if (item.type === 'buff') { hero.atk += amount; }
+                if (item.type === 'reward') { runResult.rewards += (mult * currentBet); }
+            }
+        });
+        
+        updateCombatUI(); updateUI();
+
+        if (gainedFever) {
+            showRpgMessage("しばらく一緒に冒険してくれる仲間が増えた！", processEnd);
+            return; // メッセージが終わってからprocessEndを呼ぶ
+        }
+    }
+    processEnd();
+}
 
 // =============================================================================
-// 最奥部・ボスバトル処理
+// メッセージウィンドウ・ボスバトル処理
 // =============================================================================
+
+// 改行コード（\n）ごとに0.3秒ウェイトをかけて表示する処理
 function showRpgMessage(text, callback) {
   let box = document.getElementById('rpg-message-box');
-  box.style.display = 'block'; box.innerHTML = '';
+  box.style.display = 'block';
+  box.innerHTML = '';
+  
+  let lines = text.split('\n');
   let i = 0;
-  let interval = setInterval(() => {
-      box.innerHTML += text.charAt(i); i++;
-      if (i >= text.length) { clearInterval(interval); setTimeout(() => { box.style.display = 'none'; if(callback) callback(); }, 1500); }
-  }, 50);
+  
+  function printLine() {
+      if (i > 0) box.innerHTML += '\n'; // white-space: pre-wrapなので\nでOK
+      box.innerHTML += lines[i];
+      i++;
+      if (i < lines.length) {
+          setTimeout(printLine, 300);
+      } else {
+          setTimeout(() => { box.style.display = 'none'; if(callback) callback(); }, 1500);
+      }
+  }
+  printLine();
 }
 
 function handleDeepMaze() {
@@ -810,7 +871,8 @@ function handleDeepMaze() {
 }
 
 function startBossBattle() {
-  currentBoss.hp = GAME_CONFIG.bosses[stage].hp; updateCombatUI();
+  if (!currentBoss) currentBoss = { ...GAME_CONFIG.bosses[stage] };
+  updateCombatUI();
   showRpgMessage(`ヌシの ${currentBoss.name} があらわれた！`, bossTurnHero);
 }
 
@@ -824,7 +886,7 @@ function bossTurnHero() {
           runResult.defeatBoss = true;
           runResult.rewards += (currentBoss.mult * currentBet);
           showRpgMessage(`${currentBoss.name} をたおした！\n特大ボーナス獲得！`, () => { 
-              resetHero(); // ステータス初期化
+              currentBoss = null;
               stage = stage===3 ? 1 : stage+1; 
               handleRewardCalc(); 
           });
@@ -842,7 +904,7 @@ function bossTurnEnemy() {
       if (hero.hp <= 0) {
           playSoundLose();
           showRpgMessage(`😀 は たおれてしまった...\nステージ１からやりなおしだ。`, () => {
-              resetHero(); // ステータス初期化
+              resetHero(); 
               stage = 1; 
               handleRewardCalc();
           });
@@ -870,7 +932,7 @@ function handleRewardCalc() {
       if (runResult.defeatBoss) breakdown.push(`ボス撃破ボーナス`);
       
       document.getElementById('total-win-amount').innerText = totalWin;
-      // 獲得アイテムの表示を追加
+      // 獲得アイテムをソートせずに一覧表示
       document.getElementById('win-collected-items').innerText = runResult.items.map(i => i.sym).join('');
       document.getElementById('win-breakdown').innerHTML = breakdown.join('<br>');
       document.getElementById('total-win-banner').style.display = 'block';
@@ -882,8 +944,7 @@ function handleRewardCalc() {
 
 function finishTurn() {
   document.getElementById('total-win-banner').style.display = 'none';
-  document.getElementById('hero-sprite-0').style.display = 'none';
-  document.getElementById('hero-sprite-1').style.display = 'none';
+  for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
   saveGameData(); recordMedalLog(medals);
   
   if (freeSpinsLeft > 0) {
