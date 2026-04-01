@@ -88,7 +88,7 @@
   /* スロット（迷路）エリア */
   #slot-area { 
     position: relative; margin-top: 10px; z-index: 10; 
-    padding: 47px 47px 47px 5px; /* 上・右・下に1マス(47px)分の余白を持たせる */
+    padding: 30px 47px 30px 5px; /* 上・下に30px、右に1マス(47px)分の余白を持たせる */
     background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 5px; 
   }
   
@@ -129,8 +129,8 @@
   .char-stats { font-size: 0.8rem; text-align: center; }
   .vs-text { font-size: 1.5rem; font-weight: bold; font-style: italic; color: #f00; text-shadow: 2px 2px 0 #fff; }
   
-  /* ステータスの絵文字サイズを1段階下げた設定（8pt） */
-  .emoji-stats { font-size: 8pt; line-height: 1.2; display: inline-block; vertical-align: middle; }
+  /* ステータスの絵文字サイズを1段階下げ、重なるように調整 */
+  .emoji-stats { font-size: 9px; line-height: 1.2; letter-spacing: -5px; display: inline-block; vertical-align: middle; white-space: nowrap; }
 
   /* RPG風メッセージウィンドウ */
   #rpg-message-box {
@@ -144,6 +144,7 @@
   #total-win-banner { position: fixed; top: 50%; left: 50%; width: 100%; max-width: 450px; background: rgba(0,0,0,0.95); color: #fff; text-align: center; padding: 20px 0; transform: translate(-50%, -50%); z-index: 150; display: none; border-top: 4px solid #fff; border-bottom: 4px solid #fff; }
   #total-win-banner h2 { font-size: 1.2rem; margin: 0; }
   #total-win-banner h1 { margin: 10px 0; font-size: 3rem; }
+  #win-collected-items { font-size: 1.5rem; letter-spacing: -3px; margin-bottom: 10px; min-height: 2rem; }
   #win-breakdown { font-size: 0.9rem; color: #aaa; text-align: left; display: inline-block; }
 
   .shake { animation: shakeAnim 0.3s; }
@@ -175,12 +176,15 @@ let zzfxV = 0.3,
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v1.2)</h3>
+    <h3>リリースノート (Labyrinth Adventure v1.3)</h3>
     <div style="color:#ddd; line-height: 1.5;">
       【アップデート情報】<br>
-      ・主人公が歩いたマスがすべて発光するようになりました。<br>
-      ・ステータス絵文字のサイズを調整し、UIを見やすく改善しました。<br>
-      ・右側に「GOAL」の背景文字を追加しました。<br>
+      ・アイテムを獲得したマスも発光するように演出を強化しました。<br>
+      ・リール回転開始時に、前回の発光エフェクトをリセットするように修正しました。<br>
+      ・ヌシを倒した際にゲームが進行しなくなる不具合を修正しました。<br>
+      ・TOTAL WIN画面に、今回獲得したアイテムを一覧で表示するように改善しました。<br>
+      ・ステータス表示の絵文字サイズを小さくし、重なるように調整しました。<br>
+      ・グリッド表示エリアの上下の余白を少し縮小しました。<br>
     </div>
   </div>
 </div>
@@ -246,6 +250,7 @@ let zzfxV = 0.3,
 <div id="total-win-banner">
   <h2>TOTAL WIN</h2>
   <h1 id="total-win-amount">0</h1>
+  <div id="win-collected-items"></div>
   <div id="win-breakdown"></div>
 </div>
 
@@ -384,7 +389,8 @@ function updateCombatUI() {
   document.getElementById('hero-atk-disp').innerText = '🗡️'.repeat(hero.atk);
   document.getElementById('hero-exp-disp').innerText = '⭐'.repeat(hero.exp);
   
-  currentBoss = GAME_CONFIG.bosses[stage];
+  // データの深いコピーを作成し、元データへの影響を遮断
+  currentBoss = { ...GAME_CONFIG.bosses[stage] };
   document.getElementById('boss-emoji').innerText = currentBoss.sym;
   document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(currentBoss.hp);
   document.getElementById('boss-atk-disp').innerText = '🗡️'.repeat(currentBoss.atk);
@@ -400,7 +406,7 @@ function updateCombatUI() {
 }
 
 // =============================================================================
-// チャート関連 (流用)
+// チャート関連
 // =============================================================================
 let chartInterval = 5; 
 document.getElementById('btn-chart').addEventListener('click', () => { document.getElementById('chart-modal').style.display = 'flex'; drawChart(); });
@@ -525,11 +531,7 @@ function updateCellDOM(c, r, cellData) {
       }
   }
   
-  // マスの発光クリアと矢印描画
-  let cellEl = document.getElementById(`cell-${c}-${r}`);
-  if (cellEl) cellEl.classList.remove('cell-glow');
-  
-  // 矢印描画（黄色ではなくグレーで描き、通過時にセル背景を光らせる形に変更）
+  // 矢印描画（黄色ではなくグレーで描き、通過時にセル背景を光らせる形）
   drawArrowOnCanvas(c, r, cellData.type === 'arrow' ? cellData.dir : null, '#888');
   if(cellData.collected && cellData.type !== 'arrow') {
       if(symDiv) symDiv.innerHTML = '';
@@ -559,6 +561,9 @@ function startSpin(isFree) {
     if (medals < betVal) { alert("メダルが足りません！"); return; }
     currentBet = betVal; medals -= currentBet; spinCount++;
   }
+
+  // リール開始時に全マスの発光をクリア
+  document.querySelectorAll('.cell-glow').forEach(el => el.classList.remove('cell-glow'));
 
   // フィーバーモード判定
   if (!isFree && spinCount > 0 && spinCount % 100 === 0 && !isFeverMode && feverSpinsLeft === 0) {
@@ -682,7 +687,7 @@ function startRunPhase(spawnRows) {
         h.visited[h.y][h.x] = true;
         let cell = boardState[h.y][h.x];
 
-        // 通過マスの発光処理（矢印・アイテム・ブランク問わず光らせる）
+        // 通過マスの発光処理（アイテム・ブランク問わず光らせる）
         if (h.x > 0 && cell) {
             let cellEl = document.getElementById(`cell-${h.x}-${h.y}`);
             if (cellEl) cellEl.classList.add('cell-glow');
@@ -761,7 +766,6 @@ function startRunPhase(spawnRows) {
 }
 
 // 47px単位(45pxセル幅 + 2px隙間)でスプライトを動かす。
-// paddingによって余白が担保されているため、枠外へのはみ出しも綺麗に描画されます。
 function updateSpritePos(id, c, r) {
   const sprite = document.getElementById(`hero-sprite-${id}`);
   sprite.style.left = (c * 47) + 'px'; 
@@ -866,6 +870,8 @@ function handleRewardCalc() {
       if (runResult.defeatBoss) breakdown.push(`ボス撃破ボーナス`);
       
       document.getElementById('total-win-amount').innerText = totalWin;
+      // 獲得アイテムの表示を追加
+      document.getElementById('win-collected-items').innerText = runResult.items.map(i => i.sym).join('');
       document.getElementById('win-breakdown').innerHTML = breakdown.join('<br>');
       document.getElementById('total-win-banner').style.display = 'block';
       setTimeout(finishTurn, 2500);
