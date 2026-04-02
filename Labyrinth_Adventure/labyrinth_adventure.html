@@ -84,10 +84,14 @@
      ========================================= */
   #game-container { position: relative; width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center; flex-grow: 1; }
   #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-  
+  #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2500; }
+
+  /* 上部エリア（スロットと仲間表示を横並び） */
+  #top-area { display: flex; width: 100%; max-width: 450px; justify-content: space-between; align-items: flex-start; padding: 0 10px; box-sizing: border-box; margin-top: 10px; }
+
   /* スロット（迷路）エリア */
   #slot-area { 
-    position: relative; margin-top: 10px; z-index: 10; 
+    position: relative; z-index: 10; 
     padding: 15px 47px 15px 5px; 
     background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 5px; 
   }
@@ -110,21 +114,29 @@
   /* アイテム重ね（フィーバー用） */
   .item-stack { display: inline-block; letter-spacing: -9px; white-space: nowrap; padding-right: 9px; }
 
+  /* 仲間表示エリア */
+  #party-area { width: 40px; display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); border-radius: 5px; padding: 5px 0; min-height: 100px;}
+  .party-member { font-size: 1.5rem; margin-bottom: 2px; text-shadow: 0 0 5px #fff; }
+  #party-spins { font-size: 0.8rem; font-weight: bold; color: #0ff; margin-top: 5px; }
+
   /* 主人公の移動用要素 */
   .hero-sprite { position: absolute; width: 45px; height: 45px; display: none; justify-content: center; align-items: center; font-size: 1.8rem; z-index: 20; text-shadow: 0 0 10px #fff; }
 
   /* 戦闘アニメーション表示エリア */
-  #combat-area { position: relative; width: 340px; margin-top: 35px; background: #000; border: 2px solid #fff; border-radius: 5px; padding: 10px; box-sizing: border-box; display: flex; justify-content: space-around; align-items: center; z-index: 10; font-family: monospace; }
+  #combat-area { position: relative; width: 340px; margin-top: 15px; background: #000; border: 2px solid #fff; border-radius: 5px; padding: 10px; box-sizing: border-box; display: flex; justify-content: space-around; align-items: center; z-index: 10; font-family: monospace; }
   
-  #fever-banner { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); color: #ff00aa; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #fff; display: none; white-space: nowrap; animation: pulseGlow 0.8s infinite alternate; }
+  #fever-banner { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); color: #0ff; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #fff; display: none; white-space: nowrap; animation: pulseGlow 0.8s infinite alternate; }
   @keyframes pulseGlow { from { filter: brightness(1); } to { filter: brightness(1.5); } }
 
-  .char-box { display: flex; flex-direction: column; align-items: center; width: 120px; }
+  .char-box { display: flex; flex-direction: column; align-items: flex-start; width: 120px; text-align: left; }
+  .char-name { font-size: 0.8rem; color: #aaa; margin-bottom: 2px; }
   .char-emoji { font-size: 2.5rem; margin-bottom: 5px; transition: transform 0.1s; }
-  .char-stats { font-size: 0.8rem; text-align: center; }
   .vs-text { font-size: 1.5rem; font-weight: bold; font-style: italic; color: #f00; text-shadow: 2px 2px 0 #fff; }
   
   .emoji-stats { font-size: 9px; line-height: 1.2; letter-spacing: -5px; display: inline-block; vertical-align: middle; white-space: nowrap; }
+
+  /* デバッグ用確率表示 */
+  #debug-panel { font-size: 0.7rem; color: #888; margin-top: 5px; }
 
   /* RPG風メッセージウィンドウ */
   #rpg-message-box {
@@ -150,7 +162,7 @@
 <body>
 
 <script>
-// --- ZzFXMicro 修正版 ---
+// --- ZzFXMicro ---
 let zzfxV = 0.3,
     zzfxX = new (window.AudioContext || window.webkitAudioContext)(),
     zzfx = (p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0,N=0)=>{
@@ -165,20 +177,6 @@ let zzfxV = 0.3,
   <button class="menu-btn" id="btn-continue" style="display:none;">つづきから</button>
   <div class="sound-toggle">
     <label><input type="checkbox" id="sound-checkbox" checked> 効果音をオンにする</label>
-  </div>
-</div>
-
-<div id="release-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v1.5)</h3>
-    <div style="color:#ddd; line-height: 1.5;">
-      【アップデート情報】<br>
-      ・フィーバーモード時のアイテム絵文字が美しく重なって表示されるよう改善しました。<br>
-      ・バトルフェーズで攻撃力が高い際にフリーズする不具合を修正しました。<br>
-      ・歩数のカウントを「点灯したマスの数」で正確に計算するよう修正しました。<br>
-      ・迷宮を脱出した際、獲得したアイテムがWINパネルに向かって飛んでいくアニメーション演出を追加しました。<br>
-    </div>
   </div>
 </div>
 
@@ -197,6 +195,7 @@ let zzfxV = 0.3,
 
 <div id="game-container" style="display:none;">
   <canvas id="bg-canvas"></canvas>
+  <canvas id="particle-canvas"></canvas>
 
   <div id="header">
     <div class="panel" id="btn-chart" title="履歴チャート">💹</div>
@@ -206,16 +205,20 @@ let zzfxV = 0.3,
     <div class="panel p-free" id="free-spin-panel"><div style="color:#0ff;">FREE</div><span id="free-spin-display" style="color:#0ff;">0</span></div>
   </div>
 
-  <div id="slot-area">
-    <div id="goal-text">GOAL</div>
-    <div id="grid-wrapper">
+  <div id="top-area">
+      <div id="slot-area">
+        <div id="goal-text">GOAL</div>
+        <div id="grid-wrapper"></div>
+        <div id="rpg-message-box"></div>
       </div>
-    <div id="rpg-message-box"></div>
+      <div id="party-area">
+          </div>
   </div>
 
   <div id="combat-area">
     <div id="fever-banner">FEVER MODE!!</div>
     <div class="char-box">
+      <div class="char-name">あなた</div>
       <div id="hero-emoji" class="char-emoji">😀</div>
       <div class="char-stats">
         HP:<span id="hero-hp-disp" class="emoji-stats"></span><br>
@@ -225,14 +228,15 @@ let zzfxV = 0.3,
     </div>
     <div class="vs-text">VS</div>
     <div class="char-box">
+      <div id="boss-name-disp" class="char-name">オオワニ</div>
       <div id="boss-emoji" class="char-emoji">🐊</div>
       <div class="char-stats" id="boss-stats-container">
         HP:<span id="boss-hp-disp" class="emoji-stats"></span><br>
         ATK:<span id="boss-atk-disp" class="emoji-stats"></span><br>
-        <span id="boss-name-disp">オオワニ</span>
       </div>
     </div>
   </div>
+  <div id="debug-panel"></div>
 </div>
 
 <div id="controls-row" style="display:none;">
@@ -249,30 +253,60 @@ let zzfxV = 0.3,
 
 <script>
 // =============================================================================
+// Canvas パーティクルシステム
+// =============================================================================
+const pCanvas = document.getElementById('particle-canvas');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+
+function resizePCanvas() { pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight; }
+window.addEventListener('resize', resizePCanvas);
+resizePCanvas();
+
+function spawnParticles(x, y) {
+  for(let i=0; i<20; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.5) * 10,
+      life: 1.0,
+      color: `hsl(45, 100%, ${50 + Math.random()*30}%)` // ゴールド系
+    });
+  }
+}
+
+function updateParticles() {
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  for(let i=particles.length-1; i>=0; i--) {
+    let p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+    if(p.life <= 0) { particles.splice(i, 1); continue; }
+    pCtx.globalAlpha = p.life; pCtx.fillStyle = p.color;
+    pCtx.beginPath(); pCtx.arc(p.x, p.y, 4, 0, Math.PI*2); pCtx.fill();
+  }
+  pCtx.globalAlpha = 1.0;
+  requestAnimationFrame(updateParticles);
+}
+updateParticles();
+
+// =============================================================================
 // ゲームバランス調整用コンフィグ
 // =============================================================================
 const GAME_CONFIG = {
     moveSpeed: 300,          
     turnSpeed: 2000,         
-    spinDuration: 1500,      
     arrowCountMin: 4,        
-    arrowCountMax: 16,       
+    arrowCountMax: 10,       // 矢印を減らす
     freeSpinProb: 0.05,      
-    items: [
-        { sym: '🍒', weight: 30,  mult: 0.5, type: 'reward', name: 'チェリー' },
-        { sym: '🍇', weight: 25,  mult: 1.0, type: 'reward', name: 'ブドウ' },
-        { sym: '🍊', weight: 20,  mult: 2.0, type: 'reward', name: 'オレンジ' },
-        { sym: '🍖', weight: 15,  mult: 1.0, type: 'heal',   name: 'お肉(HP+1)' },
-        { sym: '🗡️', weight:  5,  mult: 1.0, type: 'buff',   name: '剣(ATK+1)' },
-        { sym: '💎', weight:  2,  mult: 10.0,type: 'reward', name: 'ダイヤ' },
-        { sym: '',   weight: 40,  mult: 0,   type: 'blank',  name: '空き地' } 
-    ],
+    heroProb: 0.01,          // 仲間の確率1%
     bosses: {
         1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'オオワニ' },
-        2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: 'タラバガニ' },
+        2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: 'デビルタラバガニ' },
         3: { sym: '🐲', hp: 10,atk: 4, mult: 200, name: 'ドラゴン' }
     }
 };
+// フィーバーモードで2倍になるアイテム
+const DOUBLE_ITEMS = ['🍒', '🍇', '🍊', '💎', '😀'];
 
 // =============================================================================
 // 変数・セーブデータ系
@@ -282,9 +316,24 @@ let currentBet = 1;
 let spinCount = 0;
 let soundEnabled = true;
 
-let feverHeroes = 1;
-let feverSpinsLeft = 0;
-let isFeverMode = false;
+// 仲間・フィーバー管理
+let partyMembers = 0;      // 仲間の数(0〜3)
+let partySpinsLeft = 0;    // 仲間同行の残りスピン
+let isFeverMode = false;   // フリースピン中のみTRUE
+
+let hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
+let stage = 1;
+let currentBoss = null;
+let boardState = []; 
+let freeSpinsLeft = 0;
+let isFreeSpinMode = false;
+let isSpinning = false;
+let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
+
+function resetHero() {
+    hero = { hp: 5, maxHp: 5, atk: 1, exp: 1 }; // 経験値1に初期化
+    currentBoss = null; 
+}
 
 // セーブ・ロード関数
 function setCookie(name, value, days) {
@@ -316,21 +365,6 @@ function recordMedalLog(currentMedals) {
     medalLog.push({ time: new Date().getTime(), medals: currentMedals }); localStorage.setItem('labyrinth_log', JSON.stringify(medalLog));
 }
 
-// RPG状態管理
-let hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
-let stage = 1;
-let currentBoss = null;
-let boardState = []; 
-let freeSpinsLeft = 0;
-let isFreeSpinMode = false;
-let isSpinning = false;
-let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0 };
-
-function resetHero() {
-    hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
-    currentBoss = null; 
-}
-
 // =============================================================================
 // サウンド関数
 // =============================================================================
@@ -348,28 +382,28 @@ function playSoundLose() { if(soundEnabled) zzfx(...[1.5,0,80,,.1,.5,2,2,,,50,.2
 window.onload = () => {
   let savedMedals = getCookie("labyrinth_medals");
   if (savedMedals !== null && parseInt(savedMedals) > 0) document.getElementById('btn-continue').style.display = 'block';
-  document.getElementById('release-modal').style.display = 'flex';
   initGrid(); drawBackground();
+  updatePartyUI();
 };
 
-document.getElementById('close-release-modal').addEventListener('click', () => { document.getElementById('release-modal').style.display = 'none'; });
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
-  resetHero(); stage = 1; medals = 50; currentBet = 1; spinCount = 0; feverSpinsLeft = 0; feverHeroes = 1;
+  resetHero(); stage = 1; medals = 50; currentBet = 1; spinCount = 0; partyMembers = 0; partySpinsLeft = 0;
   startGameUI();
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   medals = parseInt(getCookie("labyrinth_medals") || 50); currentBet = parseInt(getCookie("labyrinth_bet") || 1); spinCount = parseInt(getCookie("labyrinth_spinCount") || 0);
   let savedHero = getCookie("labyrinth_hero"); if(savedHero) hero = JSON.parse(savedHero);
-  stage = parseInt(getCookie("labyrinth_stage") || 1); feverSpinsLeft = 0; feverHeroes = 1;
+  if(hero.exp === 0) hero.exp = 1; // 経験値0の場合は1に
+  stage = parseInt(getCookie("labyrinth_stage") || 1); partyMembers = 0; partySpinsLeft = 0;
   startGameUI();
 });
 
 function startGameUI() {
   document.getElementById('start-menu').style.display = 'none'; document.getElementById('game-container').style.display = 'flex'; document.getElementById('controls-row').style.display = 'flex';
   document.getElementById('bet-input').value = currentBet;
-  updateCombatUI(); updateUI();
+  updateCombatUI(); updateUI(); updatePartyUI();
   if(medalLog.length === 0) recordMedalLog(medals);
 }
 
@@ -379,15 +413,27 @@ function updateUI() {
   document.getElementById('free-spin-panel').style.borderColor = freeSpinsLeft > 0 ? '#0ff' : '#444';
 }
 
+function updatePartyUI() {
+  const partyArea = document.getElementById('party-area');
+  partyArea.innerHTML = '';
+  for(let i=0; i<partyMembers; i++) {
+      let em = document.createElement('div');
+      em.className = 'party-member'; em.innerText = '😀';
+      partyArea.appendChild(em);
+  }
+  if (partyMembers > 0) {
+      let sp = document.createElement('div');
+      sp.id = 'party-spins'; sp.innerText = `残り\n${partySpinsLeft}`;
+      partyArea.appendChild(sp);
+  }
+}
+
 function updateCombatUI() {
-  // Math.maxを使って0未満にならないよう保護（フリーズ修正）
   document.getElementById('hero-hp-disp').innerText = '🩷'.repeat(Math.max(0, hero.hp));
   document.getElementById('hero-atk-disp').innerText = '🗡️'.repeat(Math.max(0, hero.atk));
   document.getElementById('hero-exp-disp').innerText = '⭐'.repeat(Math.max(0, hero.exp));
   
-  if (!currentBoss) {
-      currentBoss = { ...GAME_CONFIG.bosses[stage] };
-  }
+  if (!currentBoss) currentBoss = { ...GAME_CONFIG.bosses[stage] };
   
   document.getElementById('boss-emoji').innerText = currentBoss.sym;
   document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(Math.max(0, currentBoss.hp));
@@ -403,7 +449,7 @@ function updateCombatUI() {
 }
 
 // =============================================================================
-// チャート関連
+// チャート関連 (省略・変更なし)
 // =============================================================================
 let chartInterval = 5; 
 document.getElementById('btn-chart').addEventListener('click', () => { document.getElementById('chart-modal').style.display = 'flex'; drawChart(); });
@@ -453,9 +499,9 @@ function drawBackground() {
   canvas.width = window.innerWidth; canvas.height = window.innerHeight;
   const ctx = canvas.getContext('2d');
   let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  if (stage === 1) { grad.addColorStop(0, '#131'); grad.addColorStop(1, '#242'); } // 草原
-  else if (stage === 2) { grad.addColorStop(0, '#024'); grad.addColorStop(1, '#046'); } // 海
-  else { grad.addColorStop(0, '#300'); grad.addColorStop(1, '#511'); } // 火山
+  if (stage === 1) { grad.addColorStop(0, '#131'); grad.addColorStop(1, '#242'); } 
+  else if (stage === 2) { grad.addColorStop(0, '#024'); grad.addColorStop(1, '#046'); } 
+  else { grad.addColorStop(0, '#300'); grad.addColorStop(1, '#511'); } 
   ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 window.addEventListener('resize', drawBackground);
@@ -517,7 +563,7 @@ function updateCellDOM(c, r, cellData) {
   let symDiv = document.getElementById(`sym-${c}-${r}`);
   if(symDiv) {
       if(cellData.type === 'item') {
-          if (isFeverMode) {
+          if (isFeverMode && DOUBLE_ITEMS.includes(cellData.sym)) {
               symDiv.innerHTML = `<span class="item-stack">${cellData.sym}${cellData.sym}</span>`;
           } else {
               symDiv.innerText = cellData.sym;
@@ -535,14 +581,16 @@ function updateCellDOM(c, r, cellData) {
   }
 }
 
+// 毎スピン抽選するアイテム
+let currentItemsList = [];
+
 function getRandomItem() {
   if (Math.random() < GAME_CONFIG.freeSpinProb) return { type: 'free', sym: '🆓' };
-  
-  if (feverHeroes < 4 && Math.random() < 0.05) return { type: 'item', sym: '😀', ref: { type: 'fever_trigger', name: '仲間' } };
+  if (partyMembers < 3 && Math.random() < GAME_CONFIG.heroProb) return { type: 'item', sym: '😀', ref: { type: 'fever_trigger', name: '仲間' } };
 
-  let totalW = GAME_CONFIG.items.reduce((sum, item) => sum + item.weight, 0);
+  let totalW = currentItemsList.reduce((sum, item) => sum + item.weight, 0);
   let r = Math.random() * totalW; let sum = 0;
-  for(let item of GAME_CONFIG.items) {
+  for(let item of currentItemsList) {
     sum += item.weight;
     if(r <= sum) return item.type === 'blank' ? { type: 'blank' } : { type: 'item', sym: item.sym, ref: item };
   }
@@ -566,18 +614,19 @@ function animateItemsToWin(items, startRect, targetWin, callback) {
     }
 
     let completed = 0;
-    // 0.8秒以内にすべての演出が終わるようにディレイを調整
-    let delayStep = 300 / Math.max(1, items.length); 
+    // 全体で0.8秒以内に終わらせるため、ディレイを圧縮
+    let delayStep = Math.min(100, 600 / items.length); 
 
     let winPanelDisp = document.getElementById('win-display');
     let startWin = parseInt(winPanelDisp.innerText) || 0;
     let diff = targetWin - startWin;
-    let increment = diff / Math.max(1, items.length);
+    let increment = diff / items.length;
 
     items.forEach((item, index) => {
         let el = document.createElement('div');
         el.innerText = item.sym; 
         el.style.position = 'fixed';
+        // 透過なし
         el.style.left = (startRect.left) + 'px';
         el.style.top = (startRect.top) + 'px';
         el.style.fontSize = '2rem';
@@ -590,13 +639,15 @@ function animateItemsToWin(items, startRect, targetWin, callback) {
             el.style.left = (targetX - 15) + 'px';
             el.style.top = (targetY - 15) + 'px';
             el.style.transform = 'scale(0.5)';
-            el.style.opacity = '0.2';
 
             setTimeout(() => {
                 el.remove();
                 completed++;
                 
-                // WINパネルの更新とエフェクト
+                // パーティクル発生
+                spawnParticles(targetX, targetY);
+
+                // WIN加算
                 winPanelDisp.innerText = Math.floor(startWin + increment * completed);
                 winPanel.style.transform = 'scale(1.1)';
                 setTimeout(() => winPanel.style.transform = 'scale(1)', 100);
@@ -606,7 +657,7 @@ function animateItemsToWin(items, startRect, targetWin, callback) {
                     if(callback) callback();
                 }
             }, 500); 
-        }, index * delayStep + 50); 
+        }, index * delayStep); 
     });
 }
 
@@ -622,31 +673,50 @@ function startSpin(isFree) {
     currentBet = betVal; medals -= currentBet; spinCount++;
   }
 
-  // スピン開始時に発光をリセット
+  // 表示リセット
   document.querySelectorAll('.cell-glow').forEach(el => el.classList.remove('cell-glow'));
+  document.getElementById('total-win-banner').style.display = 'none';
+  document.getElementById('win-display').innerText = '0';
+  for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
 
-  if (feverSpinsLeft > 0) {
-      isFeverMode = true; feverSpinsLeft--;
+  // 肉・剣の確率変動 (1〜5%)
+  let meatW = Math.floor(Math.random() * 5) + 1;
+  let swordW = Math.floor(Math.random() * 5) + 1;
+  document.getElementById('debug-panel').innerText = `[DEBUG] 肉:${meatW}% 剣:${swordW}%`;
+
+  currentItemsList = [
+      { sym: '🍒', weight: 20, mult: 0.5, type: 'reward', name: 'チェリー' },
+      { sym: '🍇', weight: 15, mult: 1.0, type: 'reward', name: 'ブドウ' },
+      { sym: '🍊', weight: 10, mult: 2.0, type: 'reward', name: 'オレンジ' },
+      { sym: '💎', weight: 2,  mult: 10.0,type: 'reward', name: 'ダイヤ' },
+      { sym: '🍖', weight: meatW, mult: 1.0, type: 'heal', name: 'お肉(HP+1)' },
+      { sym: '🗡️', weight: swordW, mult: 1.0, type: 'buff', name: '剣(ATK+1)' }
+  ];
+  let fixedTotal = currentItemsList.reduce((s, i) => s + i.weight, 0);
+  let blankW = Math.max(10, 100 - fixedTotal); // ブランクの比率を担保
+  currentItemsList.push({ sym: '', weight: blankW, mult: 0, type: 'blank', name: '空き地' });
+
+  // 仲間モードとフィーバーの管理
+  if (partySpinsLeft > 0) {
+      partySpinsLeft--;
   } else {
-      isFeverMode = false;
-      feverHeroes = 1;
+      partyMembers = 0;
   }
+  updatePartyUI();
+
+  // フリースピン中のみフィーバーモード
+  isFeverMode = isFree;
   document.getElementById('fever-banner').style.display = isFeverMode ? 'block' : 'none';
 
   isFreeSpinMode = isFree; isSpinning = true;
   document.getElementById('spin-btn').disabled = true;
-  document.getElementById('total-win-banner').style.display = 'none';
-  
-  for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
-  
   updateUI(); playSoundSpin();
 
+  // マップ生成
   let possibleRows = [0,1,2,3]; possibleRows.sort(()=>Math.random()-0.5);
   let heroSpawnRows = [];
-  let numHeroesToSpawn = isFeverMode ? feverHeroes : 1;
-  for(let i=0; i<numHeroesToSpawn; i++) {
-      heroSpawnRows.push(possibleRows.pop());
-  }
+  let numHeroesToSpawn = partyMembers + 1; // 主人公1 + 仲間数
+  for(let i=0; i<numHeroesToSpawn; i++) heroSpawnRows.push(possibleRows.pop());
 
   let mazeCells = [];
   for(let c=1; c<5; c++) for(let r=0; r<4; r++) mazeCells.push({c, r});
@@ -676,13 +746,36 @@ function startSpin(isFree) {
     }
   }
 
+  // 停止パターンの生成
+  let patternIdx = Math.floor(Math.random() * 8);
+  let stopTicks = Array(4).fill(0).map(()=>Array(5).fill(25));
+  for(let r=0; r<4; r++) {
+    for(let c=0; c<5; c++) {
+      if (c===0) { stopTicks[r][c] = 10; continue; }
+      switch(patternIdx) {
+        case 0: stopTicks[r][c] = 25; break; // 同時
+        case 1: stopTicks[r][c] = 10 + (r+c)*2; break; // 左上から
+        case 2: stopTicks[r][c] = 10 + Math.floor(Math.random()*15); break; // ランダム
+        case 3: stopTicks[r][c] = 10 + c * 3; break; // 縦1列
+        case 4: stopTicks[r][c] = 10 + r * 4; break; // 横1列
+        case 5: let d = Math.min(c-1, 4-c, r, 3-r); stopTicks[r][c] = 15 + d * 5; break; // 外から
+        case 6: stopTicks[r][c] = nextBoard[r][c].type === 'item' ? 15 : 25; break; // アイテム先
+        case 7: stopTicks[r][c] = nextBoard[r][c].type === 'arrow' ? 15 : 25; break; // 矢印先
+      }
+      stopTicks[r][c] = Math.min(25, stopTicks[r][c]);
+    }
+  }
+
   let ticks = 0;
   let animInterval = setInterval(() => {
     ticks++;
+    let allStopped = true;
     for(let c=0; c<5; c++) {
       for(let r=0; r<4; r++) {
-        if (c === 0 && ticks > 10) { boardState[r][c] = nextBoard[r][c]; updateCellDOM(c, r, boardState[r][c]); continue; }
-        if (c > 0 && ticks > 25) { boardState[r][c] = nextBoard[r][c]; updateCellDOM(c, r, boardState[r][c]); continue; }
+        if (ticks > stopTicks[r][c]) { 
+            boardState[r][c] = nextBoard[r][c]; updateCellDOM(c, r, boardState[r][c]); continue; 
+        }
+        allStopped = false;
         
         let symDiv = document.getElementById(`sym-${c}-${r}`);
         if(c===0) {
@@ -692,14 +785,17 @@ function startSpin(isFree) {
            if(rType<0.5) { symDiv.innerHTML=''; drawArrowOnCanvas(c,r,Math.floor(Math.random()*4)); }
            else { 
                let itmSym = GAME_CONFIG.items[Math.floor(Math.random()*(GAME_CONFIG.items.length-1))].sym;
-               if (isFeverMode) { symDiv.innerHTML = `<span class="item-stack">${itmSym}${itmSym}</span>`; }
-               else { symDiv.innerText = itmSym; }
+               if (isFeverMode && DOUBLE_ITEMS.includes(itmSym)) { 
+                   symDiv.innerHTML = `<span class="item-stack">${itmSym}${itmSym}</span>`; 
+               } else { 
+                   symDiv.innerText = itmSym; 
+               }
                drawArrowOnCanvas(c,r,null); 
            }
         }
       }
     }
-    if (ticks > 25) {
+    if (allStopped || ticks > 25) {
       clearInterval(animInterval); playSoundStop();
       setTimeout(() => startRunPhase(heroSpawnRows), 500);
     }
@@ -710,7 +806,7 @@ function startSpin(isFree) {
 // 移動フェーズ
 // =============================================================================
 function startRunPhase(spawnRows) {
-  runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0 };
+  runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
   
   let activeHeroes = spawnRows.map((row, idx) => ({
       id: idx, x: 0, y: row, dir: 1, active: true,
@@ -766,12 +862,14 @@ function startRunPhase(spawnRows) {
            h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
            h.escaped = true; h.cleared = true;
            updateSpritePos(h.id, nx, ny);
+           if (!runResult.endPos) runResult.endPos = { x: nx, y: ny };
            setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
         }
         else if (nx < 1 || ny < 0 || ny > 3) {
            h.x = nx; h.y = ny; h.active = false; someoneMoved = true;
            h.escaped = true; h.cleared = false;
            updateSpritePos(h.id, nx, ny);
+           if (!runResult.endPos) runResult.endPos = { x: nx, y: ny };
            setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, GAME_CONFIG.moveSpeed);
         }
         else if (h.visited[ny][nx]) {
@@ -822,15 +920,23 @@ function evaluateRun(activeHeroes) {
     // 点灯マスの数を歩数としてカウント
     runResult.steps = document.querySelectorAll('#grid-wrapper .cell-glow').length;
 
-    let escapedHero = activeHeroes.find(h => h.escaped);
+    // アニメーションの起点計算
     let startRect = { left: window.innerWidth / 2, top: window.innerHeight / 2 };
-    if (escapedHero) {
-        let heroEl = document.getElementById(`hero-sprite-${escapedHero.id}`);
-        if(heroEl) startRect = heroEl.getBoundingClientRect();
+    if (runResult.endPos) {
+        let gw = document.getElementById('grid-wrapper').getBoundingClientRect();
+        startRect = { left: gw.left + runResult.endPos.x * 47, top: gw.top + runResult.endPos.y * 47 };
     }
+
+    // 迷子になった仲間は離脱
+    activeHeroes.forEach(h => {
+        if (h.id > 0 && !h.escaped) partyMembers--;
+    });
+    partyMembers = Math.max(0, partyMembers);
+    updatePartyUI();
 
     let processEnd = () => {
         if (anyCleared) {
+            runResult.rewards += (3 * currentBet); // 踏破報酬
             handleDeepMaze();
         } else if (anyEscaped) {
             showRpgMessage("あなたは迷宮から帰還した", () => handleRewardCalc());
@@ -848,7 +954,6 @@ function evaluateRun(activeHeroes) {
         let gainedFever = false;
         let animItems = [];
 
-        // ボーナス計算
         let stepBonus = 0;
         if (runResult.steps >= 8) { 
             stepBonus = runResult.steps * currentBet; 
@@ -861,31 +966,29 @@ function evaluateRun(activeHeroes) {
                 animItems.push({sym: '🆓'});
             } else if (item.type === 'fever_trigger') {
                 gainedFever = true;
-                feverHeroes = Math.min(4, feverHeroes + 1);
-                feverSpinsLeft += Math.floor(Math.random() * 3) + 3; 
-                isFeverMode = true;
+                partyMembers = Math.min(3, partyMembers + 1);
+                partySpinsLeft += Math.floor(Math.random() * 3) + 3; 
                 animItems.push({sym: '😀'});
             } else {
-                let amount = isFeverMode ? 2 : 1; 
+                let amount = (isFeverMode && DOUBLE_ITEMS.includes(item.sym)) ? 2 : 1; 
                 let mult = item.mult * amount;
                 if (item.type === 'heal') { hero.maxHp += amount; hero.hp = Math.min(hero.maxHp, hero.hp + amount); }
                 if (item.type === 'buff') { hero.atk += amount; }
                 if (item.type === 'reward') { runResult.rewards += (mult * currentBet); }
-                animItems.push({sym: item.sym});
+                for(let k=0; k<amount; k++) animItems.push({sym: item.sym});
             }
         });
         
-        updateCombatUI(); updateUI();
+        updateCombatUI(); updateUI(); updatePartyUI();
 
         let targetWin = parseInt(document.getElementById('win-display').innerText) + Math.floor(runResult.rewards);
 
-        // アイテムのスライドアニメーション開始
         animateItemsToWin(animItems, startRect, targetWin, null);
 
-        // アニメーションと並行してメッセージを表示
         if (gainedFever) {
             showRpgMessage("しばらく一緒に冒険してくれる仲間が増えた！", processEnd);
         } else if (anyCleared) {
+            runResult.rewards += (3 * currentBet); // アニメーション前に加算を決定しておく
             handleDeepMaze();
         } else {
             showRpgMessage("あなたは迷宮から帰還した", () => handleRewardCalc());
@@ -926,7 +1029,6 @@ function handleDeepMaze() {
       if (hero.exp >= 5) {
           startBossBattle();
       } else {
-          runResult.rewards += (hero.exp * 10 * currentBet);
           handleRewardCalc();
       }
   });
@@ -948,7 +1050,7 @@ function bossTurnHero() {
           runResult.defeatBoss = true;
           runResult.rewards += (currentBoss.mult * currentBet);
           showRpgMessage(`${currentBoss.name} をたおした！\n特大ボーナス獲得！`, () => { 
-              currentBoss = null;
+              resetHero(); // ステージクリアで初期化 (EXP=1)
               stage = stage===3 ? 1 : stage+1; 
               handleRewardCalc(); 
           });
@@ -987,7 +1089,7 @@ function handleRewardCalc() {
       let breakdown = [];
       if (runResult.items.filter(i=>i.type==='reward').length > 0) breakdown.push('アイテム獲得');
       if (runResult.steps >= 8) breakdown.push(`長距離ボーナス(+${runResult.steps * currentBet})`);
-      if (runResult.mazeCleared && !runResult.defeatBoss) breakdown.push(`最奥部ボーナス`);
+      if (runResult.mazeCleared && !runResult.defeatBoss) breakdown.push(`踏破ボーナス(+${3 * currentBet})`);
       if (runResult.defeatBoss) breakdown.push(`ボス撃破ボーナス`);
       
       document.getElementById('total-win-amount').innerText = totalWin;
@@ -1002,6 +1104,8 @@ function handleRewardCalc() {
 
 function finishTurn() {
   document.getElementById('total-win-banner').style.display = 'none';
+  // TOTAL WIN が消えたらWINを0に戻す
+  document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
   saveGameData(); recordMedalLog(medals);
   
