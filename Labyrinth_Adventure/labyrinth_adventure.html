@@ -68,15 +68,18 @@
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; justify-content: space-between; align-items: center;
     width: 100%; max-width: 450px; padding: 5px 15px; box-sizing: border-box; background: #000; border-top: 2px solid #fff; z-index: 200;
   }
-  #medal-display { font-size: 1.1rem; color: #fff; font-weight: bold; text-align: left; min-width: 120px; }
+  #medal-display { font-size: 1.1rem; color: #fff; font-weight: bold; text-align: left; min-width: 100px; }
   
+  /* ボタンエリアのグループ化 */
+  .control-buttons { display: flex; gap: 10px; align-items: center; flex-grow: 1; justify-content: flex-end; }
+
   #speed-toggle {
-    padding: 8px 15px; font-size: 1rem; font-weight: bold; color: white; border: 2px solid #fff; border-radius: 5px; cursor: pointer; background: #333; margin-right: 10px;
+    padding: 8px 15px; font-size: 1rem; font-weight: bold; color: white; border: 2px solid #fff; border-radius: 5px; cursor: pointer; background: #333; white-space: nowrap;
   }
   #speed-toggle.speed-high { background: #d00; }
   
   #spin-btn {
-    padding: 8px 30px; font-size: 1.3rem; font-weight: bold; background: #000; color: white; border: 2px solid #fff; border-radius: 5px; cursor: pointer; flex-grow: 1;
+    padding: 8px 30px; font-size: 1.3rem; font-weight: bold; background: #000; color: white; border: 2px solid #fff; border-radius: 5px; cursor: pointer;
   }
   #spin-btn:disabled { background: #333; border-color: #666; color: #888; }
 
@@ -193,7 +196,7 @@ let zzfxV = 0.3,
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v1.7)</h3>
+    <h3>リリースノート (Labyrinth Adventure v1.8)</h3>
     <div style="color:#ddd; line-height: 1.5;">
       【アップデート情報】<br>
       ・スピード切り替え機能を追加し、移動やメッセージ速度を速められるようにしました。<br>
@@ -240,7 +243,8 @@ let zzfxV = 0.3,
   </div>
 
   <div id="bottom-info-area">
-      <div id="party-area"></div>
+      <div id="party-area">
+          </div>
       <div id="combat-area">
         <div id="fever-banner">FEVER MODE!!</div>
         <div class="char-box">
@@ -269,8 +273,11 @@ let zzfxV = 0.3,
 <div id="rpg-message-box"></div>
 
 <div id="controls-row" style="display:none;">
-  <button id="speed-toggle" class="speed-low">速度: 低</button>
-  <button id="spin-btn">SPIN</button>
+  <div id="medal-display">MEDALS: <br><span id="medal-count">50</span></div>
+  <div class="control-buttons">
+      <button id="speed-toggle" class="speed-low">速度: 低</button>
+      <button id="spin-btn">SPIN</button>
+  </div>
 </div>
 
 <div id="total-win-banner">
@@ -336,15 +343,14 @@ const GAME_CONFIG = {
     turnSpeed: 2000,         
     arrowCountMin: 4,        
     arrowCountMax: 10,       
-    freeSpinProb: 0.03,      // 3%に変更
-    heroProb: 0.01,          // 1%に変更
+    freeSpinProb: 0.03,      // 3%
+    heroProb: 0.01,          // 1%
     bosses: {
         1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'オオワニ' },
         2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: 'デビルタラバガニ' },
         3: { sym: '🐲', hp: 10,atk: 4, mult: 200, name: 'ドラゴン' }
     }
 };
-// フィーバーモードで2倍になるアイテム
 const DOUBLE_ITEMS = ['🍒', '🍇', '🍊', '💎', '😀'];
 
 const getMoveSpeed = () => isHighSpeed ? GAME_CONFIG.moveSpeed / 1.5 : GAME_CONFIG.moveSpeed;
@@ -377,7 +383,6 @@ function resetHero() {
     currentBoss = null; 
 }
 
-// セーブ・ロード関数
 function setCookie(name, value, days) {
   let expires = "";
   if (days) { let date = new Date(); date.setTime(date.getTime() + (days*24*60*60*1000)); expires = "; expires=" + date.toUTCString(); }
@@ -396,7 +401,6 @@ function saveGameData() {
   setCookie("labyrinth_hero", JSON.stringify(hero), 30); setCookie("labyrinth_stage", stage, 30);
 }
 
-// 履歴ロギング
 let medalLog = JSON.parse(localStorage.getItem('labyrinth_log') || '[]');
 let logDate = localStorage.getItem('labyrinth_logDate');
 let todayStr = new Date().toDateString();
@@ -627,7 +631,6 @@ function updateCellDOM(c, r, cellData) {
   }
 }
 
-// 毎スピン抽選するアイテム
 let currentItemsList = [];
 
 function getRandomItem() {
@@ -663,7 +666,6 @@ function animateItemsToTargets(items, startRect, targetWin, callback) {
     let winPanelDisp = document.getElementById('win-display');
     let startWin = parseInt(winPanelDisp.innerText) || 0;
     
-    // WINへ飛ぶアイテムだけ増分計算
     let winTargetsCount = items.filter(i => i.target === 'win').length;
     let diff = targetWin - startWin;
     let increment = winTargetsCount > 0 ? diff / winTargetsCount : 0;
@@ -708,7 +710,6 @@ function animateItemsToTargets(items, startRect, targetWin, callback) {
                 } else {
                     heroPanel.classList.add('hit-flash');
                     setTimeout(()=>heroPanel.classList.remove('hit-flash'), 100);
-                    // ステータス反映はまとめて行うが、エフェクトだけ鳴らす
                 }
 
                 if (completed === items.length) {
@@ -734,7 +735,6 @@ function startSpin(isFree) {
 
   document.querySelectorAll('.cell-glow').forEach(el => el.classList.remove('cell-glow'));
   document.getElementById('total-win-banner').style.display = 'none';
-  // スピン開始時にWIN表示を0にする
   document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
 
@@ -833,12 +833,10 @@ function startSpin(isFree) {
         }
         allStopped = false;
         
-        // 高速ランダム描画
         if(c===0) {
             symDiv.innerText = Math.random()>0.8 ? '😀' : '';
         } else {
            let rType = Math.random();
-           // 回転中はCanvas矢印の描画を省略し、絵文字(文字の矢印やアイテム)のみで代用して軽量化・チラツキ防止
            if(rType<0.5) { 
                symDiv.innerText = ['⬆','➡','⬇','⬅'][Math.floor(Math.random()*4)];
                symDiv.style.color = '#555';
@@ -992,6 +990,7 @@ function evaluateRun(activeHeroes) {
 
     let processEnd = () => {
         if (anyCleared) {
+            runResult.rewards += (3 * currentBet); 
             handleDeepMaze();
         } else if (anyEscaped) {
             showRpgMessage("あなたは迷宮から帰還した", () => handleRewardCalc());
@@ -1166,6 +1165,7 @@ function handleRewardCalc() {
 
 function finishTurn() {
   document.getElementById('total-win-banner').style.display = 'none';
+  document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
   saveGameData(); recordMedalLog(medals);
   
