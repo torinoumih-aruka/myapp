@@ -193,11 +193,14 @@ let zzfxV = 0.3,
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v2.2)</h3>
+    <h3>リリースノート (Labyrinth Adventure v2.4)</h3>
     <div style="color:#ddd; line-height: 1.5;">
       【アップデート情報】<br>
-      ・不足していたゲーム画面やボタン等のHTML要素を復旧し、ゲームが正常に開始できるよう修正しました。<br>
-      ・各種UIやアニメーション（パーティクル、フィーバー演出等）は引き続き実装されています。<br>
+      ・欠落していた効果音とアイテム抽選機能を完全に復元しました。<br>
+      ・HP・ATKのステータス上限を「12」に設定しました。<br>
+      ・フリースピン中の獲得メダルを一括で加算するよう修正しました。<br>
+      ・道に迷った際、半歩スライドして停止する演出を追加しました。<br>
+      ・お宝アイテムの出現率が毎スピン変動するシステムを導入しました。<br>
     </div>
   </div>
 </div>
@@ -292,22 +295,25 @@ let zzfxV = 0.3,
 // スピードトグル制御
 // =============================================================================
 let isHighSpeed = false;
-document.getElementById('speed-toggle').addEventListener('click', (e) => {
-    isHighSpeed = !isHighSpeed;
-    e.target.innerText = isHighSpeed ? '速度: 高' : '速度: 低';
-    e.target.className = isHighSpeed ? 'speed-high' : 'speed-low';
+window.addEventListener('DOMContentLoaded', () => {
+    const speedToggleBtn = document.getElementById('speed-toggle');
+    if (speedToggleBtn) {
+        speedToggleBtn.addEventListener('click', (e) => {
+            isHighSpeed = !isHighSpeed;
+            e.target.innerText = isHighSpeed ? '速度: 高' : '速度: 低';
+            e.target.className = isHighSpeed ? 'speed-high' : 'speed-low';
+        });
+    }
 });
 
 // =============================================================================
-// ゲームバランス調整用コンフィグ
+// ゲームバランス調整用コンフィグ & グローバル変数
 // =============================================================================
 const GAME_CONFIG = {
     moveSpeed: 300,          
     turnSpeed: 2000,         
     arrowCountMin: 4,        
     arrowCountMax: 10,       
-    freeSpinProb: 0.03,      
-    heroProb: 0.01,          
     bosses: {
         1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'オオワニ' },
         2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: 'デビルタラバガニ' },
@@ -316,13 +322,11 @@ const GAME_CONFIG = {
 };
 const DOUBLE_ITEMS = ['🍒', '🍇', '🍊', '💎', '😀'];
 
+//let isHighSpeed = false; 
 const getMoveSpeed = () => isHighSpeed ? GAME_CONFIG.moveSpeed / 1.5 : GAME_CONFIG.moveSpeed;
 const getMsgWait = () => isHighSpeed ? 150 : 300;
 const getTurnWait = () => isHighSpeed ? GAME_CONFIG.turnSpeed / 2.5 : GAME_CONFIG.turnSpeed / 2;
 
-// =============================================================================
-// 変数・セーブデータ系
-// =============================================================================
 let medals = 50; 
 let currentBet = 5; 
 let spinCount = 0;
@@ -344,9 +348,28 @@ let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleare
 let sessionItems = [];
 let sessionTotalWin = 0;
 
+let tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
+
+// =============================================================================
+// サウンド関数
+// =============================================================================
+function playSoundSpin() { if(soundEnabled) zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]); }
+function playSoundStop() { if(soundEnabled) zzfx(...[1.0,.1,523.2,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]); }
+function playSoundStep() { if(soundEnabled) zzfx(...[,0,43,,.01,.02,4,1.8,,,50,,,,,.1,.06,.89,.01]); }
+function playSoundItem() { if(soundEnabled) zzfx(...[1,0,400,,.05,.2,1,1,,,200,.05,,,,,,.3,,.1]); }
+function playSoundHit()  { if(soundEnabled) zzfx(...[1.2,0,100,,.05,.1,4,1.5,,,150,.1,,,,,,.6,,.1]); }
+function playSoundWin()  { if(soundEnabled) zzfx(...[.8,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); }
+function playSoundLose() { if(soundEnabled) zzfx(...[1.5,0,80,,.1,.5,2,2,,,50,.2,,,,,,.8,,.1]); }
+
+// =============================================================================
+// 初期化・UI関数群
+// =============================================================================
 function resetHero(fullReset = false) {
-    if (fullReset) hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
-    else hero.exp = 0; 
+    if (fullReset) {
+        hero = { hp: 5, maxHp: 5, atk: 1, exp: 0 };
+    } else {
+        hero.exp = 0; 
+    }
     currentBoss = null; 
 }
 
@@ -524,18 +547,7 @@ function updateMainLoop() {
 updateMainLoop();
 
 // =============================================================================
-// サウンド関数
-// =============================================================================
-function playSoundSpin() { if(soundEnabled) zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]); }
-function playSoundStop() { if(soundEnabled) zzfx(...[1.0,.1,523.2,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]); }
-function playSoundStep() { if(soundEnabled) zzfx(...[,0,43,,.01,.02,4,1.8,,,50,,,,,.1,.06,.89,.01]); }
-function playSoundItem() { if(soundEnabled) zzfx(...[1,0,400,,.05,.2,1,1,,,200,.05,,,,,,.3,,.1]); }
-function playSoundHit()  { if(soundEnabled) zzfx(...[1.2,0,100,,.05,.1,4,1.5,,,150,.1,,,,,,.6,,.1]); }
-function playSoundWin()  { if(soundEnabled) zzfx(...[.8,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); }
-function playSoundLose() { if(soundEnabled) zzfx(...[1.5,0,80,,.1,.5,2,2,,,50,.2,,,,,,.8,,.1]); }
-
-// =============================================================================
-// 初期化・UIイベント
+// 初期化・メイン処理
 // =============================================================================
 window.onload = () => {
   let savedMedals = getCookie("labyrinth_medals");
@@ -548,6 +560,7 @@ document.getElementById('close-release-modal').addEventListener('click', () => {
 document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   resetHero(true); stage = 1; medals = 50; currentBet = 5; spinCount = 0; partyMembers = 0; partySpinsLeft = 0;
+  tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
   startGameUI();
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
@@ -556,6 +569,7 @@ document.getElementById('btn-continue').addEventListener('click', () => {
   let savedHero = getCookie("labyrinth_hero"); if(savedHero) hero = JSON.parse(savedHero);
   if(hero.exp === undefined) hero.exp = 0; 
   stage = parseInt(getCookie("labyrinth_stage") || 1); partyMembers = 0; partySpinsLeft = 0;
+  tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
   startGameUI();
 });
 
@@ -608,7 +622,7 @@ function updateCombatUI() {
 }
 
 // =============================================================================
-// チャート関連
+// チャート関連 (省略)
 // =============================================================================
 let chartInterval = 5; 
 document.getElementById('btn-chart').addEventListener('click', () => { document.getElementById('chart-modal').style.display = 'flex'; drawChart(); });
@@ -725,12 +739,10 @@ function updateCellDOM(c, r, cellData) {
   }
 }
 
+// 毎スピン抽選するアイテム
 let currentItemsList = [];
 
 function getRandomItem() {
-  if (Math.random() < GAME_CONFIG.freeSpinProb) return { type: 'free', sym: '🆓' };
-  if (partyMembers < 3 && Math.random() < GAME_CONFIG.heroProb) return { type: 'item', sym: '😀', ref: { type: 'fever_trigger', name: '仲間' } };
-
   let totalW = currentItemsList.reduce((sum, item) => sum + item.weight, 0);
   let r = Math.random() * totalW; let sum = 0;
   for(let item of currentItemsList) {
@@ -840,21 +852,42 @@ function startSpin(isFree) {
   if(!isFree) document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
 
-  let meatW = Math.floor(Math.random() * 5) + 1;
-  let swordW = Math.floor(Math.random() * 5) + 1;
-  document.getElementById('debug-panel').innerText = `[DEBUG] 🩷:${meatW}% 🗡️:${swordW}% 仲間:${GAME_CONFIG.heroProb*100}% FREE:${GAME_CONFIG.freeSpinProb*100}%`;
+  // お宝の確率変動 (シーソーで2%変動)
+  let keys = ['heal', 'buff', 'hero', 'free'];
+  let incKey = keys[Math.floor(Math.random() * keys.length)];
+  let decKey = keys[Math.floor(Math.random() * keys.length)];
+  if (incKey !== decKey && tRates[decKey] >= 2) {
+      tRates[incKey] += 2;
+      tRates[decKey] -= 2;
+  }
+
+  // 仲間の出現率をパーティ数に応じて減算
+  let heroRate = tRates.hero;
+  if (partyMembers === 1) heroRate *= 0.5;
+  else if (partyMembers === 2) heroRate *= 0.2;
+  else if (partyMembers >= 3) heroRate = 0;
+
+  // 各ステージのダイヤとお宝の重み
+  let diaW = stage === 1 ? 5 : (stage === 2 ? 4 : 3);
+  let treasureW = stage === 1 ? 5 : (stage === 2 ? 6 : 7);
+
+  let healW = treasureW * (tRates.heal / 100);
+  let buffW = treasureW * (tRates.buff / 100);
+  let heroW = treasureW * (heroRate / 100);
+  let freeW = treasureW * (tRates.free / 100);
 
   currentItemsList = [
-      { sym: '🍒', weight: 20, mult: 0.5, type: 'reward', name: 'チェリー' },
-      { sym: '🍇', weight: 15, mult: 1.0, type: 'reward', name: 'ブドウ' },
+      { sym: '🍒', weight: 30, mult: 0.5, type: 'reward', name: 'チェリー' },
       { sym: '🍊', weight: 10, mult: 2.0, type: 'reward', name: 'オレンジ' },
-      { sym: '💎', weight: 2,  mult: 10.0,type: 'reward', name: 'ダイヤ' },
-      { sym: '🩷', weight: meatW, mult: 1.0, type: 'heal', name: '回復(HP+1)' },
-      { sym: '🗡️', weight: swordW, mult: 1.0, type: 'buff', name: '剣(ATK+1)' }
+      { sym: '💎', weight: diaW, mult: 10.0, type: 'reward', name: 'ダイヤ' },
+      { sym: '🩷', weight: healW, mult: 1.0, type: 'heal', name: '回復(HP+1)' },
+      { sym: '🗡️', weight: buffW, mult: 1.0, type: 'buff', name: '剣(ATK+1)' },
+      { sym: '😀', weight: heroW, mult: 0, type: 'item', ref: { type: 'fever_trigger', name: '仲間' } },
+      { sym: '🆓', weight: freeW, mult: 0, type: 'free', name: 'FREE' },
+      { sym: '', weight: 55, mult: 0, type: 'blank', name: '空き地' }
   ];
-  let fixedTotal = currentItemsList.reduce((s, i) => s + i.weight, 0);
-  let blankW = Math.max(10, 100 - fixedTotal); 
-  currentItemsList.push({ sym: '', weight: blankW, mult: 0, type: 'blank', name: '空き地' });
+
+  document.getElementById('debug-panel').innerText = `[DEBUG] お宝内訳 - 🩷:${tRates.heal}% 🗡️:${tRates.buff}% 仲間:${heroRate.toFixed(1)}% FREE:${tRates.free}%`;
 
   if (partySpinsLeft > 0) {
       partySpinsLeft--;
@@ -909,14 +942,14 @@ function startSpin(isFree) {
     for(let c=0; c<5; c++) {
       if (c===0) { stopTicks[r][c] = 10; continue; }
       switch(patternIdx) {
-        case 0: stopTicks[r][c] = 25; break; // 同時
-        case 1: stopTicks[r][c] = 10 + (r+c)*2; break; // 左上から
-        case 2: stopTicks[r][c] = 10 + Math.floor(Math.random()*15); break; // ランダム
-        case 3: stopTicks[r][c] = 10 + c * 3; break; // 縦1列
-        case 4: stopTicks[r][c] = 10 + r * 4; break; // 横1列
-        case 5: let d = Math.min(c-1, 4-c, r, 3-r); stopTicks[r][c] = 15 + d * 5; break; // 外から
-        case 6: stopTicks[r][c] = nextBoard[r][c].type === 'item' ? 15 : 25; break; // アイテム先
-        case 7: stopTicks[r][c] = nextBoard[r][c].type === 'arrow' ? 15 : 25; break; // 矢印先
+        case 0: stopTicks[r][c] = 25; break; 
+        case 1: stopTicks[r][c] = 10 + (r+c)*2; break; 
+        case 2: stopTicks[r][c] = 10 + Math.floor(Math.random()*15); break; 
+        case 3: stopTicks[r][c] = 10 + c * 3; break; 
+        case 4: stopTicks[r][c] = 10 + r * 4; break; 
+        case 5: let d = Math.min(c-1, 4-c, r, 3-r); stopTicks[r][c] = 15 + d * 5; break; 
+        case 6: stopTicks[r][c] = nextBoard[r][c].type === 'item' ? 15 : 25; break; 
+        case 7: stopTicks[r][c] = nextBoard[r][c].type === 'arrow' ? 15 : 25; break; 
       }
       stopTicks[r][c] = Math.min(25, stopTicks[r][c]);
     }
@@ -1037,6 +1070,10 @@ function startRunPhase(spawnRows) {
         else if (h.visited[ny][nx]) {
            h.active = false; 
            h.escaped = false; h.cleared = false;
+           // 道に迷ったときの半歩スライド演出
+           let halfX = h.x + (nx - h.x) * 0.4;
+           let halfY = h.y + (ny - h.y) * 0.4;
+           updateSpritePos(h.id, halfX, halfY);
         }
         else {
            h.x = nx; h.y = ny; h.active = true; someoneMoved = true;
@@ -1113,6 +1150,12 @@ function evaluateRun(activeHeroes) {
         let gainedFever = false;
         let animItems = [];
 
+        let stepBonus = 0;
+        if (runResult.steps >= 8) { 
+            stepBonus = runResult.steps * currentBet; 
+            runResult.rewards += stepBonus; 
+        }
+
         runResult.items.forEach(item => {
             if (item.type === 'free') {
                 freeSpinsLeft += 3;
@@ -1130,8 +1173,11 @@ function evaluateRun(activeHeroes) {
                 
                 let tgt = ['heal', 'buff'].includes(item.type) ? 'hero' : 'win';
 
-                if (item.type === 'heal') { hero.maxHp += amount; hero.hp = Math.min(hero.maxHp, hero.hp + amount); }
-                if (item.type === 'buff') { hero.atk += amount; }
+                if (item.type === 'heal') { 
+                    hero.maxHp = Math.min(12, hero.maxHp + amount); 
+                    hero.hp = Math.min(12, Math.min(hero.maxHp, hero.hp + amount)); 
+                }
+                if (item.type === 'buff') { hero.atk = Math.min(12, hero.atk + amount); }
                 if (item.type === 'reward') { runResult.rewards += (mult * currentBet); }
                 
                 for(let k=0; k<amount; k++) {
@@ -1259,8 +1305,8 @@ function bossTurnHero() {
                           resetHero(true); 
                           stage = 1;
                       }
-                      currentBoss = null;
                       
+                      updateCombatUI();
                       handleRewardCalc(); 
                   }, isHighSpeed ? 500 : 800);
               }, 50);
@@ -1280,7 +1326,8 @@ function bossTurnEnemy() {
           playSoundLose();
           showRpgMessage(`😀 は たおれてしまった...\nステージ１からやりなおしだ。`, () => {
               resetHero(true); 
-              stage = 1; 
+              stage = 1;
+              updateCombatUI(); 
               handleRewardCalc();
           });
       } else {
@@ -1309,9 +1356,7 @@ function handleRewardCalc() {
               return s;
           }).join('');
           
-          let breakdownText = "";
-          if(isFreeSpinMode) breakdownText = "フリースピン TOTAL";
-          else if(spinWin > 0) breakdownText = "獲得アイテム＆ボーナス";
+          let breakdownText = isFreeSpinMode ? "フリースピン TOTAL" : "獲得アイテム＆ボーナス";
           
           document.getElementById('win-breakdown').innerHTML = breakdownText;
           document.getElementById('total-win-banner').style.display = 'block';
@@ -1324,7 +1369,7 @@ function handleRewardCalc() {
 
 function finishTurn() {
   document.getElementById('total-win-banner').style.display = 'none';
-  document.getElementById('win-display').innerText = '0';
+  if(!isFreeSpinMode) document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
   saveGameData(); recordMedalLog(medals);
   
