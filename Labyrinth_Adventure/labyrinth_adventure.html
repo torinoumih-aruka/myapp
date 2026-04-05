@@ -35,6 +35,29 @@
   }
 
   /* =========================================
+     通知機能のスタイル
+     ========================================= */
+  #ticker-area {
+    width: 100%; background: #111; border-bottom: 1px solid #333;
+    padding: 2px 0; overflow: hidden; position: relative;
+    height: 1rem; z-index: 120;
+  }
+  #ticker-text {
+    position: absolute; white-space: nowrap;
+    font-size: 0.7rem; color: #0ff; line-height: 1rem;
+    animation: tickerAnim 15s linear infinite;
+  }
+  @keyframes tickerAnim { 0% { left: 100%; } 100% { left: -100%; } }
+
+  #event-notification {
+    position: fixed; top: 0; left: 0; width: 100%;
+    background: rgba(255, 0, 0, 0.9); color: #fff;
+    font-size: 0.8rem; font-weight: bold; text-align: center;
+    padding: 5px 0; z-index: 3500; display: none;
+    box-shadow: 0 2px 10px rgba(255,0,0,0.5);
+  }
+
+  /* =========================================
      2. 共通UIコンポーネント
      ========================================= */
   #start-menu {
@@ -132,7 +155,18 @@
   .cell-symbol { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 2; transition: top 0.1s; }
   canvas.arrow-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
   .cell-glow { background-color: var(--cell-glow) !important; box-shadow: 0 0 15px var(--cell-glow); }
-  .item-stack { display: inline-block; letter-spacing: -9px; white-space: nowrap; padding-right: 9px; }
+  
+  /* お宝の絵文字自体の発光エフェクト */
+  .treasure-glow { 
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff0, 0 0 30px #ff8800; 
+      animation: pulseTreasure 0.8s infinite alternate; 
+  }
+  @keyframes pulseTreasure {
+      from { filter: brightness(1); transform: scale(1); }
+      to { filter: brightness(1.3); transform: scale(1.1); }
+  }
+
+  .item-stack { display: inline-block; letter-spacing: -9px; white-space: nowrap; padding-right: 11px; }
 
   #bottom-info-area { display: flex; width: 100%; max-width: 400px; justify-content: space-between; align-items: flex-start; margin-top: 10px; z-index: 10; padding: 0 10px; box-sizing: border-box; }
   #party-area { width: 50px; display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 5px; padding: 5px 0; min-height: 120px; box-sizing: border-box; }
@@ -145,7 +179,9 @@
   .char-emoji { font-size: 2.5rem; margin-bottom: 5px; transition: transform 0.1s; text-align: center; }
   .char-stats { text-align: left; width: 100%; padding-left: 10px; box-sizing: border-box; }
   .vs-text { font-size: 1.2rem; font-weight: bold; font-style: italic; color: #f00; text-shadow: 2px 2px 0 #fff; margin: 0 5px; }
+  
   .emoji-stats { font-size: 9px; line-height: 1.2; letter-spacing: -5px; display: inline-block; vertical-align: middle; white-space: nowrap; }
+  
   #debug-panel { font-size: 0.7rem; color: #888; margin-top: 5px; z-index: 10;}
 
   .hero-sprite { position: absolute; width: 45px; height: 45px; display: none; justify-content: center; align-items: center; font-size: 1.8rem; z-index: 20; text-shadow: 0 0 10px #fff; }
@@ -161,7 +197,8 @@
   #total-win-banner { position: fixed; top: 50%; left: 50%; width: 100%; max-width: 450px; background: rgba(0,0,0,0.95); color: #fff; text-align: center; padding: 20px 0; transform: translate(-50%, -50%); z-index: 150; display: none; border-top: 4px solid #fff; border-bottom: 4px solid #fff; }
   #total-win-banner h2 { font-size: 1.2rem; margin: 0; }
   #total-win-banner h1 { margin: 10px 0; font-size: 3rem; }
-  #win-collected-items { font-size: 1.5rem; letter-spacing: -3px; margin-bottom: 10px; min-height: 2rem; }
+  /* 指定のletter-spacingへ変更 */
+  #win-collected-items { font-size: 1.5rem; letter-spacing: -4px; margin-bottom: 10px; min-height: 2rem; }
   #win-breakdown { font-size: 0.9rem; color: #aaa; text-align: left; display: inline-block; }
 
   .shake { animation: shakeAnim 0.3s; }
@@ -181,6 +218,9 @@ let zzfxV = 0.3,
     };
 </script>
 
+<div id="ticker-area"><div id="ticker-text">Welcome to Labyrinth Adventure!</div></div>
+<div id="event-notification"><span id="event-notification-text"></span></div>
+
 <div id="start-menu">
   <h1>Labyrinth<br>Adventure</h1>
   <button class="menu-btn" id="btn-newgame">はじめから</button>
@@ -190,17 +230,59 @@ let zzfxV = 0.3,
   </div>
 </div>
 
+<div id="rule-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="close-modal" id="close-rule-modal">&times;</div>
+    <h3 style="margin-top:0; color: #ff0;">遊び方・ルール</h3>
+    <div style="color:#ddd; line-height: 1.5; font-size: 0.9rem;">
+
+	  <p font-weight: bold;>迷宮の奥に眠るお宝を集めよう！</p>
+	  <p>このゲームは、迷宮探索をモチーフとしたビデオスロットゲームです。SPINを押すと、BET数分のメダルを支払い、自動的に迷宮を探索します。</p>
+	  <p>あなた（😀）は、迷宮内の矢印マークに沿って迷宮を探索します。</p>
+	  <p>迷宮の枠外に移動することができると、迷宮内で拾ったお宝を獲得することができます。また、迷宮内の最奥部（右端）に到達すると経験値(EXP)を獲得することができます。</p>
+	  <p>経験値が5に達すると、迷宮内のヌシと戦いになります。ヌシを倒すことができれば、ヌシが守っているお宝を獲得でき、更に、次の迷宮に進むことができます。</p>
+
+	  <p font-weight: bold;>仲間を見つけて冒険を有利に進めよう！</p>
+	  <p>迷宮内には、同じ志を持つ仲間がたまに現れます。仲間を見つけて迷宮から脱出することができれば、あなたのパーティに仲間が加わります。</p>
+	  <p>仲間も迷宮内で迷子になることがあります。迷宮内で迷子になると、パーティから離脱してしまいます。</p>
+	  <p>※仲間は、ヌシとの戦いには参加しません</p>
+
+	  <p font-weight: bold;>幻の迷宮を見つけよう！</p>
+	  <p>遊んでいると、たまに隠しステージへ続くゲートが見つけることがあるとか…</p>
+	  <p>ゲートが出現する時間に近くなると、画面上部分に通知が表示されます。</p>
+	  <p>全プレイヤー、同じ時間にゲートが出現するので、通知が表示されたら他のプレイヤーに教えてあげましょう</p>
+
+      <strong>【図柄の配当倍率】</strong><br>
+      🍒 チェリー: x0.5<br>
+      🍇 ブドウ: x1.0<br>
+      🍊 オレンジ: x2.0<br>
+      💎 ダイヤ: x10.0<br><br>
+
+      <strong>【長距離ボーナス】</strong><br>
+      <p>8マス以上歩いて帰還すると、マス数に応じたボーナスを獲得します。</p>
+      <p>8マス：x8、9マス：x10、10マス：x15、11マス：x20、12マス：x30、13マス：x50、14マス：x80、15マス：x150、マス：x400</p>
+
+      <strong>【踏破ボーナス】</strong><br>
+      <p>迷路の最奥部（右端）に到達すると、x1を獲得します。<.p>
+      
+      <strong>【ヌシ撃破ボーナス】</strong><br>
+      <p>最奥部に到達して経験値を「5」集めると、ヌシとの戦いに突入します。見事撃破できれば、ヌシに応じた特大ボーナス！</p>
+      🐊 わるいワニ (STAGE 1): x50<br>
+      🦀 大王タラバガニ (STAGE 2): x80<br>
+      🐲 ドラゴン (STAGE 3): x200<br>
+    </div>
+  </div>
+</div>
+
 <div id="release-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="close-modal" id="close-release-modal">&times;</div>
-    <h3>リリースノート (Labyrinth Adventure v2.4)</h3>
+    <h3>リリースノート (Labyrinth Adventure v2.6)</h3>
     <div style="color:#ddd; line-height: 1.5;">
       【アップデート情報】<br>
-      ・欠落していた効果音とアイテム抽選機能を完全に復元しました。<br>
-      ・HP・ATKのステータス上限を「12」に設定しました。<br>
-      ・フリースピン中の獲得メダルを一括で加算するよう修正しました。<br>
-      ・道に迷った際、半歩スライドして停止する演出を追加しました。<br>
-      ・お宝アイテムの出現率が毎スピン変動するシステムを導入しました。<br>
+      ・お宝が抽選された際、絵文字自体が発光し、星屑のパーティクルが飛び散る演出を追加しました。<br>
+      ・画面右上の「📖」アイコンから、いつでもルールや配当倍率を確認できるようになりました。<br>
+      ・文字間隔（letter-spacing）の調整を行いました。<br>
     </div>
   </div>
 </div>
@@ -229,6 +311,7 @@ let zzfxV = 0.3,
     <div class="panel p-cnt" id="spin-counter-btn"><div>CNT</div><span id="spin-counter">0</span></div>
     <div class="panel p-win"><div>WIN</div><span id="win-display">0</span></div>
     <div class="panel p-free" id="free-spin-panel"><div style="color:#0ff;">FREE</div><span id="free-spin-display" style="color:#0ff;">0</span></div>
+    <div class="panel" id="btn-rule" title="ルール" style="cursor: pointer; font-size: 1.2rem; margin-left: 5px;">📖</div>
   </div>
 
   <div id="top-header-area">
@@ -261,7 +344,7 @@ let zzfxV = 0.3,
         </div>
         <div class="vs-text">VS</div>
         <div class="char-box">
-          <div id="boss-name-disp" class="char-name">オオワニ</div>
+          <div id="boss-name-disp" class="char-name">わるいワニ</div>
           <div id="boss-emoji" class="char-emoji">🐊</div>
           <div class="char-stats" id="boss-stats-container">
             HP:<span id="boss-hp-disp" class="emoji-stats"></span><br>
@@ -291,10 +374,10 @@ let zzfxV = 0.3,
 </div>
 
 <script>
-// =============================================================================
-// スピードトグル制御
-// =============================================================================
 let isHighSpeed = false;
+// =============================================================================
+// モーダル・スピードトグル制御
+// =============================================================================
 window.addEventListener('DOMContentLoaded', () => {
     const speedToggleBtn = document.getElementById('speed-toggle');
     if (speedToggleBtn) {
@@ -304,7 +387,114 @@ window.addEventListener('DOMContentLoaded', () => {
             e.target.className = isHighSpeed ? 'speed-high' : 'speed-low';
         });
     }
+
+    document.getElementById('btn-rule').addEventListener('click', () => {
+        document.getElementById('rule-modal').style.display = 'flex';
+    });
+    document.getElementById('close-rule-modal').addEventListener('click', () => {
+        document.getElementById('rule-modal').style.display = 'none';
+    });
 });
+
+// =============================================================================
+// 時間管理・通知機能
+// =============================================================================
+let eventNotifTimer = null;
+let lastNotifiedMinute = -1;
+let bonusTimes = ["0630", "1425", "2030", "2230", "2330"];
+
+/**
+ * 現在の時刻がボーナスタイムの配列に含まれているかを判定する関数
+ * @param {string[]} bonusTimes - "HHMM" 形式の文字列配列
+ * @param {Date} now - 判定対象のDateオブジェクト
+ * @returns {boolean} 一致する場合はtrue、一致しない場合はfalse
+ */
+function isBonusTime(pBonusTimes, now) {
+  // 時、分を取得して2桁の文字列にパディングする
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // "HHMM" 形式の文字列を作成
+  const currentTimeStr = hours + minutes;
+  
+  // 配列に含まれているかを判定して返却
+  return pBonusTimes.includes(currentTimeStr);
+}
+
+/**
+ * 直近のボーナスタイムまでの残り分数を取得する関数
+ * @returns {number} 残り分数
+ */
+function getMinutesToNextBonus() {
+  const now = new Date();
+  // 現在時刻を「通算分」に変換 (例: 14時25分 -> 14 * 60 + 25 = 865分)
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // bonusTimes配列の各時刻を「通算分」に変換
+  const bonusMinutesList = bonusTimes.map(timeStr => {
+    const hours = parseInt(timeStr.substring(0, 2), 10);
+    const minutes = parseInt(timeStr.substring(2, 4), 10);
+    return hours * 60 + minutes;
+  });
+
+  // 現在時刻から各ボーナスタイムまでの差分（残り分）を計算
+  const diffs = bonusMinutesList.map(bonusMin => {
+    let diff = bonusMin - currentMinutes;
+    
+    // 既に今日のその時間を過ぎている場合は、翌日の時間として扱う
+    // (24時間 ＝ 1440分 を足す)
+    if (diff < 0) {
+      diff += 24 * 60;
+    }
+    return diff;
+  });
+
+  // 算出した差分の中から、最も小さい値（＝一番近い時間）を返す
+  return Math.min(...diffs);
+}
+
+
+function showEventNotification(text) {
+  let el = document.getElementById('event-notification');
+  let txtEl = document.getElementById('event-notification-text');
+  if(el && txtEl) {
+    txtEl.innerText = text; el.style.display = 'block';
+    if (eventNotifTimer) clearTimeout(eventNotifTimer);
+    eventNotifTimer = setTimeout(() => { el.style.display = 'none'; }, 30000); 
+  }
+}
+
+function updateTimeAndNotifications() {
+    let now = new Date();
+    let m = now.getMinutes();
+    let tickerEl = document.getElementById('ticker-text');
+    
+    let isBonus = isBonusTime(bonusTimes,now);
+    
+    // 次のボーナスタイムまでの分を取得
+    let remain = getMinutesToNextBonus();
+
+    if (isBonus) {
+        tickerEl.innerText = "【ゲート出現中】隠しステージに通じるゲートが出現！";
+    } else {
+    	if(remain <= 15){
+	        tickerEl.innerText = `【まもなく開始】あと${remain}分で、隠しステージに通じるゲートが出現！`;
+	    }
+    }
+
+    if (remain !== lastNotifiedMinute) {
+        if (remain === 30 || remain === 15 || remain === 10 || remain === 5 || remain === 1) {
+            let nextText = `あと${remain}分で`;
+            showEventNotification(`${nextText}隠しステージのゲートが出現します！`);
+        }
+        lastNotifiedMinute = m;
+    }
+}
+setInterval(updateTimeAndNotifications, 1000);
+
+
+
+
 
 // =============================================================================
 // ゲームバランス調整用コンフィグ & グローバル変数
@@ -315,14 +505,13 @@ const GAME_CONFIG = {
     arrowCountMin: 4,        
     arrowCountMax: 10,       
     bosses: {
-        1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'オオワニ' },
-        2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: 'デビルタラバガニ' },
+        1: { sym: '🐊', hp: 3, atk: 1, mult: 50,  name: 'わるいワニ' },
+        2: { sym: '🦀', hp: 5, atk: 2, mult: 80,  name: '大王タラバガニ' },
         3: { sym: '🐲', hp: 10,atk: 4, mult: 200, name: 'ドラゴン' }
     }
 };
-const DOUBLE_ITEMS = ['🍒', '🍇', '🍊', '💎', '😀'];
+const DOUBLE_ITEMS = ['🍒', '🍇', '🍊', '💎'];
 
-//let isHighSpeed = false; 
 const getMoveSpeed = () => isHighSpeed ? GAME_CONFIG.moveSpeed / 1.5 : GAME_CONFIG.moveSpeed;
 const getMsgWait = () => isHighSpeed ? 150 : 300;
 const getTurnWait = () => isHighSpeed ? GAME_CONFIG.turnSpeed / 2.5 : GAME_CONFIG.turnSpeed / 2;
@@ -343,23 +532,30 @@ let boardState = [];
 let freeSpinsLeft = 0;
 let isFreeSpinMode = false;
 let isSpinning = false;
-let runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
+let runResult = { rewards: 0, steps: 0, items: [], warped: false, defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
+
+// 隠しステージ管理
+let isSecretStage = false;
+let previousStage = 1;
 
 let sessionItems = [];
 let sessionTotalWin = 0;
+let bossWin = 0;
 
 let tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
 
 // =============================================================================
 // サウンド関数
 // =============================================================================
-function playSoundSpin() { if(soundEnabled) zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]); }
-function playSoundStop() { if(soundEnabled) zzfx(...[1.0,.1,523.2,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]); }
-function playSoundStep() { if(soundEnabled) zzfx(...[,0,43,,.01,.02,4,1.8,,,50,,,,,.1,.06,.89,.01]); }
-function playSoundItem() { if(soundEnabled) zzfx(...[1,0,400,,.05,.2,1,1,,,200,.05,,,,,,.3,,.1]); }
-function playSoundHit()  { if(soundEnabled) zzfx(...[1.2,0,100,,.05,.1,4,1.5,,,150,.1,,,,,,.6,,.1]); }
-function playSoundWin()  { if(soundEnabled) zzfx(...[.8,0,440,.05,.15,.2,2,.5,,,150,.1,,,,,,.5,.25,.05]); }
-function playSoundLose() { if(soundEnabled) zzfx(...[1.5,0,80,,.1,.5,2,2,,,50,.2,,,,,,.8,,.1]); }
+function playSoundSpin() { if(soundEnabled) zzfx(...[2,0,600,,.04,.13,1,2,,,109,.09,,,,,,.63,.05,,-1412]); } // SPINボタン押下
+function playSoundStop() { if(soundEnabled) zzfx(...[1.0,.1,523.2,.03,.02,0,4,1.3,,,,,,,,,.1,1.1,,.02,488]); } // リール停止音 
+function playSoundStep() { if(soundEnabled) zzfx(...[,0,43,,.01,.02,4,1.8,,,50,,,,,.1,.06,.89,.01]); } // 歩行音
+function playSoundItem() { if(soundEnabled) zzfx(...[1,0,400,,.05,.2,1,1,,,200,.05,,,,,,.3,,.1]); } // アイテム拾った音
+function playSoundHit()  { if(soundEnabled) zzfx(...[1.2,0,100,,.05,.1,4,1.5,,,150,.1,,,,,,.6,,.1]); } // 攻撃音
+function playSoundWin()  { if(soundEnabled) zzfx(...[.4,0,245,,.1,.25,1,0,,,300,,.05,,,,,.8,,,117]); } // TOTAL WIN
+function playSoundLose() { if(soundEnabled) zzfx(...[1.5,0,80,,.1,.5,2,2,,,50,.2,,,,,,.8,,.1]); } // 負けた音
+function playSoundItemNext() { if(soundEnabled) zzfx(...[,0,541,.02,.1,,,4,,,387,.07,.02,,,,,.67,.01]); } // お宝出現
+function playSoundItemGet() { if(soundEnabled) zzfx(...[.9,0,306,,,.2,1,1.5,,,300,.04,,,,,,.98,,,198]); } // 脱出してアイテムを正式に獲得するとき
 
 // =============================================================================
 // 初期化・UI関数群
@@ -437,6 +633,7 @@ function getStageColors() {
         feverHue = (feverHue + 1) % 360;
         return { top: hslToRgb(feverHue, 80, 20), bot: hslToRgb((feverHue + 60) % 360, 80, 50) };
     }
+    if (isSecretStage) return { top: [120, 100, 0], bot: [220, 200, 0] }; // 幻の迷宮
     if (stage === 1) return { top: [0, 30, 15], bot: [40, 100, 40] }; 
     if (stage === 2) return { top: [0, 15, 40], bot: [10, 100, 160] }; 
     return { top: [40, 0, 0], bot: [150, 30, 30] }; 
@@ -461,13 +658,38 @@ function spawnParticles(x, y) {
     particles.push({
       x: x, y: y,
       vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12,
-      life: 1.0, color: `hsl(45, 100%, ${50 + Math.random()*30}%)` 
+      life: 1.0, color: `hsl(45, 100%, ${50 + Math.random()*30}%)`,
+      type: 'explosion'
     });
   }
 }
 
+// お宝出現時のキラキラパーティクル
+function spawnTreasureParticles(x, y) {
+    for(let i=0; i<15; i++) {
+        particles.push({
+            x: x + (Math.random() - 0.5) * 40,
+            y: y + (Math.random() - 0.5) * 40,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -1 - Math.random() * 2,
+            life: 1.0,
+            color: Math.random() > 0.5 ? '#fff' : '#ff0',
+            type: 'star'
+        });
+    }
+}
+
 function addBgParticle() {
-    if (isFeverMode) {
+    if (isSecretStage) {
+        if(Math.random() < 0.4) {
+            let colors = ['#ffd700', '#c0c0c0', '#ff4444', '#44ff44'];
+            bgParticles.push({
+                type: 'secret', x: Math.random() * fxCanvas.width, y: -20,
+                vx: (Math.random() - 0.5) * 1, vy: 1 + Math.random() * 3, r: 2 + Math.random() * 4,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
+    } else if (isFeverMode) {
         if(Math.random() < 0.2) {
             bgParticles.push({
                 type: 'fever', x: Math.random() * fxCanvas.width, y: -20,
@@ -517,6 +739,10 @@ function updateMainLoop() {
           else { fxCtx.beginPath(); fxCtx.moveTo(0, -p.size/2); fxCtx.lineTo(p.size/2, p.size/2); fxCtx.lineTo(-p.size/2, p.size/2); fxCtx.fill(); }
           fxCtx.restore();
           if (p.y > fxCanvas.height + 30) bgParticles.splice(i, 1);
+      } else if (p.type === 'secret') {
+          fxCtx.fillStyle = p.color;
+          fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI*2); fxCtx.fill();
+          if (p.y > fxCanvas.height + 30) bgParticles.splice(i, 1);
       } else if (p.type === 'wind') {
           fxCtx.strokeStyle = `rgba(255,255,255,${p.alpha})`; fxCtx.lineWidth = 1.5;
           fxCtx.beginPath(); fxCtx.moveTo(p.x, p.y); fxCtx.lineTo(p.x + p.len, p.y); fxCtx.stroke();
@@ -537,8 +763,24 @@ function updateMainLoop() {
     let p = particles[i];
     p.x += p.vx; p.y += p.vy; p.life -= 0.04;
     if(p.life <= 0) { particles.splice(i, 1); continue; }
-    pCtx.globalAlpha = p.life; pCtx.fillStyle = p.color;
-    pCtx.beginPath(); pCtx.arc(p.x, p.y, 4 + p.life*2, 0, Math.PI*2); pCtx.fill();
+    
+    pCtx.globalAlpha = p.life;
+    if (p.type === 'star') {
+        pCtx.fillStyle = p.color;
+        pCtx.beginPath();
+        pCtx.moveTo(p.x, p.y - 4);
+        pCtx.lineTo(p.x + 1, p.y - 1);
+        pCtx.lineTo(p.x + 4, p.y);
+        pCtx.lineTo(p.x + 1, p.y + 1);
+        pCtx.lineTo(p.x, p.y + 4);
+        pCtx.lineTo(p.x - 1, p.y + 1);
+        pCtx.lineTo(p.x - 4, p.y);
+        pCtx.lineTo(p.x - 1, p.y - 1);
+        pCtx.fill();
+    } else {
+        pCtx.fillStyle = p.color;
+        pCtx.beginPath(); pCtx.arc(p.x, p.y, 4 + p.life*2, 0, Math.PI*2); pCtx.fill();
+    }
   }
   pCtx.globalAlpha = 1.0;
   
@@ -561,6 +803,7 @@ document.getElementById('btn-newgame').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
   resetHero(true); stage = 1; medals = 50; currentBet = 5; spinCount = 0; partyMembers = 0; partySpinsLeft = 0;
   tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
+  isSecretStage = false;
   startGameUI();
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
@@ -570,6 +813,7 @@ document.getElementById('btn-continue').addEventListener('click', () => {
   if(hero.exp === undefined) hero.exp = 0; 
   stage = parseInt(getCookie("labyrinth_stage") || 1); partyMembers = 0; partySpinsLeft = 0;
   tRates = { heal: 30, buff: 30, hero: 20, free: 20 };
+  isSecretStage = false;
   startGameUI();
 });
 
@@ -595,9 +839,9 @@ function updatePartyUI() {
       partyArea.appendChild(em);
   }
   if (partyMembers > 0) {
-      let sp = document.createElement('div');
-      sp.id = 'party-spins'; sp.innerText = `残り\n${partySpinsLeft}`;
-      partyArea.appendChild(sp);
+//      let sp = document.createElement('div');
+//      sp.id = 'party-spins'; sp.innerText = `残り\n${partySpinsLeft}`;
+//      partyArea.appendChild(sp);
   }
 }
 
@@ -612,12 +856,25 @@ function updateCombatUI() {
   document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(Math.max(0, currentBoss.hp));
   document.getElementById('boss-atk-disp').innerText = '🗡️'.repeat(Math.max(0, currentBoss.atk));
   document.getElementById('boss-name-disp').innerText = currentBoss.name;
-  
+    
   let root = document.documentElement;
-  let titleText = `STAGE ${stage}: `;
-  if(stage === 1) { root.style.setProperty('--cell-bg', '#021'); root.style.setProperty('--cell-glow', '#4f4'); titleText += '草原'; }
-  else if(stage === 2) { root.style.setProperty('--cell-bg', '#013'); root.style.setProperty('--cell-glow', '#0ff'); titleText += '海'; }
-  else { root.style.setProperty('--cell-bg', '#300'); root.style.setProperty('--cell-glow', '#f44'); titleText += '火山'; }
+  let titleText = "";
+  if (isSecretStage) {
+      root.style.setProperty('--cell-bg', '#330'); root.style.setProperty('--cell-glow', '#ff0');
+      titleText = "STAGE ?: 幻の迷宮";
+
+	  document.getElementById('boss-emoji').innerText = "";
+	  document.getElementById('boss-hp-disp').innerText = '🩷'.repeat(0);
+	  document.getElementById('boss-atk-disp').innerText = '🗡️'.repeat(0);
+	  document.getElementById('boss-name-disp').innerText = "";
+
+
+  } else {
+      titleText = `STAGE ${stage}: `;
+      if(stage === 1) { root.style.setProperty('--cell-bg', '#021'); root.style.setProperty('--cell-glow', '#4f4'); titleText += '草原'; }
+      else if(stage === 2) { root.style.setProperty('--cell-bg', '#013'); root.style.setProperty('--cell-glow', '#0ff'); titleText += '海'; }
+      else { root.style.setProperty('--cell-bg', '#300'); root.style.setProperty('--cell-glow', '#f44'); titleText += '火山'; }
+  }
   document.getElementById('stage-title').innerText = titleText;
 }
 
@@ -720,7 +977,7 @@ function drawArrowOnCanvas(c, r, dir, color='#888') {
 function updateCellDOM(c, r, cellData) {
   let symDiv = document.getElementById(`sym-${c}-${r}`);
   if(symDiv) {
-      if(cellData.type === 'item') {
+      if(cellData.type === 'item' || cellData.type === 'warp') {
           if (isFeverMode && DOUBLE_ITEMS.includes(cellData.sym)) {
               symDiv.innerHTML = `<span class="item-stack">${cellData.sym}${cellData.sym}</span>`;
           } else {
@@ -739,10 +996,17 @@ function updateCellDOM(c, r, cellData) {
   }
 }
 
-// 毎スピン抽選するアイテム
 let currentItemsList = [];
 
 function getRandomItem() {
+  let now = new Date();
+  // ボーナスタイムか判定
+  let isBonus = isBonusTime(bonusTimes,now);
+  
+  if (!isSecretStage && isBonus && Math.random() < 0.5) {
+      return { type: 'warp', sym: '🌀', ref: { type: 'warp', name: 'ワープ' } };
+  }
+
   let totalW = currentItemsList.reduce((sum, item) => sum + item.weight, 0);
   let r = Math.random() * totalW; let sum = 0;
   for(let item of currentItemsList) {
@@ -779,7 +1043,7 @@ function animateItemsToTargets(items, startRect, targetWin, callback) {
 
     items.forEach((item, index) => {
         let el = document.createElement('div');
-        let displaySym = item.sym.replace('(大)','');
+        let displaySym = item.sym.replace(/\(大\)/g, '');
         el.innerText = displaySym; 
         el.style.position = 'fixed';
         el.style.left = (startRect.left) + 'px';
@@ -818,6 +1082,8 @@ function animateItemsToTargets(items, startRect, targetWin, callback) {
                     heroPanel.classList.add('hit-flash');
                     setTimeout(()=>heroPanel.classList.remove('hit-flash'), 100);
                 }
+                
+                playSoundItemGet();
 
                 if (completed === items.length) {
                     winPanelDisp.innerText = Math.floor(targetWin);
@@ -848,11 +1114,11 @@ function startSpin(isFree) {
   }
 
   document.querySelectorAll('.cell-glow').forEach(el => el.classList.remove('cell-glow'));
+  document.querySelectorAll('.treasure-glow').forEach(el => el.classList.remove('treasure-glow'));
   document.getElementById('total-win-banner').style.display = 'none';
   if(!isFree) document.getElementById('win-display').innerText = '0';
   for(let i=0; i<4; i++) document.getElementById(`hero-sprite-${i}`).style.display = 'none';
 
-  // お宝の確率変動 (シーソーで2%変動)
   let keys = ['heal', 'buff', 'hero', 'free'];
   let incKey = keys[Math.floor(Math.random() * keys.length)];
   let decKey = keys[Math.floor(Math.random() * keys.length)];
@@ -861,36 +1127,35 @@ function startSpin(isFree) {
       tRates[decKey] -= 2;
   }
 
-  // 仲間の出現率をパーティ数に応じて減算
   let heroRate = tRates.hero;
-  if (partyMembers === 1) heroRate *= 0.5;
-  else if (partyMembers === 2) heroRate *= 0.2;
+  if (partyMembers === 1) heroRate *= 0.7;
+  else if (partyMembers === 2) heroRate *= 0.5;
   else if (partyMembers >= 3) heroRate = 0;
 
-  // 各ステージのダイヤとお宝の重み
-  let diaW = stage === 1 ? 5 : (stage === 2 ? 4 : 3);
-  let treasureW = stage === 1 ? 5 : (stage === 2 ? 6 : 7);
-
-  let healW = treasureW * (tRates.heal / 100);
-  let buffW = treasureW * (tRates.buff / 100);
-  let heroW = treasureW * (heroRate / 100);
-  let freeW = treasureW * (tRates.free / 100);
-
-  currentItemsList = [
-      { sym: '🍒', weight: 30, mult: 0.5, type: 'reward', name: 'チェリー' },
-      { sym: '🍊', weight: 10, mult: 2.0, type: 'reward', name: 'オレンジ' },
-      { sym: '💎', weight: diaW, mult: 10.0, type: 'reward', name: 'ダイヤ' },
-      { sym: '🩷', weight: healW, mult: 1.0, type: 'heal', name: '回復(HP+1)' },
-      { sym: '🗡️', weight: buffW, mult: 1.0, type: 'buff', name: '剣(ATK+1)' },
-      { sym: '😀', weight: heroW, mult: 0, type: 'item', ref: { type: 'fever_trigger', name: '仲間' } },
-      { sym: '🆓', weight: freeW, mult: 0, type: 'free', name: 'FREE' },
-      { sym: '', weight: 55, mult: 0, type: 'blank', name: '空き地' }
-  ];
-
-  document.getElementById('debug-panel').innerText = `[DEBUG] お宝内訳 - 🩷:${tRates.heal}% 🗡️:${tRates.buff}% 仲間:${heroRate.toFixed(1)}% FREE:${tRates.free}%`;
+  if (isSecretStage) {
+      currentItemsList = [
+          { sym: '🍇', weight: 15, mult: 1.0, type: 'reward', name: 'ブドウ' },
+          { sym: '💎', weight: 35, mult: 10.0, type: 'reward', name: 'ダイヤ' },
+          { sym: '🩷', weight: 30, mult: 1.0, type: 'heal', name: '回復(HP+1)' },
+          { sym: '🗡️', weight: 20, mult: 1.0, type: 'buff', name: '剣(ATK+1)' }
+      ];
+      document.getElementById('debug-panel').innerText = `[DEBUG] 幻の迷宮 - お宝確定モード！`;
+  } else {
+      currentItemsList = [
+          { sym: '🍒', weight: 30, mult: 0.5, type: 'reward', name: 'チェリー' },
+          { sym: '🍊', weight: 10, mult: 2.0, type: 'reward', name: 'オレンジ' },
+          { sym: '💎', weight: (stage === 1 ? 5 : (stage === 2 ? 4 : 3)), mult: 10.0, type: 'reward', name: 'ダイヤ' },
+          { sym: '🩷', weight: (tRates.heal / 100) * 5, mult: 1.0, type: 'heal', name: '回復(HP+1)' },
+          { sym: '🗡️', weight: (tRates.buff / 100) * 5, mult: 1.0, type: 'buff', name: '剣(ATK+1)' },
+          { sym: '😀', weight: (heroRate / 100) * 5, mult: 0, type: 'item', ref: { type: 'fever_trigger', name: '仲間' } },
+          { sym: '🆓', weight: (tRates.free / 100) * 5, mult: 0, type: 'free', name: 'FREE' },
+          { sym: '', weight: 55, mult: 0, type: 'blank', name: '空き地' }
+      ];
+      document.getElementById('debug-panel').innerText = `[DEBUG] 🩷:${tRates.heal}% 🗡️:${tRates.buff}% 仲間:${heroRate.toFixed(1)}% FREE:${tRates.free}%`;
+  }
 
   if (partySpinsLeft > 0) {
-      partySpinsLeft--;
+//      partySpinsLeft--;
   } else {
       partyMembers = 0;
   }
@@ -912,7 +1177,7 @@ function startSpin(isFree) {
   for(let c=1; c<5; c++) for(let r=0; r<4; r++) mazeCells.push({c, r});
   mazeCells.sort(() => Math.random() - 0.5); 
   
-  let arrowCount = Math.floor(Math.random() * (GAME_CONFIG.arrowCountMax - GAME_CONFIG.arrowCountMin + 1)) + GAME_CONFIG.arrowCountMin;
+  let arrowCount = isSecretStage ? 0 : Math.floor(Math.random() * (GAME_CONFIG.arrowCountMax - GAME_CONFIG.arrowCountMin + 1)) + GAME_CONFIG.arrowCountMin;
   
   let nextBoard = [];
   for(let r=0; r<4; r++) {
@@ -973,7 +1238,7 @@ function startSpin(isFree) {
             drawArrowOnCanvas(c,r,null);
         } else {
            let rType = Math.random();
-           if(rType<0.5) { 
+           if(rType<0.5 && !isSecretStage) { 
                symDiv.innerHTML = '';
                drawArrowOnCanvas(c, r, Math.floor(Math.random()*4), '#888');
            } else { 
@@ -991,7 +1256,29 @@ function startSpin(isFree) {
       }
     }
     if (allStopped || ticks > 25) {
-      clearInterval(animInterval); playSoundStop();
+      clearInterval(animInterval); 
+      playSoundStop();
+
+      // お宝マスの発光と音
+      let treasureFound = false;
+      for(let c=1; c<5; c++) {
+          for(let r=0; r<4; r++) {
+              let cell = boardState[r][c];
+              if (cell && ['🩷', '🗡️', '😀', '🆓', '🌀'].includes(cell.sym)) {
+                  let symDiv = document.getElementById(`sym-${c}-${r}`);
+                  if (symDiv) symDiv.classList.add('treasure-glow');
+                  
+                  let cellEl = document.getElementById(`cell-${c}-${r}`);
+                  if (cellEl) {
+                      let rect = cellEl.getBoundingClientRect();
+                      spawnTreasureParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+                  }
+                  treasureFound = true;
+              }
+          }
+      }
+      if(treasureFound) playSoundItemNext();
+
       setTimeout(() => startRunPhase(heroSpawnRows), 500);
     }
   }, 50);
@@ -1001,7 +1288,7 @@ function startSpin(isFree) {
 // 移動フェーズ
 // =============================================================================
 function startRunPhase(spawnRows) {
-  runResult = { rewards: 0, steps: 0, items: [], defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
+  runResult = { rewards: 0, steps: 0, items: [], warped: false, defeatBoss: false, mazeCleared: false, expGained: 0, endPos: null };
   
   let activeHeroes = spawnRows.map((row, idx) => ({
       id: idx, x: 0, y: row, dir: 1, active: true,
@@ -1034,7 +1321,19 @@ function startRunPhase(spawnRows) {
 
         if (h.x > 0 && cell && !cell.collected) {
            cell.collected = true; 
-           if (cell.type === 'arrow') {
+           if (cell.type === 'warp') {
+               playSoundItem();
+               showPopupText(h.x, h.y, cell.sym);
+               runResult.items.push(cell.ref);
+               updateCellDOM(h.x, h.y, cell);
+               
+               h.active = false; someoneMoved = true;
+               h.escaped = true; h.cleared = false; 
+               runResult.warped = true;
+               if (!runResult.endPos) runResult.endPos = { x: h.x, y: h.y };
+               setTimeout(() => { document.getElementById(`hero-sprite-${h.id}`).style.display = 'none'; }, getMoveSpeed());
+               return;
+           } else if (cell.type === 'arrow') {
                h.dir = cell.dir;
            } else if (cell.type === 'item' || cell.type === 'free') {
                playSoundItem(); 
@@ -1070,7 +1369,6 @@ function startRunPhase(spawnRows) {
         else if (h.visited[ny][nx]) {
            h.active = false; 
            h.escaped = false; h.cleared = false;
-           // 道に迷ったときの半歩スライド演出
            let halfX = h.x + (nx - h.x) * 0.4;
            let halfY = h.y + (ny - h.y) * 0.4;
            updateSpritePos(h.id, halfX, halfY);
@@ -1124,20 +1422,43 @@ function evaluateRun(activeHeroes) {
         startRect = { left: gw.left + runResult.endPos.x * 47, top: gw.top + runResult.endPos.y * 47 };
     }
 
+	let isPartyMaigo = false;
+	let heroMaigoCnt = 0;
+
     activeHeroes.forEach(h => {
-        if (h.id > 0 && !h.escaped) partyMembers--;
+        if (h.id > 0 && !h.escaped){
+        	 partyMembers--;
+        	 heroMaigoCnt++;
+       	}
     });
+    
+    let maigoMsg = "";
+    // 迷子が１人以上いる場合
+    if(heroMaigoCnt > 0){
+    	isPartyMaigo = true;
+    	maigoMsg = `\n仲間が${heroMaigoCnt}人　迷子になってしまった！`;
+    }
+    
     partyMembers = Math.max(0, partyMembers);
     updatePartyUI();
 
     let processEnd = () => {
-        if (anyCleared) {
-            runResult.rewards += (3 * currentBet); 
+        if (runResult.warped) {
+            previousStage = stage;
+            isSecretStage = true;
+            hero.exp = 0;
+            freeSpinsLeft = 5;
+            showRpgMessage("謎のゲートに吸い込まれた！\n幻の迷宮へ移動します...", () => {
+                updateCombatUI(); updateUI();
+                handleRewardCalc();
+            });
+        } else if (anyCleared) {
+            runResult.rewards += (1 * currentBet); 
             handleDeepMaze();
         } else if (anyEscaped) {
-            showRpgMessage("迷宮から帰還した！", () => handleRewardCalc());
+            showRpgMessage(`迷宮から帰還した！${maigoMsg}`, () => handleRewardCalc());
         } else {
-            showRpgMessage("道に迷ってしまった！", () => {
+            showRpgMessage(`道に迷ってしまった！${maigoMsg}`, () => {
                 runResult.rewards = 0;
                 runResult.items = []; 
                 runResult.steps = 0;
@@ -1152,16 +1473,78 @@ function evaluateRun(activeHeroes) {
 
         let stepBonus = 0;
         if (runResult.steps >= 8) { 
-            stepBonus = runResult.steps * currentBet; 
+        	if (runResult.steps === 8) {
+            	stepBonus = 8 * currentBet; 
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 9) {
+           	stepBonus = 10 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 10) {
+           	stepBonus = 15 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 11) {
+           	stepBonus = 20 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 12) {
+           	stepBonus = 30 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 13) {
+           	stepBonus = 50 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 14) {
+           	stepBonus = 80 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else if (runResult.steps === 15) {
+           	stepBonus = 150 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        } else {
+           	stepBonus = 400 * currentBet; 
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	            sessionItems.push('🥾');
+	        }
             runResult.rewards += stepBonus; 
         }
 
         runResult.items.forEach(item => {
-            if (item.type === 'free') {
+            if (item.type === 'warp') {
+                animItems.push({sym: '🌀', target: 'win'});
+            } else if (item.type === 'free') {
                 freeSpinsLeft += 3;
                 animItems.push({sym: '🆓', target: 'win'});
                 sessionItems.push('🆓');
-            } else if (item.type === 'fever_trigger') {
+            } else if (item.ref && item.ref.type === 'fever_trigger') {
                 gainedFever = true;
                 partyMembers = Math.min(3, partyMembers + 1);
                 partySpinsLeft += Math.floor(Math.random() * 3) + 3; 
@@ -1187,7 +1570,7 @@ function evaluateRun(activeHeroes) {
             }
         });
         
-        if (anyCleared) {
+        if (anyCleared && !isSecretStage) {
             runResult.rewards += (3 * currentBet); 
             animItems.push({sym: '⭐', target: 'hero'});
             sessionItems.push('⭐');
@@ -1198,7 +1581,16 @@ function evaluateRun(activeHeroes) {
         
         animateItemsToTargets(animItems, startRect, targetWin, () => {
             updateCombatUI(); updateUI(); updatePartyUI();
-            if (gainedFever) {
+            if (runResult.warped) {
+                showRpgMessage("謎のゲートに吸い込まれた！\n幻の迷宮へ移動します...", () => {
+                    previousStage = stage;
+                    isSecretStage = true;
+                    hero.exp = 0;
+                    freeSpinsLeft = 5;
+                    updateCombatUI(); updateUI();
+                    handleRewardCalc();
+                });
+            } else if (gainedFever) {
                 showRpgMessage("しばらく一緒に冒険してくれる仲間が増えた！", processEnd);
             } else if (anyCleared) {
                 handleDeepMaze();
@@ -1238,19 +1630,37 @@ function showRpgMessage(text, callback) {
 
 function handleDeepMaze() {
   hero.exp++; updateCombatUI(); runResult.expGained = 1;
-  showRpgMessage(`迷宮の最奥部に到達した！\n経験値を獲得した！`, () => {
+  
+  if (isSecretStage) {
       if (hero.exp >= 5) {
-          startBossBattle();
+          showRpgMessage(`幻の迷宮の奥深くに到達した！\n元の世界へ帰還します...`, () => {
+              isSecretStage = false;
+              stage = previousStage;
+              hero.exp = 0;
+              document.querySelectorAll('.cell-glow').forEach(cell => cell.classList.remove('cell-glow'));
+              updateCombatUI();
+              handleRewardCalc();
+          });
       } else {
-          handleRewardCalc();
+          showRpgMessage(`迷宮の奥深くに到達した！\n経験値を獲得！`, () => {
+              handleRewardCalc();
+          });
       }
-  });
+  } else {
+      showRpgMessage(`迷宮の奥深くに到達した！\n経験値を獲得！`, () => {
+          if (hero.exp >= 5) {
+              startBossBattle();
+          } else {
+              handleRewardCalc();
+          }
+      });
+  }
 }
 
 function startBossBattle() {
   if (!currentBoss) currentBoss = { ...GAME_CONFIG.bosses[stage] };
   updateCombatUI();
-  showRpgMessage(`ヌシの ${currentBoss.name} があらわれた！`, bossTurnHero);
+  showRpgMessage(`ヌシの ${currentBoss.name} が現れた！`, bossTurnHero);
 }
 
 function bossTurnHero() {
@@ -1264,7 +1674,7 @@ function bossTurnHero() {
           
           let bossDrop = stage === 1 ? '🍊' : (stage === 2 ? '🍇' : '💎');
 
-          showRpgMessage(`${currentBoss.name} をたおした！\n特大ボーナス獲得！`, () => { 
+          showRpgMessage(`${currentBoss.name} を倒した！\nボーナス獲得！`, () => { 
               
               document.querySelectorAll('.cell-glow').forEach(cell => cell.classList.remove('cell-glow'));
 
@@ -1293,7 +1703,7 @@ function bossTurnHero() {
                       spawnParticles(winRect.left + winRect.width/2, winRect.top + winRect.height/2);
                       
                       let winPanelDisp = document.getElementById('win-display');
-                      let bossWin = (currentBoss.mult * currentBet);
+                      bossWin = (currentBoss.mult * currentBet);
                       winPanelDisp.innerText = Math.floor(parseInt(winPanelDisp.innerText) + bossWin);
                       sessionTotalWin += Math.floor(bossWin);
                       sessionItems.push(bossDrop + '(大)');
@@ -1318,13 +1728,14 @@ function bossTurnHero() {
 }
 
 function bossTurnEnemy() {
-  showRpgMessage(`${currentBoss.name} のこうげき！\n😀 は ${currentBoss.atk} のダメージ！`, () => {
+  showRpgMessage(`${currentBoss.name} の攻撃！\n😀 は ${currentBoss.atk} のダメージ！`, () => {
       playSoundHit();
       let heroEl = document.getElementById('hero-emoji'); heroEl.classList.add('hit-flash', 'shake'); setTimeout(()=>heroEl.classList.remove('hit-flash', 'shake'), 300);
       hero.hp = Math.max(0, hero.hp - currentBoss.atk); updateCombatUI();
       if (hero.hp <= 0) {
           playSoundLose();
-          showRpgMessage(`😀 は たおれてしまった...\nステージ１からやりなおしだ。`, () => {
+          showRpgMessage(`😀 は 倒れてしまった...\nステージ１からやりなおしだ`, () => {
+              document.querySelectorAll('.cell-glow').forEach(cell => cell.classList.remove('cell-glow'));
               resetHero(true); 
               stage = 1;
               updateCombatUI(); 
@@ -1341,18 +1752,26 @@ function bossTurnEnemy() {
 // =============================================================================
 function handleRewardCalc() {
   let spinWin = Math.floor(runResult.rewards);
-  if (spinWin > 0) {
+  if (spinWin > 0 && !isFreeSpinMode) {
+      if(bossWin>0){
+      	medals += bossWin;
+      }
       playSoundWin(); medals += spinWin; updateUI();
   }
 
   if (freeSpinsLeft > 0) {
       setTimeout(finishTurn, 1000);
   } else {
+      if (isFreeSpinMode && sessionTotalWin > 0) {
+          medals += sessionTotalWin;
+          updateUI();
+      }
+
       if (sessionTotalWin > 0 || sessionItems.length > 0) {
           document.getElementById('total-win-amount').innerText = sessionTotalWin;
           
           document.getElementById('win-collected-items').innerHTML = sessionItems.map(s => {
-              if(s.includes('(大)')) return `<span style="font-size:3rem; vertical-align:middle; line-height:1;">${s.replace('(大)','')}</span>`;
+              if(s.includes('(大)')) return `<span style="font-size:3rem; vertical-align:middle; line-height:1;">${s.replace(/\(大\)/g,'')}</span>`;
               return s;
           }).join('');
           
