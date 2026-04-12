@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Beast Clown Slot - Lever Edition</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #050505;
+    color: #fff;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: manipulation;
+    overflow-x: hidden;
+  }
+
+  /* --- 役一覧タブ (スライド式) --- */
+  #payout-tab-container {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    width: 90%;
+    max-width: 380px;
+    background: #1a1a1a;
+    border: 3px solid #444;
+    border-top: none;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  #payout-tab-container.open {
+    transform: translateX(-50%) translateY(0);
+  }
+  .payout-content {
+    padding: 15px;
+    font-size: 1.2rem;
+  }
+  .pay-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 5px 0; }
+  
+  /* タブの取っ手部分 */
+  #tab-handle {
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #444;
+    color: #fff;
+    padding: 5px 15px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 2px solid #555;
+    border-top: none;
+  }
+
+  #game-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 50px; /* タブの取っ手分の余白 */
+    z-index: 10;
+  }
+
+  /* 演出用トップエリア */
+  #top-display {
+    width: 90%;
+    height: 70px;
+    background: #111;
+    border: 3px solid #333;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 20px #000;
+  }
+  .lamp-text { font-size: 2.5rem; color: #222; font-weight: bold; margin: 0 15px; }
+  .lamp-on { color: #ff00ff; text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff; animation: flash 0.5s infinite alternate; }
+  @keyframes flash { 0% { filter: brightness(1); } 100% { filter: brightness(1.5); } }
+
+  /* メーター */
+  #meters {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    margin-bottom: 10px;
+  }
+  .meter-box {
+    background: #000;
+    border: 2px solid #555;
+    border-radius: 5px;
+    padding: 5px 10px;
+    text-align: center;
+    min-width: 70px;
+  }
+  .meter-title { font-size: 1rem; color: #aaa; }
+  .meter-value { font-size: 1.8rem; color: #0ff; font-weight: bold; }
+
+  /* スロット筐体 */
+  #slot-machine {
+    position: relative;
+    width: 95%;
+    background: linear-gradient(180deg, #444 0%, #111 100%);
+    border: 4px solid #777;
+    border-radius: 15px;
+    padding: 15px 5px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+
+  #reels-window {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: #000;
+    padding: 5px;
+    border: 3px inset #555;
+    border-radius: 10px;
+  }
+
+  #lines-indicator {
+    display: flex;
+    flex-direction: column;
+    height: 240px;
+    justify-content: space-between;
+    padding: 10px 5px;
+  }
+  .line-dot { width: 14px; height: 14px; border-radius: 50%; background: #111; border: 2px solid #000; transition: all 0.2s; }
+  .dot-red.active { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
+  .dot-green.active { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+  .dot-blue.active { background: #0088ff; box-shadow: 0 0 10px #0088ff; }
+
+  #reels-board { display: flex; gap: 5px; position: relative; }
+  #paylines-overlay { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5; }
+
+  .reel-container { width: 85px; height: 240px; overflow: hidden; position: relative; background: #fff; border-radius: 5px; }
+  .reel-strip { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; will-change: transform; }
+  .symbol { width: 85px; height: 80px; display: flex; justify-content: center; align-items: center; font-size: 3.5rem; box-sizing: border-box; }
+
+  /* ストップボタン */
+  #stop-buttons { display: flex; gap: 15px; margin-top: 15px; }
+  .stop-btn {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ff4444, #aa0000);
+    border: 3px solid #fff; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+    cursor: pointer; font-size: 1.8rem; color: white;
+  }
+  .stop-btn:disabled { filter: grayscale(1); opacity: 0.5; }
+  .stop-btn.active-glow { animation: pulseRed 0.5s infinite alternate; }
+  @keyframes pulseRed { from { filter: brightness(1); } to { filter: brightness(1.5); } }
+
+  /* --- レバー & BETエリア --- */
+  #main-controls {
+    display: flex;
+    width: 90%;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 20px;
+    padding: 0 10px;
+  }
+
+  /* レバーの装飾 */
+  #lever-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    width: 80px;
+  }
+  #lever-base {
+    width: 40px; height: 40px; background: #222; border-radius: 50%;
+    border: 3px solid #666; position: relative;
+  }
+  #lever-stick {
+    width: 10px; height: 60px; background: #888;
+    position: absolute; bottom: 20px; left: 15px;
+    transform-origin: bottom center;
+    transition: transform 0.1s;
+    border-radius: 5px;
+    background: linear-gradient(to right, #888, #eee, #888);
+  }
+  #lever-knob {
+    width: 35px; height: 35px; background: radial-gradient(circle at 30% 30%, #ff4444, #800);
+    border-radius: 50%; position: absolute; top: -25px; left: -12px;
+    border: 2px solid #fff; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+  }
+  /* レバーを叩いた時のアニメーション */
+  #lever-area.pulling #lever-stick { transform: scaleY(0.3); }
+  #lever-area.disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+
+  /* BETボタン */
+  .action-btn {
+    padding: 15px 30px;
+    font-size: 1.8rem;
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    color: white;
+    background: linear-gradient(to bottom, #0088ff, #0000aa);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+  }
+  .action-btn:disabled { filter: grayscale(1); opacity: 0.5; }
+
+  #fx-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<canvas id="fx-canvas"></canvas>
+
+<div id="payout-tab-container">
+  <div class="payout-content">
+    <div class="pay-row"><span>7️⃣7️⃣7️⃣</span><span style="color:#ffaa00;">150</span></div>
+    <div class="pay-row"><span>🦁🦁🦁</span><span style="color:#ffaa00;">50</span></div>
+    <div class="pay-row"><span>🍉🍉🍉</span><span style="color:#ffaa00;">15</span></div>
+    <div class="pay-row"><span>🔔🔔🔔</span><span style="color:#ffaa00;">10</span></div>
+    <div class="pay-row"><span>🍇🍇🍇</span><span style="color:#ffaa00;">5</span></div>
+    <div class="pay-row"><span>🍒 (ANY)</span><span style="color:#ffaa00;">2</span></div>
+  </div>
+  <div id="tab-handle">▼ 役の一覧を表示</div>
+</div>
+
+<div id="game-wrapper">
+  
+  <div id="top-display">
+    <span id="lamp-gogo" class="lamp-text">GOGO!</span>
+    <span id="lamp-roar" class="lamp-text">ROAR!</span>
+  </div>
+
+  <div id="meters">
+    <div class="meter-box"><div class="meter-title">CREDIT</div><div class="meter-value" id="credit-display">50</div></div>
+    <div class="meter-box"><div class="meter-title">PAYOUT</div><div class="meter-value" id="payout-display" style="color: #ffaa00;">0</div></div>
+    <div class="meter-box"><div class="meter-title">BET</div><div class="meter-value" id="bet-display">0</div></div>
+  </div>
+
+  <div id="slot-machine">
+    <div id="reels-window">
+      <div id="lines-indicator">
+        <div class="line-dot dot-blue" id="dot-diag-down"></div>
+        <div class="line-dot dot-green" id="dot-top"></div>
+        <div class="line-dot dot-red" id="dot-center"></div>
+        <div class="line-dot dot-green" id="dot-bottom"></div>
+        <div class="line-dot dot-blue" id="dot-diag-up"></div>
+      </div>
+      <div id="reels-board">
+        <canvas id="paylines-overlay" width="265" height="240"></canvas>
+        <div class="reel-container"><div class="reel-strip" id="reel-0"></div></div>
+        <div class="reel-container"><div class="reel-strip" id="reel-1"></div></div>
+        <div class="reel-container"><div class="reel-strip" id="reel-2"></div></div>
+      </div>
+    </div>
+
+    <div id="stop-buttons">
+      <button class="stop-btn" id="stop-0" disabled>L</button>
+      <button class="stop-btn" id="stop-1" disabled>C</button>
+      <button class="stop-btn" id="stop-2" disabled>R</button>
+    </div>
+
+    <div id="main-controls">
+      <div id="lever-area" class="disabled">
+        <div id="lever-base">
+          <div id="lever-stick"><div id="lever-knob"></div></div>
+        </div>
+        <div style="font-size:0.8rem; margin-top:5px; color:#aaa;">LEVER</div>
+      </div>
+
+      <button class="action-btn" id="bet-btn">BET</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYMBOL_HEIGHT = 80;
+const REEL_LENGTH = 21;
+const REEL_STRIP = ['7️⃣', '🔔', '🍉', '🤡', '🍒', '🍇', '🦁', '🔔', '🍉', '🍒', '🤡', '🍇', '🦁', '🔔', '🍉', '🤡', '🍒', '🍇', '🦁', '🔔', '🍉'];
+
+const reelsDOM = [document.getElementById('reel-0'), document.getElementById('reel-1'), document.getElementById('reel-2')];
+const stopBtns = [document.getElementById('stop-0'), document.getElementById('stop-1'), document.getElementById('stop-2')];
+
+let credits = 50;
+let currentBet = 0;
+let payout = 0;
+let gameState = 'IDLE'; 
+let reelsData = [
+  { y: 0, speed: 0, isSpinning: false, stoppedIndex: 0 },
+  { y: 0, speed: 0, isSpinning: false, stoppedIndex: 0 },
+  { y: 0, speed: 0, isSpinning: false, stoppedIndex: 0 }
+];
+let activeLines = [];
+let animationId;
+
+// --- タブの制御 ---
+const payoutTab = document.getElementById('payout-tab-container');
+const tabHandle = document.getElementById('tab-handle');
+
+tabHandle.addEventListener('click', () => {
+  payoutTab.classList.toggle('open');
+  tabHandle.innerText = payoutTab.classList.contains('open') ? "▲ 閉じる" : "▼ 役の一覧を表示";
+});
+
+function initReelDOM() {
+  const fullStrip = [...REEL_STRIP, REEL_STRIP[0], REEL_STRIP[1], REEL_STRIP[2]];
+  reelsDOM.forEach(reel => {
+    reel.innerHTML = '';
+    fullStrip.forEach(sym => {
+      const div = document.createElement('div');
+      div.className = 'symbol';
+      div.innerText = sym;
+      reel.appendChild(div);
+    });
+  });
+}
+initReelDOM();
+
+function updateUI() {
+  document.getElementById('credit-display').innerText = credits;
+  document.getElementById('bet-display').innerText = currentBet;
+  document.getElementById('payout-display').innerText = payout;
+
+  document.getElementById('dot-center').classList.toggle('active', currentBet >= 1);
+  document.getElementById('dot-top').classList.toggle('active', currentBet >= 2);
+  document.getElementById('dot-bottom').classList.toggle('active', currentBet >= 2);
+  document.getElementById('dot-diag-down').classList.toggle('active', currentBet >= 3);
+  document.getElementById('dot-diag-up').classList.toggle('active', currentBet >= 3);
+
+  document.getElementById('bet-btn').disabled = (gameState !== 'IDLE' && gameState !== 'BETTING') || credits === 0 || currentBet === 3;
+  
+  // レバーの有効/無効
+  const lever = document.getElementById('lever-area');
+  if (currentBet > 0 && (gameState === 'IDLE' || gameState === 'BETTING')) {
+    lever.classList.remove('disabled');
+  } else {
+    lever.classList.add('disabled');
+  }
+}
+
+document.getElementById('bet-btn').addEventListener('click', () => {
+  if (credits > 0 && currentBet < 3) {
+    credits--; currentBet++; gameState = 'BETTING'; updateUI();
+  }
+});
+
+// レバークリック
+document.getElementById('lever-area').addEventListener('click', function() {
+  if (this.classList.contains('disabled')) return;
+  
+  // アニメーション
+  this.classList.add('pulling');
+  setTimeout(() => this.classList.remove('pulling'), 150);
+
+  // タブが開いていたら閉じる
+  if (payoutTab.classList.contains('open')) {
+    payoutTab.classList.remove('open');
+    tabHandle.innerText = "▼ 役の一覧を表示";
+  }
+
+  startSpin();
+});
+
+stopBtns.forEach((btn, idx) => {
+  btn.addEventListener('click', () => stopReel(idx));
+});
+
+function startSpin() {
+  gameState = 'SPINNING';
+  payout = 0;
+  updateUI();
+  
+  const pCtx = document.getElementById('paylines-overlay').getContext('2d');
+  pCtx.clearRect(0,0,300,240);
+  
+  document.getElementById('lamp-gogo').classList.remove('lamp-on');
+  document.getElementById('lamp-roar').classList.remove('lamp-on');
+
+  activeLines = getActiveLines();
+
+  reelsData.forEach((reel, i) => {
+    reel.isSpinning = true;
+    reel.speed = 35;
+    stopBtns[i].disabled = false;
+    stopBtns[i].classList.add('active-glow');
+  });
+
+  if (!animationId) animationId = requestAnimationFrame(spinLoop);
+}
+
+function spinLoop() {
+  let allStopped = true;
+  reelsData.forEach((reel, i) => {
+    if (reel.isSpinning) {
+      allStopped = false;
+      reel.y -= reel.speed;
+      if (reel.y <= -(REEL_LENGTH * SYMBOL_HEIGHT)) reel.y += (REEL_LENGTH * SYMBOL_HEIGHT);
+      reelsDOM[i].style.transform = `translateY(${reel.y}px)`;
+    } else if (reel.speed > 0) {
+      reel.y = -(reel.stoppedIndex * SYMBOL_HEIGHT);
+      reelsDOM[i].style.transform = `translateY(${reel.y}px)`;
+      reel.speed = 0;
+    }
+  });
+
+  if (!allStopped) animationId = requestAnimationFrame(spinLoop);
+  else {
+    animationId = null;
+    evaluateBoard();
+  }
+}
+
+function stopReel(idx) {
+  if (!reelsData[idx].isSpinning) return;
+  reelsData[idx].isSpinning = false;
+  stopBtns[idx].disabled = true;
+  stopBtns[idx].classList.remove('active-glow');
+  const currentAbsY = Math.abs(reelsData[idx].y);
+  let nextIndex = Math.ceil(currentAbsY / SYMBOL_HEIGHT);
+  if (nextIndex >= REEL_LENGTH) nextIndex = 0;
+  reelsData[idx].stoppedIndex = nextIndex;
+}
+
+function getActiveLines() {
+  const lines = [];
+  if (currentBet >= 1) lines.push({ id: 'center', coords: [[0,1], [1,1], [2,1]], color: '#ff0000' });
+  if (currentBet >= 2) {
+    lines.push({ id: 'top', coords: [[0,0], [1,0], [2,0]], color: '#00ff00' });
+    lines.push({ id: 'bottom', coords: [[0,2], [1,2], [2,2]], color: '#00ff00' });
+  }
+  if (currentBet >= 3) {
+    lines.push({ id: 'diagDown', coords: [[0,0], [1,1], [2,2]], color: '#0088ff' });
+    lines.push({ id: 'diagUp', coords: [[0,2], [1,1], [2,0]], color: '#0088ff' });
+  }
+  return lines;
+}
+
+function evaluateBoard() {
+  const grid = [[], [], []];
+  for (let c = 0; c < 3; c++) {
+    const startIdx = reelsData[c].stoppedIndex;
+    for (let r = 0; r < 3; r++) grid[c][r] = REEL_STRIP[(startIdx + r) % REEL_LENGTH];
+  }
+
+  let totalWin = 0;
+  let wonLines = [];
+  let cherryWon = false;
+
+  activeLines.forEach(line => {
+    const s1 = grid[line.coords[0][0]][line.coords[0][1]];
+    const s2 = grid[line.coords[1][0]][line.coords[1][1]];
+    const s3 = grid[line.coords[2][0]][line.coords[2][1]];
+
+    if (s1 === '🍒' && !cherryWon) {
+      totalWin += 2; cherryWon = true; wonLines.push({ line, color: '#ff0000' });
+    }
+    if (s1 === s2 && s2 === s3) {
+      let win = 0;
+      if (s1 === '7️⃣') { win = 150; triggerLamp('GOGO'); }
+      else if (s1 === '🦁') { win = 50; triggerLamp('ROAR'); }
+      else if (s1 === '🍉') win = 15;
+      else if (s1 === '🔔') win = 10;
+      else if (s1 === '🍇') win = 5;
+      if (win > 0) { totalWin += win; wonLines.push({ line, color: line.color }); }
+    }
+  });
+
+  if (totalWin > 0) {
+    payout = totalWin; credits += payout; drawPaylines(wonLines);
+    createParticles(window.innerWidth/2, window.innerHeight/2, wonLines[0].color, 100, 5);
+  }
+  currentBet = 0; gameState = 'IDLE'; updateUI();
+}
+
+function triggerLamp(type) {
+  document.getElementById(type === 'GOGO' ? 'lamp-gogo' : 'lamp-roar').classList.add('lamp-on');
+}
+
+function drawPaylines(wonLines) {
+  const c = document.getElementById('paylines-overlay');
+  const ctx = c.getContext('2d');
+  ctx.lineWidth = 5;
+  wonLines.forEach(wl => {
+    ctx.strokeStyle = wl.color; ctx.beginPath();
+    wl.line.coords.forEach((coord, i) => {
+      const x = (coord[0] * 85) + 42; const y = (coord[1] * 80) + 40;
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+}
+
+// Particle System
+const canvas = document.getElementById('fx-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+function createParticles(x, y, color, count, speed) {
+  for (let i = 0; i < count; i++) particles.push({ x, y, vx: (Math.random()-0.5)*speed*2, vy: (Math.random()-0.5)*speed*2, life: 1, color });
+}
+function updateParticles() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach((p, i) => {
+    ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+    p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+    if(p.life <= 0) particles.splice(i, 1);
+  });
+  requestAnimationFrame(updateParticles);
+}
+updateParticles();
+updateUI();
+</script>
+</body>
+</html>
