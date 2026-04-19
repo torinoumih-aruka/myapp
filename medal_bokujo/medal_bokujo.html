@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>メダル牧場 - 農業システム追加版</title>
+<style>
+    * {
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        font-family: sans-serif;
+    }
+    body {
+        margin: 0; padding: 0;
+        width: 100vw; height: 100vh;
+        overflow: hidden;
+        background-color: #333;
+    }
+
+    #title-screen {
+        position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+        background-color: #8B4513; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; z-index: 1000; color: white;
+    }
+    #start-btn {
+        padding: 15px 30px; font-size: 1.5rem; background-color: #FFD700; color: #333;
+        border: none; border-radius: 10px; font-weight: bold;
+    }
+
+    #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
+
+    #ticker {
+        position: absolute; top: 0; left: 0; width: 100vw; height: 1rem;
+        background-color: black; color: white; font-size: 0.7rem; line-height: 1rem;
+        white-space: nowrap; overflow: hidden; z-index: 100;
+    }
+    #ticker-text { display: inline-block; padding-left: 100vw; animation: ticker 15s linear infinite; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+    /* 所持餌数 UI (右上) */
+    #fodder-status {
+        position: absolute; top: 1.5rem; right: 10px;
+        background-color: rgba(0, 0, 0, 0.7); color: white;
+        padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold;
+        z-index: 100;
+    }
+
+    #main-area {
+        position: absolute; top: 1rem; bottom: 1.5rem; width: 100vw;
+        overflow: hidden; background-color: #000;
+    }
+    canvas { display: block; }
+
+    /* メニューシステム */
+    #menu-container {
+        position: absolute; top: 30px; left: -200px;
+        height: calc(100% - 100px);
+        display: flex; transition: left 0.3s ease; z-index: 200; pointer-events: none;
+    }
+    #menu-container.open { left: 0; }
+    
+    #menu-panel {
+        width: 200px; height: 100%;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-right: 2px solid #333; padding: 10px;
+        overflow-y: auto; pointer-events: auto; touch-action: pan-y;
+    }
+    
+    #menu-tabs {
+        width: 35px; display: flex; flex-direction: column; gap: 2px; pointer-events: auto;
+    }
+    .menu-tab {
+        flex: 1; min-height: 45px; display: flex; align-items: center; justify-content: center;
+        border-radius: 0 10px 10px 0; border: 1px solid #333; border-left: none;
+        writing-mode: vertical-rl; text-orientation: upright;
+        font-size: 0.8rem; font-weight: bold; cursor: pointer;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    }
+    .tab-ground { background-color: white; color: black; }
+    .tab-crop { background-color: lightgreen; color: black; }
+    .tab-facility { background-color: lightpink; color: black; }
+    .tab-livestock { background-color: lightblue; color: black; }
+    .tab-pet { background-color: lightyellow; color: black; }
+    .tab-decoration { background-color: lightgray; color: black; }
+    .tab-debug { background-color: black; color: white; }
+
+    .menu-item {
+        padding: 10px; margin-bottom: 8px; background: #fff;
+        border: 2px solid #ccc; border-radius: 5px; font-size: 0.85rem;
+        display: flex; align-items: center; gap: 5px; cursor: grab; touch-action: none;
+    }
+    .menu-item:active { background: #f0f0f0; border-color: #888; }
+    .menu-item.debug-btn { cursor: pointer; text-align: center; justify-content: center; background: #eee; }
+
+    /* ステータス表示エリア */
+    #status-area {
+        position: absolute; bottom: 10px; right: 10px; width: 150px;
+        background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 5px; padding: 5px;
+        font-size: 0.8rem; z-index: 100; display: none;
+    }
+    #farm-stats-overlay {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.85); color: white; border: 2px solid #FFD700;
+        border-radius: 10px; padding: 20px; z-index: 300; display: none;
+        width: 80%; max-width: 300px; text-align: center;
+    }
+
+    #footer {
+        position: absolute; bottom: 0; left: 0; width: 100vw; height: 1.5rem;
+        background-color: black; color: yellow; display: flex; align-items: center; padding: 0 5px;
+        font-size: 1.1rem; z-index: 100;
+    }
+    #medal-count { flex-grow: 1; }
+    .footer-btn { background: none; border: none; color: white; font-size: 1.2rem; margin-left: 10px; opacity: 0.5; }
+    .footer-btn.active { opacity: 1; color: #FFD700; }
+    
+    .pop-text {
+        position: absolute; font-weight: bold; font-size: 1.2rem; z-index: 300; pointer-events: none;
+        text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff,
+                     0px 2px 0 #fff, 0px -2px 0 #fff, 2px 0px 0 #fff, -2px 0px 0 #fff;
+        animation: floatUp 1s ease-out forwards;
+    }
+    @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-40px); } }
+
+    #drag-ghost {
+        position: fixed; pointer-events: none; z-index: 9999;
+        font-size: 2.5rem; text-shadow: 0 0 5px rgba(255,255,255,0.8);
+        display: none; transform: translate(-50%, -50%);
+    }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+    <h1>メダル牧場</h1>
+    <button id="start-btn">ゲームスタート</button>
+</div>
+
+<div id="game-screen">
+    <div id="ticker"><div id="ticker-text">畑に種を蒔いて作物を育てましょう！</div></div>
+
+    <div id="fodder-status">🌿：0個</div>
+
+    <div id="main-area">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="menu-container">
+            <div id="menu-panel">
+                <div id="menu-title" style="font-weight:bold; border-bottom:1px solid #333; margin-bottom:10px">メニュー</div>
+                <div id="menu-items-list"></div>
+            </div>
+            <div id="menu-tabs">
+                <div class="menu-tab tab-ground" data-target="ground">地面</div>
+                <div class="menu-tab tab-crop" data-target="crop">作物</div>
+                <div class="menu-tab tab-facility" data-target="facility">施設</div>
+                <div class="menu-tab tab-livestock" data-target="livestock">家畜</div>
+                <div class="menu-tab tab-pet" data-target="pet">ペット</div>
+                <div class="menu-tab tab-decoration" data-target="decoration">装飾品</div>
+                <div class="menu-tab tab-debug" data-target="debug">デバッグ</div>
+            </div>
+        </div>
+
+        <div id="status-area">
+            <div id="status-obj">上物: なし</div>
+            <div id="status-ground">地面: 土</div>
+            <div id="status-temp">気温: 20℃</div>
+        </div>
+
+        <div id="farm-stats-overlay">
+            <h3 style="margin-top:0; color:#FFD700;">牧場の価値</h3>
+            <div style="text-align:left; font-size:0.9rem; line-height:1.5;">
+                <span style="color:gray;">【普通の牧場】未開放</span><br>
+                <span style="color:gray;">【整理された牧場】未開放</span><br>
+                <span style="color:gray;">【ふれあい牧場】未開放</span>
+            </div>
+            <p style="font-size:0.8rem; margin-top:15px;">※もう一度「📊」を押して閉じる</p>
+        </div>
+    </div>
+
+    <div id="drag-ghost"></div>
+
+    <div id="footer">
+        <div id="medal-count">🪙: 0</div>
+        <button class="footer-btn" id="btn-save" title="保存">💾</button>
+        <button class="footer-btn" id="btn-stats" title="ステータス">📊</button>
+        <button class="footer-btn" id="mode-inspect" title="情報表示">🔎</button>
+        <button class="footer-btn" id="mode-pick" title="ピック">🤏</button>
+        <button class="footer-btn active" id="mode-view" title="閲覧">👁️</button>
+    </div>
+</div>
+
+<script>
+const TILE_SIZE = 48;
+const MAP_SIZE = 50;
+let canvas, ctx;
+let gameLoopInterval;
+
+let state = {
+    medals: 1000,
+    fodder: 0,
+    map: [],
+    camera: { x: 0, y: 0 },
+    mode: 'view',
+    selectedTile: null,
+    isMenuOpen: false,
+    activeMenuTab: null
+};
+
+const COLORS = { soil: '#8B5A2B', grass: '#7CFC00', field: '#DEB887', path: '#D3D3D3' };
+const GROUND_NAMES = { soil: '土', grass: '草原', field: '畑', path: '道' };
+
+// 作物の成長マスタデータ（時間＝分）
+const CROP_DATA = {
+    tomato: { name: 'トマト', icon: '🍅', time: 10, minTemp: 15, maxTemp: 30, yield: 3, maxHarvest: 5 },
+    potato: { name: 'ジャガイモ', icon: '🥔', time: 5, minTemp: 5, maxTemp: 25, yield: 1, maxHarvest: 20 },
+    carrot: { name: 'ニンジン', icon: '🥕', time: 10, minTemp: 5, maxTemp: 20, yield: 2, maxHarvest: 10 },
+    cucumber: { name: 'きゅうり', icon: '🥒', time: 5, minTemp: 20, maxTemp: 30, yield: 1, maxHarvest: 20 },
+    broccoli: { name: 'ブロッコリー', icon: '🥦', time: 15, minTemp: 0, maxTemp: 15, yield: 4, maxHarvest: 5 },
+    spinach: { name: 'ほうれんそう', icon: '🥬', time: 10, minTemp: 0, maxTemp: 15, yield: 2, maxHarvest: 10 },
+    strawberry: { name: 'いちご', icon: '🍓', time: 10, minTemp: 5, maxTemp: 20, yield: 4, maxHarvest: 10 },
+    pineapple: { name: 'パイナップル', icon: '🍍', time: 30, minTemp: 25, maxTemp: 30, yield: 10, maxHarvest: 5 },
+    melon: { name: 'メロン', icon: '🍈', time: 30, minTemp: 20, maxTemp: 30, yield: 10, maxHarvest: 5 },
+    fodder: { name: '餌', icon: '🌿', time: 5, minTemp: -999, maxTemp: 999, yield: 0, maxHarvest: 20 }
+};
+
+const MENU_DATA = {
+    ground: [
+        { name: '土', icon: '🟫', cost: 0, type: 'ground', groundType: 'soil' },
+        { name: '草原', icon: '🟩', cost: 1, type: 'ground', groundType: 'grass' },
+        { name: '畑', icon: '🟨', cost: 1, type: 'ground', groundType: 'field' },
+        { name: '道', icon: '⬜', cost: 1, type: 'ground', groundType: 'path' }
+    ],
+    crop: [
+        { name: 'トマトの種', icon: '🍅', cost: 2, type: 'seed', cropKey: 'tomato' },
+        { name: 'ジャガイモの種', icon: '🥔', cost: 4, type: 'seed', cropKey: 'potato' },
+        { name: 'ニンジンの種', icon: '🥕', cost: 4, type: 'seed', cropKey: 'carrot' },
+        { name: 'きゅうりの種', icon: '🥒', cost: 2, type: 'seed', cropKey: 'cucumber' },
+        { name: 'ブロッコリーの種', icon: '🥦', cost: 3, type: 'seed', cropKey: 'broccoli' },
+        { name: 'ほうれんそうの種', icon: '🥬', cost: 3, type: 'seed', cropKey: 'spinach' },
+        { name: 'いちごの種', icon: '🍓', cost: 3, type: 'seed', cropKey: 'strawberry' },
+        { name: 'パイナップルの種', icon: '🍍', cost: 4, type: 'seed', cropKey: 'pineapple' },
+        { name: 'メロンの種', icon: '🍈', cost: 5, type: 'seed', cropKey: 'melon' },
+        { name: '餌の種', icon: '🌿', cost: 1, type: 'seed', cropKey: 'fodder' }
+    ],
+    facility: [
+        { name: '柵', icon: '🪵', cost: 10, type: 'facility' },
+        { name: 'コンポスト', icon: '📦', cost: 100, type: 'facility' },
+        { name: 'スプリンクラー', icon: '⛲', cost: 100, type: 'facility' }
+    ],
+    livestock: [
+        { name: '鶏', icon: '🐓', cost: 50, type: 'livestock' },
+        { name: '豚', icon: '🐖', cost: 300, type: 'livestock' },
+        { name: '牛', icon: '🐄', cost: 1000, type: 'livestock' }
+    ],
+    pet: [
+        { name: '犬', icon: '🐕', cost: 50, type: 'pet' },
+        { name: '猫', icon: '🐈‍⬛', cost: 50, type: 'pet' }
+    ],
+    decoration: [
+        { name: '花', icon: '🌻', cost: 5, type: 'decoration' },
+        { name: '落葉樹', icon: '🌳', cost: 50, type: 'decoration' }
+    ],
+    debug: [
+        { name: 'メダル+1000', icon: '🪙', cost: 0, type: 'debug_medal' },
+        { name: '時間を進める(5分)', icon: '⏩', cost: 0, type: 'debug_time' }
+    ]
+};
+
+function initGame() {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = MAP_SIZE * TILE_SIZE;
+    canvas.height = MAP_SIZE * TILE_SIZE;
+
+    loadData();
+    setupEvents();
+    setupDragAndDrop();
+    
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    
+    state.camera.x = (canvas.width - window.innerWidth) / 2;
+    state.camera.y = (canvas.height - window.innerHeight) / 2;
+
+    requestAnimationFrame(render);
+    
+    // 1秒ごとのゲームループ（植物の成長など）
+    gameLoopInterval = setInterval(() => {
+        advanceGameTime(1); // 1秒経過
+    }, 1000);
+}
+
+function generateInitialMap() {
+    let newMap = [];
+    const centerStart = Math.floor((MAP_SIZE - 8) / 2);
+    const centerEnd = centerStart + 8;
+    for (let r = 0; r < MAP_SIZE; r++) {
+        let row = [];
+        for (let c = 0; c < MAP_SIZE; c++) {
+            let isCenter = r >= centerStart && r < centerEnd && c >= centerStart && c < centerEnd;
+            row.push({
+                ground: isCenter ? 'grass' : 'soil',
+                isWet: false, // 畑以外は一律false
+                object: isCenter ? null : { icon: '🪾', name: '枯れ木', type: 'trash' },
+                temp: 20
+            });
+        }
+        newMap.push(row);
+    }
+    return newMap;
+}
+
+// 時間経過処理
+function advanceGameTime(seconds) {
+    for (let r = 0; r < MAP_SIZE; r++) {
+        for (let c = 0; c < MAP_SIZE; c++) {
+            let cell = state.map[r][c];
+            if (cell.object && cell.object.type === 'crop' && cell.object.cropState === 'seedling') {
+                let cropData = CROP_DATA[cell.object.cropKey];
+                let isTempOk = cell.temp >= cropData.minTemp && cell.temp <= cropData.maxTemp;
+                
+                // 湿っていて気温の条件を満たしている場合のみ成長タイマーを進める
+                if (cell.isWet && isTempOk) {
+                    cell.object.growthTimer += seconds;
+                    // 必要時間（分を秒に換算）に達したら成長完了
+                    if (cell.object.growthTimer >= cropData.time * 60) {
+                        cell.object.cropState = 'ready';
+                        cell.object.icon = cropData.icon;
+                        cell.object.name = cropData.name;
+                    }
+                }
+            }
+        }
+    }
+}
+
+function render() {
+    canvas.style.transform = `translate(${-state.camera.x}px, ${-state.camera.y}px)`;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const startCol = Math.max(0, Math.floor(state.camera.x / TILE_SIZE));
+    const endCol = Math.min(MAP_SIZE, Math.floor((state.camera.x + window.innerWidth) / TILE_SIZE) + 1);
+    const startRow = Math.max(0, Math.floor(state.camera.y / TILE_SIZE));
+    const endRow = Math.min(MAP_SIZE, Math.floor((state.camera.y + window.innerHeight) / TILE_SIZE) + 1);
+
+    for (let r = startRow; r < endRow; r++) {
+        for (let c = startCol; c < endCol; c++) {
+            let cell = state.map[r][c];
+            let x = c * TILE_SIZE; let y = r * TILE_SIZE;
+
+            ctx.fillStyle = COLORS[cell.ground];
+            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+
+            if (cell.object) {
+                ctx.font = `${TILE_SIZE * 0.7}px sans-serif`;
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(cell.object.icon, x + TILE_SIZE/2, y + TILE_SIZE/2 + 2);
+            }
+
+            if (state.selectedTile && state.selectedTile.r === r && state.selectedTile.c === c) {
+                ctx.lineWidth = 4; ctx.strokeStyle = '#FFD700';
+                ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                ctx.lineWidth = 2; ctx.strokeStyle = '#000';
+                ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+    requestAnimationFrame(render);
+}
+
+function renderMenu(tabKey) {
+    const list = document.getElementById('menu-items-list');
+    list.innerHTML = '';
+    const items = MENU_DATA[tabKey] || [];
+    
+    items.forEach(item => {
+        const div = document.createElement('div');
+        if(tabKey === 'debug') {
+            div.className = 'menu-item debug-btn';
+            div.innerText = `${item.icon} ${item.name}`;
+            div.addEventListener('click', () => handleDebug(item.type));
+        } else {
+            div.className = 'menu-item drag-item';
+            div.innerHTML = `<span style="font-size:1.5rem">${item.icon}</span> 
+                             <div style="flex-grow:1"><b>${item.name}</b><br><span style="color:#666">🪙${item.cost}</span></div>`;
+            div.dataset.item = JSON.stringify(item);
+        }
+        list.appendChild(div);
+    });
+}
+
+function handleDebug(type) {
+    if(type === 'debug_medal') { addMedal(1000, window.innerWidth/2, window.innerHeight/2); }
+    if(type === 'debug_time') { 
+        advanceGameTime(5 * 60); // 5分（300秒）進める
+        alert("時間を5分進めました！"); 
+    }
+}
+
+function setupEvents() {
+    document.querySelectorAll('.menu-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const target = e.target.dataset.target;
+            const titleMap = { ground:'地面', crop:'作物', facility:'施設', livestock:'家畜', pet:'ペット', decoration:'装飾品', debug:'デバッグ' };
+            
+            if (state.isMenuOpen && state.activeMenuTab === target) {
+                document.getElementById('menu-container').classList.remove('open');
+                state.isMenuOpen = false;
+            } else {
+                document.getElementById('menu-container').classList.add('open');
+                document.getElementById('menu-title').innerText = `メニュー：${titleMap[target]}`;
+                renderMenu(target);
+                state.isMenuOpen = true;
+                state.activeMenuTab = target;
+            }
+        });
+    });
+
+    let isDragging = false;
+    let startX, startY, camStartX, camStartY;
+    const mainArea = document.getElementById('main-area');
+
+    mainArea.addEventListener('touchstart', (e) => {
+        if(e.target.closest('#menu-container')) return;
+        isDragging = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        camStartX = state.camera.x; camStartY = state.camera.y;
+    }, {passive: false});
+
+    mainArea.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        if (state.mode === 'view' || state.mode === 'inspect' || state.mode === 'pick') {
+            state.camera.x = Math.max(0, Math.min(canvas.width - window.innerWidth, camStartX + (startX - e.touches[0].clientX)));
+            state.camera.y = Math.max(0, Math.min(canvas.height - window.innerHeight + 40, camStartY + (startY - e.touches[0].clientY)));
+        }
+    }, {passive: true});
+
+    mainArea.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        let endX = e.changedTouches[0].clientX; let endY = e.changedTouches[0].clientY;
+        if (Math.abs(startX - endX) < 10 && Math.abs(startY - endY) < 10) {
+            handleTap(endX, endY);
+        }
+    });
+
+    ['view', 'inspect', 'pick'].forEach(m => {
+        document.getElementById(`mode-${m}`).addEventListener('click', () => {
+            state.mode = m;
+            document.querySelectorAll('.footer-btn').forEach(b => { if(b.id.startsWith('mode-')) b.classList.remove('active') });
+            document.getElementById(`mode-${m}`).classList.add('active');
+            document.getElementById('status-area').style.display = (m === 'inspect') ? 'block' : 'none';
+            if (m !== 'inspect') state.selectedTile = null;
+        });
+    });
+
+    const statsOverlay = document.getElementById('farm-stats-overlay');
+    document.getElementById('btn-stats').addEventListener('click', () => {
+        statsOverlay.style.display = (statsOverlay.style.display === 'block') ? 'none' : 'block';
+    });
+}
+
+function setupDragAndDrop() {
+    let draggedItemData = null;
+    const ghost = document.getElementById('drag-ghost');
+
+    document.getElementById('menu-items-list').addEventListener('touchstart', (e) => {
+        const itemEl = e.target.closest('.drag-item');
+        if (!itemEl) return;
+        
+        const touch = e.touches[0];
+        draggedItemData = JSON.parse(itemEl.dataset.item);
+        
+        ghost.innerText = draggedItemData.icon;
+        ghost.style.display = 'block';
+        ghost.style.left = touch.clientX + 'px';
+        ghost.style.top = touch.clientY + 'px';
+        e.preventDefault(); 
+    }, {passive: false});
+
+    document.addEventListener('touchmove', (e) => {
+        if (draggedItemData) {
+            const touch = e.touches[0];
+            ghost.style.left = touch.clientX + 'px';
+            ghost.style.top = touch.clientY + 'px';
+            e.preventDefault();
+        }
+    }, {passive: false});
+
+    document.addEventListener('touchend', (e) => {
+        if (draggedItemData) {
+            ghost.style.display = 'none';
+            const touch = e.changedTouches[0];
+            if (touch.clientX > 200 || !state.isMenuOpen) {
+                processDropOnMap(touch.clientX, touch.clientY, draggedItemData);
+            }
+            draggedItemData = null;
+        }
+    });
+}
+
+function processDropOnMap(screenX, screenY, item) {
+    let mx = screenX + state.camera.x;
+    let my = screenY - 16 + state.camera.y;
+    let c = Math.floor(mx / TILE_SIZE);
+    let r = Math.floor(my / TILE_SIZE);
+
+    if (r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE) {
+        let cell = state.map[r][c];
+
+        if (item.type === 'ground') {
+            if (cell.object !== null) {
+                alert("上物があるマスは変更できません");
+                return;
+            }
+            if (state.medals >= item.cost) {
+                addMedal(-item.cost, screenX, screenY);
+                cell.ground = item.groundType;
+                // ※現在は水撒き機能がないため、畑を配置した時点から湿っている（成長可能）扱いにする
+                cell.isWet = (item.groundType === 'field');
+            } else {
+                alert("メダルが足りません");
+            }
+        } 
+        else if (item.type === 'seed') {
+            if (cell.ground !== 'field') {
+                alert("種は「畑」のマスにのみ植えることができます");
+                return;
+            }
+            if (cell.object !== null) {
+                alert("既に上物があります");
+                return;
+            }
+            if (state.medals >= item.cost) {
+                addMedal(-item.cost, screenX, screenY);
+                let cropDef = CROP_DATA[item.cropKey];
+                cell.object = { 
+                    type: 'crop', 
+                    cropKey: item.cropKey,
+                    icon: '🌱', 
+                    name: `${cropDef.name}の苗`, 
+                    cropState: 'seedling',
+                    harvestsLeft: cropDef.maxHarvest,
+                    growthTimer: 0 // 成長カウンター（秒）
+                };
+            } else {
+                alert("メダルが足りません");
+            }
+        }
+        else {
+            // 施設・家畜・装飾品等の基本配置ロジック
+            if (cell.object !== null) {
+                alert("既に上物があります");
+                return;
+            }
+            if (state.medals >= item.cost) {
+                addMedal(-item.cost, screenX, screenY);
+                cell.object = { icon: item.icon, name: item.name, type: item.type };
+            } else {
+                alert("メダルが足りません");
+            }
+        }
+    }
+}
+
+function handleTap(sx, sy) {
+    let mx = sx + state.camera.x;
+    let my = sy - 16 + state.camera.y;
+    let c = Math.floor(mx / TILE_SIZE);
+    let r = Math.floor(my / TILE_SIZE);
+
+    if (r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE) {
+        state.selectedTile = { r, c };
+        let cell = state.map[r][c];
+
+        if (state.mode === 'inspect') {
+            document.getElementById('status-obj').innerText = `上物: ${cell.object ? cell.object.name : 'なし'}`;
+            document.getElementById('status-ground').innerText = `地面: ${GROUND_NAMES[cell.ground] || '不明'}`;
+            // 気温と湿潤状態も表示
+            document.getElementById('status-temp').innerText = `気温: ${cell.temp}℃${cell.isWet ? ' (湿)' : ''}`;
+        } 
+        else if (state.mode === 'pick' && cell.object) {
+            if (cell.object.type === 'trash' && state.medals >= 100) {
+                addMedal(-100, sx, sy);
+                cell.object = null;
+            } 
+            // 作物の収穫処理
+            else if (cell.object.type === 'crop' && cell.object.cropState === 'ready') {
+                let cropDef = CROP_DATA[cell.object.cropKey];
+                
+                if (cell.object.cropKey === 'fodder') {
+                    // 餌の収穫（メダル増減なし、所持餌数増加）
+                    state.fodder++;
+                    document.getElementById('fodder-status').innerText = `🌿：${state.fodder}個`;
+                    showPopText("🌿+1", sx, sy, '#32CD32');
+                } else {
+                    // 通常の作物収穫
+                    addMedal(cropDef.yield, sx, sy);
+                }
+
+                cell.object.harvestsLeft--;
+                
+                if (cell.object.harvestsLeft <= 0) {
+                    // 収穫可能回数が尽きたら消滅
+                    cell.object = null;
+                } else {
+                    // まだ収穫可能なら苗に戻る
+                    cell.object.cropState = 'seedling';
+                    cell.object.icon = '🌱';
+                    cell.object.name = `${cropDef.name}の苗`;
+                    cell.object.growthTimer = 0; // 成長タイマーリセット
+                }
+            }
+        }
+    }
+}
+
+function showPopText(text, x, y, color) {
+    const pop = document.createElement('div');
+    pop.className = 'pop-text';
+    pop.style.left = `${x}px`; pop.style.top = `${y}px`;
+    pop.style.color = color;
+    pop.innerText = text;
+    document.body.appendChild(pop);
+    setTimeout(() => pop.remove(), 1000);
+}
+
+function addMedal(amt, x, y) {
+    state.medals += amt;
+    document.getElementById('medal-count').innerText = `🪙: ${state.medals}`;
+    
+    if(amt !== 0) {
+        showPopText(`🪙${amt > 0 ? '+' : ''}${amt}`, x, y, amt >= 0 ? '#4169E1' : '#DC143C');
+    }
+}
+
+function loadData() {
+    state.map = generateInitialMap();
+    document.getElementById('medal-count').innerText = `🪙: ${state.medals}`;
+    document.getElementById('fodder-status').innerText = `🌿：${state.fodder}個`;
+}
+
+document.getElementById('start-btn').addEventListener('click', initGame);
+</script>
+</body>
+</html>
