@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>メダル牧場 - 施設・農業拡張版</title>
 <style>
     * {
@@ -14,13 +14,13 @@
     }
     body {
         margin: 0; padding: 0;
-        width: 100vw; height: 100vh;
+        width: 100vw; height: 100dvh; /* 100vhから100dvhに変更（スマホのUIバーを考慮） */
         overflow: hidden;
         background-color: #333;
     }
 
     #title-screen {
-        position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+        position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
         background-color: #8B4513; display: flex; flex-direction: column;
         justify-content: center; align-items: center; z-index: 1000; color: white;
     }
@@ -29,7 +29,7 @@
         border: none; border-radius: 10px; font-weight: bold;
     }
 
-    #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
+    #game-screen { display: none; width: 100vw; height: 100dvh; position: relative; }
 
     #ticker {
         position: absolute; top: 0; left: 0; width: 100vw; height: 1rem;
@@ -47,7 +47,10 @@
     }
 
     #main-area {
-        position: absolute; top: 1rem; bottom: 1.5rem; width: 100vw;
+        position: absolute; top: 1rem;
+        /* フッターの高さ＋セーフエリア分を確保 */
+        bottom: calc(2rem + env(safe-area-inset-bottom)); 
+        width: 100vw;
         overflow: hidden; background-color: #000;
     }
     canvas { display: block; }
@@ -73,7 +76,7 @@
     .menu-tab {
         flex: 1; min-height: 45px; display: flex; align-items: center; justify-content: center;
         border-radius: 0 10px 10px 0; border: 1px solid #333; border-left: none;
-        writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0px;
+        writing-mode: vertical-rl; text-orientation: upright;
         font-size: 0.8rem; font-weight: bold; cursor: pointer;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
@@ -106,12 +109,15 @@
     }
 
     #footer {
-        position: absolute; bottom: 0; left: 0; width: 100vw; height: 1.5rem;
-        background-color: black; color: yellow; display: flex; align-items: center; padding: 0 5px;
+        position: absolute; bottom: 0; left: 0; width: 100vw;
+        /* スマホのセーフエリア（下部のバー等）を確保するための余白設定 */
+        height: calc(2.2rem + env(safe-area-inset-bottom));
+        padding: 0 10px env(safe-area-inset-bottom) 10px;
+        background-color: black; color: yellow; display: flex; align-items: center;
         font-size: 1.1rem; z-index: 100;
     }
     #medal-count { flex-grow: 1; }
-    .footer-btn { background: none; border: none; color: white; font-size: 1.2rem; margin-left: 10px; opacity: 0.5; cursor: pointer; }
+    .footer-btn { background: none; border: none; color: white; font-size: 1.2rem; margin-left: 10px; opacity: 0.5; cursor: pointer; padding: 5px; }
     .footer-btn.active { opacity: 1; color: #FFD700; }
     
     .pop-text {
@@ -185,7 +191,7 @@
 </div>
 
 <script>
-let TILE_SIZE = 48; // 可変になったためletに変更
+let TILE_SIZE = 48; 
 const MAP_SIZE = 50;
 let canvas, ctx;
 let gameLoopInterval;
@@ -197,8 +203,8 @@ let state = {
     camera: { x: 0, y: 0 },
     mode: 'view',
     selectedTile: null,
-    activeFacilityArea: null, // タップ時の効果範囲表示用 {r, c, size}
-    lastTap: { time: 0, r: -1, c: -1 }, // ダブルタップ判定用
+    activeFacilityArea: null, 
+    lastTap: { time: 0, r: -1, c: -1 }, 
     isMenuOpen: false,
     activeMenuTab: null,
     isZoomedOut: false
@@ -294,9 +300,7 @@ function generateInitialMap() {
     return newMap;
 }
 
-// 毎秒呼ばれるマップ情報の更新ロジック
 function updateMapStates() {
-    // 1. 全マスの基本状態をリセット
     for (let r = 0; r < MAP_SIZE; r++) {
         for (let c = 0; c < MAP_SIZE; c++) {
             state.map[r][c].temp = 20;
@@ -305,7 +309,6 @@ function updateMapStates() {
         }
     }
 
-    // 2. 施設の効果を計算して適用
     for (let r = 0; r < MAP_SIZE; r++) {
         for (let c = 0; c < MAP_SIZE; c++) {
             let obj = state.map[r][c].object;
@@ -351,9 +354,8 @@ function applyAreaEffect(r, c, size, effectFn) {
     }
 }
 
-// 成長・品質抽選システム
 function advanceGameTime(seconds) {
-    updateMapStates(); // 毎秒施設効果を最新化
+    updateMapStates(); 
 
     for (let r = 0; r < MAP_SIZE; r++) {
         for (let c = 0; c < MAP_SIZE; c++) {
@@ -369,7 +371,6 @@ function advanceGameTime(seconds) {
                         cell.object.icon = cropData.icon;
                         cell.object.name = cropData.name;
                         
-                        // 品質ランク抽選（餌以外）
                         if(cell.object.cropKey !== 'fodder') {
                             cell.object.rank = rollQuality(cell.fertilizer);
                             cell.object.sellPrice = calculatePrice(cropData.yield, cell.object.rank);
@@ -404,7 +405,6 @@ function calculatePrice(basePrice, rank) {
     return basePrice;
 }
 
-// 描画ループ
 function render() {
     canvas.width = MAP_SIZE * TILE_SIZE;
     canvas.height = MAP_SIZE * TILE_SIZE;
@@ -428,7 +428,6 @@ function render() {
             ctx.strokeStyle = 'rgba(0,0,0,0.05)';
             ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
 
-            // 畑が湿っている場合のグラフィック
             if (cell.ground === 'field' && cell.isWet) {
                 ctx.fillStyle = '#654321';
                 ctx.beginPath();
@@ -441,7 +440,6 @@ function render() {
                 ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText(cell.object.icon, x + TILE_SIZE/2, y + TILE_SIZE/2 + 2);
 
-                // パーティクル演出
                 if ((cell.object.type === 'crop' && (cell.object.rank === 'A' || cell.object.rank === 'S')) ||
                     (cell.object.type === 'facility' && cell.object.level === 3)) {
                     drawSparkles(ctx, x, y, TILE_SIZE, cell.object.type === 'crop' ? '#FFD700' : '#FFFFFF', time);
@@ -457,7 +455,6 @@ function render() {
         }
     }
 
-    // 効果範囲表示アニメーション
     if (state.activeFacilityArea) {
         let { r, c, size } = state.activeFacilityArea;
         let half = Math.floor(size / 2);
@@ -554,13 +551,11 @@ function setupEvents() {
         }
     });
 
-    // モード切り替え & ズーム機能
     let zoomTimer;
     const btnView = document.getElementById('mode-view');
     
-    // 長押しズームロジック
     const startZoomTimer = (e) => {
-        e.preventDefault(); // クリック等との競合防止
+        e.preventDefault(); 
         setMode('view');
         zoomTimer = setTimeout(() => {
             if(!state.isZoomedOut) toggleZoom(true);
@@ -617,7 +612,6 @@ function toggleZoom(enable) {
     TILE_SIZE = enable ? 24 : 48;
     let scale = TILE_SIZE / oldSize;
     
-    // 画面中央を基準にカメラを調整
     let cx = state.camera.x + window.innerWidth / 2;
     let cy = state.camera.y + window.innerHeight / 2;
     state.camera.x = Math.max(0, Math.min((MAP_SIZE * TILE_SIZE) - window.innerWidth, cx * scale - window.innerWidth / 2));
@@ -648,7 +642,6 @@ function setupDragAndDrop() {
             ghost.style.left = touch.clientX + 'px';
             ghost.style.top = touch.clientY + 'px';
             
-            // 地面タブ以外で外側にドラッグしたらメニューを閉じる
             if (draggedItemData.type !== 'ground' && touch.clientX > 200 && state.isMenuOpen) {
                 document.getElementById('menu-container').classList.remove('open');
                 state.isMenuOpen = false;
@@ -683,7 +676,6 @@ function processDropOnMap(screenX, screenY, item) {
             if (state.medals < item.cost) return alert("メダルが足りません");
             addMedal(-item.cost, screenX, screenY);
             cell.ground = item.groundType;
-            // スプリンクラー効果を再計算
             updateMapStates();
         } 
         else if (item.type === 'seed') {
@@ -704,7 +696,7 @@ function processDropOnMap(screenX, screenY, item) {
             
             addMedal(-item.cost, screenX, screenY);
             cell.object = { icon: item.icon, name: item.name, type: item.type, facilityKey: item.facilityKey };
-            updateMapStates(); // 配置後即時反映
+            updateMapStates(); 
         }
     }
 }
@@ -719,7 +711,6 @@ function handleTap(sx, sy) {
         state.selectedTile = { r, c };
         let cell = state.map[r][c];
 
-        // ダブルタップ判定 (消去処理)
         let now = Date.now();
         if (state.lastTap.r === r && state.lastTap.c === c && (now - state.lastTap.time) < 300) {
             if (cell.object && cell.object.type === 'facility') {
@@ -735,7 +726,6 @@ function handleTap(sx, sy) {
         }
         state.lastTap = { time: now, r, c };
 
-        // 施設タップ時範囲表示
         state.activeFacilityArea = null;
         if (cell.object && cell.object.type === 'facility' && cell.object.facilityKey !== 'upgrader' && cell.object.facilityKey !== 'fence') {
             let baseSize = (cell.object.facilityKey === 'sprinkler') ? 3 : 5;
