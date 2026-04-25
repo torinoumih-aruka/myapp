@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>はるかゲームズ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            letter-spacing: 0px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050508;
+            color: #ffffff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ヘッダー */
+        header {
+            text-align: center;
+            padding: 20px 0 5px 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(100, 200, 255, 0.8), 0 0 20px rgba(0, 100, 255, 0.5);
+        }
+
+        /* メダル情報 */
+        .medal-info {
+            text-align: center;
+            font-size: 16px;
+            color: #aaddff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 8px rgba(100, 200, 255, 0.6);
+        }
+
+        .medal-value {
+            font-family: monospace;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* ゲーム選択パネル（グリッド） */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 0 15px 30px 15px;
+            flex-grow: 1;
+        }
+
+        /* パネル本体（グラスモーフィズム） */
+        .panel {
+            position: relative;
+            background: rgba(0, 40, 80, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        /* 光沢線のスライド演出 */
+        .panel::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: sweep 5s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes sweep {
+            0% { left: -150%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        /* タップ時の縁の鼓動演出 */
+        .panel.pulsing {
+            animation: pulse-border 0.6s ease-out;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(100, 200, 255, 0.8); border-color: rgba(100, 200, 255, 1); }
+            100% { box-shadow: 0 0 20px 15px rgba(100, 200, 255, 0); border-color: rgba(100, 200, 255, 0.2); }
+        }
+
+        /* パネル内の要素 */
+        .game-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(100, 200, 255, 0.5);
+        }
+
+        .game-desc {
+            font-size: 12px;
+            color: #ddeeFF;
+            flex-grow: 1;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .play-btn {
+            background: rgba(0, 100, 200, 0.6);
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+            pointer-events: none; /* パネル全体でクリック判定させるため */
+        }
+
+        /* パーティクル */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 12px;
+            background: #eef8ff;
+            box-shadow: 0 0 6px #aaccff;
+            pointer-events: none;
+            opacity: 1;
+            transform: translate(-50%, -50%);
+            animation: fly 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes fly {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.2); opacity: 0; }
+        }
+
+        /* フッター */
+        footer {
+            border-top: 1px solid rgba(100, 200, 255, 0.3);
+            text-align: center;
+            padding: 15px 0;
+            font-size: 10px;
+            color: #6688aa;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>はるかゲームズ</h1>
+    </header>
+
+    <div class="medal-info">
+        メダル: <span id="medalCount" class="medal-value">00000000</span>
+    </div>
+
+    <div class="game-grid">
+        <div class="panel" data-href="emoji_spin/emoji_spin.html">
+            <div class="game-title">Emoji Drop</div>
+            <div class="game-desc">スロットゲーム<br>落ちものパズルとスロットゲームを合体させたようなゲームです。コナミのメダルゲームTwinkle Dropが遊びたかったのでまるパクリしました。</div>
+            <div class="play-btn">遊ぶ</div>
+        </div>
+
+        <div class="panel" data-href="Labyrinth_Adventure/labyrinth_adventure.html">
+            <div class="game-title">Labyrinth Adventure</div>
+            <div class="game-desc">スロットゲーム<br>迷宮の中を冒険し、奥に眠るヌシを倒して"お宝"を獲得する、RPGゲームをモチーフとしたメダルゲームです。<br>どれくらい演出などを凝ったつくりにできるか？を調べながら作った実験的作品です。</div>
+            <div class="play-btn">遊ぶ</div>
+        </div>
+
+        <div class="panel" data-href="medal_bokujo/medal_bokujo.html">
+            <div class="game-title">メダル牧場</div>
+            <div class="game-desc">【作成中】牧場経営ゲーム<br>集めたメダルを使って牧場経営。効率よく作物や家畜を育てましょう。収穫したものはメダルに還元されます。リアルタイムで育つため、じっくり遊ぶゲームです。</div>
+            <div class="play-btn">遊ぶ</div>
+        </div>
+    </div>
+
+    <footer>
+    </footer>
+    
+    <div>
+    <h2>メダル非連動ゲーム</h2>
+    </div>
+
+    <div class="game-grid">
+        <div class="panel" data-href="sample_slot/sample_slot.html">
+            <div class="game-title">猛獣サーカス</div>
+            <div class="game-desc">スロットゲーム<br>昔の猛獣王とジャグラーは面白かった。という意見を見聞きしたので、AIに丸投げして作らせたゲームです。メダル連動はありません。<br>リール停止時の"最大4コマの引き込み"は実装しておらず、純粋な"目押し"が可能な作品です。</div>
+            <div class="play-btn">遊ぶ</div>
+        </div>
+
+        <div class="panel">
+            <div class="game-title">ジェミニの大冒険</div>
+            <div class="game-desc">【作成途中】ローグ<br>不思議のダンジョンシリーズを、絵文字だけで作った作品。ボリュームが多すぎてAIが解釈できなくなったため、現在は開発を停止中。地下12階くらいまでなら遊べます。</div>
+            <div class="play-btn">遊ぶ</div>
+        </div>
+    </div>
+
+
+    <footer>
+        &copy; 2026 Haruka Games. All rights reserved.
+    </footer>
+
+    <script>
+        // Cookieからメダル数を取得し、8桁ゼロ埋めで表示する
+        function updateMedalDisplay() {
+            const getCookieValue = (name) => {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            };
+
+            let medals = getCookieValue("emojiDrop_medals");
+            
+            // Cookieが存在しないか数値でない場合は0とする
+            if (!medals || isNaN(medals)) {
+                medals = "0";
+            }
+
+            // 8桁のゼロ埋め
+            const formattedMedals = String(medals).padStart(8, '0');
+            document.getElementById('medalCount').innerText = formattedMedals;
+        }
+
+        // パーティクル生成関数
+        function createParticles(x, y, container) {
+            const particleCount = 8 + Math.floor(Math.random() * 5); // 8〜12個のパーティクル
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // コンテナの相対座標に配置
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+
+                // ランダムな飛散方向と距離を計算
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 30 + Math.random() * 50;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                // CSS変数にセット
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+
+                // ランダムな角度で矩形を傾ける
+                particle.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 180}deg)`;
+
+                container.appendChild(particle);
+
+                // アニメーション終了後に要素を削除
+                setTimeout(() => {
+                    particle.remove();
+                }, 600);
+            }
+        }
+
+        // パネルのタップ（クリック）イベントの設定
+        document.querySelectorAll('.panel').forEach(panel => {
+            panel.addEventListener('click', function(e) {
+                // アニメーションをリセットして再度付与（鼓動エフェクト）
+                this.classList.remove('pulsing');
+                void this.offsetWidth; // リフローを強制してアニメーションを再起動
+                this.classList.add('pulsing');
+
+                // タップした座標を取得
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // パーティクル発生
+                createParticles(x, y, this);
+
+				// HTMLで設定した data-href の値を取得する
+		        const targetUrl = this.dataset.href;
+
+		        // 遷移先のURLが設定されている場合のみ遷移を実行
+		        if (targetUrl) {
+		            // パーティクルや鼓動の演出を見せるため、400ミリ秒後に遷移
+		            setTimeout(() => { 
+		                window.location.href = targetUrl; 
+		            }, 400);
+		        }
+            });
+        });
+
+        // 初期化
+        updateMedalDisplay();
+    </script>
+</body>
+</html>
