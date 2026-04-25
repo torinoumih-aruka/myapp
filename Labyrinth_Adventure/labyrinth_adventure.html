@@ -588,7 +588,7 @@ function getCookie(name) {
   return null;
 }
 function saveGameData() {
-  setCookie("labyrinth_medals", medals, 30); setCookie("labyrinth_bet", currentBet, 30); setCookie("labyrinth_spinCount", spinCount, 30);
+  setCookie("emojiDrop_medals", medals, 30); setCookie("labyrinth_bet", currentBet, 30); setCookie("labyrinth_spinCount", spinCount, 30);
   setCookie("labyrinth_hero", JSON.stringify(hero), 30); setCookie("labyrinth_stage", stage, 30);
 }
 
@@ -797,7 +797,7 @@ updateMainLoop();
 // 初期化・メイン処理
 // =============================================================================
 window.onload = () => {
-  let savedMedals = getCookie("labyrinth_medals");
+  let savedMedals = getCookie("emojiDrop_medals");
   if (savedMedals !== null && parseInt(savedMedals) > 0) document.getElementById('btn-continue').style.display = 'block';
   document.getElementById('release-modal').style.display = 'flex'; 
   initGrid(); updatePartyUI(); updateCombatUI();
@@ -813,7 +813,7 @@ document.getElementById('btn-newgame').addEventListener('click', () => {
 });
 document.getElementById('btn-continue').addEventListener('click', () => {
   soundEnabled = document.getElementById('sound-checkbox').checked;
-  medals = parseInt(getCookie("labyrinth_medals") || 50); currentBet = parseInt(getCookie("labyrinth_bet") || 5); spinCount = parseInt(getCookie("labyrinth_spinCount") || 0);
+  medals = parseInt(getCookie("emojiDrop_medals") || 50); currentBet = parseInt(getCookie("labyrinth_bet") || 5); spinCount = parseInt(getCookie("labyrinth_spinCount") || 0);
   let savedHero = getCookie("labyrinth_hero"); if(savedHero) hero = JSON.parse(savedHero);
   if(hero.exp === undefined) hero.exp = 0; 
   stage = parseInt(getCookie("labyrinth_stage") || 1); partyMembers = 0; partySpinsLeft = 0;
