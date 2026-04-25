@@ -25,9 +25,9 @@
         background-color: #8B4513; display: flex; flex-direction: column;
         justify-content: center; align-items: center; z-index: 1000; color: white;
     }
-    #start-btn {
+    .title-btn {
         padding: 15px 30px; font-size: 1.5rem; background-color: #FFD700; color: #333;
-        border: none; border-radius: 10px; font-weight: bold;
+        border: none; border-radius: 10px; font-weight: bold; margin-bottom: 15px; cursor: pointer;
     }
 
     #game-screen { display: none; width: 100vw; height: 100dvh; position: relative; }
@@ -49,7 +49,7 @@
 
     #main-area {
         position: absolute; top: 1rem;
-        bottom: calc(2rem + env(safe-area-inset-bottom)); 
+        bottom: calc(2.2rem + env(safe-area-inset-bottom)); 
         width: 100vw;
         overflow: hidden; background-color: #000;
     }
@@ -97,11 +97,18 @@
     .menu-item:active { background: #f0f0f0; border-color: #888; }
     .menu-item.debug-btn { cursor: pointer; text-align: center; justify-content: center; background: #eee; }
 
+    /* ステータス表示エリアを画像に合わせた2段構成のレイアウトに改修 */
     #status-area {
-        position: absolute; bottom: 10px; right: 10px; width: 170px;
-        background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 5px; padding: 5px;
-        font-size: 0.8rem; z-index: 100; display: none; line-height: 1.3;
+        position: absolute; bottom: 10px; right: 10px; width: 220px;
+        z-index: 100; display: none; flex-direction: column; gap: 5px;
     }
+    .status-box {
+        background-color: rgba(0, 0, 0, 0.85); color: white; border-radius: 8px; padding: 10px;
+        font-size: 0.9rem; line-height: 1.5; font-weight: bold;
+    }
+    .status-row { display: flex; justify-content: space-between; align-items: center; }
+    .stars { color: #FFD700; letter-spacing: 2px; }
+
     #farm-stats-overlay {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background-color: rgba(0, 0, 0, 0.85); color: white; border: 2px solid #FFD700;
@@ -139,7 +146,8 @@
 
 <div id="title-screen">
     <h1>メダル牧場</h1>
-    <button id="start-btn">ゲームスタート</button>
+    <button class="title-btn" id="start-new-btn">はじめから</button>
+    <button class="title-btn" id="start-load-btn">つづきから</button>
     <div id="save-date" style="margin-top: 15px; font-size: 0.9rem; color: #FFD700;"></div>
 </div>
 
@@ -168,9 +176,15 @@
         </div>
 
         <div id="status-area">
-            <div id="status-obj">上物: なし</div>
-            <div id="status-ground">地面: 土</div>
-            <div id="status-temp">気温: 20℃</div>
+            <div class="status-box" id="status-obj-box">
+                </div>
+            <div class="status-box" id="status-ground-box">
+                <div id="status-ground">地面: </div>
+                <div class="status-row">
+                    <span id="status-temp">温度: </span>
+                    <span id="status-wet"></span>
+                </div>
+            </div>
         </div>
 
         <div id="farm-stats-overlay">
@@ -198,7 +212,7 @@ let canvas, ctx;
 let gameLoopInterval;
 
 let state = {
-    medals: 5000,
+    medals: 50,
     fodder: 0,
     defaultTemp: 20, 
     map: [],
@@ -212,7 +226,8 @@ let state = {
     isMenuOpen: false,
     activeMenuTab: null,
     menuWidth: 240, 
-    isZoomedOut: false
+    isZoomedOut: false,
+    animalNameCounters: {} // { '牛': 1, '犬': 3... } 命名用カウンタ
 };
 
 const COLORS = { soil: '#8B5A2B', grass: '#7CFC00', field: '#DEB887', path: '#D3D3D3', water: '#4682B4' };
@@ -228,17 +243,36 @@ const TAB_CONFIGS = {
     debug: { bg: '#000000', color: '#ffffff', width: 240 }
 };
 
+// 育成時間の分表記と適正気温
 const CROP_DATA = {
-    tomato: { name: 'トマト', icon: '🍅', time: 10, minTemp: 15, maxTemp: 30, yield: 3, maxHarvest: 5 },
+    tomato: { name: 'トマト', icon: '🍅', time: 10, minTemp: 20, maxTemp: 30, yield: 3, maxHarvest: 5 },
     potato: { name: 'ジャガイモ', icon: '🥔', time: 5, minTemp: 5, maxTemp: 25, yield: 1, maxHarvest: 20 },
-    carrot: { name: 'ニンジン', icon: '🥕', time: 10, minTemp: 5, maxTemp: 20, yield: 2, maxHarvest: 10 },
-    cucumber: { name: 'きゅうり', icon: '🥒', time: 5, minTemp: 20, maxTemp: 30, yield: 1, maxHarvest: 20 },
-    broccoli: { name: 'ブロッコリー', icon: '🥦', time: 15, minTemp: 0, maxTemp: 15, yield: 4, maxHarvest: 5 },
-    spinach: { name: 'ほうれんそう', icon: '🥬', time: 10, minTemp: 0, maxTemp: 15, yield: 2, maxHarvest: 10 },
-    strawberry: { name: 'いちご', icon: '🍓', time: 10, minTemp: 5, maxTemp: 20, yield: 4, maxHarvest: 10 },
+    carrot: { name: 'ニンジン', icon: '🥕', time: 10, minTemp: 5, maxTemp: 15, yield: 2, maxHarvest: 10 },
+    cucumber: { name: 'きゅうり', icon: '🥒', time: 5, minTemp: 25, maxTemp: 35, yield: 1, maxHarvest: 20 },
+    broccoli: { name: 'ブロッコリー', icon: '🥦', time: 15, minTemp: 5, maxTemp: 15, yield: 4, maxHarvest: 5 },
+    spinach: { name: 'ほうれんそう', icon: '🥬', time: 10, minTemp: 0, maxTemp: 10, yield: 2, maxHarvest: 10 },
+    strawberry: { name: 'いちご', icon: '🍓', time: 10, minTemp: 5, maxTemp: 15, yield: 4, maxHarvest: 10 },
     pineapple: { name: 'パイナップル', icon: '🍍', time: 30, minTemp: 25, maxTemp: 30, yield: 10, maxHarvest: 5 },
-    melon: { name: 'メロン', icon: '🍈', time: 30, minTemp: 20, maxTemp: 30, yield: 10, maxHarvest: 5 },
+    melon: { name: 'メロン', icon: '🍈', time: 30, minTemp: 20, maxTemp: 25, yield: 10, maxHarvest: 5 },
     fodder: { name: '餌', icon: '🌿', time: 5, minTemp: -999, maxTemp: 999, yield: 0, maxHarvest: 20 }
+};
+
+// 畜産物関連データ
+const ANIMAL_PROD_DATA = {
+    cow: { reqFeed: 2, minTemp: 10, maxTemp: 25, reqTimeMin: 60, resKey: 'milk', resName: '牛乳', resIcon: '🥛' },
+    sheep: { reqFeed: 1, minTemp: 0, maxTemp: 15, reqTimeMin: 60, resKey: 'wool', resName: '羊毛', resIcon: '☁' },
+    chicken: { reqFeed: 1, minTemp: 5, maxTemp: 25, reqTimeMin: 30, resKey: 'egg', resName: '卵', resIcon: '🥚' }
+};
+
+const MEAT_MAP = {
+    cow: { key: 'beef', name: '牛肉', icon: '🥩', price: 600 },
+    pig: { key: 'pork', name: '豚肉', icon: '🥩', price: 80 },
+    sheep: { key: 'mutton', name: '羊肉', icon: '🥩', price: 200 },
+    chicken: { key: 'chicken_meat', name: '鶏肉', icon: '🥩', price: 40 }
+};
+
+const PRODUCT_PRICES = {
+    milk: 100, wool: 50, egg: 10
 };
 
 const MENU_DATA = {
@@ -262,20 +296,38 @@ const MENU_DATA = {
         { name: '餌の種', icon: '🌿', cost: 1, type: 'seed', cropKey: 'fodder' }
     ],
     facility: [
-        { name: 'ホットストーン', icon: '🪨', cost: 1000, type: 'facility', facilityKey: 'hot_stone' },
-        { name: 'ひんやりストーン', icon: '🪨', cost: 1000, type: 'facility', facilityKey: 'cold_stone' },
+        { name: 'ホットストーン', icon: '🧱', cost: 1000, type: 'facility', facilityKey: 'hot_stone' },
+        { name: 'ひんやりストーン', icon: '🧱', cost: 1000, type: 'facility', facilityKey: 'cold_stone' },
         { name: 'コンポスト', icon: '📦', cost: 100, type: 'facility', facilityKey: 'compost' },
         { name: 'スプリンクラー', icon: '⛲', cost: 100, type: 'facility', facilityKey: 'sprinkler' },
         { name: 'かかし', icon: '🤪', cost: 100, type: 'facility', facilityKey: 'scarecrow' },
         { name: 'アップグレーダー', icon: '🎚️', cost: 2000, type: 'facility', facilityKey: 'upgrader' },
-        { name: '柵', icon: '🪵', cost: 10, type: 'facility', facilityKey: 'fence' }
+        { name: '柵', icon: '🪵', cost: 10, type: 'facility', facilityKey: 'fence' },
+        { name: '食肉加工施設', icon: '🏭', cost: 1000, type: 'facility', facilityKey: 'meat_processor' }
     ],
-    livestock: [{ name: '鶏', icon: '🐓', cost: 50, type: 'livestock' }, { name: '牛', icon: '🐄', cost: 1000, type: 'livestock' }],
-    pet: [{ name: '犬', icon: '🐕', cost: 50, type: 'pet' }, { name: '猫', icon: '🐈‍⬛', cost: 50, type: 'pet' }],
-    decoration: [{ name: '花', icon: '🌻', cost: 5, type: 'decoration' }],
+    livestock: [
+        { name: '鶏', icon: '🐓', cost: 50, type: 'livestock', animKey: 'chicken' }, 
+        { name: '豚', icon: '🐖', cost: 300, type: 'livestock', animKey: 'pig' }, 
+        { name: '牛', icon: '🐄', cost: 1000, type: 'livestock', animKey: 'cow' },
+        { name: '羊', icon: '🐏', cost: 800, type: 'livestock', animKey: 'sheep' }
+    ],
+    pet: [
+        { name: '犬', icon: '🐕', cost: 50, type: 'pet' }, 
+        { name: '猫', icon: '🐈‍⬛', cost: 50, type: 'pet' }
+    ],
+    decoration: [
+        { name: '花', icon: '🌻', cost: 5, type: 'decoration', isRandomFlower: true },
+        { name: 'レンガ', icon: '🧱', cost: 5, type: 'decoration' },
+        { name: '壺', icon: '⚱️', cost: 5, type: 'decoration' },
+        { name: '落葉樹', icon: '🌳', cost: 50, type: 'decoration' },
+        { name: '常緑樹', icon: '🌲', cost: 50, type: 'decoration' },
+        { name: 'クリスマスツリー', icon: '🎄', cost: 100, type: 'decoration' },
+        { name: 'ヤシの木', icon: '🌴', cost: 100, type: 'decoration' }
+    ],
     debug: [
         { name: 'メダル+1000', icon: '🪙', cost: 0, type: 'debug_medal' },
-        { name: '時間を進める(5分)', icon: '⏩', cost: 0, type: 'debug_time' },
+        { name: '時間を進める(60分)', icon: '⏩', cost: 0, type: 'debug_time' },
+        { name: '日を跨ぐ', icon: '🌙', cost: 0, type: 'debug_day' },
         { name: 'イベント: なにもない', icon: '☁️', type: 'debug_event', eventKey: 'none' },
         { name: 'イベント: 嵐の到来', icon: '🌪️', type: 'debug_event', eventKey: 'storm' },
         { name: 'イベント: 台風の到来', icon: '🌀', type: 'debug_event', eventKey: 'typhoon' },
@@ -302,50 +354,55 @@ const CookieUtil = {
 };
 
 function saveData() {
-    CookieUtil.set('medals', state.medals);
+    CookieUtil.set('emojiDrop_medals', state.medals);
     localStorage.setItem('farm_map', JSON.stringify(state.map));
     localStorage.setItem('farm_time', Date.now().toString());
     localStorage.setItem('farm_fodder', state.fodder.toString());
+    localStorage.setItem('farm_animal_counters', JSON.stringify(state.animalNameCounters));
     showPopText("保存しました", window.innerWidth/2, window.innerHeight/2, '#FFFFFF');
 }
 
-function loadData() {
-    let savedMedals = CookieUtil.get('medals');
+// 起動ボタンによる呼び出し
+document.getElementById('start-new-btn').addEventListener('click', () => {
+    state.medals = 50;
+    state.map = generateInitialMap();
+    state.fodder = 0;
+    state.animalNameCounters = {};
+    startGame();
+});
+
+document.getElementById('start-load-btn').addEventListener('click', () => {
+    let savedMedals = CookieUtil.get('emojiDrop_medals');
     if (savedMedals !== undefined) state.medals = parseInt(savedMedals, 10);
-    else state.medals = 5000; 
+    else state.medals = 50;
 
     let savedMap = localStorage.getItem('farm_map');
     let savedTime = localStorage.getItem('farm_time');
     let savedFodder = localStorage.getItem('farm_fodder');
+    let savedCounters = localStorage.getItem('farm_animal_counters');
 
     if (savedFodder !== null) state.fodder = parseInt(savedFodder, 10);
+    if (savedCounters !== null) state.animalNameCounters = JSON.parse(savedCounters);
 
     if (savedMap && savedTime) {
         state.map = JSON.parse(savedMap);
-        document.getElementById('save-date').innerText = "前回のデータから再開できます";
-        document.getElementById('start-btn').innerText = "つづきから";
-
         let passedSeconds = Math.floor((Date.now() - parseInt(savedTime)) / 1000);
         if (passedSeconds > 0) {
-            advanceGameTime(passedSeconds); // オフライン経過時間を反映
+            advanceGameTime(passedSeconds);
         }
     } else {
         state.map = generateInitialMap();
     }
-    
-    document.getElementById('medal-count').innerText = `🪙: ${state.medals}`;
-    document.getElementById('fodder-status').innerText = `🌿：${state.fodder}個`;
-}
+    startGame();
+});
 
-function initGame() {
+function startGame() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
     canvas.width = MAP_SIZE * TILE_SIZE;
     canvas.height = MAP_SIZE * TILE_SIZE;
 
     document.getElementById('menu-container').style.left = '-240px';
-
-    loadData();
     setupEvents();
     setupDragAndDrop();
     updateUIForMode();
@@ -356,11 +413,20 @@ function initGame() {
     state.camera.x = (canvas.width - window.innerWidth) / 2;
     state.camera.y = (canvas.height - window.innerHeight) / 2;
 
+    document.getElementById('medal-count').innerText = `🪙: ${state.medals}`;
+    document.getElementById('fodder-status').innerText = `🌿：${state.fodder}個`;
+
     requestAnimationFrame(render);
     
     gameLoopInterval = setInterval(() => {
         advanceGameTime(1);
     }, 1000);
+}
+
+// 起動時の「つづきから」ボタン表示チェック
+let hasSavedData = localStorage.getItem('farm_map') !== null;
+if(!hasSavedData) {
+    document.getElementById('start-load-btn').style.display = 'none';
 }
 
 function generateInitialMap() {
@@ -416,7 +482,7 @@ function updateMapStates() {
                 }
             }
             
-            // 水マスの隣接効果(畑を湿らせる)
+            // 水マスの隣接効果
             if (state.map[r][c].ground === 'field' && !state.map[r][c].isWet) {
                 const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
                 for (let d of dirs) {
@@ -453,6 +519,40 @@ function applyAreaEffect(r, c, size, effectFn) {
     }
 }
 
+// 育成速度計算 (仕様変更後)
+function calcGrowthSpeed(r, c, cropKey) {
+    let speed = 1;
+    let cell = state.map[r][c];
+    if (cell.isWet) speed++;
+    if (cell.fertilizer >= 4) speed++;
+
+    let cropDef = CROP_DATA[cropKey];
+    if (cell.temp >= cropDef.minTemp && cell.temp <= cropDef.maxTemp) speed++;
+
+    let sameAdjs = 0;
+    const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+    for(let d of dirs) {
+        let nr = r + d[0], nc = c + d[1];
+        if (nr >= 0 && nr < MAP_SIZE && nc >= 0 && nc < MAP_SIZE) {
+            if(state.map[nr][nc].object && state.map[nr][nc].object.cropKey === cropKey) sameAdjs++;
+        }
+    }
+    if (sameAdjs >= 2) speed++;
+
+    return Math.min(5, speed);
+}
+
+// 速度に応じた必要秒数を算出
+function getRequiredTimeSec(baseTimeMin, speed) {
+    let baseSec = baseTimeMin * 60;
+    if(speed === 1) return baseSec * 3;
+    if(speed === 2) return baseSec * 2;
+    if(speed === 3) return baseSec;
+    if(speed === 4) return Math.max(10, baseSec - 120);
+    if(speed === 5) return Math.max(10, baseSec - 240);
+    return baseSec;
+}
+
 function advanceGameTime(seconds) {
     updateMapStates(); 
     let movedThisTick = new Set();
@@ -461,9 +561,9 @@ function advanceGameTime(seconds) {
         for (let c = 0; c < MAP_SIZE; c++) {
             let cell = state.map[r][c];
 
-            // 動物のランダム移動 (通常1秒進行時のみ)
-            if (seconds === 1 && cell.object && cell.object.type === 'livestock' && !movedThisTick.has(cell.object)) {
-                if (Math.random() < 0.1) { // 10%の確率で移動
+            // 動物のランダム移動
+            if (seconds === 1 && cell.object && (cell.object.type === 'livestock' || cell.object.type === 'pet') && !movedThisTick.has(cell.object)) {
+                if (Math.random() < 0.1) { 
                     const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
                     let d = dirs[Math.floor(Math.random() * dirs.length)];
                     let nr = r + d[0], nc = c + d[1];
@@ -472,44 +572,105 @@ function advanceGameTime(seconds) {
                         if (target.ground === 'grass' && !target.object) {
                             target.object = cell.object;
                             cell.object = null;
-                            target.object.anim = {
-                                fromX: (c - nc) * TILE_SIZE,
-                                fromY: (r - nr) * TILE_SIZE,
-                                start: Date.now(),
-                                duration: 300
-                            };
+                            target.object.anim = { fromX: (c - nc) * TILE_SIZE, fromY: (r - nr) * TILE_SIZE, start: Date.now(), duration: 300 };
                             movedThisTick.add(target.object);
-                            cell = target; // 以降の判定用に参照先を更新
+                            cell = target; 
                         }
                     }
                 }
             }
 
-            // 作物の成長判定
+            // 作物の成長判定 (気温条件撤廃・速度ベース進行)
             if (cell.object && cell.object.type === 'crop' && cell.object.cropState === 'seedling') {
                 let cropData = CROP_DATA[cell.object.cropKey];
-                let isTempOk = cell.temp >= cropData.minTemp && cell.temp <= cropData.maxTemp;
+                let speed = calcGrowthSpeed(r, c, cell.object.cropKey);
+                let reqSec = getRequiredTimeSec(cropData.time, speed);
                 
-                if (cell.isWet && isTempOk) {
-                    cell.object.growthTimer += seconds;
-                    if (cell.object.growthTimer >= cropData.time * 60) {
-                        cell.object.cropState = 'ready';
-                        cell.object.icon = cropData.icon;
-                        cell.object.name = cropData.name;
-                        
-                        if(cell.object.cropKey !== 'fodder') {
-                            cell.object.rank = rollQuality(cell.fertilizer);
-                            cell.object.sellPrice = calculatePrice(cropData.yield, cell.object.rank);
-                        } else {
-                            cell.object.rank = '-';
-                            cell.object.sellPrice = 0;
+                // 表示更新用に現在の速度を保持
+                cell.object.currentSpeed = speed;
+
+                cell.object.growthTimer += seconds;
+                if (cell.object.growthTimer >= reqSec) {
+                    cell.object.cropState = 'ready';
+                    cell.object.icon = cropData.icon;
+                    cell.object.name = cropData.name;
+                    
+                    if(cell.object.cropKey !== 'fodder') {
+                        cell.object.rank = rollQuality(cell.fertilizer);
+                        cell.object.sellPrice = calculatePrice(cropData.yield, cell.object.rank);
+                    } else {
+                        cell.object.rank = '-';
+                        cell.object.sellPrice = 0;
+                    }
+                }
+            }
+
+            // 畜産物の生成
+            if (cell.object && cell.object.type === 'livestock') {
+                let pData = ANIMAL_PROD_DATA[cell.object.animKey];
+                if (pData) {
+                    cell.object.prodTimer += seconds;
+                    if (cell.object.prodTimer >= pData.reqTimeMin * 60) {
+                        if (cell.object.feed >= pData.reqFeed && cell.temp >= pData.minTemp && cell.temp <= pData.maxTemp) {
+                            // 隣接空きマス探索
+                            let empties = [];
+                            const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+                            for(let d of dirs) {
+                                let nr = r+d[0], nc = c+d[1];
+                                if(nr>=0 && nr<MAP_SIZE && nc>=0 && nc<MAP_SIZE && !state.map[nr][nc].object && state.map[nr][nc].ground !== 'water') {
+                                    empties.push({r: nr, c: nc});
+                                }
+                            }
+                            if (empties.length > 0) {
+                                let target = empties[Math.floor(Math.random() * empties.length)];
+                                state.map[target.r][target.c].object = {
+                                    type: 'product', key: pData.resKey, name: pData.resName, icon: pData.resIcon,
+                                    sellPrice: PRODUCT_PRICES[pData.resKey], rank: cell.object.rank
+                                };
+                            }
+                            // 餌消費
+                            cell.object.feed -= pData.reqFeed;
                         }
+                        cell.object.prodTimer = 0;
                     }
                 }
             }
         }
     }
     updateInspectUI();
+}
+
+function triggerNextDay() {
+    for (let r = 0; r < MAP_SIZE; r++) {
+        for (let c = 0; c < MAP_SIZE; c++) {
+            let cell = state.map[r][c];
+            if (cell.object && (cell.object.type === 'livestock' || cell.object.type === 'pet')) {
+                if (cell.object.feed === 0) cell.object.lifespan -= 1;
+                if (cell.temp <= 0) cell.object.lifespan -= 10;
+
+                if (cell.object.lifespan <= 0) {
+                    cell.object = null; // 寿命で消滅
+                }
+            }
+        }
+    }
+    showPopText("日を跨ぎました", window.innerWidth/2, 100, '#FFF');
+    updateInspectUI();
+}
+
+function getFenceCount() {
+    let count = 0;
+    for(let r=0; r<MAP_SIZE; r++) for(let c=0; c<MAP_SIZE; c++) if(state.map[r][c].object?.facilityKey === 'fence') count++;
+    return count;
+}
+
+function generateAnimalRank() {
+    let fences = getFenceCount();
+    let rnd = Math.random() * 100;
+    if (fences <= 20) return rnd < 70 ? 'C' : 'B';
+    if (fences <= 40) return rnd < 50 ? 'C' : (rnd < 90 ? 'B' : 'A');
+    if (fences <= 70) return rnd < 40 ? 'C' : (rnd < 80 ? 'B' : (rnd < 98 ? 'A' : 'S'));
+    return rnd < 60 ? 'B' : (rnd < 90 ? 'A' : 'S');
 }
 
 function rollQuality(fertilizer) {
@@ -570,8 +731,8 @@ function triggerEvent(key) {
         for (let c=0; c<MAP_SIZE; c++) {
             let obj = state.map[r][c].object;
             if (obj && obj.type === 'pet') {
-                if (obj.name === '犬') dogCount++;
-                if (obj.name === '猫') catCount++;
+                if (obj.name.includes('犬')) dogCount++;
+                if (obj.name.includes('猫')) catCount++;
             }
         }
     }
@@ -606,6 +767,7 @@ function triggerEvent(key) {
                     if (obj.name === '花' && Math.random() < 0.25) cell.object = null;
                     else if (obj.type === 'crop' && Math.random() < 0.10) cell.object = null;
                     else if (obj.facilityKey === 'fence' && Math.random() < 0.30) cell.object = null;
+                    else if (obj.type === 'livestock' || obj.type === 'pet') obj.lifespan -= 10;
                 }
             }
         }
@@ -759,8 +921,9 @@ function render() {
                 }
 
                 if ((cell.object.type === 'crop' && (cell.object.rank === 'A' || cell.object.rank === 'S')) ||
-                    (cell.object.type === 'facility' && cell.object.level === 3)) {
-                    drawSparkles(ctx, drawX - TILE_SIZE/2, drawY - TILE_SIZE/2, TILE_SIZE, cell.object.type === 'crop' ? '#FFD700' : '#FFFFFF', time);
+                    (cell.object.type === 'facility' && cell.object.level === 3) ||
+                    (cell.object.type === 'product' && (cell.object.rank === 'A' || cell.object.rank === 'S'))) {
+                    drawSparkles(ctx, drawX - TILE_SIZE/2, drawY - TILE_SIZE/2, TILE_SIZE, cell.object.type === 'facility' ? '#FFFFFF' : '#FFD700', time);
                 }
             }
 
@@ -862,8 +1025,9 @@ function renderMenu(tabKey) {
             div.className = 'menu-item debug-btn';
             div.innerText = `${item.icon} ${item.name}`;
             div.addEventListener('click', () => {
-                if(item.type === 'debug_time') { advanceGameTime(5*60); updateMapStates(); alert("5分経過"); }
+                if(item.type === 'debug_time') { advanceGameTime(60*60); updateMapStates(); alert("60分経過"); }
                 else if(item.type === 'debug_medal') addMedal(1000, window.innerWidth/2, window.innerHeight/2);
+                else if(item.type === 'debug_day') triggerNextDay();
                 else if(item.type === 'debug_event') triggerEvent(item.eventKey);
             });
         } else {
@@ -874,6 +1038,16 @@ function renderMenu(tabKey) {
         }
         list.appendChild(div);
     });
+}
+
+function generateName(baseName) {
+    if(!state.animalNameCounters[baseName]) state.animalNameCounters[baseName] = 0;
+    let code = state.animalNameCounters[baseName];
+    state.animalNameCounters[baseName]++;
+    // A, B, C... Z, AA, AB...
+    let letter = String.fromCharCode(65 + (code % 26));
+    if (code >= 26) letter = String.fromCharCode(65 + Math.floor(code / 26) - 1) + letter;
+    return baseName + letter;
 }
 
 function setupEvents() {
@@ -890,26 +1064,41 @@ function setupEvents() {
 
     let isDragging = false;
     let startX, startY, camStartX, camStartY;
+    let longPressTimer = null;
     const mainArea = document.getElementById('main-area');
 
     mainArea.addEventListener('touchstart', (e) => {
         if(e.target.closest('#menu-container')) return;
 
-        if (state.mode === 'pick') {
-            let mx = e.touches[0].clientX + state.camera.x;
-            let my = e.touches[0].clientY - 16 + state.camera.y;
-            let c = Math.floor(mx / TILE_SIZE);
-            let r = Math.floor(my / TILE_SIZE);
+        let mx = e.touches[0].clientX + state.camera.x;
+        let my = e.touches[0].clientY - 16 + state.camera.y;
+        let c = Math.floor(mx / TILE_SIZE);
+        let r = Math.floor(my / TILE_SIZE);
+
+        if (state.mode === 'pick' && r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE) {
+            let cell = state.map[r][c];
             
-            if (r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE) {
-                let cell = state.map[r][c];
-                if (cell.object && cell.object.type === 'facility' && cell.object.facilityKey !== 'upgrader') {
-                    state.draggingMapItem = { r, c, object: cell.object };
-                    cell.object = null; 
-                    state.dragCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-                    e.preventDefault(); 
-                    return; 
-                }
+            // 家畜の長押し餌やり処理
+            if (cell.object && (cell.object.type === 'livestock' || cell.object.type === 'pet')) {
+                longPressTimer = setTimeout(() => {
+                    if (!isDragging && cell.object.feed < 5 && state.fodder > 0) {
+                        state.fodder--;
+                        cell.object.feed++;
+                        document.getElementById('fodder-status').innerText = `🌿：${state.fodder}個`;
+                        showPopText("🍖+1", e.touches[0].clientX, e.touches[0].clientY, "orange");
+                        updateInspectUI();
+                        // 連続付与しないようにクリア
+                        clearTimeout(longPressTimer); 
+                    }
+                }, 500);
+            }
+
+            if (cell.object && cell.object.type === 'facility' && cell.object.facilityKey !== 'upgrader') {
+                state.draggingMapItem = { r, c, object: cell.object };
+                cell.object = null; 
+                state.dragCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                e.preventDefault(); 
+                return; 
             }
         }
 
@@ -926,19 +1115,45 @@ function setupEvents() {
         }
 
         if (!isDragging) return;
+        
+        let dx = Math.abs(startX - e.touches[0].clientX);
+        let dy = Math.abs(startY - e.touches[0].clientY);
+        if (dx > 5 || dy > 5) {
+            clearTimeout(longPressTimer); // ドラッグ開始で長押しキャンセル
+        }
+
         state.camera.x = Math.max(0, Math.min(canvas.width - window.innerWidth, camStartX + (startX - e.touches[0].clientX)));
         state.camera.y = Math.max(0, Math.min(canvas.height - window.innerHeight + 40, camStartY + (startY - e.touches[0].clientY)));
     }, {passive: false});
 
     mainArea.addEventListener('touchend', (e) => {
+        clearTimeout(longPressTimer);
+
         if (state.draggingMapItem) {
             let mx = e.changedTouches[0].clientX + state.camera.x;
             let my = e.changedTouches[0].clientY - 16 + state.camera.y;
             let c = Math.floor(mx / TILE_SIZE);
             let r = Math.floor(my / TILE_SIZE);
 
-            if (r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE && !state.map[r][c].object && state.map[r][c].ground !== 'water') {
-                state.map[r][c].object = state.draggingMapItem.object;
+            if (r >= 0 && r < MAP_SIZE && c >= 0 && c < MAP_SIZE) {
+                let target = state.map[r][c];
+
+                // 食肉加工処理
+                if (target.object && target.object.facilityKey === 'meat_processor' && state.draggingMapItem.object.type === 'livestock') {
+                    let meatData = MEAT_MAP[state.draggingMapItem.object.animKey];
+                    if (meatData) {
+                        // ドラッグ元（元いた場所）に肉を置く
+                        state.map[state.draggingMapItem.r][state.draggingMapItem.c].object = {
+                            type: 'product', key: meatData.key, name: meatData.name, icon: meatData.icon,
+                            sellPrice: meatData.price, rank: state.draggingMapItem.object.rank
+                        };
+                        showPopText("🏭解体", e.changedTouches[0].clientX, e.changedTouches[0].clientY, "red");
+                    }
+                } else if (!target.object && target.ground !== 'water') {
+                    target.object = state.draggingMapItem.object;
+                } else {
+                    state.map[state.draggingMapItem.r][state.draggingMapItem.c].object = state.draggingMapItem.object;
+                }
             } else {
                 state.map[state.draggingMapItem.r][state.draggingMapItem.c].object = state.draggingMapItem.object;
             }
@@ -989,7 +1204,7 @@ function setMode(newMode) {
     state.mode = newMode;
     document.querySelectorAll('.footer-btn').forEach(b => { if(b.id.startsWith('mode-')) b.classList.remove('active') });
     document.getElementById(`mode-${newMode}`).classList.add('active');
-    document.getElementById('status-area').style.display = (newMode === 'inspect') ? 'block' : 'none';
+    document.getElementById('status-area').style.display = (newMode === 'inspect') ? 'flex' : 'none';
     
     if (newMode !== 'inspect') {
         state.selectedTile = null;
@@ -1042,6 +1257,21 @@ function setupDragAndDrop() {
             if (dx > 10 && dx > dy) { 
                 dragIntent = true;
                 draggedItemData = JSON.parse(initialTouch.itemEl.dataset.item);
+                
+                // 花のランダム処理
+                if(draggedItemData.isRandomFlower) {
+                    const flowers = ['🌻', '🌼', '🌷', '🪻', '🌹'];
+                    draggedItemData.icon = flowers[Math.floor(Math.random() * flowers.length)];
+                }
+                // 家畜・ペットの名前生成処理
+                if(draggedItemData.type === 'livestock' || draggedItemData.type === 'pet') {
+                    draggedItemData.name = generateName(draggedItemData.name);
+                    draggedItemData.rank = generateAnimalRank();
+                    draggedItemData.lifespan = 100;
+                    draggedItemData.feed = 0;
+                    draggedItemData.prodTimer = 0;
+                }
+
                 ghost.innerText = draggedItemData.icon;
                 ghost.style.display = 'block';
             } else if (dy > 10) {
@@ -1109,7 +1339,7 @@ function processDropOnMap(screenX, screenY, item) {
             if (state.medals < item.cost) return alert("メダルが足りません");
             
             addMedal(-item.cost, screenX, screenY);
-            cell.object = { icon: item.icon, name: item.name, type: item.type, facilityKey: item.facilityKey };
+            cell.object = { ...item };
             updateMapStates(); 
         }
     }
@@ -1127,7 +1357,7 @@ function handleTap(sx, sy) {
 
         let now = Date.now();
         if (state.lastTap.r === r && state.lastTap.c === c && (now - state.lastTap.time) < 300) {
-            if (cell.object && cell.object.type === 'facility') {
+            if (cell.object && (cell.object.type === 'facility' || cell.object.type === 'decoration')) {
                 if (confirm(`${cell.object.name}を消去してよろしいですか？`)) {
                     cell.object = null;
                     updateMapStates();
@@ -1171,6 +1401,23 @@ function handleTap(sx, sy) {
                 }
                 updateInspectUI();
             }
+            else if (cell.object.type === 'product') {
+                addMedal(cell.object.sellPrice, sx, sy);
+                cell.object = null;
+                updateInspectUI();
+            }
+        }
+    }
+}
+
+// 名前の変更
+window.renameAnimal = function(r, c) {
+    if (state.map[r] && state.map[r][c] && state.map[r][c].object) {
+        let obj = state.map[r][c].object;
+        let newName = prompt("名前を入力(8文字まで)", obj.name);
+        if (newName !== null && newName.trim() !== "") {
+            obj.name = newName.substring(0, 8);
+            updateInspectUI();
         }
     }
 }
@@ -1180,24 +1427,42 @@ function updateInspectUI() {
     let {r, c} = state.selectedTile;
     let cell = state.map[r][c];
     
-    let objText = `上物: ${cell.object ? cell.object.name : 'なし'}`;
+    let objHtml = ``;
     if (cell.object) {
-        if (cell.object.type === 'crop') {
-            if (cell.object.cropState === 'seedling') {
-                let stars = '⭐'.repeat(Math.min(5, cell.fertilizer));
-                objText += `<br>(肥料: ${stars || 'なし'})`;
-            } else if (cell.object.cropKey !== 'fodder') {
-                objText += `<br>(ランク: ${cell.object.rank}, 価値: 🪙${cell.object.sellPrice})`;
-            }
-        } else if (cell.object.type === 'facility' && cell.object.level) {
-            let lvText = cell.object.level === 3 ? 'MAX' : cell.object.level;
-            objText += ` (Lv.${lvText})`;
+        let obj = cell.object;
+        let headStr = `上物: ${obj.name}`;
+        if (obj.type === 'livestock' || obj.type === 'pet') {
+            headStr += ` <span style="cursor:pointer;" onclick="renameAnimal(${r}, ${c})">✏️</span>`;
         }
+        objHtml += `<div>${headStr}</div>`;
+
+        if (obj.type === 'crop') {
+            if (obj.cropState === 'seedling') {
+                let sStars = `<span class="stars">${'⭐'.repeat(obj.currentSpeed || 1)}</span>`;
+                let fStars = `<span class="stars">${'⭐'.repeat(Math.min(5, cell.fertilizer))}</span>`;
+                objHtml += `<div class="status-row"><span>生育速度: </span>${sStars}</div>`;
+                objHtml += `<div class="status-row"><span>肥料: </span>${fStars}</div>`;
+            } else if (obj.cropKey !== 'fodder') {
+                objHtml += `<div class="status-row"><span>ランク: ${obj.rank}</span><span>価格: ${obj.sellPrice}</span></div>`;
+            }
+        } else if (obj.type === 'facility' && obj.level) {
+            let lvText = obj.level === 3 ? 'MAX' : obj.level;
+            objHtml += `<div>Lv.${lvText}</div>`;
+        } else if (obj.type === 'livestock' || obj.type === 'pet') {
+            let fStars = `<span class="stars">${'⭐'.repeat(obj.feed || 0)}</span>`;
+            objHtml += `<div class="status-row"><span>ランク: ${obj.rank || '-'}</span><span>寿命: ${obj.lifespan}/100</span></div>`;
+            objHtml += `<div class="status-row"><span>餌: </span>${fStars}</div>`;
+        } else if (obj.type === 'product') {
+            objHtml += `<div class="status-row"><span>ランク: ${obj.rank}</span><span>価格: ${obj.sellPrice}</span></div>`;
+        }
+    } else {
+        objHtml = `<div>上物: なし</div>`;
     }
     
-    document.getElementById('status-obj').innerHTML = objText;
+    document.getElementById('status-obj-box').innerHTML = objHtml;
     document.getElementById('status-ground').innerText = `地面: ${GROUND_NAMES[cell.ground] || '不明'}`;
-    document.getElementById('status-temp').innerText = `気温: ${cell.temp}℃${cell.isWet ? ' (湿)' : ''}`;
+    document.getElementById('status-temp').innerText = `${cell.temp}℃`;
+    document.getElementById('status-wet').innerText = cell.isWet ? '湿っている' : '';
 }
 
 function showPopText(text, x, y, color) {
@@ -1216,7 +1481,6 @@ function addMedal(amt, x, y) {
     if(amt !== 0) showPopText(`🪙${amt > 0 ? '+' : ''}${amt}`, x, y, amt >= 0 ? '#4169E1' : '#DC143C');
 }
 
-document.getElementById('start-btn').addEventListener('click', initGame);
 </script>
 </body>
 </html>
