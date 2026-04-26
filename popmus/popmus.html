@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pop'n Clone</title>
+    <title>Pop'n Clone V3</title>
     <style>
+        /* 文字間隔の指定を適用 */
+        * { letter-spacing: 0px !important; }
+        
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #111; color: #fff;
-            font-family: sans-serif;
-            overflow: hidden; /* スクロール防止 */
-            touch-action: none; /* デフォルトのタッチアクションを無効化 */
+            background-color: #000; color: #fff;
+            font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+            overflow: hidden; touch-action: none;
         }
         .screen {
             display: none; width: 100%; height: 100%;
@@ -18,140 +20,209 @@
         }
         .active { display: flex; }
         
-        /* タイトル・リザルト */
-        h1 { font-size: 2.5rem; margin-bottom: 20px; color: #ffeb3b; text-shadow: 2px 2px 0px #e91e63; }
+        h1 { font-size: 2.2rem; margin-bottom: 20px; color: #ffeb3b; text-shadow: 2px 2px 0px #e91e63; }
         button {
             padding: 15px 30px; font-size: 1.2rem; margin: 10px;
             background-color: #e91e63; color: white; border: none; border-radius: 25px;
             box-shadow: 0 4px 0 #880e4f; cursor: pointer;
         }
-        button:active { transform: translateY(4px); box-shadow: none; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #880e4f; }
 
-        /* 設定画面 */
         .settings-container {
-            width: 80%; max-width: 400px; background: #222; padding: 20px; border-radius: 10px;
+            width: 85%; max-width: 400px; background: #222; padding: 20px; border-radius: 15px; border: 2px solid #444;
         }
-        .setting-row {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
-        }
-        select, input { padding: 5px; font-size: 1rem; width: 100px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        select, input { padding: 6px; font-size: 1rem; width: 110px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
 
-        /* ゲーム画面 */
-        #game-screen { position: relative; justify-content: flex-start; }
-        canvas { display: block; background: #000; width: 100%; height: 85%; }
-        #gauge-container {
-            width: 100%; height: 15%; background: #333; position: relative;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            border-top: 2px solid #fff;
+        #game-screen { position: relative; justify-content: flex-start; background: #000; }
+        canvas { display: block; width: 100%; height: 85%; }
+        
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 85%;
+            pointer-events: none;
         }
-        #gauge-bg { width: 90%; height: 30px; background: #555; border-radius: 15px; overflow: hidden; }
-        #gauge-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ff9800, #4caf50); transition: width 0.1s; }
-        #score-display { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; z-index: 10; text-shadow: 1px 1px 2px #000;}
-        #combo-display { position: absolute; top: 50px; right: 10px; font-size: 1.2rem; color: #ffeb3b; z-index: 10;}
-        #time-display { position: absolute; top: 10px; left: 10px; font-size: 1.2rem; z-index: 10;}
+        #gauge-container {
+            width: 100%; height: 15%; background: #222; position: relative;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-top: 4px solid #444;
+        }
+        #gauge-bg { width: 90%; height: 25px; background: #333; border-radius: 12px; border: 2px solid #555; overflow: hidden; }
+        #gauge-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336); transition: width 0.1s; }
+        
+        .hud-text { position: absolute; z-index: 10; font-weight: bold; text-shadow: 2px 2px 2px rgba(0,0,0,0.8); }
+        #score-display { top: 10px; right: 15px; font-size: 1.8rem; color: #fff; }
+        #combo-display { top: 50px; right: 15px; font-size: 1.4rem; color: #ffeb3b; }
+        #time-display { top: 10px; left: 15px; font-size: 1.2rem; color: #bbb; }
     </style>
 </head>
 <body>
 
     <div id="screen-title" class="screen active">
         <h1>Pop'n Clone</h1>
-        <button onclick="changeScreen('screen-settings')">START</button>
+        <button onclick="changeScreen('screen-settings')">PLAY GAME</button>
     </div>
 
     <div id="screen-settings" class="screen">
         <div class="settings-container">
-            <h2 style="text-align: center; margin-top:0;">設定</h2>
+            <h3 style="text-align: center; margin-top:0; color:#03a9f4;">GAME OPTIONS</h3>
+            <div class="setting-row"><label>ライン数</label><select id="set-lines"><option value="5">5</option><option value="7">7</option><option value="9" selected>9</option></select></div>
+            <div class="setting-row"><label>難度 (10-45)</label><input type="number" id="set-diff" value="15"></div>
+            <div class="setting-row"><label>BPM</label><input type="number" id="set-bpm" value="128"></div>
+            <div class="setting-row"><label>時間(秒)</label><input type="number" id="set-time" value="100"></div>
             <div class="setting-row">
-                <label>ライン数</label>
-                <select id="set-lines">
-                    <option value="5">5</option>
-                    <option value="7">7</option>
-                    <option value="9" selected>9</option>
-                </select>
-            </div>
-            <div class="setting-row">
-                <label>難易度 (10-45)</label>
-                <input type="number" id="set-diff" min="10" max="45" value="15">
-            </div>
-            <div class="setting-row">
-                <label>BPM (50-400)</label>
-                <input type="number" id="set-bpm" min="50" max="400" value="128">
-            </div>
-            <div class="setting-row">
-                <label>時間(秒) (60-300)</label>
-                <input type="number" id="set-time" min="60" max="300" step="10" value="100">
-            </div>
-            <div class="setting-row">
-                <label>落下速度</label>
+                <label>落下速</label>
                 <select id="set-speed">
-                    <option value="1" selected>x1</option>
+                    <option value="1">x1</option>
                     <option value="1.5">x1.5</option>
-                    <option value="2">x2</option>
+                    <option value="2" selected>x2</option>
                     <option value="2.5">x2.5</option>
                     <option value="3">x3</option>
                     <option value="3.5">x3.5</option>
                     <option value="4">x4</option>
                 </select>
             </div>
-            <div class="setting-row">
-                <label>判定</label>
-                <select id="set-judge">
-                    <option value="easy">Easy</option>
-                    <option value="normal" selected>Normal</option>
-                </select>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="startGame()">GAME START</button>
-            </div>
+            <div class="setting-row"><label>判定</label><select id="set-judge"><option value="easy">EASY</option><option value="normal" selected>NORMAL</option></select></div>
+            <button onclick="startGame()" style="width:100%; margin: 10px 0 0 0;">START!</button>
         </div>
     </div>
 
     <div id="screen-game" class="screen">
-        <div id="score-display">0</div>
-        <div id="combo-display"></div>
-        <div id="time-display">0:00</div>
         <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer">
+            <div id="score-display" class="hud-text">0</div>
+            <div id="combo-display" class="hud-text"></div>
+            <div id="time-display" class="hud-text">0:00</div>
+        </div>
         <div id="gauge-container">
-            <div style="margin-bottom: 5px;">GROOVE GAUGE</div>
-            <div id="gauge-bg">
-                <div id="gauge-fill"></div>
-            </div>
+            <div style="font-size: 0.8rem; margin-bottom: 4px; color: #aaa;">GROOVE GAUGE</div>
+            <div id="gauge-bg"><div id="gauge-fill"></div></div>
         </div>
     </div>
 
     <div id="screen-result" class="screen">
         <h1>RESULT</h1>
-        <h2 id="result-score" style="font-size: 2.5rem; color: #4caf50;">Score: 0</h2>
-        <div style="text-align: left; margin-bottom: 20px; font-size: 1.2rem;">
-            <p id="res-cool" style="color: #03a9f4; margin: 5px 0;">COOL: 0</p>
-            <p id="res-great" style="color: #8bc34a; margin: 5px 0;">GREAT: 0</p>
-            <p id="res-good" style="color: #ffeb3b; margin: 5px 0;">GOOD: 0</p>
-            <p id="res-bad" style="color: #f44336; margin: 5px 0;">BAD: 0</p>
-            <p id="res-maxcombo" style="margin: 5px 0;">MAX COMBO: 0</p>
-        </div>
-        <button onclick="changeScreen('screen-settings')">設定に戻る</button>
+        <h2 id="result-score" style="font-size: 2.5rem; color: #ffeb3b;">0</h2>
+        <div id="result-details" style="text-align: left; margin: 10px 0; line-height: 1.6;"></div>
+        <button onclick="changeScreen('screen-settings')">RETRY</button>
     </div>
 
 <script>
-    // --- 画面遷移管理 ---
-    function changeScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-    }
-
-    // --- ゲーム設定・状態 ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    let animationId;
-    let config = {};
-    let gameState = {};
-    let notes = [];
-    let effects = []; // タップ時の判定エフェクト
+    let animationId, config = {}, gameState = {}, notes = [];
+    let particles = [], judgeTexts = [], activeLanes = [];
+    
+    // 基本の9レーンカラー
+    const laneColors9 = ['#ffffff', '#ffeb3b', '#4caf50', '#2196f3', '#f44336', '#2196f3', '#4caf50', '#ffeb3b', '#ffffff'];
 
-    // ポップン風の色定義 (9ライン基準)
-    const laneColors9 = ['#fff', '#ffeb3b', '#4caf50', '#2196f3', '#f44336', '#2196f3', '#4caf50', '#ffeb3b', '#fff'];
+    function changeScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
 
-    function initSettings() {
+    // --- パーティクルシステム (小規模＆短時間化) ---
+    class Particle {
+        constructor(x, y, color, type) {
+            this.x = x; this.y = y; this.color = color;
+            this.size = Math.random() * 3 + 1.5; // サイズを少し小さく
+            const angle = Math.random() * Math.PI * 2;
+            // 飛散速度を落として隣のレーンに少しかぶる程度に
+            const speed = type === 'cool' ? Math.random() * 2.5 + 1 : Math.random() * 1.5 + 0.5;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.life = 1.0;
+            this.decay = 0.04 + Math.random() * 0.02; // 約0.3〜0.4秒で消滅
+        }
+        update() { 
+            this.x += this.vx; this.y += this.vy; 
+            this.life -= this.decay; 
+        }
+        draw(ctx) {
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function createBurst(x, y, color, type) {
+        const count = type === 'cool' ? 15 : 8;
+        for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, type));
+    }
+
+    // --- 譜面生成 ---
+    function generateNotes() {
+        notes = [];
+        const beatInterval = 60000 / config.bpm;
+        const totalBeats = (config.duration * config.bpm) / 60;
+        const density = config.difficulty / 60; 
+        
+        let lastPatternEnd = 4;
+
+        while (lastPatternEnd < totalBeats - 4) {
+            const patternType = Math.random();
+            const startBeat = lastPatternEnd + (Math.random() > 0.8 ? 2 : 1);
+            let length = 0;
+
+            if (patternType < 0.2) { // 階段
+                length = 4 + Math.floor(Math.random() * 5);
+                const dir = Math.random() > 0.5 ? 1 : -1;
+                let lane = dir === 1 ? 0 : config.lines - 1;
+                for (let i = 0; i < length; i++) {
+                    addNote((startBeat + i * 0.5) * beatInterval, lane % config.lines);
+                    lane += dir;
+                    if (lane < 0) lane = 1;
+                    if (lane >= config.lines) lane = config.lines - 2;
+                }
+                lastPatternEnd = startBeat + length * 0.5;
+            } 
+            else if (patternType < 0.4) { // トリル
+                length = 6 + Math.floor(Math.random() * 4);
+                let l1 = Math.floor(Math.random() * (config.lines - 2));
+                let l2 = l1 + 2;
+                let base = l1 + 1;
+                for (let i = 0; i < length; i++) {
+                    let lane = (i % 2 === 0) ? (i % 4 === 0 ? l1 : l2) : base;
+                    addNote((startBeat + i * 0.5) * beatInterval, lane);
+                }
+                lastPatternEnd = startBeat + length * 0.5;
+            }
+            else if (patternType < 0.6 && config.lines >= 7) { // ドラム+メロディ
+                length = 8;
+                const drumLane = Math.random() > 0.5 ? 0 : config.lines - 1;
+                for (let i = 0; i < length; i++) {
+                    addNote((startBeat + i) * beatInterval, drumLane);
+                    if (i % 2 === 0) addNote((startBeat + i) * beatInterval, Math.floor(Math.random() * (config.lines-2)) + 1);
+                }
+                lastPatternEnd = startBeat + length;
+            }
+            else { // 通常ランダム
+                const num = (Math.random() < density) ? (Math.random() > 0.7 ? 2 : 1) : 0;
+                if (num > 0) {
+                    let used = [];
+                    for (let n = 0; n < Math.min(num, 4); n++) {
+                        let lane, attempts = 0;
+                        do { 
+                            lane = Math.floor(Math.random() * config.lines);
+                            attempts++;
+                        } while ((used.includes(lane) || used.includes(lane-1) || used.includes(lane+1)) && attempts < 10);
+                        used.push(lane);
+                        addNote(startBeat * beatInterval, lane);
+                    }
+                }
+                lastPatternEnd = startBeat + 0.5;
+            }
+        }
+        notes.sort((a, b) => a.time - b.time);
+    }
+
+    function addNote(time, lane) {
+        notes.push({ time, lane: Math.max(0, Math.min(lane, config.lines - 1)), hit: false, missed: false });
+    }
+
+    // --- ゲームエンジン ---
+    function startGame() {
         config = {
             lines: parseInt(document.getElementById('set-lines').value),
             difficulty: parseInt(document.getElementById('set-diff').value),
@@ -160,320 +231,269 @@
             speed: parseFloat(document.getElementById('set-speed').value),
             judgeStr: document.getElementById('set-judge').value
         };
-
-        // 判定幅 (ms)
         const isEasy = config.judgeStr === 'easy';
-        config.judgeWindows = {
-            cool: isEasy ? 50 : 30,
-            great: isEasy ? 90 : 60,
-            good: isEasy ? 140 : 100,
-            bad: isEasy ? 200 : 150
-        };
-
-        // レーンごとの色を割り当て
-        if (config.lines === 5) config.colors = [laneColors9[2], laneColors9[3], laneColors9[4], laneColors9[5], laneColors9[6]];
-        else if (config.lines === 7) config.colors = [laneColors9[1], laneColors9[2], laneColors9[3], laneColors9[4], laneColors9[5], laneColors9[6], laneColors9[7]];
-        else config.colors = laneColors9;
-    }
-
-    // --- ノーツ生成 ---
-    function generateNotes() {
-        notes = [];
-        const totalBeats = (config.duration * config.bpm) / 60;
-        const beatInterval = 60000 / config.bpm; // 1拍のミリ秒
-
-        // 難易度(10〜45)に応じたノーツ生成確率と密度
-        const density = config.difficulty / 45; 
-
-        for (let beat = 4; beat < totalBeats; beat += 0.5) { // 最初の数拍は余白
-            // 確率でノーツを配置
-            if (Math.random() < density + 0.1) {
-                const time = beat * beatInterval;
-                // 同時押し数 (1〜4)
-                let numNotes = 1;
-                if (Math.random() < density * 0.5) numNotes = 2;
-                if (Math.random() < density * 0.2) numNotes = 3;
-                if (Math.random() < density * 0.05) numNotes = 4;
-
-                let usedLanes = new Set();
-                for (let i = 0; i < numNotes; i++) {
-                    let lane;
-                    do { lane = Math.floor(Math.random() * config.lines); } while (usedLanes.has(lane));
-                    usedLanes.add(lane);
-
-                    notes.push({
-                        time: time,
-                        lane: lane,
-                        hit: false,
-                        missed: false
-                    });
-                }
-            }
-        }
-        // 判定時間順にソート
-        notes.sort((a, b) => a.time - b.time);
-    }
-
-    // --- ゲーム開始 ---
-    function startGame() {
-        initSettings();
+        config.judgeWindows = { cool: isEasy?60:40, great: isEasy?100:70, good: isEasy?150:110, bad: isEasy?220:170 };
+        config.colors = config.lines === 5 ? laneColors9.slice(2,7) : (config.lines === 7 ? laneColors9.slice(1,8) : laneColors9);
+        
         generateNotes();
-
-        // 10万点をノーツ数で分配 (全てCOOLの場合)
-        const scorePerNote = notes.length > 0 ? 100000 / notes.length : 0;
-
         gameState = {
-            startTime: performance.now() + 2000, // 2秒後スタート
-            score: 0,
-            combo: 0,
-            maxCombo: 0,
-            gauge: 0,
-            scorePerNote: scorePerNote,
+            startTime: performance.now() + 2000, score: 0, combo: 0, maxCombo: 0, gauge: 20, 
+            scorePerNote: notes.length > 0 ? 100000 / notes.length : 0,
             counts: { cool: 0, great: 0, good: 0, bad: 0 }
         };
-        effects = [];
-
+        
+        particles = [];
+        judgeTexts = [];
+        activeLanes = new Array(config.lines).fill(false);
+        activeTouches.clear();
+        
         canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight * 0.85; // 画面の85%
+        canvas.height = window.innerHeight * 0.85;
         
-        updateUI();
         changeScreen('screen-game');
-        
         if (animationId) cancelAnimationFrame(animationId);
         gameLoop();
     }
 
-    // --- ゲームループ ---
     function gameLoop() {
-        const now = performance.now();
-        const currentTime = now - gameState.startTime;
-
-        updateLogic(currentTime);
+        const currentTime = performance.now() - gameState.startTime;
+        update(currentTime);
         draw(currentTime);
-
-        // 終了判定
-        if (currentTime > (config.duration * 1000) + 2000) {
-            endGame();
-            return;
-        }
-
+        if (currentTime > (config.duration * 1000) + 1000) return endGame();
         animationId = requestAnimationFrame(gameLoop);
     }
 
-    // --- ロジック更新 ---
-    function updateLogic(currentTime) {
-        // 見逃し（Bad）判定
-        notes.forEach(note => {
-            if (!note.hit && !note.missed && currentTime > note.time + config.judgeWindows.bad) {
-                note.missed = true;
-                registerHit('bad');
+    function update(currentTime) {
+        notes.forEach(n => {
+            if (!n.hit && !n.missed && currentTime > n.time + config.judgeWindows.bad) {
+                n.missed = true; registerHit('bad');
             }
         });
+        
+        particles.forEach(p => p.update());
+        particles = particles.filter(p => p.life > 0);
+        
+        judgeTexts.forEach(t => { t.life -= 0.03; t.y -= 0.5; });
+        judgeTexts = judgeTexts.filter(t => t.life > 0);
 
-        // エフェクトの寿命管理
-        effects = effects.filter(e => currentTime - e.time < 500);
-
-        // 残り時間更新
-        const remaining = Math.max(0, config.duration - Math.floor(currentTime / 1000));
-        document.getElementById('time-display').innerText = `${Math.floor(remaining/60)}:${(remaining%60).toString().padStart(2, '0')}`;
+        const rem = Math.max(0, config.duration - Math.floor(currentTime / 1000));
+        document.getElementById('time-display').innerText = `${Math.floor(rem/60)}:${(rem%60).toString().padStart(2, '0')}`;
     }
 
-    // --- 描画 ---
     function draw(currentTime) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const laneWidth = canvas.width / config.lines;
-        const judgeY = canvas.height - 80;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const laneW = canvas.width / config.lines;
+        const judgeY = canvas.height - 100;
+        const fallTime = 2000 / config.speed;
 
-        // レーン背景と判定ライン
+        // レーン背景と発光の描画
         for (let i = 0; i < config.lines; i++) {
-            ctx.fillStyle = (i % 2 === 0) ? '#1a1a1a' : '#222';
-            ctx.fillRect(i * laneWidth, 0, laneWidth, canvas.height);
-            
-            // 下部の判定エリアの目印
+            // 暗いベース色をつける（本家風）
             ctx.fillStyle = config.colors[i];
-            ctx.globalAlpha = 0.3;
-            ctx.fillRect(i * laneWidth + 2, judgeY - 10, laneWidth - 4, 20);
-            ctx.globalAlpha = 1.0;
+            ctx.globalAlpha = 0.15;
+            ctx.fillRect(i * laneW, 0, laneW, canvas.height);
+            ctx.globalAlpha = 1.0; // リセット
+
+            // タップ中の発光
+            if (activeLanes[i]) {
+                ctx.fillStyle = config.colors[i];
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(i * laneW, 0, laneW, canvas.height);
+                ctx.globalAlpha = 1.0; // リセット
+            }
+            
+            // レーン境界線
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(i * laneW, 0, laneW, canvas.height);
         }
 
-        // 赤い判定ライン
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, judgeY);
-        ctx.lineTo(canvas.width, judgeY);
-        ctx.stroke();
-
-        // 落下速度係数 (x1 = 2000msで画面上から判定ラインへ)
-        const fallTimeMs = 2000 / config.speed;
+        // 判定ライン（太く、目立つ色に修正）
+        ctx.strokeStyle = '#ff1744'; 
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(0, judgeY); ctx.lineTo(canvas.width, judgeY); ctx.stroke();
 
         // ノーツ描画
-        notes.forEach(note => {
-            if (note.hit || note.missed) return;
-
-            const timeDiff = note.time - currentTime;
-            // 画面外なら描画しない
-            if (timeDiff > fallTimeMs || timeDiff < -config.judgeWindows.bad) return;
-
-            // Y座標計算
-            const y = judgeY - (timeDiff / fallTimeMs) * judgeY;
-            const x = note.lane * laneWidth + laneWidth / 2;
-
-            // ポップ君を描画 (カプセル型)
-            ctx.fillStyle = config.colors[note.lane];
+        notes.forEach(n => {
+            if (n.hit || n.missed) return;
+            const diff = n.time - currentTime;
+            if (diff > fallTime || diff < -200) return;
+            const y = judgeY - (diff / fallTime) * judgeY;
+            const x = n.lane * laneW + laneW / 2;
+            
+            ctx.fillStyle = config.colors[n.lane];
             ctx.beginPath();
-            ctx.ellipse(x, y, laneWidth * 0.4, 15, 0, 0, Math.PI * 2);
+            ctx.ellipse(x, y, laneW * 0.42, 18, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.beginPath(); ctx.ellipse(x - laneW*0.1, y - 5, laneW * 0.15, 6, 0, 0, Math.PI * 2); ctx.fill();
         });
 
-        // 判定文字エフェクト描画
-        effects.forEach(e => {
-            const progress = (currentTime - e.time) / 500;
-            ctx.globalAlpha = 1 - progress;
-            ctx.fillStyle = e.color;
+        // パーティクル描画
+        particles.forEach(p => p.draw(ctx));
+        ctx.globalAlpha = 1.0; // パーティクル描画後に確実にリセット（暗くなるバグの修正）
+
+        // 判定文字エフェクト（COOL/GREAT/GOOD/BAD）
+        judgeTexts.forEach(t => {
+            ctx.globalAlpha = Math.max(0, t.life);
+            ctx.fillStyle = t.color;
             ctx.font = 'bold 30px sans-serif';
             ctx.textAlign = 'center';
-            // 少し上に浮き上がるアニメーション
-            ctx.fillText(e.text, e.x, judgeY - 40 - (progress * 20));
-            ctx.globalAlpha = 1.0;
+            // 文字間隔のCSSはCanvasのfillTextに直接影響しないため、テキスト描画自体はそのまま行う
+            ctx.fillText(t.text, t.x, t.y);
         });
+        ctx.globalAlpha = 1.0; // 確実にリセット
     }
 
-    // --- タップ判定処理 ---
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // ズーム等防止
-        const currentTime = performance.now() - gameState.startTime;
-        const rect = canvas.getBoundingClientRect();
-        const laneWidth = canvas.width / config.lines;
+    // --- タップ & スライド制御 (押しっぱなし対応) ---
+    const activeTouches = new Map();
 
-        // 新規タップのみ処理 (同時押し対応)
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            const touch = e.changedTouches[i];
-            const touchX = touch.clientX - rect.left;
-            const lane = Math.floor(touchX / laneWidth);
+    function updateActiveLanes(e) {
+        activeLanes.fill(false);
+        const rect = canvas.getBoundingClientRect();
+        const laneW = canvas.width / config.lines;
+        const boundaryThreshold = 0.15;
+
+        // 現在画面に触れているすべての指から、光らせるべきレーンを算出
+        for (let i = 0; i < e.touches.length; i++) {
+            const x = e.touches[i].clientX - rect.left;
+            const lane = Math.floor(x / laneW);
+            const ratio = (x % laneW) / laneW;
 
             if (lane >= 0 && lane < config.lines) {
-                checkHit(lane, currentTime);
+                activeLanes[lane] = true;
+                if (ratio < boundaryThreshold && lane > 0) activeLanes[lane - 1] = true;
+                if (ratio > (1 - boundaryThreshold) && lane < config.lines - 1) activeLanes[lane + 1] = true;
             }
-        }
-    }, { passive: false });
-
-    function checkHit(lane, currentTime) {
-        // そのレーンで、まだ叩かれていない、判定枠内に最も近いノーツを探す
-        let targetNote = null;
-        let minDiff = Infinity;
-
-        for (let i = 0; i < notes.length; i++) {
-            const note = notes[i];
-            if (note.lane === lane && !note.hit && !note.missed) {
-                const diff = Math.abs(note.time - currentTime);
-                if (diff < config.judgeWindows.bad && diff < minDiff) {
-                    minDiff = diff;
-                    targetNote = note;
-                }
-            }
-        }
-
-        if (targetNote) {
-            targetNote.hit = true;
-            let judge = 'bad';
-            if (minDiff <= config.judgeWindows.cool) judge = 'cool';
-            else if (minDiff <= config.judgeWindows.great) judge = 'great';
-            else if (minDiff <= config.judgeWindows.good) judge = 'good';
-
-            registerHit(judge, targetNote.lane);
         }
     }
 
-    // --- スコア・ゲージ計算 ---
-    function registerHit(judge, lane = -1) {
-        gameState.counts[judge]++;
+    function processHits(e) {
+        const rect = canvas.getBoundingClientRect();
+        const laneW = canvas.width / config.lines;
+        const boundaryThreshold = 0.15;
+
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            const x = t.clientX - rect.left;
+            const lane = Math.floor(x / laneW);
+            
+            let lanesToHit = [];
+            if (lane >= 0 && lane < config.lines) {
+                lanesToHit.push(lane);
+                const ratio = (x % laneW) / laneW;
+                if (ratio < boundaryThreshold && lane > 0) lanesToHit.push(lane - 1);
+                if (ratio > (1 - boundaryThreshold) && lane < config.lines - 1) lanesToHit.push(lane + 1);
+            }
+
+            const lastLane = activeTouches.get(t.identifier);
+
+            // 新規タップ、またはスライドで新しいレーンに入った瞬間に判定
+            if (e.type === 'touchstart' || lastLane !== lane) {
+                activeTouches.set(t.identifier, lane);
+                lanesToHit.forEach(l => checkHit(l, performance.now() - gameState.startTime));
+            }
+        }
+    }
+
+    function removeTouches(e) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            activeTouches.delete(e.changedTouches[i].identifier);
+        }
+    }
+
+    // イベントリスナーの登録
+    canvas.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); updateActiveLanes(e); processHits(e); 
+    }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { 
+        e.preventDefault(); updateActiveLanes(e); processHits(e); 
+    }, {passive: false});
+    canvas.addEventListener('touchend', (e) => { 
+        e.preventDefault(); updateActiveLanes(e); removeTouches(e); 
+    }, {passive: false});
+    canvas.addEventListener('touchcancel', (e) => { 
+        e.preventDefault(); updateActiveLanes(e); removeTouches(e); 
+    }, {passive: false});
+
+    function checkHit(lane, time) {
+        let target = null;
+        let min = Infinity;
+        for (let n of notes) {
+            if (n.lane === lane && !n.hit && !n.missed) {
+                const diff = Math.abs(n.time - time);
+                if (diff < config.judgeWindows.bad && diff < min) { min = diff; target = n; }
+            }
+        }
+        if (target) {
+            target.hit = true;
+            let j = 'bad';
+            if (min <= config.judgeWindows.cool) j = 'cool';
+            else if (min <= config.judgeWindows.great) j = 'great';
+            else if (min <= config.judgeWindows.good) j = 'good';
+            registerHit(j, lane);
+        }
+    }
+
+    function registerHit(j, lane = -1) {
+        gameState.counts[j]++;
+        const colors = { cool: '#03a9f4', great: '#8bc34a', good: '#ffeb3b', bad: '#f44336' };
         
-        let effectColor = '';
-        let effectText = judge.toUpperCase();
-
-        switch (judge) {
-            case 'cool':
-                gameState.score += gameState.scorePerNote;
-                gameState.combo++;
-                gameState.gauge = Math.min(100, gameState.gauge + 1); // ゲージ+1%
-                effectColor = '#03a9f4';
-                break;
-            case 'great':
-                gameState.score += gameState.scorePerNote * 0.8;
-                gameState.combo++;
-                gameState.gauge = Math.min(100, gameState.gauge + 0.5);
-                effectColor = '#8bc34a';
-                break;
-            case 'good':
-                gameState.score += gameState.scorePerNote * 0.5;
-                gameState.combo++;
-                gameState.gauge = Math.min(100, gameState.gauge + 0.2);
-                effectColor = '#ffeb3b';
-                break;
-            case 'bad':
-                gameState.combo = 0;
-                gameState.gauge = Math.max(0, gameState.gauge - 3); // ミスはゲージ-3%
-                effectColor = '#f44336';
-                break;
+        if (j === 'cool') {
+            gameState.score += gameState.scorePerNote;
+            gameState.combo++;
+            gameState.gauge = Math.min(100, gameState.gauge + 2.0);
+            if(lane !== -1) createBurst(lane * (canvas.width/config.lines) + (canvas.width/config.lines)/2, canvas.height-100, config.colors[lane], 'cool');
+        } else if (j === 'great') {
+            gameState.score += gameState.scorePerNote * 0.8;
+            gameState.combo++;
+            gameState.gauge = Math.min(100, gameState.gauge + 1.2);
+            if(lane !== -1) createBurst(lane * (canvas.width/config.lines) + (canvas.width/config.lines)/2, canvas.height-100, config.colors[lane], 'great');
+        } else if (j === 'good') {
+            gameState.score += gameState.scorePerNote * 0.4;
+            gameState.combo++;
+            gameState.gauge = Math.min(100, gameState.gauge + 0.4);
+        } else {
+            gameState.combo = 0;
+            gameState.gauge = Math.max(0, gameState.gauge - 1.5);
         }
 
-        if (gameState.combo > gameState.maxCombo) {
-            gameState.maxCombo = gameState.combo;
-        }
-
-        // エフェクト追加
+        // 判定文字の追加
         if (lane !== -1) {
-            const laneWidth = canvas.width / config.lines;
-            effects.push({
-                x: lane * laneWidth + laneWidth / 2,
-                text: effectText,
-                color: effectColor,
-                time: performance.now() - gameState.startTime
+            judgeTexts.push({
+                text: j.toUpperCase(),
+                color: colors[j],
+                x: lane * (canvas.width/config.lines) + (canvas.width/config.lines)/2,
+                y: canvas.height - 130,
+                life: 1.0
             });
         }
-
+        
+        if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
         updateUI();
     }
 
     function updateUI() {
-        document.getElementById('score-display').innerText = Math.floor(gameState.score);
-        document.getElementById('combo-display').innerText = gameState.combo > 0 ? `${gameState.combo} COMBO` : '';
+        document.getElementById('score-display').innerText = Math.floor(gameState.score).toLocaleString();
+        document.getElementById('combo-display').innerText = gameState.combo > 2 ? `${gameState.combo} COMBO` : '';
         document.getElementById('gauge-fill').style.width = `${gameState.gauge}%`;
-        
-        // ゲージの色変化（クリアライン目安など）
-        if (gameState.gauge >= 80) {
-            document.getElementById('gauge-fill').style.background = 'linear-gradient(90deg, #e91e63, #ffeb3b)';
-        } else {
-            document.getElementById('gauge-fill').style.background = 'linear-gradient(90deg, #ff9800, #4caf50)';
-        }
+        const fill = document.getElementById('gauge-fill');
+        if (gameState.gauge >= 80) fill.style.background = 'linear-gradient(90deg, #ff5722, #ffeb3b)';
+        else fill.style.background = 'linear-gradient(90deg, #4caf50, #8bc34a)';
     }
 
-    // --- ゲーム終了 ---
     function endGame() {
         cancelAnimationFrame(animationId);
-        
-        document.getElementById('result-score').innerText = `Score: ${Math.floor(gameState.score)}`;
-        document.getElementById('res-cool').innerText = `COOL: ${gameState.counts.cool}`;
-        document.getElementById('res-great').innerText = `GREAT: ${gameState.counts.great}`;
-        document.getElementById('res-good').innerText = `GOOD: ${gameState.counts.good}`;
-        document.getElementById('res-bad').innerText = `BAD: ${gameState.counts.bad}`;
-        document.getElementById('res-maxcombo').innerText = `MAX COMBO: ${gameState.maxCombo}`;
-
+        document.getElementById('result-score').innerText = Math.floor(gameState.score).toLocaleString();
+        document.getElementById('result-details').innerHTML = `
+            COOL: ${gameState.counts.cool}<br>GREAT: ${gameState.counts.great}<br>
+            GOOD: ${gameState.counts.good}<br>BAD: ${gameState.counts.bad}<br>
+            MAX COMBO: ${gameState.maxCombo}
+        `;
         changeScreen('screen-result');
     }
-
-    // ウィンドウリサイズ対応
-    window.addEventListener('resize', () => {
-        if (document.getElementById('screen-game').classList.contains('active')) {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight * 0.85;
-        }
-    });
-
 </script>
 </body>
 </html>
