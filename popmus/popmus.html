@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pop'n Clone V4</title>
+    <title>Pop'n Clone V6 - Pattern Options</title>
     <style>
         /* [重要] ユーザー指定の固定スタイル */
         * { letter-spacing: 0px !important; }
@@ -29,17 +29,22 @@
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #880e4f; }
 
         .settings-container {
-            width: 85%; max-width: 400px; background: #222; padding: 20px; border-radius: 15px; border: 2px solid #444;
+            width: 85%; max-width: 420px; background: #222; padding: 20px; border-radius: 15px; border: 2px solid #444;
+            max-height: 90vh; overflow-y: auto;
         }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        select, input { padding: 6px; font-size: 1rem; width: 110px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        select, input[type="number"] { padding: 6px; font-size: 0.95rem; width: 140px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+
+        .upload-row { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #555; }
+        .upload-row label { margin-bottom: 8px; color: #4caf50; font-weight: bold; }
+        input[type="file"] { font-size: 0.9rem; color: #ccc; }
+        #json-status { font-size: 0.8rem; color: #ffeb3b; margin-top: 5px; }
 
         #game-screen { position: relative; justify-content: flex-start; background: #000; }
         canvas { display: block; width: 100%; height: 85%; }
         
         #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 85%;
-            pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 85%; pointer-events: none;
         }
         #gauge-container {
             width: 100%; height: 15%; background: #222; position: relative;
@@ -65,20 +70,32 @@
     <div id="screen-settings" class="screen">
         <div class="settings-container">
             <h3 style="text-align: center; margin-top:0; color:#03a9f4;">GAME OPTIONS</h3>
+            
+            <div class="upload-row">
+                <label>【カスタム譜面 (任意)】</label>
+                <input type="file" id="json-upload" accept=".json">
+                <div id="json-status">未読み込み（自動生成になります）</div>
+            </div>
+
+            <div class="setting-row">
+                <label>譜面傾向</label>
+                <select id="set-pattern">
+                    <option value="random" selected>ランダムミックス</option>
+                    <option value="softrock">ソフトロックLONG風</option>
+                    <option value="melt">メルトEX風</option>
+                    <option value="anthem">アンセムトランス風</option>
+                </select>
+            </div>
+
             <div class="setting-row"><label>ライン数</label><select id="set-lines"><option value="5">5</option><option value="7">7</option><option value="9" selected>9</option></select></div>
-            <div class="setting-row"><label>難度 (1-50)</label><input type="number" id="set-diff" value="25"></div>
-            <div class="setting-row"><label>BPM</label><input type="number" id="set-bpm" value="128"></div>
-            <div class="setting-row"><label>時間(秒)</label><input type="number" id="set-time" value="100"></div>
+            <div class="setting-row"><label>難度 (1-50)</label><input type="number" id="set-diff" value="35"></div>
+            <div class="setting-row"><label>BPM</label><input type="number" id="set-bpm" value="150"></div>
+            <div class="setting-row"><label>時間(秒)</label><input type="number" id="set-time" value="90"></div>
             <div class="setting-row">
                 <label>落下速</label>
                 <select id="set-speed">
-                    <option value="1">x1</option>
-                    <option value="1.5">x1.5</option>
-                    <option value="2" selected>x2</option>
-                    <option value="2.5">x2.5</option>
-                    <option value="3">x3</option>
-                    <option value="3.5">x3.5</option>
-                    <option value="4">x4</option>
+                    <option value="1">x1</option><option value="1.5">x1.5</option><option value="2">x2</option>
+                    <option value="2.5" selected>x2.5</option><option value="3">x3</option><option value="4">x4</option>
                 </select>
             </div>
             <div class="setting-row"><label>判定</label><select id="set-judge"><option value="easy">EASY</option><option value="normal" selected>NORMAL</option></select></div>
@@ -111,8 +128,28 @@
     const ctx = canvas.getContext('2d');
     let animationId, config = {}, gameState = {}, notes = [];
     let particles = [], judgeTexts = [], activeLanes = [];
+    let customChartData = null; 
     
     const laneColors9 = ['#ffffff', '#ffeb3b', '#4caf50', '#2196f3', '#f44336', '#2196f3', '#4caf50', '#ffeb3b', '#ffffff'];
+
+    document.getElementById('json-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (Array.isArray(data) && data.length > 0) {
+                    customChartData = data;
+                    document.getElementById('json-status').innerText = `${data.length} ノーツ読み込み完了！`;
+                    document.getElementById('json-status').style.color = '#8bc34a';
+                }
+            } catch(err) {
+                document.getElementById('json-status').innerText = "読み込みエラー";
+            }
+        };
+        reader.readAsText(file);
+    });
 
     function changeScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -125,10 +162,8 @@
             this.size = Math.random() * 3 + 1.5; 
             const angle = Math.random() * Math.PI * 2;
             const speed = type === 'cool' ? Math.random() * 2.5 + 1 : Math.random() * 1.5 + 0.5;
-            this.vx = Math.cos(angle) * speed;
-            this.vy = Math.sin(angle) * speed;
-            this.life = 1.0;
-            this.decay = 0.04 + Math.random() * 0.02; 
+            this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+            this.life = 1.0; this.decay = 0.04 + Math.random() * 0.02; 
         }
         update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
         draw(ctx) {
@@ -143,127 +178,193 @@
         for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, type));
     }
 
-    // --- 譜面生成ロジック ---
     function addNote(time, lane) {
         notes.push({ time, lane: Math.max(0, Math.min(lane, config.lines - 1)), hit: false, missed: false });
     }
 
-    // [隠しモード] ソフトロックLONG風 ジェネレーター
-    function generateHiddenChart(beatInterval, totalBeats) {
-        let currentBeat = 4;
-        let measure = 0;
-
-        while(currentBeat < totalBeats - 4) {
-            let motif = measure % 6; // 6つのパターンをループ
-
-            if (motif === 0) { // イントロ・歌い出し風：8分で左右に散る
-                for(let i=0; i<8; i++) addNote((currentBeat + i*0.5) * beatInterval, (i%2===0)? 2 : 6);
-            } else if (motif === 1) { // 16分ドラムロール＋4分メロディ
-                for(let i=0; i<16; i++) {
-                    addNote((currentBeat + i*0.25) * beatInterval, 1); // 16分ロール
-                    if (i%4===0) addNote((currentBeat + i*0.25) * beatInterval, 4 + (i/4)%4);
-                }
-            } else if (motif === 2) { // 画像80小節付近の「X字クロス」
-                for(let i=0; i<8; i++) {
-                    addNote((currentBeat + i*0.5) * beatInterval, i);
-                    addNote((currentBeat + i*0.5) * beatInterval, 8 - i);
-                }
-            } else if (motif === 3) { // 階段＋3連符
-                for(let i=0; i<12; i++) {
-                    addNote((currentBeat + i*0.333) * beatInterval, i%9);
-                }
-            } else if (motif === 4) { // 同時押しのラッシュ
-                for(let i=0; i<8; i++) {
-                    addNote((currentBeat + i*0.5) * beatInterval, 2);
-                    addNote((currentBeat + i*0.5) * beatInterval, 6);
-                    if(i%2===1) addNote((currentBeat + i*0.5) * beatInterval, 4);
-                }
-            } else { // 複雑なトリル
-                for(let i=0; i<16; i++) {
-                    addNote((currentBeat + i*0.25) * beatInterval, (i%4===0||i%4===1)? 3 : 5);
-                }
-            }
-            currentBeat += 4;
-            measure++;
-        }
-    }
-
+    // --- 譜面生成ロジック ---
     function generateNotes() {
         notes = [];
         const beatInterval = 60000 / config.bpm;
-        const totalBeats = (config.duration * config.bpm) / 60;
 
-        // 隠しモード判定
-        if (config.bpm === 178 && config.duration === 150 && config.lines === 9) {
-            generateHiddenChart(beatInterval, totalBeats);
+        if (customChartData) {
+            let maxBeat = 0;
+            customChartData.forEach(n => {
+                if (n.b !== undefined && n.l !== undefined) {
+                    addNote(n.b * beatInterval, n.l);
+                    if (n.b > maxBeat) maxBeat = n.b;
+                }
+            });
+            config.duration = Math.ceil((maxBeat * beatInterval) / 1000) + 4; 
             notes.sort((a, b) => a.time - b.time);
             return;
         }
 
-        // --- 難易度に応じた制限 ---
-        let maxSimul = 1; // 同時押し上限
+        const totalBeats = (config.duration * config.bpm) / 60;
+        
+        // 難易度によるスケーリング制御
+        let maxSimul = 1; 
         if (config.difficulty > 12) maxSimul = 2;
         if (config.difficulty > 24) maxSimul = 3;
         if (config.difficulty > 36) maxSimul = 4;
         if (config.difficulty > 45) maxSimul = 5;
 
-        // 難度が高いほど、間隔が詰まる（16分や8分が出やすくなる）
-        const density = Math.min(0.9, config.difficulty / 50);
+        // 16分音符を許可するかどうか（低難易度では8分に間引くため）
+        const allow16th = config.difficulty >= 20;
+        // 密度（ノーツが詰まる確率）
+        const density = Math.min(0.95, config.difficulty / 50);
 
         let currentBeat = 4;
+
         while (currentBeat < totalBeats - 4) {
-            const patternType = Math.random();
-
-            if (patternType < 0.15 && config.difficulty > 15) { 
-                // 16分音符の連打 (ドラムロール等)
-                let len = 4 + Math.floor(Math.random() * 4);
-                let lane = Math.random() > 0.5 ? 0 : config.lines - 1;
-                for(let i=0; i<len; i++) addNote((currentBeat + i*0.25) * beatInterval, lane);
-                currentBeat += len * 0.25;
-            } 
-            else if (patternType < 0.3 && config.difficulty > 20) { 
-                // 3連符
-                let len = 3 + Math.floor(Math.random() * 3);
-                let startLane = Math.floor(Math.random() * (config.lines - 2)) + 1;
-                for(let i=0; i<len; i++) addNote((currentBeat + i*0.333) * beatInterval, startLane + (i%2===0?0:1));
-                currentBeat += len * 0.333;
-            } 
-            else if (patternType < 0.5) { 
-                // 階段 (8分音符)
-                let len = 4 + Math.floor(Math.random() * 5);
-                const dir = Math.random() > 0.5 ? 1 : -1;
-                let lane = dir === 1 ? 0 : config.lines - 1;
-                for (let i = 0; i < len; i++) {
-                    addNote((currentBeat + i * 0.5) * beatInterval, lane);
-                    lane += dir;
-                    if (lane < 0) lane = 1; if (lane >= config.lines) lane = config.lines - 2;
-                }
-                currentBeat += len * 0.5;
-            } 
-            else { 
-                // 通常配置 ＆ 同時押し
-                let gap = 1.0; // 基本4分
-                if (Math.random() < density) gap = 0.5; // 難度が高いと8分になりやすい
-                if (Math.random() < (density - 0.4)) gap = 0.25; // かなり高難度だと16分も
-
-                // 同時押し数の決定
-                let numNotes = 1;
-                if (Math.random() < density && maxSimul > 1) {
-                    numNotes = 1 + Math.floor(Math.random() * maxSimul);
-                }
-
-                let used = [];
-                for (let n = 0; n < numNotes; n++) {
-                    let lane, attempts = 0;
-                    do { 
-                        lane = Math.floor(Math.random() * config.lines);
-                        attempts++;
-                    } while ((used.includes(lane) || used.includes(lane-1) || used.includes(lane+1)) && attempts < 10);
-                    used.push(lane);
-                    addNote(currentBeat * beatInterval, lane);
-                }
-                currentBeat += gap;
+            let patternToUse = config.pattern;
+            if (patternToUse === 'random') {
+                const r = Math.random();
+                if (r < 0.33) patternToUse = 'softrock';
+                else if (r < 0.66) patternToUse = 'melt';
+                else patternToUse = 'anthem';
             }
+
+            const motifId = Math.floor(Math.random() * 4);
+            let beatsUsed = 2; // 基本は2拍進む
+
+            // ====== 1. ソフトロックLONG風 ======
+            if (patternToUse === 'softrock') {
+                if (motifId === 0) { // X字クロス（難度に応じて同時押し制限）
+                    let step = allow16th && density > 0.6 ? 0.25 : 0.5;
+                    let len = Math.floor(4 * density) + 2;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, i % config.lines);
+                        if (maxSimul >= 2) addNote((currentBeat + i*step) * beatInterval, (config.lines - 1) - (i % config.lines));
+                    }
+                    beatsUsed = len * step;
+                } else if (motifId === 1) { // 16分ロール＋メロディ
+                    let step = allow16th ? 0.25 : 0.5;
+                    let rollLane = Math.random() > 0.5 ? 1 : config.lines - 2;
+                    let len = Math.floor(8 * density) + 2;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, rollLane);
+                        if (i % 2 === 0 && maxSimul >= 2) addNote((currentBeat + i*step) * beatInterval, 4);
+                    }
+                    beatsUsed = len * step;
+                } else if (motifId === 2) { // 細かい階段
+                    let len = 4 + Math.floor(Math.random() * 4 * density);
+                    let dir = Math.random() > 0.5 ? 1 : -1;
+                    let lane = dir === 1 ? 2 : config.lines - 3;
+                    let step = allow16th && Math.random() < density ? 0.25 : 0.5;
+                    for (let i = 0; i < len; i++) {
+                        addNote((currentBeat + i * step) * beatInterval, lane);
+                        lane += dir;
+                        if (lane < 1 || lane >= config.lines - 1) dir *= -1; // 折り返し
+                    }
+                    beatsUsed = len * step;
+                } else { // 同時押しラッシュ
+                    let step = density > 0.7 ? 0.5 : 1.0;
+                    for(let i=0; i<4; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, 2);
+                        if(maxSimul >= 2) addNote((currentBeat + i*step) * beatInterval, 6);
+                        if(maxSimul >= 3 && i%2===0) addNote((currentBeat + i*step) * beatInterval, 4);
+                    }
+                    beatsUsed = 4 * step;
+                }
+            }
+            // ====== 2. メルトEX風 ======
+            else if (patternToUse === 'melt') {
+                if (motifId === 0) { // 端から端までの大階段
+                    let step = allow16th ? 0.25 : 0.5;
+                    let len = Math.min(config.lines, Math.floor(4 + density * 5));
+                    let startLane = Math.random() > 0.5 ? 0 : config.lines - 1;
+                    let dir = startLane === 0 ? 1 : -1;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, startLane + i*dir);
+                    }
+                    beatsUsed = len * step;
+                } else if (motifId === 1) { // 二重階段（難度で単推しに変化）
+                    let step = 0.5;
+                    let len = Math.floor(4 + density * 4);
+                    let lane = 2;
+                    let isDouble = maxSimul >= 2;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, lane);
+                        if(isDouble) addNote((currentBeat + i*step) * beatInterval, lane + 2);
+                        lane = (lane + 1) % (config.lines - 2);
+                    }
+                    beatsUsed = len * step;
+                } else if (motifId === 2) { // 乱打・アルペジオ
+                    let step = allow16th && density > 0.5 ? 0.25 : 0.5;
+                    let len = Math.floor(6 + density * 6);
+                    let prev = 4;
+                    for(let i=0; i<len; i++) {
+                        let l;
+                        do { l = Math.floor(Math.random() * config.lines); } while(l === prev);
+                        addNote((currentBeat + i*step) * beatInterval, l);
+                        prev = l;
+                    }
+                    beatsUsed = len * step;
+                } else { // 密集同時押し（和音）
+                    let num = Math.min(maxSimul, 4);
+                    addNote(currentBeat * beatInterval, 4);
+                    if(num >= 2) addNote(currentBeat * beatInterval, 2);
+                    if(num >= 3) addNote(currentBeat * beatInterval, 6);
+                    if(num >= 4) addNote(currentBeat * beatInterval, 0);
+                    beatsUsed = 1.0;
+                }
+            }
+            // ====== 3. アンセムトランス風 ======
+            else if (patternToUse === 'anthem') {
+                if (motifId === 0) { // 軸押し（ペダル）＋メロディ
+                    let pedalStep = allow16th && density > 0.8 ? 0.5 : 1.0;
+                    let melodyStep = allow16th ? 0.25 : 0.5;
+                    let pedalLane = Math.random() > 0.5 ? 0 : config.lines - 1;
+                    // ペダル配置
+                    for(let i=0; i<4; i++) {
+                        addNote((currentBeat + i*pedalStep) * beatInterval, pedalLane);
+                    }
+                    // メロディ配置
+                    let melodyLen = Math.floor((4 * pedalStep) / melodyStep);
+                    for(let i=0; i<melodyLen; i++) {
+                        if(Math.random() < density) {
+                            let l = Math.floor(Math.random() * (config.lines - 2)) + 1;
+                            addNote((currentBeat + i*melodyStep) * beatInterval, l);
+                        }
+                    }
+                    beatsUsed = 4 * pedalStep;
+                } else if (motifId === 1) { // トランス和音の連続
+                    let step = 0.5;
+                    let len = Math.floor(3 + density * 3);
+                    let num = Math.min(maxSimul, 3);
+                    for(let i=0; i<len; i++) {
+                        let base = Math.floor(Math.random() * 3) + 1;
+                        addNote((currentBeat + i*step) * beatInterval, base);
+                        if(num >= 2) addNote((currentBeat + i*step) * beatInterval, base + 2);
+                        if(num >= 3) addNote((currentBeat + i*step) * beatInterval, base + 4);
+                    }
+                    beatsUsed = len * step;
+                } else if (motifId === 2) { // 左右対称の開閉パターン
+                    let step = allow16th ? 0.25 : 0.5;
+                    let len = 4;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, 4 - i);
+                        if(maxSimul >= 2) addNote((currentBeat + i*step) * beatInterval, 4 + i);
+                    }
+                    beatsUsed = len * step;
+                } else { // 高速トリル
+                    let step = allow16th ? 0.25 : 0.5;
+                    let len = Math.floor(6 * density) + 2;
+                    let l1 = 3, l2 = 5;
+                    for(let i=0; i<len; i++) {
+                        addNote((currentBeat + i*step) * beatInterval, i % 2 === 0 ? l1 : l2);
+                    }
+                    beatsUsed = len * step;
+                }
+            }
+            
+            // 難易度による余白の調整（低難易度ほど休符が入りやすい）
+            let rest = 0;
+            if (Math.random() > density) rest = 0.5;
+            if (density < 0.4 && Math.random() > density) rest = 1.0;
+
+            currentBeat += beatsUsed + rest;
         }
         notes.sort((a, b) => a.time - b.time);
     }
@@ -276,13 +377,15 @@
             bpm: parseInt(document.getElementById('set-bpm').value),
             duration: parseInt(document.getElementById('set-time').value),
             speed: parseFloat(document.getElementById('set-speed').value),
-            judgeStr: document.getElementById('set-judge').value
+            judgeStr: document.getElementById('set-judge').value,
+            pattern: document.getElementById('set-pattern').value
         };
         const isEasy = config.judgeStr === 'easy';
         config.judgeWindows = { cool: isEasy?60:40, great: isEasy?100:70, good: isEasy?150:110, bad: isEasy?220:170 };
         config.colors = config.lines === 5 ? laneColors9.slice(2,7) : (config.lines === 7 ? laneColors9.slice(1,8) : laneColors9);
         
         generateNotes();
+        
         gameState = {
             startTime: performance.now() + 2000, score: 0, combo: 0, maxCombo: 0, gauge: 20, 
             scorePerNote: notes.length > 0 ? 100000 / notes.length : 0,
@@ -333,17 +436,11 @@
 
         for (let i = 0; i < config.lines; i++) {
             ctx.fillStyle = config.colors[i];
-            ctx.globalAlpha = 0.15;
-            ctx.fillRect(i * laneW, 0, laneW, canvas.height);
+            ctx.globalAlpha = 0.15; ctx.fillRect(i * laneW, 0, laneW, canvas.height);
             ctx.globalAlpha = 1.0;
-
             if (activeLanes[i]) {
-                ctx.fillStyle = config.colors[i];
-                ctx.globalAlpha = 0.5;
-                ctx.fillRect(i * laneW, 0, laneW, canvas.height);
-                ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 0.5; ctx.fillRect(i * laneW, 0, laneW, canvas.height); ctx.globalAlpha = 1.0;
             }
-            
             ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(i * laneW, 0, laneW, canvas.height);
         }
 
@@ -369,15 +466,12 @@
 
         judgeTexts.forEach(t => {
             ctx.globalAlpha = Math.max(0, t.life);
-            ctx.fillStyle = t.color;
-            ctx.font = 'bold 30px sans-serif';
-            ctx.textAlign = 'center';
+            ctx.fillStyle = t.color; ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(t.text, t.x, t.y);
         });
         ctx.globalAlpha = 1.0; 
     }
 
-    // --- タップ制御 ---
     const activeTouches = new Map();
 
     function updateActiveLanes(e) {
