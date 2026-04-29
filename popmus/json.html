@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pop'n Chart Tracer v6</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #1a1b26; color: #a9b1d6; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #toolbar { background-color: #24283b; padding: 8px; display: flex; gap: 12px; align-items: center; border-bottom: 2px solid #414868; flex-wrap: wrap; z-index: 10; font-size: 11px; }
+        #canvas-container { flex-grow: 1; position: relative; overflow: hidden; background-color: #16161e; }
+        canvas { display: block; }
+        .control-group { display: flex; flex-direction: column; gap: 2px; }
+        label { font-size: 9px; color: #787c99; font-weight: bold; text-transform: uppercase; }
+        input, select { background: #1a1b26; border: 1px solid #414868; color: #c0caf5; padding: 3px; border-radius: 4px; font-size: 11px; }
+        
+        .mode-switch { display: flex; background: #1a1b26; border-radius: 6px; padding: 2px; border: 1px solid #414868; }
+        .mode-btn { cursor: pointer; padding: 4px 10px; border-radius: 4px; border: none; color: #565f89; background: transparent; font-weight: bold; }
+        .mode-btn.active { background: #7aa2f7; color: #1a1b26; }
+        .mode-btn.active.img-only { background: #bb9af7; }
+
+        .btn-green { background: #9ece6a !important; color: #1a1b26 !important; font-weight: bold; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-blue { background: #7aa2f7 !important; color: #1a1b26 !important; font-weight: bold; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        
+        #info { position: absolute; bottom: 20px; left: 20px; background: rgba(22, 22, 30, 0.9); padding: 10px; border-radius: 8px; border: 1px solid #414868; pointer-events: none; font-family: monospace; }
+        .mode-indicator { font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <div class="control-group">
+        <label>画像読み込み</label>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="control-group">
+        <label>JSON読み込み(修正用)</label>
+        <input type="file" id="jsonInput" accept=".json">
+    </div>
+
+    <div class="control-group">
+        <label>操作モード</label>
+        <div class="mode-switch">
+            <button id="modeChart" class="mode-btn active">編集</button>
+            <button id="modeImg" class="mode-btn img-only">画像校正</button>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>画像サイズ(px単位微調整)</label>
+        <div style="display:flex; gap:2px;">
+            W:<input type="number" id="imgW" style="width:55px">
+            H:<input type="number" id="imgH" style="width:55px">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>1拍の高さ / 基準拍</label>
+        <div style="display:flex; gap:2px;">
+            <input type="number" id="beatHeight" value="100" style="width:45px">
+            <input type="number" id="baseBeat" value="0" style="width:40px">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>ガイド色</label>
+        <select id="guideColor">
+            <option value="#ff0000">赤</option>
+            <option value="#00ff00">緑</option>
+            <option value="#0000ff">青</option>
+            <option value="#000000">黒</option>
+            <option value="#ffffff" selected>白</option>
+            <option value="#ffff00">黄</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>スナップ</label>
+        <select id="snapRes">
+            <option value="0.5" selected>8分</option>
+            <option value="0.25">16分</option>
+            <option value="0.125">32分</option>
+            <option value="0.0625">64分</option>
+            <option value="0.1">0.1刻み</option>
+            <option value="0.05">0.05刻み</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>画像不透明度</label>
+        <input type="range" id="opacityRange" min="0" max="1" step="0.05" value="0.8" style="width:70px">
+    </div>
+
+    <button id="exportBtn" class="btn-green">JSON出力</button>
+</div>
+
+<div id="canvas-container">
+    <canvas id="mainCanvas"></canvas>
+    <div id="info">
+        <div id="modeLabel" class="mode-indicator" style="background: #7aa2f7; color: #1a1b26;">全体移動モード</div><br>
+        Beat: <span id="curBeat">0.000</span> | Lane: <span id="curLane">-</span><br>
+        Notes: <span id="noteCount">0</span>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+const jsonInput = document.getElementById('jsonInput');
+const imgWInput = document.getElementById('imgW');
+const imgHInput = document.getElementById('imgH');
+const beatHeightInput = document.getElementById('beatHeight');
+const baseBeatInput = document.getElementById('baseBeat');
+const snapResInput = document.getElementById('snapRes');
+const guideColorInput = document.getElementById('guideColor');
+const opacityRange = document.getElementById('opacityRange');
+const exportBtn = document.getElementById('exportBtn');
+
+let img = null;
+let notes = [];
+let mode = 'CHART';
+let camera = { x: 100, y: 500, zoom: 1 };
+let imgState = { x: 0, y: 0, w: 0, h: 0 };
+
+let isMouseDown = false;
+let isDragging = false;
+let startMousePos = { x: 0, y: 0 };
+let initialCameraPos = { ...camera };
+let initialImgPos = { ...imgState };
+
+const laneColors = ['#FFFFFF', '#FFFF00', '#00FF00', '#0000FF', '#FF0000', '#0000FF', '#00FF00', '#FFFF00', '#FFFFFF'];
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - document.getElementById('toolbar').offsetHeight;
+    draw();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// 画像読み込み
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (v) => {
+        img = new Image();
+        img.onload = () => {
+            imgState.w = img.naturalWidth;
+            imgState.h = img.naturalHeight;
+            imgWInput.value = imgState.w;
+            imgHInput.value = imgState.h;
+            camera.y = canvas.height - 50;
+            draw();
+        };
+        img.src = v.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+// JSON読み込み
+jsonInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (v) => {
+        try {
+            const data = JSON.parse(v.target.result);
+            if (Array.isArray(data)) {
+                notes = data;
+                draw();
+                alert(`${notes.length}個のノーツを読み込みました。`);
+            }
+        } catch (err) {
+            alert("JSONの解析に失敗しました。");
+        }
+    };
+    reader.readAsText(file);
+});
+
+// 手入力によるサイズ変更
+[imgWInput, imgHInput].forEach(el => el.addEventListener('input', () => {
+    imgState.w = parseInt(imgWInput.value) || 0;
+    imgState.h = parseInt(imgHInput.value) || 0;
+    draw();
+}));
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!img) {
+        ctx.fillStyle = "#565f89";
+        ctx.fillText("画像を読み込んでください", 20, 30);
+        return;
+    }
+
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
+    ctx.scale(camera.zoom, camera.zoom);
+
+    // 1. 画像の描画 (imgStateのW/Hを使用)
+    ctx.save();
+    ctx.translate(imgState.x, imgState.y);
+    ctx.globalAlpha = parseFloat(opacityRange.value);
+    ctx.drawImage(img, 0, -imgState.h, imgState.w, imgState.h);
+    ctx.restore();
+
+    // 2. グリッド描画
+    const bHeight = parseFloat(beatHeightInput.value);
+    const bStart = parseFloat(baseBeatInput.value);
+    const snap = parseFloat(snapResInput.value);
+    const gColor = guideColorInput.value;
+    const laneWidth = 40;
+    const totalWidth = laneWidth * 9;
+
+    const viewTopWorldY = -camera.y / camera.zoom;
+    const viewBottomWorldY = (canvas.height - camera.y) / camera.zoom;
+    let bMin = Math.floor((-viewBottomWorldY / bHeight) / snap) * snap;
+    let bMax = Math.ceil((-viewTopWorldY / bHeight) / snap) * snap;
+
+    for (let b = bMin; b <= bMax; b += snap) {
+        if (b < -1) continue; 
+        const y = -b * bHeight;
+        const displayBeat = b + bStart;
+
+        ctx.strokeStyle = gColor;
+        if (Math.abs(b % 4) < 0.001) {
+            ctx.lineWidth = 4 / camera.zoom; // 小節線はかなり太く
+            ctx.globalAlpha = 1.0;
+        } else if (Math.abs(b % 1) < 0.001) {
+            ctx.lineWidth = 2 / camera.zoom; // 拍線
+            ctx.globalAlpha = 0.8;
+        } else {
+            ctx.lineWidth = 1 / camera.zoom; // スナップ線
+            ctx.globalAlpha = 0.4;
+        }
+        
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(totalWidth, y); ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        if (Math.abs(b % 1) < 0.001) {
+            ctx.fillStyle = gColor;
+            ctx.font = `bold ${12 / camera.zoom}px Arial`;
+            ctx.fillText(displayBeat.toFixed(0), -25 / camera.zoom, y + (4 / camera.zoom));
+        }
+    }
+
+    // レーン縦枠
+    ctx.strokeStyle = gColor;
+    ctx.lineWidth = 1 / camera.zoom;
+    ctx.globalAlpha = 0.3;
+    for(let i=0; i<=9; i++) {
+        ctx.beginPath(); ctx.moveTo(i * laneWidth, -bMin * bHeight); ctx.lineTo(i * laneWidth, -bMax * bHeight); ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // 3. ノーツ描画
+    notes.forEach(n => {
+        const relativeBeat = n.b - bStart;
+        const nx = (n.l * laneWidth);
+        const ny = -relativeBeat * bHeight;
+        ctx.fillStyle = laneColors[n.l];
+        ctx.fillRect(nx + 2, ny - 5 / camera.zoom, laneWidth - 4, 10 / camera.zoom);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1 / camera.zoom;
+        ctx.strokeRect(nx + 2, ny - 5 / camera.zoom, laneWidth - 4, 10 / camera.zoom);
+    });
+
+    ctx.restore();
+    document.getElementById('noteCount').innerText = notes.length;
+}
+
+function screenToWorld(sx, sy) {
+    const rect = canvas.getBoundingClientRect();
+    return { 
+        wx: (sx - rect.left - camera.x) / camera.zoom, 
+        wy: (sy - rect.top - camera.y) / camera.zoom,
+        mx: sx - rect.left, my: sy - rect.top
+    };
+}
+
+canvas.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    isMouseDown = true;
+    isDragging = false;
+    startMousePos = { x: e.clientX, y: e.clientY };
+    initialCameraPos = { ...camera };
+    initialImgPos = { ...imgState };
+});
+
+window.addEventListener('mousemove', e => {
+    const world = screenToWorld(e.clientX, e.clientY);
+    const bHeight = parseFloat(beatHeightInput.value);
+    const bStart = parseFloat(baseBeatInput.value);
+    const snap = parseFloat(snapResInput.value);
+    
+    const lane = Math.floor(world.wx / 40);
+    const beat = Math.round((-world.wy / bHeight) / snap) * snap + bStart;
+    
+    if(lane >= 0 && lane <= 8) {
+        document.getElementById('curBeat').innerText = beat.toFixed(3);
+        document.getElementById('curLane').innerText = lane;
+    }
+
+    if (isMouseDown) {
+        const dx = e.clientX - startMousePos.x;
+        const dy = e.clientY - startMousePos.y;
+        if (Math.hypot(dx, dy) > 2) {
+            isDragging = true;
+            if (mode === 'CHART') {
+                camera.x = initialCameraPos.x + dx;
+                camera.y = initialCameraPos.y + dy;
+            } else {
+                imgState.x = initialImgPos.x + dx / camera.zoom;
+                imgState.y = initialImgPos.y + dy / camera.zoom;
+            }
+            draw();
+        }
+    }
+});
+
+window.addEventListener('mouseup', e => {
+    if (isMouseDown && !isDragging && mode === 'CHART') {
+        const world = screenToWorld(e.clientX, e.clientY);
+        const bHeight = parseFloat(beatHeightInput.value);
+        const bStart = parseFloat(baseBeatInput.value);
+        const snap = parseFloat(snapResInput.value);
+        const lane = Math.floor(world.wx / 40);
+        const beat = Math.round((-world.wy / bHeight) / snap) * snap + bStart;
+
+        if (lane >= 0 && lane <= 8) {
+            notes = notes.filter(n => !(Math.abs(n.b - beat) < 0.001 && n.l === lane));
+            notes.push({ b: beat, l: lane });
+        }
+    }
+    isMouseDown = false;
+    isDragging = false;
+    draw();
+});
+
+canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
+    if (mode === 'CHART') {
+        const world = screenToWorld(e.clientX, e.clientY);
+        camera.x = world.mx - (world.mx - camera.x) * zoomFactor;
+        camera.y = world.my - (world.my - camera.y) * zoomFactor;
+        camera.zoom *= zoomFactor;
+    } else {
+        // 画像モードでのホイールは全体的なリサイズ
+        imgState.w = Math.round(imgState.w * zoomFactor);
+        imgState.h = Math.round(imgState.h * zoomFactor);
+        imgWInput.value = imgState.w;
+        imgHInput.value = imgState.h;
+    }
+    draw();
+}, { passive: false });
+
+function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    const label = document.getElementById('modeLabel');
+    if (m === 'CHART') {
+        document.getElementById('modeChart').classList.add('active');
+        label.innerText = "全体編集モード";
+        label.style.background = "#7aa2f7";
+    } else {
+        document.getElementById('modeImg').classList.add('active');
+        label.innerText = "画像校正モード (ホイールでリサイズ)";
+        label.style.background = "#bb9af7";
+    }
+    draw();
+}
+document.getElementById('modeChart').addEventListener('click', () => setMode('CHART'));
+document.getElementById('modeImg').addEventListener('click', () => setMode('IMAGE'));
+
+canvas.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const world = screenToWorld(e.clientX, e.clientY);
+    const bHeight = parseFloat(beatHeightInput.value);
+    const bStart = parseFloat(baseBeatInput.value);
+    const lane = Math.floor(world.wx / 40);
+    const beat = -world.wy / bHeight + bStart;
+    notes = notes.filter(n => !(Math.abs(n.b - beat) < 0.15 && n.l === lane));
+    draw();
+});
+
+exportBtn.addEventListener('click', () => {
+    const sorted = [...notes].sort((a, b) => a.b - b.b);
+    const data = sorted.map(n => ({ b: parseFloat(n.b.toFixed(3)), l: n.l }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'chart_edited.json';
+    a.click();
+});
+
+[beatHeightInput, baseBeatInput, snapResInput, guideColorInput, opacityRange].forEach(el => el.addEventListener('change', draw));
+</script>
+</body>
+</html>
