@@ -85,7 +85,7 @@
 </head>
 <body>
 <!-- YouTube BGM用プレイヤー枠（見えないように配置） -->
-<div style="position: absolute; width: 100px; height: 100px; opacity: 1; pointer-events: none; z-index: 1000;">
+<div style="position: fixed; top: 10%; left: 50%; transform: translateX(-50%); z-index: 9999; background: red; padding: 5px; border: 3px solid yellow;">
     <div id="youtube-bgm"></div>
 </div>
 
@@ -266,12 +266,23 @@
     // API読み込み完了時に自動で呼ばれる関数（名前を変えてはいけません）
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('youtube-bgm', {
+/*
             height: '0',
             width: '0',
             playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
             events: {
                 'onReady': () => { isYtReady = true; } // 準備完了フラグ
             }
+*/
+            height: '200', // ★ 十分に見えるサイズにする
+            width: '300',  // ★ 十分に見えるサイズにする
+            playerVars: { 
+                'autoplay': 0, 
+                'controls': 1, // ★ 1にしてYouTubeのUI(再生ボタン等)を表示
+                'disablekb': 0, 
+                'playsinline': 1 
+            },
+            events: { 'onReady': () => { isYtReady = true; } }
         });
     }
 
