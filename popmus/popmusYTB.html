@@ -84,8 +84,10 @@
     </style>
 </head>
 <body>
-	<!-- YouTube BGM用プレイヤー枠 -->
-	<div id="youtube-bgm" style="display:none;"></div>
+<!-- YouTube BGM用プレイヤー枠（見えないように配置） -->
+<div style="position: absolute; width: 100px; height: 100px; opacity: 1; pointer-events: none; z-index: 1000;">
+    <div id="youtube-bgm"></div>
+</div>
 
     <div id="screen-title" class="screen active">
         <h1>Pop'n Clone</h1>
@@ -117,8 +119,13 @@
                     <option value="1">x1.0</option><option value="1.5">x1.5</option><option value="2">x2.0</option>
                     <option value="2.5" selected>x2.5</option><option value="3">x3.0</option><option value="4">x4.0</option>
                 </select>
+				<label>オフセット(秒)</label>
+                <input type="number" id="ms-offset" step="0.1" value="0.0" onchange="saveOffset()" style="width: 70px;">
+            </div>
+			<div class="opt-row">
                 <label>判定</label>
                 <select id="ms-judge"><option value="easy">EASY</option><option value="normal" selected>NORMAL</option></select>
+                <div id="song-highscore" style="color: #4caf50; font-weight: bold;">SCORE: 0</div>
             </div>
             <button onclick="startMusicSelectGame()" style="width: 100%; margin: 10px 0 0 0;">PLAY</button>
         </div>
@@ -155,6 +162,20 @@
     </div>
 
     <div id="screen-game" class="screen">
+
+        <!-- ゲーム画面のグルーヴゲージ -->
+        <div style="display: flex; align-items: center; padding: 10px; background: #111;">
+            <div style="color: white; font-weight: bold; margin-right: 10px;">GROOVE</div>
+            <div id="groove-gauge-container" style="flex-grow: 1; height: 24px; background: #333; border: 2px solid #ccc; position: relative;">
+                <!-- ゲージの中身 -->
+                <div id="groove-gauge-bar" style="width: 0%; height: 100%; background: #00ffff; transition: width 0.1s, background-color 0.1s;"></div>
+                <!-- 70%のクリアライン -->
+                <div style="position: absolute; left: 70%; top: -2px; bottom: -2px; width: 4px; background: #ff0000; z-index: 10;"></div>
+                <!-- 本家風の目盛り（CSSで表現） -->
+                <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 4.8%, #222 4.8%, #222 5%); pointer-events: none; z-index: 5;"></div>
+            </div>
+        </div>
+
         <canvas id="gameCanvas"></canvas>
         <div id="ui-layer">
             <div id="score-display" class="hud-text">0</div>
@@ -168,6 +189,15 @@
     </div>
 
     <div id="screen-result" class="screen">
+        <!-- ★ここを追加 -->
+        <div id="result-clear-status" style="font-size: 36px; font-weight: bold; text-align: center; margin-top: 20px;"></div>
+        
+        <!-- ★リザルト用ゲージ -->
+        <div id="result-gauge-container" style="width: 80%; margin: 10px auto 30px auto; height: 24px; background: #333; border: 2px solid #ccc; position: relative;">
+            <div id="result-gauge-bar" style="width: 0%; height: 100%; background: #00ffff;"></div>
+            <div style="position: absolute; left: 70%; top: -2px; bottom: -2px; width: 4px; background: #ff0000; z-index: 10;"></div>
+            <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 4.8%, #222 4.8%, #222 5%); pointer-events: none; z-index: 5;"></div>
+        </div>
         <h1>RESULT</h1>
         <h2 id="result-score" style="font-size: 2.5rem; color: #ffeb3b;">0</h2>
         <div id="result-details" style="text-align: left; margin: 10px 0; line-height: 1.6;"></div>
@@ -186,29 +216,39 @@
     // --- 楽曲リストの定義 ---
     const songList = [
         {
-            title: 'メルト', genre: 'メルト', file: 'melt_ex.json', bpm: 168,
+			id: 'dummy', title: '【DEBUG】ダミー曲', genre: 'DEBUG', file: null, bpm: 120,
+            url: 'https://www.youtube.com/watch?v=nK9W46_BuOA', // 任意のテスト動画
+            desc: "ローカルテスト用のダミー曲です。JSONを読み込まず、プログラム内の短い譜面を使用します。",
+            ignore7: [], ignore5: []
+        },
+        {
+            id: 'melt' , title: 'メルト', genre: 'メルト', file: 'melt_ex.json', bpm: 168,
             desc: "それはとろける恋心。パーキッツから爽快なポップスが届いたよ。",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8], URL:"https://www.youtube.com/watch?v=2CsgpS0OdSM"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=2CsgpS0OdSM"
         },
         {
-            title: 'jewelry girl*', genre: 'ジュエリーロック', file: 'jlrock_ex.json', bpm: 173,
+        	id: 'jlrock'
+            ,title: 'jewelry girl*', genre: 'ジュエリーロック', file: 'jlrock_ex.json', bpm: 173,
             desc: "残された想い出だけが、キラキラと輝き続ける…。ｊｕｎ新境地は、切なさ溢れるロックナンバー！",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8], URL:"https://www.youtube.com/watch?v=S9yHVVe-Ong"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=S9yHVVe-Ong"
         },
         {
-            title: 'Votum stellarum iconoclasm', genre: 'アンセムトランス', file: 'anthem_trance_h.json', bpm: 147,
+        	id: 'anthem'
+            ,title: 'Votum stellarum iconoclasm', genre: 'アンセムトランス', file: 'anthem_trance_h.json', bpm: 136,
             desc: "星にかけた願いは、こうして星達の歌声となって舞い降りる。",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8],URL:"https://www.youtube.com/watch?v=IzHFup0ly4M"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8],url:"https://www.youtube.com/watch?v=IzHFup0ly4M"
         },
         {
-            title: 'チェイス！チェイス！チェイス！', genre: 'フレッシュ', file: 'fresh_ex.json', bpm: 176,
+        	id: 'fresh'
+            ,title: 'チェイス！チェイス！チェイス！', genre: 'フレッシュ', file: 'fresh_ex.json', bpm: 176,
             desc: "新生活応援青春ソング。思わず口ずさんでしまうアップビートなポップチューンだよ！",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8], URL:"https://www.youtube.com/watch?v=PDK3SHROL3o"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=ttj82kvo4ts"
         },
         {
-            title: 'DAWN', genre: 'SFポップ', file: 'sfpop_ex.json', bpm: 142,
+        	id: 'sfpop'
+            ,title: 'DAWN', genre: 'SFポップ', file: 'sfpop_ex.json', bpm: 142,
             desc: "Ｐｏｐ’ｎＴＶが贈る新感覚ＳＦアニメ、『流星のカルナパル』オープニングテーマ。ＮＯＷ　ＯＮ　ＰＬＡＹ！",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8], URL:"https://www.youtube.com/watch?v=nK9W46_BuOA"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=nK9W46_BuOA"
         }
     ];
     let selectedSongIdx = 0;
@@ -254,33 +294,29 @@
         const container = document.getElementById('song-list-container');
         container.innerHTML = '';
         songList.forEach((song, idx) => {
-            // 斜めに配置するためのオフセット計算
-            const offset = 5 + (idx * 0);
+            const offset = 5 + (idx * 15);
             const div = document.createElement('div');
             div.className = `song-item ${idx === selectedSongIdx ? 'selected' : ''}`;
             div.style.marginLeft = `${offset}%`;
-            /* div.innerHTML = `<div class="song-genre">${song.genre}</div><div class="song-title">${song.title}</div>`; */
 
-		// --- ここから書き換え ---
-        // URLがある場合のみアイコンを表示する
-        const youtubeLink = song.URL 
-            ? `<a href="${song.URL}" target="_blank" rel="noopener noreferrer" 
-                  onclick="event.stopPropagation();" 
-                  style="text-decoration:none; margin-left:10px; cursor:pointer;">📺</a>` 
-            : '';
+            // 📺アイコンの生成（URLがある場合のみ）
+            const youtubeLink = song.url 
+                ? `<a href="${song.url}" target="_blank" rel="noopener noreferrer" 
+                      onclick="event.stopPropagation();" 
+                      style="text-decoration:none; margin-left:10px; cursor:pointer;">📺</a>` 
+                : '';
 
-        div.innerHTML = `
-            <div class="song-genre">
-                ${song.genre}${youtubeLink}
-            </div>
-            <div class="song-title">${song.title}</div>
-        `;
-        // --- ここまで書き換え ---
+            div.innerHTML = `
+                <div class="song-genre">
+                    ${song.genre}${youtubeLink}
+                </div>
+                <div class="song-title">${song.title}</div>
+            `;
 
             div.onclick = () => selectSong(idx);
             container.appendChild(div);
         });
-        updateSongInfo();
+        updateSongInfo(); // 初期選択曲のスコアやオフセットを表示
     }
 
     function selectSong(idx) {
@@ -294,18 +330,55 @@
     }
 
     function updateSongInfo() {
-        const song = songList[selectedSongIdx];
+		const song = songList[selectedSongIdx];
         document.getElementById('song-desc').innerText = song.desc;
+        
+        // ローカルストレージからオフセットを読み込む
+        const savedOffset = localStorage.getItem(`popn_offset_${song.id}`) || "0.0";
+        document.getElementById('ms-offset').value = savedOffset;
+
+        // ローカルストレージからハイスコアを読み込む
+        const diff = document.getElementById('ms-diff').value;
+        const highScore = localStorage.getItem(`popn_score_${song.id}_${diff}`) || "0";
+        document.getElementById('song-highscore').innerText = `SCORE: ${highScore}`;
     }
 
-    // --- 譜面間引き・レーン変換処理 ---
+	function saveOffset() {
+        const song = songList[selectedSongIdx];
+        const offsetVal = document.getElementById('ms-offset').value;
+        localStorage.setItem(`popn_offset_${song.id}`, offsetVal);
+    }
+
+    // --- 拍数から時間(ミリ秒)を計算する関数 ---
+    function calculateTimeFromBeat(targetBeat, bpmChanges) {
+        let timeMs = 0;
+        let currentBeat = 0;
+        let currentBpm = bpmChanges[0].c;
+
+        for (let i = 1; i < bpmChanges.length; i++) {
+            const change = bpmChanges[i];
+            if (targetBeat >= change.b) {
+                // ターゲットの拍がこのBPM変更よりも後ろなら、前の区間の時間を丸ごと加算
+                timeMs += (change.b - currentBeat) * (60000 / currentBpm);
+                currentBeat = change.b;
+                currentBpm = change.c;
+            } else {
+                break; // ターゲットが現在のBPM区間内にある場合はループを抜ける
+            }
+        }
+        // 最後に、現在のBPM区間での端数の拍数分の時間を加算
+        timeMs += (targetBeat - currentBeat) * (60000 / currentBpm);
+        return timeMs;
+    }
+
+// --- 譜面間引き・レーン変換処理 ---
     function processJSONChart(rawData, songDef, buttonsCount, difficultyMode) {
         let filtered = [];
+        let bpmChanges = []; // ★BPM変更を格納する配列を追加
         let ignoreList = [];
         if (buttonsCount === 7) ignoreList = songDef.ignore7;
         if (buttonsCount === 5) ignoreList = songDef.ignore5;
 
-        // 除外されないレーンに新しい0からのインデックスを割り当てる
         let laneMap = {};
         let currentVisLane = 0;
         let activeColors = [];
@@ -316,16 +389,26 @@
                 currentVisLane++;
             }
         }
-        config.colors = activeColors; // プレイ用のレーン色を上書き
+        config.colors = activeColors;
 
-        // 1. 無効レーンを削除し、レーン番号を振り直す
+        // 1. ノーツ抽出とBPM変更の抽出
         rawData.forEach(n => {
-            if (!ignoreList.includes(n.l)) {
+            if (n.c !== undefined) {
+                // BPM変更の定義をキャッチ
+                bpmChanges.push({ b: n.b, c: n.c });
+            } else if (n.l !== undefined && !ignoreList.includes(n.l)) {
+                // 通常のノーツ
                 filtered.push({ b: n.b, l: laneMap[n.l] });
             }
         });
 
-        // 2. 難易度による間引き処理
+        // ★BPM変更リストを拍数でソートし、先頭(0拍目)のBPM定義を保証する
+        bpmChanges.sort((a, b) => a.b - b.b);
+        if (bpmChanges.length === 0 || bpmChanges[0].b > 0) {
+            bpmChanges.unshift({ b: 0, c: songDef.bpm }); // cの記載がない場合のデフォルト処理
+        }
+
+        // 2. 難易度による間引き処理（変更なし）
         let thinned = [];
         let beatMap = {};
         filtered.forEach(n => {
@@ -336,35 +419,35 @@
         for (let b in beatMap) {
             let beatVal = parseFloat(b);
             let notesAtBeat = beatMap[b];
-            
             if (difficultyMode === 'ex') {
-                // そのまま
                 thinned.push(...notesAtBeat);
             } else if (difficultyMode === 'hyper') {
-                // 同時押しを最大2つに制限
                 thinned.push(...notesAtBeat.slice(0, 2));
             } else if (difficultyMode === 'normal') {
-                // 8分音符(0.5刻み)のみ許可し、同時押しは単推しに
-                if (beatVal % 0.5 === 0) {
-                    thinned.push(notesAtBeat[0]);
-                }
+                if (beatVal % 0.5 === 0) thinned.push(notesAtBeat[0]);
             }
         }
-        return thinned;
+        
+        // ★ノーツ配列とBPM変更配列の両方を返す
+        return { notes: thinned, bpmChanges: bpmChanges };
     }
 
     // --- ゲーム開始（ミュージックセレクトから） ---
-    async function startMusicSelectGame() {
+	async function startMusicSelectGame() {
         const song = songList[selectedSongIdx];
         const buttons = parseInt(document.getElementById('ms-buttons').value);
-        const difficulty = document.getElementById('ms-diff').value;
+        const difficultyStr = document.getElementById('ms-diff').value;
+        const offsetSec = parseFloat(document.getElementById('ms-offset').value) || 0;
 
         config = {
+            songId: song.id,
+            difficultyStr: difficultyStr,
             lines: buttons,
-            bpm: song.bpm, // 曲固有のBPM
+            bpm: song.bpm,
             speed: parseFloat(document.getElementById('ms-speed').value),
             judgeStr: document.getElementById('ms-judge').value,
-            mode: 'music-select'
+            mode: 'music-select',
+            offsetMs: offsetSec * 1000 // ミリ秒に変換
         };
 
         const isEasy = config.judgeStr === 'easy';
@@ -372,45 +455,56 @@
 
         document.getElementById('loading-overlay').style.display = 'flex';
 
+        // ★ YouTube再生リクエストを「fetch」などの非同期処理の【前】に実行する（自動再生ブロック回避）
+        const videoId = getYTVideoId(song.url);
+        if (videoId && isYtReady && ytPlayer) {
+            ytPlayer.loadVideoById(videoId);
+        }
+
         try {
-            // JSONファイルの取得
-            const response = await fetch(song.file);
-            if (!response.ok) throw new Error("File not found");
-            const rawData = await response.json();
+            let chartData; // オブジェクトを受け取るための変数に変更
             
-            // 譜面の処理（レーン数と難易度に応じた間引き）
-            const processedChart = processJSONChart(rawData, song, buttons, difficulty);
+            if (song.id === 'dummy') {
+                const dummyData = [
+                    {b: 0, l: 4}, {b: 1, l: 3}, {b: 2, l: 5}, {b: 3, l: 4},
+                    {b: 4, l: 2}, {b: 4.5, l: 6}, {b: 5, l: 2}, {b: 5.5, l: 6},
+                    {b: 6, l: 4}, {b: 7, l: 4}, {b: 8, l: 0}, {b: 8, l: 8},
+                    {b: 10, l: 4}, {b: 12, l: 1}, {b: 12, l: 7}, {b: 14, l: 4}
+                ];
+                chartData = processJSONChart(dummyData, song, buttons, difficultyStr);
+                await new Promise(r => setTimeout(r, 500));
+            } else {
+                const response = await fetch(song.file);
+                if (!response.ok) throw new Error("File not found");
+                const rawData = await response.json();
+                chartData = processJSONChart(rawData, song, buttons, difficultyStr);
+            }
             
             notes = [];
             let maxBeat = 0;
-            const beatInterval = 60000 / config.bpm;
-            processedChart.forEach(n => {
-                notes.push({ time: n.b * beatInterval, lane: n.l, hit: false, missed: false });
+            const processedNotes = chartData.notes;
+            const bpmChanges = chartData.bpmChanges;
+
+            processedNotes.forEach(n => {
+                // ★ 新しい時間計算関数を適用
+                const baseNoteTime = calculateTimeFromBeat(n.b, bpmChanges);
+                const noteTime = baseNoteTime + config.offsetMs;
+                notes.push({ time: Math.max(0, noteTime), lane: n.l, hit: false, missed: false });
                 if (n.b > maxBeat) maxBeat = n.b;
             });
             notes.sort((a, b) => a.time - b.time);
             
-            // プレイ時間の自動計算
-            config.duration = Math.ceil((maxBeat * beatInterval) / 1000) + 4;
+            // ★ ゲームの終了時間(duration)も計算し直す
+            const maxTimeMs = calculateTimeFromBeat(maxBeat, bpmChanges);
+            config.duration = Math.ceil((maxTimeMs + Math.max(0, config.offsetMs)) / 1000) + 4;
 
             document.getElementById('loading-overlay').style.display = 'none';
-
-
-		    // YouTube BGMの再生処理
-		    const videoId = getYTVideoId(song.url);
-		    if (videoId && isYtReady && ytPlayer) {
-		        ytPlayer.loadVideoById(videoId); // 動画を読み込んで再生
-		        // 譜面が降ってくるまでの猶予（startTimeの2000ms等）と合わせるため、
-		        // 厳密にやるならここでシーク処理などを行いますが、今回はそのまま流します
-		    }
-		    
-		    document.getElementById('loading-overlay').style.display = 'none';
-
             bootGame();
 
         } catch (err) {
             document.getElementById('loading-overlay').style.display = 'none';
-            alert(`【エラー】\n${song.file} の読み込みに失敗しました。\nローカルのJSONファイルを読み込む場合、ブラウザのセキュリティ制限によりWebサーバー環境（Live Server等）経由で開く必要があります。`);
+            if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
+            alert(`【エラー】\nファイルの読み込みに失敗しました。\nローカル時はダミー曲を使用してください。`);
         }
     }
 
@@ -563,7 +657,10 @@
         
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight * 0.85;
-        
+
+        gameState.gauge = 22.0; // 初期値(%)
+        updateGaugeUI();
+
         changeScreen('screen-game');
         if (animationId) cancelAnimationFrame(animationId);
         gameLoop();
@@ -582,6 +679,29 @@
         draw(ctx) {
             ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color;
             ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+
+    // グルーヴゲージを更新する関数
+    function updateGauge(judge) {
+        // 難易度や判定によって増減量を調整します（お好みで調整してください）
+        if (judge === 'cool') gameState.gauge += 2.0;
+        else if (judge === 'great') gameState.gauge += 1.0;
+        else if (judge === 'good') gameState.gauge += 0.5;
+        else if (judge === 'bad') gameState.gauge -= 4.0; // 本家はミス時の減少が大きい
+
+        // 0% 〜 100% の間に収める
+        gameState.gauge = Math.max(0, Math.min(100, gameState.gauge));
+        updateGaugeUI();
+    }
+
+    // 画面のゲージバーの見た目を更新する関数
+    function updateGaugeUI() {
+        const gaugeBar = document.getElementById('groove-gauge-bar');
+        if (gaugeBar) {
+            gaugeBar.style.width = `${gameState.gauge}%`;
+            // 70%以上で色を赤/ピンク系に変更（本家のボーダー超え演出）
+            gaugeBar.style.backgroundColor = gameState.gauge >= 70 ? '#ff3366' : '#00ffff';
         }
     }
 
@@ -769,15 +889,43 @@
         else fill.style.background = 'linear-gradient(90deg, #4caf50, #8bc34a)';
     }
 
-    function endGame() {
-        cancelAnimationFrame(animationId);
-
-		// --- BGMを停止する ---
+	function endGame() {
+cancelAnimationFrame(animationId);
+        
         if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
             ytPlayer.stopVideo();
         }
 
-        document.getElementById('result-score').innerText = Math.floor(gameState.score).toLocaleString();
+        const finalScore = Math.floor(gameState.score);
+        
+        // ★ クリア判定ロジック（70%以上でクリア）
+        const isClear = gameState.gauge >= 70;
+
+        // ★ CLEAR/FAILED の表示設定
+        const statusEl = document.getElementById('result-clear-status');
+        if (isClear) {
+            statusEl.innerText = "STAGE CLEAR!!";
+            statusEl.style.color = "#ff3366";
+        } else {
+            statusEl.innerText = "FAILED...";
+            statusEl.style.color = "#44bbff";
+        }
+
+        // ★ リザルト画面のゲージに最終状態を反映
+        const resultBar = document.getElementById('result-gauge-bar');
+        resultBar.style.width = `${gameState.gauge}%`;
+        resultBar.style.backgroundColor = isClear ? '#ff3366' : '#00ffff';
+
+        // スコア保存処理（クリア時のみハイスコアを更新したい場合は、ここに isClear の条件を足してもOKです）
+        if (config.mode === 'music-select') {
+            const scoreKey = `popn_score_${config.songId}_${config.difficultyStr}`;
+            const prevScore = parseInt(localStorage.getItem(scoreKey) || "0");
+            if (finalScore > prevScore) {
+                localStorage.setItem(scoreKey, finalScore);
+            }
+        }
+
+        document.getElementById('result-score').innerText = finalScore.toLocaleString();
         document.getElementById('result-details').innerHTML = `
             COOL: ${gameState.counts.cool}<br>GREAT: ${gameState.counts.great}<br>
             GOOD: ${gameState.counts.good}<br>BAD: ${gameState.counts.bad}<br>
