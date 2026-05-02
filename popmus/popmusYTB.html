@@ -43,7 +43,7 @@
             padding: 20px 0 50px 0; background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
         }
         .song-item {
-            width: 80%; background: rgba(50, 50, 50, 0.8); border-left: 5px solid #555;
+            width: 95%; background: rgba(50, 50, 50, 0.8); border-left: 5px solid #555;
             margin-bottom: 15px; padding: 12px 20px; border-radius: 0 20px 20px 0;
             transition: all 0.2s ease;
         }
@@ -224,7 +224,7 @@
         {
             id: 'melt' , title: 'メルト', genre: 'メルト', file: 'melt_ex.json', bpm: 168,
             desc: "それはとろける恋心。パーキッツから爽快なポップスが届いたよ。",
-            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=2CsgpS0OdSM"
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=_YcXgNwCMWY"
         },
         {
         	id: 'jlrock'
@@ -282,6 +282,14 @@
         return match ? match[1] : null;
     }
 
+    // 特定の曲の全難易度ハイスコアを取得する関数
+    function getSongHighScores(songId) {
+        return {
+            normal: localStorage.getItem(`popn_score_${songId}_normal`) || "0",
+            hyper:  localStorage.getItem(`popn_score_${songId}_hyper`) || "0",
+            ex:     localStorage.getItem(`popn_score_${songId}_ex`) || "0"
+        };
+    }
 
     // --- 画面遷移 ---
     function changeScreen(id) {
@@ -294,10 +302,14 @@
         const container = document.getElementById('song-list-container');
         container.innerHTML = '';
         songList.forEach((song, idx) => {
-            const offset = 5 + (idx * 15);
+            const offset = 5 + (idx * 0);
             const div = document.createElement('div');
             div.className = `song-item ${idx === selectedSongIdx ? 'selected' : ''}`;
             div.style.marginLeft = `${offset}%`;
+
+
+            // ハイスコアを取得
+            const scores = getSongHighScores(song.id);
 
             // 📺アイコンの生成（URLがある場合のみ）
             const youtubeLink = song.url 
@@ -307,10 +319,18 @@
                 : '';
 
             div.innerHTML = `
-                <div class="song-genre">
-                    ${song.genre}${youtubeLink}
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <div>
+                        <div class="song-genre">${song.genre}${youtubeLink}</div>
+                        <div class="song-title">${song.title}</div>
+                    </div>
+                    <!-- ★ 右側に全難易度のハイスコアを表示 (N, H, E) -->
+                    <div class="song-highscores" style="text-align: right; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.9); line-height: 1.2; margin-top: 5px;">
+                        <div>N：${scores.normal.padStart(6, '0')}</div>
+                        <div>H：${scores.hyper.padStart(6, '0')}</div>
+                        <div>E：${scores.ex.padStart(6, '0')}</div>
+                    </div>
                 </div>
-                <div class="song-title">${song.title}</div>
             `;
 
             div.onclick = () => selectSong(idx);
@@ -722,6 +742,7 @@
         notes.forEach(n => {
             if (!n.hit && !n.missed && currentTime > n.time + config.judgeWindows.bad) {
                 n.missed = true; registerHit('bad');
+                updateGauge('bad');
             }
         });
         
@@ -855,17 +876,22 @@
         
         if (j === 'cool') {
             gameState.score += gameState.scorePerNote; gameState.combo++;
-            gameState.gauge = Math.min(100, gameState.gauge + 2.0);
+            //gameState.gauge = Math.min(100, gameState.gauge + 2.0);
+            updateGauge('cool');
             if(lane !== -1) createBurst(lane * (canvas.width/config.lines) + (canvas.width/config.lines)/2, canvas.height-100, config.colors[lane], 'cool');
         } else if (j === 'great') {
             gameState.score += gameState.scorePerNote * 0.8; gameState.combo++;
-            gameState.gauge = Math.min(100, gameState.gauge + 1.2);
+            //gameState.gauge = Math.min(100, gameState.gauge + 1.2);
+            updateGauge('great');
             if(lane !== -1) createBurst(lane * (canvas.width/config.lines) + (canvas.width/config.lines)/2, canvas.height-100, config.colors[lane], 'great');
         } else if (j === 'good') {
             gameState.score += gameState.scorePerNote * 0.4; gameState.combo++;
-            gameState.gauge = Math.min(100, gameState.gauge + 0.4);
+            //gameState.gauge = Math.min(100, gameState.gauge + 0.4);
+            updateGauge('good');
         } else {
-            gameState.combo = 0; gameState.gauge = Math.max(0, gameState.gauge - 1.5);
+            gameState.combo = 0; 
+            //gameState.gauge = Math.max(0, gameState.gauge - 1.5);
+            updateGauge('bad');
         }
 
         if (lane !== -1) {
@@ -900,6 +926,17 @@ cancelAnimationFrame(animationId);
         
         // ★ クリア判定ロジック（70%以上でクリア）
         const isClear = gameState.gauge >= 70;
+
+        // --- ハイスコア保存処理 ---
+        if (config.mode === 'music-select') {
+            const scoreKey = `popn_score_${config.songId}_${config.difficultyStr}`;
+            const prevScore = parseInt(localStorage.getItem(scoreKey) || "0");
+            
+            // 前回のスコアを上回った場合のみ保存
+            if (finalScore > prevScore) {
+                localStorage.setItem(scoreKey, finalScore);
+            }
+        }
 
         // ★ CLEAR/FAILED の表示設定
         const statusEl = document.getElementById('result-clear-status');
