@@ -476,9 +476,29 @@
         document.getElementById('loading-overlay').style.display = 'flex';
 
         // ★ YouTube再生リクエストを「fetch」などの非同期処理の【前】に実行する（自動再生ブロック回避）
+/*
         const videoId = getYTVideoId(song.url);
         if (videoId && isYtReady && ytPlayer) {
             ytPlayer.loadVideoById(videoId);
+        }
+*/
+        // ★ iOS対策を入れたYouTube再生リクエスト部分
+        const videoId = getYTVideoId(song.url);
+        if (videoId && isYtReady && ytPlayer) {
+            ytPlayer.loadVideoById({
+                videoId: videoId,
+                suggestedQuality: 'small'
+            });
+            
+            // iOSはミュート状態であればプログラムからの自動再生を許可しやすい
+            ytPlayer.mute(); 
+            ytPlayer.playVideo();
+
+            // ほんの少し遅らせてミュートを解除し、音量を上げる（タップイベントの延長と誤認させる）
+            setTimeout(() => {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+            }, 100);
         }
 
         try {
