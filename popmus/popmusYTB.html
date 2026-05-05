@@ -271,6 +271,12 @@
             ,title: 'サヨナラ・ヘヴン', genre: 'コンテンポラリーネイション2', file: 'contempo2_ex.json', bpm: 111,
             desc: "そしてイマは永遠の地「ヘヴン」を後にする。幾年の時を超え、今遥かなる旅立ちへ・・・。",
             ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=Dtm-V9YroCM"
+        },
+        {
+        	id: 'megane'
+            ,title: 'ポップミュージック論', genre: 'メガネロック', file: 'megane_ex.json', bpm: 190,
+            desc: "メガネを通して見える世界は有象無象にまみれてやがらあ。冴えない僕らの逆ギレロック。",
+            ignore7: [1, 7], ignore5: [0, 1, 7, 8], url:"https://www.youtube.com/watch?v=ZPU9d-9lx90"
         }
     ];
     let selectedSongIdx = 0;
@@ -484,6 +490,68 @@
         // ★ノーツ配列とBPM変更配列の両方を返す
         return { notes: thinned, bpmChanges: bpmChanges };
     }
+
+// --- キーボード入力用の設定と管理 ---
+    // 1 = 1段配置 (Z, X, C, V, B, N, M, <, >)
+    // 2 = ポップン風配置 (Z, S, X, D, C, F, V, G, B)
+    let keyboardLayoutType = 2; // ← 1か2に変更することで配列を切り替えられます
+
+    const keyboardMapping = {
+        1: {
+            'z': 0, 'x': 1, 'c': 2, 'v': 3, 'b': 4,
+            'n': 5, 'm': 6, ',': 7, '<': 7, '.': 8, '>': 8
+        },
+        2: {
+            'z': 0, 's': 1, 'x': 2, 'd': 3, 'c': 4,
+            'f': 5, 'v': 6, 'g': 7, 'b': 8
+        }
+    };
+
+    // 押しっぱなしによる「連続多重判定」を防ぐためのフラグ管理
+    const pressedKeys = {};
+
+    // --- キーが押された時の処理 ---
+    window.addEventListener('keydown', (e) => {
+        // プレイ中以外（ミュージックセレクト画面など）は反応させない場合はここで弾く
+        // if (config.mode !== 'game') return; // 必要に応じてコメントアウトを解除してください
+
+        const key = e.key.toLowerCase();
+        
+        // 既に押されている状態（押しっぱなし）なら処理をスキップ
+        if (pressedKeys[key]) return;
+
+        const currentMap = keyboardMapping[keyboardLayoutType];
+        
+        // 設定されたキーが押された場合
+        if (currentMap[key] !== undefined) {
+            pressedKeys[key] = true; // 押下状態にする
+            const lane = currentMap[key];
+            
+            // ★ ノーツの判定処理を呼び出す
+            // （以前のやり取りで例示した judgeNote 関数を使っている前提です。
+            // 　もし関数名が異なる場合は、ご自身の判定関数名に書き換えてください）
+            if (typeof judgeNote === 'function') {
+                judgeNote(lane);
+            }
+            
+            // 【おまけ】もし画面下のボタンを光らせるなどのUI更新関数があればここに書きます
+            // 例: activateButtonUI(lane);
+        }
+    });
+
+    // --- キーが離された時の処理 ---
+    window.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        
+        // キーが離されたらフラグを解除し、再度押せるようにする
+        if (pressedKeys[key] !== undefined) {
+            pressedKeys[key] = false;
+            
+            // 【おまけ】画面下のボタンの光を消す関数があればここに書きます
+            // const lane = keyboardMapping[keyboardLayoutType][key];
+            // 例: deactivateButtonUI(lane);
+        }
+    });
 
     // --- ゲーム開始（ミュージックセレクトから） ---
 	async function startMusicSelectGame() {
