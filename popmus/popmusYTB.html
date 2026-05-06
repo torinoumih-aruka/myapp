@@ -92,8 +92,8 @@
         }
         .marquee-content {
             display: inline-block;
-            padding-left: 100%;
-            animation: marquee 8s linear infinite;
+            /*padding-left: 100%;
+            animation: marquee 8s linear infinite;*/
         }
         @keyframes marquee {
             0%   { transform: translate(0, 0); }
@@ -156,7 +156,7 @@
                     <option value="5.5">x5.5</option>
                     <option value="6">x6.0</option>
                 </select>
-                <label>オフセット(秒)</label>
+                <label>オフセット</label>
                 <div style="display: flex; align-items: center;">
                     <input type="number" id="ms-offset" step="0.1" value="0.0" onchange="saveOffset()" style="width: 60px;">
                     <!-- ★ 設定ボタン追加 -->
@@ -168,7 +168,17 @@
                 <select id="ms-judge"><option value="easy">EASY</option><option value="normal" selected>NORMAL</option></select>
                 <div></div> <!-- ★ スコアを削除して空きスペースに -->
             </div>
+            <!--
             <button onclick="startMusicSelectGame()" style="width: 100%; margin: 10px 0 0 0;">PLAY</button>
+            -->
+            <div style="display: flex; gap: 5px; margin-top: 15px;">
+                <!-- ？ボタン (flex: 1) 青色 -->
+                <button onclick="showHelpModal()" style="flex: 1; background-color: #03a9f4; border-radius: 5px; font-weight: bold; font-size: 1.2rem; padding: 10px 0;">？</button>
+                
+                <!-- PLAYボタン (flex: 8) 既存の色など -->
+                <button onclick="startMusicSelectGame()" style="flex: 8; border-radius: 5px; padding: 10px 0; background-color: #ff007f;">PLAY</button>
+            </div>
+
         </div>
         <div id="loading-overlay"><h2 style="color:#03a9f4;">LOADING...</h2></div>
     </div>
@@ -258,6 +268,48 @@
             <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 4.8%, #222 4.8%, #222 5%); pointer-events: none; z-index: 5;"></div>
         </div>
         <button onclick="changeScreen('screen-title')" style="background-color: #ff007f; border-radius: 5px; width: 60%; max-width: 300px;">TITLE</button>
+    </div>
+
+    <!-- ヘルプダイアログ (モーダル) -->
+<!-- ヘルプダイアログ (モーダル) -->
+    <div id="help-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(49, 49, 49, 0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <!-- ★ max-height: 90vh; と display: flex; flex-direction: column; を追加 -->
+        <div style="background: #232323; border: 2px solid #03a9f4; border-radius: 10px; width: 85%; max-width: 500px; max-height: 85vh; padding: 20px; position: relative; color: #fff; box-shadow: 0 0 15px rgba(3, 169, 244, 0.5); display: flex; flex-direction: column;">
+            
+            <!-- 閉じるボタン (常に右上に固定) -->
+            <button onclick="closeHelpModal()" style="position: absolute; top: 10px; right: 15px; background: transparent; background-color: #00557c; border: none; color: #ffffff; font-size: 1.5rem; cursor: pointer; padding: 0; z-index: 10;">×</button>
+
+            <!-- コンテンツ -->
+            <h2 style="font-size: 1rem; margin: 0 0 5px 0;">ヘルプ</h2>
+            <hr style="border: 0; border-top: 1px dashed #555; margin: 10px 0;">
+
+            <div style="overflow-y: auto; padding: 10px 5px; flex-grow: 1; -webkit-overflow-scrolling: touch;">
+
+                <h3 style="font-size: 0.9rem; margin: 10px 0 10px 0;">難易度について</h3>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">難易度はEASY,NORMAL,HYPER,EX,ORIGINがあります。難易度は、元々の譜面（ORIGIN）から、ノーツを間引くことで調整しています。</p>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.7rem; line-height: 1.6;">
+                    <li>・EASY：メトロノームが鳴る部分（表打ち）のリズムに合ったノーツのみが登場します。同時押しは登場しません。</li>
+                    <li>・NORMAL：表打ちに加え、裏打ちのリズムに合ったノーツも登場します。同時押しは登場しません。</li>
+                    <li>・HYPER：表打ちに加え、裏打ちのリズムに合ったノーツのみが登場します。２音までの同時押しが登場します。</li>
+                    <li>・EX：リズムによるノーツの"間引き"は行われません。２音までの同時押しが登場します。</li>
+                    <li>・ORIGIN：元々の譜面のとおりのノーツが登場します。</li>
+                </ul>
+                <h3 style="font-size: 0.9rem; margin: 10px 0 10px 0;">オフセットについて</h3>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">ゲームが始まると、YouTubeのBGMをバックにゲームが開始されます。<br>YouTubeの動画ごとにゲームの開始時間が異なるため、ノーツが落下し始めるまでの時間を補正するための機能が「オフセット」です。</p>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">オフセットに4.53と入力すると、ゲーム開始後4.53秒待機してからノーツが落下し始めるようになります。この時間を調整して、BGMのリズムとノーツの落下をあわせましょう！</p>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">【調整ボタン】を押すと、オフセット調整用画面が表示されます。<br>オフセット調整用画面では、BGMが再生されるので最初のノーツが落ちてくるタイミングを見計らって画面をタップすると、タップした時間までを計測し、自動的にオフセットを設定します。<br>ただし、それでもズレがあると思うので、何度かゲームをPLAYしてオフセットを調整しましょう</p>
+                <p style="font-size: 0.7rem; color:#ff5dce; margin: 0 0 10px 0;">どんなにオフセットを調整しても、動画の特性上、どうしても0.0x秒の微妙なズレが生じることがあります。そのようなズレはどうすることもできないので、そういうものとして諦めてください。</p>
+
+                <h3 style="font-size: 0.9rem; margin: 10px 0 10px 0;">ハイスコアの記録</h3>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">難易度EASY,NORMAL,HYPER,EXはハイスコアが記録されます。例えば9ボタンで1000点を取ったあと、5ボタンで1500点を取った場合、ハイスコアは1500(5)と表示されます。</p>
+                <hr style="border: 0; border-top: 1px dashed #555; margin: 10px 0;">
+                <h3 style="font-size: 0.9rem; margin: 10px 0 10px 0;">PCで遊ぶ場合</h3>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">PCでも一応動作します。PCの場合、Z～>キーが各レーンに対応します。</p>
+                <hr style="border: 0; border-top: 1px dashed #555; margin: 10px 0;">
+                <h3 style="font-size: 0.9rem; margin: 10px 0 10px 0;">ゲームパッド対応</h3>
+                <p style="font-size: 0.7rem; margin: 0 0 10px 0;">OSが対応している場合ゲームパッドでも遊べるように作ってはいますが、未テストです。Bluetooth接続のため遅延等を考慮する必要があります。<br>元々のゲームのキー配置に準拠しています。</p>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -429,7 +481,7 @@
                     <div class="marquee-container" style="font-size: 1.0rem; font-weight: bold; margin-top: 2px;">
                         <div class="marquee-content" style="color: #fff;">${song.title}</div>
                     </div>
-                    <div class="marquee-container" style="font-size: 0.85rem; font-family: monospace; color: rgba(255,255,255,0.8); margin-top: 3px;">
+                    <div class="marquee-container" style="font-size: 0.6rem; font-family: monospace; color: rgba(255,255,255,0.8); margin-top: 3px;">
                         <div class="marquee-content">${highScoresStr}</div>
                     </div>
                 </div>
@@ -439,6 +491,15 @@
             container.appendChild(div);
         });
         updateSongInfo();
+    }
+
+    // --- ヘルプダイアログ制御 ---
+    function showHelpModal() {
+        document.getElementById('help-modal').style.display = 'flex';
+    }
+
+    function closeHelpModal() {
+        document.getElementById('help-modal').style.display = 'none';
     }
 
     function selectSong(idx) {
@@ -744,6 +805,63 @@
         }
     });
 
+    // --- ゲームパッド対応処理 ---
+    let previousGamepadState = []; // 前回のボタン状態を保持
+
+    function getGamepadMapping(lines) {
+        // ボタン番号: レーン番号 のマッピング
+        if (lines === 9) {
+            return { 6:0, 4:1, 14:2, 12:3, 13:3, 15:4, 2:4, 0:5, 3:5, 1:6, 5:7, 7:8 };
+        } else if (lines === 7) {
+            return { 4:0, 14:1, 12:2, 13:2, 15:3, 2:3, 0:4, 3:4, 1:5, 5:6 };
+        } else if (lines === 5) {
+            return { 14:0, 12:1, 13:1, 15:2, 2:2, 0:3, 3:3, 1:4 };
+        }
+        return {};
+    }
+
+    function pollGamepads() {
+        // ゲーム中のみ処理を行う
+        if (!gameState.startTime || !document.getElementById('screen-game').classList.contains('active')) return;
+
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        if (!gamepads || !gamepads[0]) return; // 1つ目のコントローラーのみ監視
+
+        const gp = gamepads[0];
+        
+        // 初回状態の初期化
+        if (!previousGamepadState[0]) {
+            previousGamepadState[0] = new Array(gp.buttons.length).fill(false);
+        }
+
+        const prevState = previousGamepadState[0];
+        const mapping = getGamepadMapping(config.lines);
+
+        // 全ボタンの状態をチェック
+        for (let i = 0; i < gp.buttons.length; i++) {
+            const isPressed = gp.buttons[i].pressed;
+            const lane = mapping[i];
+
+            if (lane !== undefined) {
+                if (isPressed && !prevState[i]) {
+                    // ★ボタンが「押された瞬間」の処理
+                    const currentTime = performance.now() - gameState.startTime;
+                    checkHit(lane, currentTime);
+                    if (lane >= 0 && lane < config.lines) {
+                        activeLanes[lane] = true;
+                    }
+                } else if (!isPressed && prevState[i]) {
+                    // ★ボタンが「離された瞬間」の処理
+                    if (lane >= 0 && lane < config.lines) {
+                        activeLanes[lane] = false;
+                    }
+                }
+            }
+            prevState[i] = isPressed; // 状態を更新
+        }
+    }
+
+
     // --- ゲーム開始（ミュージックセレクトから） ---
 	async function startMusicSelectGame() {
         const song = songList[selectedSongIdx];
@@ -1045,6 +1163,9 @@
     }
 
     function gameLoop() {
+
+        pollGamepads();
+
         const currentTime = performance.now() - gameState.startTime;
         update(currentTime);
         draw(currentTime);
