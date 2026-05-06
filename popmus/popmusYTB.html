@@ -81,6 +81,37 @@
             position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8);
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
+
+        /* --- タイトル等のスクロールアニメーション --- */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 8s linear infinite;
+        }
+        @keyframes marquee {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* --- ミュージックセレクトUIの微調整 --- */
+        .song-item {
+            width: 95%; background: rgba(50, 50, 50, 0.8); border-left: 5px solid #555;
+            margin-bottom: 10px; padding: 8px 15px; border-radius: 0 20px 20px 0; /* paddingとmarginを縮小 */
+            transition: all 0.2s ease;
+        }
+        .song-genre { font-size: 0.8rem; color: #ffeb3b; margin-bottom: 0px; } /* bottomマージンを0に */
+
+        /* --- リザルト画面専用レイアウト --- */
+        .res-row { display: flex; justify-content: space-between; align-items: baseline; }
+        .res-detail-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px; font-size: 1.1rem; }
+
     </style>
 </head>
 <body>
@@ -108,24 +139,34 @@
                 </select>
                 <label>難易度</label>
                 <select id="ms-diff">
-                    <option value="normal">NORMAL</option>
+                    <option value="easy">EASY</option>
+                    <option value="normal" selected>NORMAL</option>
                     <option value="hyper">HYPER</option>
-                    <option value="ex" selected>EX</option>
+                    <option value="ex">EX</option>
+                    <option value="origin">ORIGIN</option>
                 </select>
             </div>
             <div class="opt-row">
                 <label>落下速度</label>
                 <select id="ms-speed">
                     <option value="1">x1.0</option><option value="1.5">x1.5</option><option value="2">x2.0</option>
-                    <option value="2.5" selected>x2.5</option><option value="3">x3.0</option><option value="4">x4.0</option>
+                    <option value="2.5" selected>x2.5</option><option value="3">x3.0</option><option value="3.5">x3.5</option><option value="4">x4.0</option>
+                    <option value="4.5">x4.5</option>
+                    <option value="5">x5.0</option>
+                    <option value="5.5">x5.5</option>
+                    <option value="6">x6.0</option>
                 </select>
-				<label>オフセット(秒)</label>
-                <input type="number" id="ms-offset" step="0.1" value="0.0" onchange="saveOffset()" style="width: 70px;">
+                <label>オフセット(秒)</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="number" id="ms-offset" step="0.1" value="0.0" onchange="saveOffset()" style="width: 60px;">
+                    <!-- ★ 設定ボタン追加 -->
+                    <button onclick="startOffsetMeasurement()" style="padding: 4px 8px; font-size: 0.8rem; margin: 0 0 0 5px; border-radius: 5px;">設定</button>
+                </div>
             </div>
-			<div class="opt-row">
+            <div class="opt-row">
                 <label>判定</label>
                 <select id="ms-judge"><option value="easy">EASY</option><option value="normal" selected>NORMAL</option></select>
-                <div id="song-highscore" style="color: #4caf50; font-weight: bold;">SCORE: 0</div>
+                <div></div> <!-- ★ スコアを削除して空きスペースに -->
             </div>
             <button onclick="startMusicSelectGame()" style="width: 100%; margin: 10px 0 0 0;">PLAY</button>
         </div>
@@ -166,19 +207,9 @@
     </div>
 
     <div id="screen-game" class="screen">
-
-        <!-- ゲーム画面のグルーヴゲージ -->
-        <div style="display: flex; align-items: center; padding: 10px; background: #111;">
-            <div style="color: white; font-weight: bold; margin-right: 10px;">GROOVE</div>
-            <div id="groove-gauge-container" style="flex-grow: 1; height: 24px; background: #333; border: 2px solid #ccc; position: relative;">
-                <!-- ゲージの中身 -->
-                <div id="groove-gauge-bar" style="width: 0%; height: 100%; background: #00ffff; transition: width 0.1s, background-color 0.1s;"></div>
-                <!-- 70%のクリアライン -->
-                <div style="position: absolute; left: 70%; top: -2px; bottom: -2px; width: 4px; background: #ff0000; z-index: 10;"></div>
-                <!-- 本家風の目盛り（CSSで表現） -->
-                <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 4.8%, #222 4.8%, #222 5%); pointer-events: none; z-index: 5;"></div>
-            </div>
-        </div>
+        
+        <!-- ★ 上部のタイトル表示（0.7rem） -->
+        <div id="game-song-title" style="position: absolute; top: 5px; left: 0; width: 100%; text-align: center; font-size: 0.7rem; color: #fff; z-index: 10; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
 
         <canvas id="gameCanvas"></canvas>
         <div id="ui-layer">
@@ -193,19 +224,40 @@
     </div>
 
     <div id="screen-result" class="screen">
-        <!-- ★ここを追加 -->
-        <div id="result-clear-status" style="font-size: 36px; font-weight: bold; text-align: center; margin-top: 20px;"></div>
+        <div id="result-clear-status" style="font-size: 36px; font-weight: bold; text-align: center; margin-top: 10px;"></div>
+        <h1 style="color: #ff00ff; text-shadow: none; margin: 10px 0;">RESULT</h1>
         
-        <!-- ★リザルト用ゲージ -->
+        <div style="width: 85%; max-width: 400px; margin: 0 auto;">
+            <!-- ジャンルとボタン数 -->
+            <div class="res-row" style="color: #ffeb3b; font-weight: bold; font-size: 1.0rem;">
+                <span id="result-genre">GENRE</span>
+                <span id="result-buttons">9 button</span>
+            </div>
+            <!-- タイトル -->
+            <div id="result-title" style="text-align: left; margin: 5px 0 20px 0; font-size: 1.3rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">TITLE</div>
+            
+            <!-- スコア -->
+            <div class="res-row" style="margin-bottom: 15px;">
+                <span style="font-size: 1.5rem; font-weight: bold;">SCORE:</span>
+                <span id="result-score" style="font-size: 2.5rem; font-weight: bold;">999999</span>
+            </div>
+            
+            <!-- 詳細 -->
+            <div style="width: 80%; margin: 0 auto 20px auto;">
+                <div class="res-detail-row"><span style="color:#03a9f4;">COOL</span><span id="res-cool">9999</span></div>
+                <div class="res-detail-row"><span style="color:#8bc34a;">GREAT</span><span id="res-great">9999</span></div>
+                <div class="res-detail-row"><span style="color:#ffeb3b;">GOOD</span><span id="res-good">9999</span></div>
+                <div class="res-detail-row"><span style="color:#f44336;">BAD</span><span id="res-bad">9999</span></div>
+                <div class="res-detail-row" style="margin-top: 10px;"><span>MAX COMBO</span><span id="res-combo">9999</span></div>
+            </div>
+        </div>
+
         <div id="result-gauge-container" style="width: 80%; margin: 10px auto 30px auto; height: 24px; background: #333; border: 2px solid #ccc; position: relative;">
             <div id="result-gauge-bar" style="width: 0%; height: 100%; background: #00ffff;"></div>
             <div style="position: absolute; left: 70%; top: -2px; bottom: -2px; width: 4px; background: #ff0000; z-index: 10;"></div>
             <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 4.8%, #222 4.8%, #222 5%); pointer-events: none; z-index: 5;"></div>
         </div>
-        <h1>RESULT</h1>
-        <h2 id="result-score" style="font-size: 2.5rem; color: #ffeb3b;">0</h2>
-        <div id="result-details" style="text-align: left; margin: 10px 0; line-height: 1.6;"></div>
-        <button onclick="changeScreen('screen-title')">TITLE</button>
+        <button onclick="changeScreen('screen-title')" style="background-color: #ff007f; border-radius: 5px; width: 60%; max-width: 300px;">TITLE</button>
     </div>
 
 <script>
@@ -336,38 +388,49 @@
         document.getElementById(id).classList.add('active');
     }
 
+    function getFormattedHighScores(songId) {
+        // originを除外したハイスコア取得・フォーマット処理
+        const diffs = { easy: 'E', normal: 'N', hyper: 'H', ex: 'X' };
+        let scores = [];
+        for (let key in diffs) {
+            const data = localStorage.getItem(`popn_score_${songId}_${key}`) || "0";
+            const parts = data.split('_'); // 例: "100000_9"
+            const score = parseInt(parts[0]);
+            const btn = parts.length > 1 ? parts[1] : '-';
+            
+            if (score > 0) {
+                const scoreStr = score >= 100000 ? '⭐' : (score % 100000).toString();
+                scores.push(`${diffs[key]}:${scoreStr}(${btn})`);
+            } else {
+                scores.push(`${diffs[key]}:0(-)`);
+            }
+        }
+        return scores.join('  '); // 横並びにするためにスペースを空ける
+    }
+
     // --- ミュージックセレクトUIの構築 ---
     function initMusicSelect() {
         const container = document.getElementById('song-list-container');
         container.innerHTML = '';
         songList.forEach((song, idx) => {
-            const offset = 5 + (idx * 0);
             const div = document.createElement('div');
             div.className = `song-item ${idx === selectedSongIdx ? 'selected' : ''}`;
-            div.style.marginLeft = `${offset}%`;
 
-
-            // ハイスコアを取得
-            const scores = getSongHighScores(song.id);
-
-            // 📺アイコンの生成（URLがある場合のみ）
             const youtubeLink = song.url 
-                ? `<a href="${song.url}" target="_blank" rel="noopener noreferrer" 
-                      onclick="event.stopPropagation();" 
-                      style="text-decoration:none; margin-left:10px; cursor:pointer;">📺</a>` 
+                ? `<a href="${song.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="text-decoration:none; margin-left:10px; cursor:pointer;">📺</a>` 
                 : '';
 
+            const highScoresStr = getFormattedHighScores(song.id);
+
+            // ジャンル＋BPM、タイトルのスクロール、スコアのスクロールを適用
             div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                    <div>
-                        <div class="song-genre">${song.genre}${youtubeLink}</div>
-                        <div class="song-title">${song.title}</div>
+                <div style="display: flex; flex-direction: column; width: 100%; overflow: hidden;">
+                    <div class="song-genre">${song.genre} 【BPM:${song.bpm}】${youtubeLink}</div>
+                    <div class="marquee-container" style="font-size: 1.0rem; font-weight: bold; margin-top: 2px;">
+                        <div class="marquee-content" style="color: #fff;">${song.title}</div>
                     </div>
-                    <!-- ★ 右側に全難易度のハイスコアを表示 (N, H, E) -->
-                    <div class="song-highscores" style="text-align: right; font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.9); line-height: 1.2; margin-top: 5px;">
-                        <div>N：${scores.normal.padStart(6, '0')}</div>
-                        <div>H：${scores.hyper.padStart(6, '0')}</div>
-                        <div>E：${scores.ex.padStart(6, '0')}</div>
+                    <div class="marquee-container" style="font-size: 0.85rem; font-family: monospace; color: rgba(255,255,255,0.8); margin-top: 3px;">
+                        <div class="marquee-content">${highScoresStr}</div>
                     </div>
                 </div>
             `;
@@ -375,7 +438,7 @@
             div.onclick = () => selectSong(idx);
             container.appendChild(div);
         });
-        updateSongInfo(); // 初期選択曲のスコアやオフセットを表示
+        updateSongInfo();
     }
 
     function selectSong(idx) {
@@ -389,23 +452,135 @@
     }
 
     function updateSongInfo() {
-		const song = songList[selectedSongIdx];
+        const song = songList[selectedSongIdx];
         document.getElementById('song-desc').innerText = song.desc;
-        
-        // ローカルストレージからオフセットを読み込む
         const savedOffset = localStorage.getItem(`popn_offset_${song.id}`) || "0.0";
         document.getElementById('ms-offset').value = savedOffset;
-
-        // ローカルストレージからハイスコアを読み込む
-        const diff = document.getElementById('ms-diff').value;
-        const highScore = localStorage.getItem(`popn_score_${song.id}_${diff}`) || "0";
-        document.getElementById('song-highscore').innerText = `SCORE: ${highScore}`;
+        // （スコア表示処理は削除しました）
     }
 
 	function saveOffset() {
         const song = songList[selectedSongIdx];
         const offsetVal = document.getElementById('ms-offset').value;
         localStorage.setItem(`popn_offset_${song.id}`, offsetVal);
+    }
+
+    // --- オフセット計測機能 ---
+    async function startOffsetMeasurement() {
+        const song = songList[selectedSongIdx];
+        let firstNoteTimeMs = 0;
+
+        // 1. 譜面データから最初のノーツの時間を計算する
+        if (song.id !== 'dummy' && song.file) {
+            try {
+                // ローディング表示（必要であれば）
+                document.getElementById('loading-overlay').style.display = 'flex';
+                
+                const response = await fetch(song.file);
+                if (!response.ok) throw new Error("File not found");
+                const rawData = await response.json();
+                
+                // BPM変更履歴の取得
+                let bpmChanges = rawData.filter(n => n.c !== undefined).map(n => ({ b: n.b, c: n.c }));
+                bpmChanges.sort((a, b) => a.b - b.b);
+                if (bpmChanges.length === 0 || bpmChanges[0].b > 0) {
+                    bpmChanges.unshift({ b: 0, c: song.bpm });
+                }
+
+                // 最初のノーツ（lが設定されているもの）を探す
+                let firstNoteBeat = Infinity;
+                rawData.forEach(n => {
+                    if (n.l !== undefined && n.b < firstNoteBeat) {
+                        firstNoteBeat = n.b;
+                    }
+                });
+
+                // 最初のノーツの時間をミリ秒で算出
+                if (firstNoteBeat !== Infinity) {
+                    firstNoteTimeMs = calculateTimeFromBeat(firstNoteBeat, bpmChanges);
+                }
+                
+                document.getElementById('loading-overlay').style.display = 'none';
+            } catch (err) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                alert("譜面データの読み込みに失敗しました。");
+                return;
+            }
+        }
+
+        const firstNoteTimeSec = firstNoteTimeMs / 1000;
+
+        // 2. 計測画面への遷移と計測処理
+        changeScreen('screen-game');
+        
+        // 計測用の画面を描画
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('画面をタップして計測', canvas.width/2, canvas.height/2);
+
+        // 画面切り替えが完了した直後にアラートを出す
+        setTimeout(() => {
+            alert("OKボタンをタップし、オフセット計測を開始します。");
+
+
+            // ★ iOS対策を入れたYouTube再生リクエスト部分
+            const videoId = getYTVideoId(song.url);
+            if (videoId && isYtReady && ytPlayer) {
+                ytPlayer.loadVideoById({
+                    videoId: videoId,
+                    suggestedQuality: 'small'
+                });
+                
+                // iOSはミュート状態であればプログラムからの自動再生を許可しやすい
+                ytPlayer.mute(); 
+                ytPlayer.playVideo();
+
+                // ほんの少し遅らせてミュートを解除し、音量を上げる（タップイベントの延長と誤認させる）
+                setTimeout(() => {
+                    ytPlayer.unMute();
+                    ytPlayer.setVolume(100);
+                }, 100);
+            }
+
+
+            const startTime = performance.now();
+            
+            // タップ時のイベントハンドラ
+            const tapHandler = (e) => {
+                e.preventDefault();
+                const endTime = performance.now();
+ 
+                 // 計測時間から最初のノーツの時間を引く
+                const measuredSec = (endTime - startTime) / 1000;
+                let offsetSec = measuredSec - firstNoteTimeSec - 2.1;
+                
+                // 0.01秒単位に丸める
+                offsetSec = offsetSec.toFixed(2);
+                offsetSec = offsetSec;
+                
+                alert(`タップまでの時間: ${measuredSec.toFixed(2)}秒\n最初のノーツ位置: ${firstNoteTimeSec.toFixed(2)}秒\n\nオフセットを ${offsetSec}秒 で登録しました`);
+ 
+                // 上書き保存
+                localStorage.setItem(`popn_offset_${song.id}`, offsetSec);
+                document.getElementById('ms-offset').value = offsetSec;
+                
+                // リスナーを解除
+                canvas.removeEventListener('touchstart', tapHandler);
+                canvas.removeEventListener('mousedown', tapHandler);
+
+                if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+                    ytPlayer.stopVideo();
+                }
+
+                // セレクト画面に戻る
+                changeScreen('screen-music-select');
+                updateSongInfo();
+            };
+            
+            // 1回だけ反応するリスナーを登録
+            canvas.addEventListener('touchstart', tapHandler, {once: true});
+            canvas.addEventListener('mousedown', tapHandler, {once: true});
+        }, 100);
     }
 
     // --- 拍数から時間(ミリ秒)を計算する関数 ---
@@ -475,15 +650,27 @@
             beatMap[n.b].push(n);
         });
 
+        let deleteBeatVal = 1;        
+        if (songDef.bpm >= 180){
+            deleteBeatVal = 1;// デフォルトBPMが180以上なら、4分音符を基準に間引きを行う
+        } else {
+            deleteBeatVal = 0.5;// デフォルトBPMが180未満なら、8分音符を基準に間引きを行う
+        }
+
         for (let b in beatMap) {
             let beatVal = parseFloat(b);
             let notesAtBeat = beatMap[b];
-            if (difficultyMode === 'ex') {
+            // ORIGINは間引かない
+            if (difficultyMode === 'origin') {
                 thinned.push(...notesAtBeat);
-            } else if (difficultyMode === 'hyper') {
+            } else if (difficultyMode === 'ex') {
                 thinned.push(...notesAtBeat.slice(0, 2));
+            } else if (difficultyMode === 'hyper') {
+                if (beatVal % (deleteBeatVal/2) === 0) thinned.push(...notesAtBeat.slice(0, 2));
             } else if (difficultyMode === 'normal') {
-                if (beatVal % 0.5 === 0) thinned.push(notesAtBeat[0]);
+                if (beatVal % (deleteBeatVal/2) === 0) thinned.push(notesAtBeat[0]);
+            } else if (difficultyMode === 'easy') {
+                if (beatVal % deleteBeatVal === 0) thinned.push(notesAtBeat[0]);
             }
         }
         
@@ -494,7 +681,7 @@
 // --- キーボード入力用の設定と管理 ---
     // 1 = 1段配置 (Z, X, C, V, B, N, M, <, >)
     // 2 = ポップン風配置 (Z, S, X, D, C, F, V, G, B)
-    let keyboardLayoutType = 2; // ← 1か2に変更することで配列を切り替えられます
+    let keyboardLayoutType = 1; // ← 1か2に変更することで配列を切り替えられます
 
     const keyboardMapping = {
         1: {
@@ -512,8 +699,8 @@
 
     // --- キーが押された時の処理 ---
     window.addEventListener('keydown', (e) => {
-        // プレイ中以外（ミュージックセレクト画面など）は反応させない場合はここで弾く
-        // if (config.mode !== 'game') return; // 必要に応じてコメントアウトを解除してください
+        // ゲーム中（startTimeが設定されており、リザルト画面等ではない）のみ反応させる
+        if (!gameState.startTime || !document.getElementById('screen-game').classList.contains('active')) return;
 
         const key = e.key.toLowerCase();
         
@@ -528,14 +715,13 @@
             const lane = currentMap[key];
             
             // ★ ノーツの判定処理を呼び出す
-            // （以前のやり取りで例示した judgeNote 関数を使っている前提です。
-            // 　もし関数名が異なる場合は、ご自身の判定関数名に書き換えてください）
-            if (typeof judgeNote === 'function') {
-                judgeNote(lane);
+            const currentTime = performance.now() - gameState.startTime;
+            checkHit(lane, currentTime);
+
+            // ★ レーンを光らせる処理
+            if (lane >= 0 && lane < config.lines) {
+                activeLanes[lane] = true;
             }
-            
-            // 【おまけ】もし画面下のボタンを光らせるなどのUI更新関数があればここに書きます
-            // 例: activateButtonUI(lane);
         }
     });
 
@@ -547,9 +733,14 @@
         if (pressedKeys[key] !== undefined) {
             pressedKeys[key] = false;
             
-            // 【おまけ】画面下のボタンの光を消す関数があればここに書きます
-            // const lane = keyboardMapping[keyboardLayoutType][key];
-            // 例: deactivateButtonUI(lane);
+            // ★ レーンの光を消す処理
+            const currentMap = keyboardMapping[keyboardLayoutType];
+            if (currentMap[key] !== undefined) {
+                const lane = currentMap[key];
+                if (lane >= 0 && lane < config.lines) {
+                    activeLanes[lane] = false;
+                }
+            }
         }
     });
 
@@ -575,6 +766,8 @@
         config.judgeWindows = { cool: isEasy?60:40, great: isEasy?100:70, good: isEasy?150:110, bad: isEasy?220:170 };
 
         document.getElementById('loading-overlay').style.display = 'flex';
+
+        document.getElementById('game-song-title').innerText = song.title; // ★追加
 
         // ★ YouTube再生リクエストを「fetch」などの非同期処理の【前】に実行する（自動再生ブロック回避）
 /*
@@ -1036,30 +1229,30 @@
         else fill.style.background = 'linear-gradient(90deg, #4caf50, #8bc34a)';
     }
 
-	function endGame() {
-cancelAnimationFrame(animationId);
+    function endGame() {
+        if (animationId) cancelAnimationFrame(animationId);
         
         if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
             ytPlayer.stopVideo();
         }
 
         const finalScore = Math.floor(gameState.score);
-        
-        // ★ クリア判定ロジック（70%以上でクリア）
         const isClear = gameState.gauge >= 70;
 
         // --- ハイスコア保存処理 ---
-        if (config.mode === 'music-select') {
+        // ★ ORIGIN 難易度だった場合は保存処理をスキップする
+        if (config.mode === 'music-select' && config.difficultyStr !== 'origin') {
             const scoreKey = `popn_score_${config.songId}_${config.difficultyStr}`;
-            const prevScore = parseInt(localStorage.getItem(scoreKey) || "0");
+            // 保存データは "スコア_ボタン数" (例: "100000_9") になる
+            const prevData = localStorage.getItem(scoreKey) || "0";
+            const prevScore = parseInt(prevData.split('_')[0]) || 0;
             
-            // 前回のスコアを上回った場合のみ保存
             if (finalScore > prevScore) {
-                localStorage.setItem(scoreKey, finalScore);
+                localStorage.setItem(scoreKey, `${finalScore}_${config.lines}`);
             }
         }
 
-        // ★ CLEAR/FAILED の表示設定
+        // --- リザルト画面のUI更新 ---
         const statusEl = document.getElementById('result-clear-status');
         if (isClear) {
             statusEl.innerText = "STAGE CLEAR!!";
@@ -1069,26 +1262,24 @@ cancelAnimationFrame(animationId);
             statusEl.style.color = "#44bbff";
         }
 
-        // ★ リザルト画面のゲージに最終状態を反映
         const resultBar = document.getElementById('result-gauge-bar');
         resultBar.style.width = `${gameState.gauge}%`;
         resultBar.style.backgroundColor = isClear ? '#ff3366' : '#00ffff';
 
-        // スコア保存処理（クリア時のみハイスコアを更新したい場合は、ここに isClear の条件を足してもOKです）
-        if (config.mode === 'music-select') {
-            const scoreKey = `popn_score_${config.songId}_${config.difficultyStr}`;
-            const prevScore = parseInt(localStorage.getItem(scoreKey) || "0");
-            if (finalScore > prevScore) {
-                localStorage.setItem(scoreKey, finalScore);
-            }
-        }
+        // 楽曲情報の表示（画像レイアウト準拠）
+        const song = songList.find(s => s.id === config.songId) || {genre: 'FREE', title: 'CUSTOM'};
+        document.getElementById('result-genre').innerText = song.genre;
+        document.getElementById('result-buttons').innerText = `${config.lines} button`;
+        document.getElementById('result-title').innerText = song.title;
+        
+        // スコアと詳細の表示
+        document.getElementById('result-score').innerText = finalScore >= 100000 ? finalScore : (finalScore % 100000);
+        document.getElementById('res-cool').innerText = gameState.counts.cool;
+        document.getElementById('res-great').innerText = gameState.counts.great;
+        document.getElementById('res-good').innerText = gameState.counts.good;
+        document.getElementById('res-bad').innerText = gameState.counts.bad;
+        document.getElementById('res-combo').innerText = gameState.maxCombo;
 
-        document.getElementById('result-score').innerText = finalScore.toLocaleString();
-        document.getElementById('result-details').innerHTML = `
-            COOL: ${gameState.counts.cool}<br>GREAT: ${gameState.counts.great}<br>
-            GOOD: ${gameState.counts.good}<br>BAD: ${gameState.counts.bad}<br>
-            MAX COMBO: ${gameState.maxCombo}
-        `;
         changeScreen('screen-result');
     }
 </script>
