@@ -6,8 +6,9 @@
     <title>MINE DIGGER'S</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #222; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
-        .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
+        /* 100dvhを追加し、iOSのアドレスバーによる高さ変動バグを回避 */
+        body { margin: 0; padding: 0; background-color: #222; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; height: 100vh; height: 100dvh; }
+        .screen { display: none; width: 100vw; height: 100vh; height: 100dvh; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
         .active { display: flex; }
         h1 { font-size: 2.5rem; color: #f1c40f; text-shadow: 3px 3px #000; text-align: center; }
         button { padding: 15px 30px; margin: 10px; font-size: 1.2rem; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.1s; }
@@ -16,15 +17,19 @@
         
         #title-screen, #result-screen { background-color: #2c3e50; }
         #char-screen { background-color: #34495e; }
-        .char-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .char-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
         .char-plate { width: 85px; height: 120px; border: 3px solid #7f8c8d; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #2c3e50; font-size: 0.9rem; font-weight: bold; transition: 0.2s; cursor: pointer;}
         .char-plate.selected { border-color: #f1c40f; background-color: #1a252f; transform: scale(1.05); }
         .char-color-preview { width: 40px; height: 40px; margin-bottom: 10px; background-color: transparent; }
-        input[type="text"] { padding: 12px; font-size: 1.2rem; text-align: center; width: 200px; border-radius: 5px; border: 2px solid #bdc3c7; margin-bottom: 10px; background: #ecf0f1; color: #2c3e50; font-weight: bold;}
+        
+        input[type="text"] { padding: 12px; font-size: 1.2rem; text-align: center; width: 160px; border-radius: 5px; border: 2px solid #bdc3c7; margin-bottom: 0; background: #ecf0f1; color: #2c3e50; font-weight: bold;}
+        .name-input-container { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        #char-info { margin-bottom: 15px; text-align: center; background: #2c3e50; padding: 10px; border-radius: 8px; width: 85%; max-width: 320px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         
         #game-screen { display: none; background-color: #000; }
         #game-screen.active { display: block; }
-        #gameCanvas { display: block; width: 100vw; height: calc(100vh - 140px); background-color: #D2B48C; }
+        #gameCanvas { display: block; width: 100vw; height: calc(100vh - 140px); height: calc(100dvh - 140px); background-color: #D2B48C; }
         
         .ui-header { position: absolute; top: env(safe-area-inset-top, 0px); left: 0; width: 100%; height: 60px; pointer-events: none; z-index: 10; }
         .ui-controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 140px; background: #2c3e50; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; padding-bottom: env(safe-area-inset-bottom, 20px); box-sizing: border-box; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); }
@@ -64,10 +69,19 @@
             <div class="char-plate" data-type="ear"><canvas class="char-color-preview" id="prev-ear"></canvas>耳が良い</div>
             <div class="char-plate" data-type="dexterous"><canvas class="char-color-preview" id="prev-dexterous"></canvas>手先が器用</div>
         </div>
-        <input type="text" id="player-name" maxlength="4">
-        <p id="waiting-text" style="color:#bdc3c7; font-weight:bold;"></p>
+        
+        <div id="char-info"></div>
+
+        <div class="name-input-container">
+            <label for="player-name" style="font-weight: bold; font-size: 1.2rem;">なまえ</label>
+            <input type="text" id="player-name" maxlength="4">
+        </div>
+        
+        <p id="waiting-text" style="color:#bdc3c7; font-weight:bold; margin-top:0;"></p>
         <button id="btn-start" style="display: none;">START</button>
         <button id="btn-ready" style="display: none; background-color: #2ecc71;">準備OK</button>
+        
+        <div id="saved-points-display" style="font-size: 0.6rem; text-align: left; width: 100%; padding-left: 20px; box-sizing: border-box; margin-top: 10px; color: #bdc3c7;"></div>
     </div>
 
     <div id="game-screen" class="screen">
@@ -92,10 +106,11 @@
 const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 200, TILE_SIZE: 0, FPS: 30 };
 const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
 
+/* キャラクター紹介文(desc)を追加 */
 const CHARACTERS = {
-    strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5 },
-    ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0 },
-    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8 }
+    strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
+    ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
+    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, desc: "アイテムの効果範囲が広く、鉱石の獲得量も多い。" }
 };
 
 const BLOCK_DEFS = {
@@ -128,7 +143,7 @@ const state = {
     entities: [],
     particles: [],
     scores: {},
-    oreCounts: {} /* 鉱石のカウント用に追加 */
+    oreCounts: {}
 };
 
 const showScreen = (id) => {
@@ -137,7 +152,6 @@ const showScreen = (id) => {
 };
 
 const drawCharacterShape = (ctx, x, y, size, color) => {
-    /* ctx.clearRect(x, y, size, size); ここを削除することで透過(背景維持)を実現 */
     ctx.fillStyle = color;
     ctx.fillRect(x, y, size, size * 0.6);
     ctx.fillRect(x + size * 0.15, y + size * 0.6, size * 0.25, size * 0.4);
@@ -148,12 +162,26 @@ const drawCharacterShape = (ctx, x, y, size, color) => {
     ctx.fillRect(x + size * 0.65, y + size * 0.15, eyeSize, eyeSize);
 };
 
+/* キャラクター情報パネルの更新関数 */
+const updateCharInfo = (type) => {
+    const c = CHARACTERS[type];
+    const infoDiv = document.getElementById('char-info');
+    infoDiv.innerHTML = `
+        <div style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">【${c.name}】</div>
+        <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">
+            エネルギー: <span style="color:#2ecc71">${c.energy}</span> &nbsp;|&nbsp; 
+            速さ: <span style="color:#3498db">x${c.speedMult}</span> &nbsp;|&nbsp; 
+            視界: <span style="color:#e74c3c">${c.vision}</span>
+        </div>
+        <div style="font-size: 0.8rem; color: #ecf0f1; line-height: 1.3;">${c.desc}</div>
+    `;
+};
+
 window.onload = () => {
     Object.keys(CHARACTERS).forEach(key => {
         const c = document.getElementById(`prev-${key}`);
         c.width = 40; c.height = 40;
         const ctx = c.getContext('2d');
-        /* プレビュー画面では背景を消すため特別にclearRectを行う */
         ctx.clearRect(0, 0, 40, 40);
         drawCharacterShape(ctx, 0, 0, 40, CHARACTERS[key].color);
     });
@@ -201,7 +229,6 @@ const generateMap = () => {
                 if (depth >= 10 && Math.random() < 0.08 && x !== mainPathX) {
                     block = { type: 'iron', hp: 999999 };
                 } 
-                /* 木箱の確率を 0.05 から 1/3程度の 0.016 に修正 */
                 else if (depth >= 10 && Math.random() < 0.016) {
                     block = { type: 'item_box', hp: 2 };
                 }
@@ -240,9 +267,9 @@ const initPeer = (isHost, hostId = null) => {
         state.myId = id;
         if (isHost) {
             const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
-            navigator.clipboard.writeText(url).then(() => {
-                alert("部屋のURLをクリップボードにコピーしました！\nゲストに送信してください。");
-            });
+            /* Safariのセキュリティ制限回避のためpromptを使用 */
+            window.prompt("以下のURLをコピーしてゲストに送信してください。", url);
+            
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
             showScreen('char-screen');
             setupCharScreen();
@@ -325,7 +352,6 @@ const handleNetworkData = (data) => {
             if(!state.scores[data.playerId]) state.scores[data.playerId] = 0;
             state.scores[data.playerId] += data.val;
 
-            /* ネットワーク経由での鉱石カウント追加 */
             if (data.oreType) {
                 if(!state.oreCounts[data.playerId]) state.oreCounts[data.playerId] = {};
                 if(!state.oreCounts[data.playerId][data.oreType]) state.oreCounts[data.playerId][data.oreType] = 0;
@@ -373,12 +399,21 @@ const setupCharScreen = () => {
     nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
     let selectedChar = 'strong';
     
+    /* 初期化時のキャラクター情報表示 */
+    updateCharInfo(selectedChar);
+
+    /* 保存されているポイントの表示 */
+    let savedPoints = parseInt(localStorage.getItem('minedigger_metalpoint')) || 0;
+    document.getElementById('saved-points-display').innerText = `所持ポイント: ${savedPoints} pts`;
+    
     document.querySelectorAll('.char-plate').forEach(plate => {
         plate.addEventListener('click', (e) => {
             if (!state.isHost && state.players[state.myId]?.ready) return; 
             document.querySelectorAll('.char-plate').forEach(p => p.classList.remove('selected'));
             e.currentTarget.classList.add('selected');
             selectedChar = e.currentTarget.dataset.type;
+            /* キャラ切り替え時の情報更新 */
+            updateCharInfo(selectedChar);
         });
     });
 
@@ -498,7 +533,7 @@ const spawnEntities = (x, y, targetBlock, diggerChar) => {
         for (let i = 0; i < count; i++) {
             spawned.push({
                 id: Math.random().toString(36).substr(2, 9), type: 'ore',
-                oreType: targetBlock.ore.type, /* 鉱石タイプを追加 */
+                oreType: targetBlock.ore.type,
                 x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
                 vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5,
                 color: targetBlock.ore.color, val: targetBlock.ore.val,
@@ -664,13 +699,11 @@ const update = () => {
 
         if (state.gameState === 'playing' && Math.abs(me.x + CONFIG.TILE_SIZE/2 - e.x) < CONFIG.TILE_SIZE && Math.abs(me.y + CONFIG.TILE_SIZE/2 - e.y) < CONFIG.TILE_SIZE) {
             if (e.type === 'ore') {
-                /* oreTypeを送信データに追加 */
                 broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId, val: e.val, oreType: e.oreType });
                 
                 if(!state.scores[state.myId]) state.scores[state.myId] = 0;
                 state.scores[state.myId] += e.val;
 
-                /* ローカル用の鉱石カウント追加 */
                 if(!state.oreCounts[state.myId]) state.oreCounts[state.myId] = {};
                 if(!state.oreCounts[state.myId][e.oreType]) state.oreCounts[state.myId][e.oreType] = 0;
                 state.oreCounts[state.myId][e.oreType]++;
@@ -892,7 +925,14 @@ const gameOver = () => {
     const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
     const myScore = state.scores[state.myId] || 0;
 
-    /* リザルトの鉱石内訳表示を追加 */
+    /* ローカルストレージへのポイント保存追加 (人数で等分・切り捨て) */
+    const playerCount = Object.keys(state.players).length || 1;
+    const earnedPoints = Math.floor(myScore / playerCount);
+    
+    let currentStoredPoints = parseInt(localStorage.getItem('minedigger_metalpoint')) || 0;
+    currentStoredPoints += earnedPoints;
+    localStorage.setItem('minedigger_metalpoint', currentStoredPoints);
+
     const myOreCounts = state.oreCounts[state.myId] || {};
     const ORE_NAMES = {
         'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 
@@ -914,6 +954,7 @@ const gameOver = () => {
         <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
         <p>獲得した鉱石スコア: <span style="color:#3498db; font-size:1.5rem;">${myScore} pts</span></p>
         <p>総合スコア: <span style="color:#2ecc71; font-size:1.5rem;">${finalDepth * 4 + myScore} pts</span></p>
+        <p style="font-size: 0.9rem; color: #bdc3c7; margin-top: -10px;">(獲得ポイント ${earnedPoints} pts を保存しました)</p>
         <div style="margin-top: 15px; border-top: 1px solid #7f8c8d; padding-top: 10px;">
             <p style="margin:0; font-size: 1rem; color: #ecf0f1;">【獲得鉱石内訳】</p>
             ${oreDetailsHtml}

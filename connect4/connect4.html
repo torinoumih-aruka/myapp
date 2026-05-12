@@ -15,20 +15,15 @@
       background-color: #f0f4f8;
       color: #333;
       height: 100vh;
-      height: 100dvh; /* スマホのアドレスバー等の高さを考慮した指定 */
+      height: 100dvh;
       display: flex;
       flex-direction: column;
-      overflow: hidden; /* スマホでの意図しないスクロール防止 */
+      overflow: hidden;
     }
     button {
-      padding: 10px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      padding: 10px 15px; font-size: 1rem; border: none; border-radius: 8px;
+      cursor: pointer; background-color: #007bff; color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background-color 0.2s;
     }
     button:active { transform: translateY(1px); box-shadow: none; }
     button:disabled { background-color: #aaa; cursor: not-allowed; }
@@ -37,13 +32,8 @@
        Screens
     ------------------------------ */
     .screen {
-      display: none;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
+      display: none; flex-direction: column; height: 100%; width: 100%;
+      max-width: 600px; margin: 0 auto; position: relative;
     }
     .screen.active { display: flex; }
 
@@ -51,10 +41,10 @@
     #title-screen { justify-content: center; align-items: center; gap: 30px; }
     h1 { font-size: 2rem; color: #2c3e50; text-align: center; }
 
-    /* --- Modal --- */
+    /* --- Modal & Overlays --- */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center;
     }
     .modal-content {
       background: white; width: 85%; max-height: 80vh; border-radius: 12px;
@@ -66,6 +56,23 @@
     }
     .modal-body { overflow-y: auto; margin-top: 15px; font-size: 0.95rem; line-height: 1.6; }
 
+    /* --- Voting Overlay --- */
+    #voting-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); display: none; flex-direction: column;
+      justify-content: center; align-items: center; z-index: 80; color: #333;
+    }
+    .voting-content {
+      background: white; width: 90%; max-width: 400px; padding: 25px;
+      border-radius: 12px; text-align: center;
+    }
+    .voting-content h2 { margin-bottom: 20px; font-size: 1.3rem; color: #2c3e50; }
+    .voting-content button {
+      display: block; width: 100%; margin-bottom: 15px; padding: 15px;
+      font-size: 1.1rem; background-color: #28a745;
+    }
+    .voting-content button:hover:not(:disabled) { background-color: #218838; }
+
     /* --- Game Screen --- */
     #status-bar {
       display: flex; justify-content: space-between; padding: 10px 15px;
@@ -76,7 +83,7 @@
       font-size: 0.9rem; text-align: center; font-weight: bold;
     }
     #canvas-container {
-      width: 100%; aspect-ratio: 10 / 11; /* 盤面10 + 矢印1 */
+      width: 100%; aspect-ratio: 10 / 11;
       background-color: #1e293b; position: relative;
     }
     canvas { width: 100%; height: 100%; display: block; }
@@ -94,11 +101,11 @@
       font-size: 0.9rem; word-break: break-all; animation: fadeIn 0.3s ease-out;
       position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
-    .chat-msg.mine {
-      align-self: flex-end; background-color: #a4e57e; border-bottom-right-radius: 2px;
-    }
-    .chat-msg.theirs {
-      align-self: flex-start; background-color: #ffffff; border-bottom-left-radius: 2px;
+    .chat-msg.mine { align-self: flex-end; background-color: #a4e57e; border-bottom-right-radius: 2px; }
+    .chat-msg.theirs { align-self: flex-start; background-color: #ffffff; border-bottom-left-radius: 2px; }
+    .chat-msg.system {
+      align-self: center; background-color: #f39c12; color: white; font-size: 0.85rem;
+      font-weight: bold; padding: 6px 15px; border-radius: 20px; max-width: 90%; text-align: center;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -112,7 +119,6 @@
     }
     #btn-resign { background-color: #e74c3c; padding: 8px 12px; font-size: 0.9rem; }
 
-    /* --- Game Over Overlay --- */
     #game-over-overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.6); display: none; flex-direction: column;
@@ -123,7 +129,6 @@
 </head>
 <body>
 
-  <!-- ================= タイトル画面 ================= -->
   <div id="title-screen" class="screen active">
     <h1>対戦・コネクトフォー</h1>
     <button id="btn-create-room" style="font-size: 1.2rem; padding: 15px 30px;">部屋を作成</button>
@@ -131,25 +136,34 @@
     <p id="title-info" style="font-size:0.9rem; color:#666;"></p>
   </div>
 
-  <!-- ================= 遊び方モーダル ================= -->
   <div id="rule-modal" class="modal-overlay">
     <div class="modal-content">
       <span class="modal-close" id="btn-close-modal">×</span>
       <h2 style="font-size: 1.2rem; border-bottom: 1px solid #ccc; padding-bottom: 5px;">遊び方</h2>
       <div class="modal-body">
         <p>10×10の盤面に交互にブロックを落とし、先に縦・横・斜めのいずれかに4つブロックを並べたプレイヤーの勝利です。</p><br>
+        <p><strong>【特殊ルールについて】</strong></p>
+        <p>ゲーム開始時に投票で特殊ルールを決定します。同じルールが選ばれた場合は確定、異なる場合はランダムでどちらかが採用されます。</p><br>
         <p><strong>【ホスト側（部屋を作る人）】</strong></p>
         <p>「部屋を作成」ボタンを押し、コピーされたURLを対戦相手に送ってください。ホストが先手（水色）です。</p><br>
         <p><strong>【ゲスト側（参加する人）】</strong></p>
-        <p>送られたURLにアクセスすると自動でゲームが始まります。ゲストは後手（ピンク）です。</p><br>
-        <p><strong>【操作方法】</strong></p>
-        <p>自分の手番の時、盤面の一番上にある赤い矢印をタップすると、その列にブロックが落下します。</p>
+        <p>送られたURLにアクセスすると自動でゲームが始まります。ゲストは後手（ピンク）です。</p>
       </div>
     </div>
   </div>
 
-  <!-- ================= ゲーム画面 ================= -->
   <div id="game-screen" class="screen">
+    
+    <div id="voting-overlay">
+      <div class="voting-content">
+        <h2>特殊ルールを選んでください</h2>
+        <button id="btn-rule-0">特殊ルール無し</button>
+        <button id="btn-rule-1">おじゃまストーン落下</button>
+        <button id="btn-rule-2">重たいストーン落下</button>
+        <p id="voting-status" style="margin-top:10px; font-size:0.9rem; color:#666; font-weight:bold;"></p>
+      </div>
+    </div>
+
     <div id="status-bar">
       <span id="turn-display">Turn: 1</span>
       <span id="player-turn-display">あなたの番</span>
@@ -185,6 +199,7 @@
     const STATE = {
       TITLE: 'title',
       WAITING: 'waiting',
+      VOTING: 'voting',
       PLAYING: 'playing',
       ANIMATING: 'animating',
       ENDED: 'ended'
@@ -194,24 +209,34 @@
     let isHost = false;
     let isMyTurn = false;
     let turnCount = 1;
+    let totalMoves = 0; // 特殊ルール発動用のカウント（累計手数）
     let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
     
-    // Player 1: Host (水色), Player 2: Guest (ピンク)
+    // Player definitions
     const PLAYER_MINE = 1;
     const PLAYER_THEIRS = 2;
+    const BLOCK_GRAY = 3;
+    const BLOCK_HEAVY = 4;
     let myPlayerId = 0;
 
     // Animation specific
-    let fallingBlock = null; 
+    let fallingBlocks = []; 
+    let currentDropCallback = null;
+
+    // Special Rules
+    const RULE_NONE = 0;
+    const RULE_OBSTACLE = 1;
+    const RULE_HEAVY = 2;
+    let activeRule = RULE_NONE;
+    let myVote = null;
+    let theirVote = null;
+    let nextEventMove = 0;
+    let eventM = 0;
 
     // PeerJS
     let peer = null;
     let conn = null;
-
-    // WakeLock
     let wakeLock = null;
-
-    // Chat
     let lastChatTime = 0;
 
     // DOM Elements
@@ -234,7 +259,12 @@
       btnResign: document.getElementById('btn-resign'),
       gameOverOverlay: document.getElementById('game-over-overlay'),
       resultText: document.getElementById('result-text'),
-      btnEndGame: document.getElementById('btn-end-game')
+      btnEndGame: document.getElementById('btn-end-game'),
+      votingOverlay: document.getElementById('voting-overlay'),
+      votingStatus: document.getElementById('voting-status'),
+      btnRule0: document.getElementById('btn-rule-0'),
+      btnRule1: document.getElementById('btn-rule-1'),
+      btnRule2: document.getElementById('btn-rule-2')
     };
 
     const canvas = document.getElementById('game-canvas');
@@ -244,40 +274,37 @@
     // Initialization & Event Listeners
     // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
-      // 画面リサイズ時にCanvasの解像度を調整
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
 
-      // URLクエリの確認（ゲスト参加か判定）
       const urlParams = new URLSearchParams(window.location.search);
       const roomId = urlParams.get('room');
 
       if (roomId) {
-        // ゲストとして参加
         isHost = false;
         myPlayerId = PLAYER_THEIRS;
         ui.btnCreate.style.display = 'none';
         ui.titleInfo.innerText = "ホストに接続中...";
         initPeerGuest(roomId);
       } else {
-        // ホストとして待機
         isHost = true;
         myPlayerId = PLAYER_MINE;
       }
     });
 
-    // 遊び方モーダル
     ui.btnHowTo.addEventListener('click', () => ui.modal.style.display = 'flex');
     ui.btnCloseModal.addEventListener('click', () => ui.modal.style.display = 'none');
 
-    // ホスト: 部屋作成
     ui.btnCreate.addEventListener('click', () => {
       ui.btnCreate.disabled = true;
       ui.titleInfo.innerText = "部屋を作成中...";
       initPeerHost();
     });
 
-    // ゲーム内ボタン
+    ui.btnRule0.addEventListener('click', () => onVoteClick(0));
+    ui.btnRule1.addEventListener('click', () => onVoteClick(1));
+    ui.btnRule2.addEventListener('click', () => onVoteClick(2));
+
     ui.btnResign.addEventListener('click', () => {
       if(gameState !== STATE.PLAYING) return;
       if(confirm('本当に投了しますか？')) {
@@ -287,7 +314,6 @@
     });
 
     ui.btnEndGame.addEventListener('click', () => {
-      // タイトルへ戻る処理（ページリロードが確実）
       window.location.href = window.location.origin + window.location.pathname;
     });
 
@@ -296,26 +322,15 @@
       if(e.key === 'Enter') sendChat();
     });
 
-    // Canvasタップ判定
     canvas.addEventListener('click', (e) => {
       if (gameState !== STATE.PLAYING || !isMyTurn) return;
-
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
-      // 論理的なX座標(0 ~ Canvas Width)
       const x = (e.clientX - rect.left) * scaleX;
-      
       const cellWidth = canvas.width / COLS;
       const col = Math.floor(x / cellWidth);
-
-      // 矢印のY領域（上から1マス分）がタップされたか、あるいは盤面全体をタップ可とするか。
-      // 要件「一番上の１列に矢印が設置され、タップすることで落下」に従い盤面全体どこでもその列として扱うようUXを考慮します。
-      
-      if (col >= 0 && col < COLS) {
-        dropPiece(col);
-      }
+      if (col >= 0 && col < COLS) dropPiece(col);
     });
-
 
     // ==========================================
     // PeerJS Networking
@@ -326,13 +341,9 @@
         const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${id}`;
         navigator.clipboard.writeText(inviteUrl).then(() => {
           alert("招待URLをクリップボードにコピーしました！\n対戦相手に共有してください。");
-          switchScreen('game');
-          gameState = STATE.WAITING;
-          updateUI();
-          requestWakeLock();
-        }).catch(err => {
-          // コピー失敗時のフォールバック
+        }).catch(() => {
           prompt("以下のURLをコピーして対戦相手に送ってください", inviteUrl);
+        }).finally(() => {
           switchScreen('game');
           gameState = STATE.WAITING;
           updateUI();
@@ -343,7 +354,7 @@
       peer.on('connection', (connection) => {
         conn = connection;
         setupConnection();
-        startGame();
+        startVotingPhase();
       });
     }
 
@@ -359,7 +370,7 @@
       conn.on('open', () => {
         if (!isHost) {
           switchScreen('game');
-          startGame();
+          startVotingPhase();
         }
       });
 
@@ -368,16 +379,12 @@
       });
 
       conn.on('close', () => {
-        if(gameState !== STATE.ENDED) {
-          endGame('通信が切断されました');
-        }
+        if(gameState !== STATE.ENDED) endGame('通信が切断されました');
       });
     }
 
     function sendData(data) {
-      if(conn && conn.open) {
-        conn.send(data);
-      }
+      if(conn && conn.open) conn.send(data);
     }
 
     function handleNetworkData(data) {
@@ -386,16 +393,96 @@
           executeDrop(data.col, PLAYER_THEIRS);
           break;
         case 'chat':
-          addChat(data.text, false);
+          addChat(data.text, false, false);
           break;
         case 'resign':
           endGame('あなたの勝利！ (相手の投了)');
           break;
-        case 'event': // 特殊ルール用フック
+        case 'vote':
+          handleReceiveVote(data.vote);
+          break;
+        case 'vote_result':
+          applyVoteResult(data.rule, data.nextParams);
+          break;
+        case 'event_trigger':
+          executeEventBlocks(data.rule, data.cols, () => {
+            nextEventMove = totalMoves + data.nextParams.N;
+            eventM = data.nextParams.M;
+            reallyProceedToNextTurn();
+          });
           break;
       }
     }
 
+    // ==========================================
+    // Voting & Rules Logic
+    // ==========================================
+    function startVotingPhase() {
+      gameState = STATE.VOTING;
+      ui.votingOverlay.style.display = 'flex';
+      ui.votingStatus.innerText = "";
+      myVote = null;
+      theirVote = null;
+      ui.btnRule0.disabled = false;
+      ui.btnRule1.disabled = false;
+      ui.btnRule2.disabled = false;
+    }
+
+    function onVoteClick(ruleId) {
+      if (myVote !== null) return;
+      myVote = ruleId;
+      ui.btnRule0.disabled = true;
+      ui.btnRule1.disabled = true;
+      ui.btnRule2.disabled = true;
+      ui.votingStatus.innerText = "相手の選択を待っています...";
+      sendData({ type: 'vote', vote: myVote });
+      checkVoteComplete();
+    }
+
+    function handleReceiveVote(vote) {
+      theirVote = vote;
+      checkVoteComplete();
+    }
+
+    function checkVoteComplete() {
+      if (myVote !== null && theirVote !== null) {
+        if (isHost) {
+          activeRule = (myVote === theirVote) ? myVote : (Math.random() < 0.5 ? myVote : theirVote);
+          const nextParams = getNextEventParams(activeRule);
+          sendData({ type: 'vote_result', rule: activeRule, nextParams });
+          applyVoteResult(activeRule, nextParams);
+        }
+      }
+    }
+
+    function getNextEventParams(rule) {
+      if (rule === RULE_OBSTACLE) {
+        const nChoices = [10, 12, 14, 16, 18, 20];
+        return { 
+          N: nChoices[Math.floor(Math.random() * nChoices.length)], 
+          M: Math.floor(Math.random() * 5) + 1 
+        };
+      } else if (rule === RULE_HEAVY) {
+        const nChoices = [16, 18, 20, 22, 24];
+        return { 
+          N: nChoices[Math.floor(Math.random() * nChoices.length)], 
+          M: 1 
+        };
+      }
+      return { N: 0, M: 0 };
+    }
+
+    function applyVoteResult(rule, nextParams) {
+      activeRule = rule;
+      nextEventMove = nextParams.N;
+      eventM = nextParams.M;
+      ui.votingOverlay.style.display = 'none';
+      
+      const ruleNames = ["特殊ルール無し", "おじゃまストーン落下", "重たいストーン落下"];
+      addChat(`採用されたルール: ${ruleNames[rule]}`, false, true);
+      
+      startGame();
+    }
 
     // ==========================================
     // Game Logic
@@ -403,109 +490,131 @@
     function startGame() {
       board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
       turnCount = 1;
+      totalMoves = 0;
       gameState = STATE.PLAYING;
-      
-      // ホストが先手
       isMyTurn = isHost;
-      
       ui.infoBar.innerText = "ゲーム開始！";
       updateUI();
       requestAnimationFrame(renderCanvas);
     }
 
     function dropPiece(col) {
-      // 落下可能かチェック
-      if (board[0][col] !== 0) return; // 列が一杯
-
-      // 自分の画面でアニメーション開始
+      if (board[0][col] !== 0) return;
       executeDrop(col, PLAYER_MINE);
-      // 相手に通信
       sendData({ type: 'move', col: col });
     }
 
     function executeDrop(col, playerType) {
       gameState = STATE.ANIMATING;
-      
-      // 落下先の行を特定
       let targetRow = ROWS - 1;
       for (let r = 0; r < ROWS; r++) {
-        if (board[r][col] !== 0) {
-          targetRow = r - 1;
-          break;
-        }
+        if (board[r][col] !== 0) { targetRow = r - 1; break; }
       }
-
-      // アニメーション設定
-      fallingBlock = {
-        col: col,
-        targetRow: targetRow,
-        currentY: -1, // 矢印の行からスタート
-        targetY: targetRow,
-        player: playerType
-      };
+      fallingBlocks = [{ col, targetRow, currentY: -1, targetY: targetRow, player: playerType, landed: false }];
+      currentDropCallback = () => proceedToNextTurn(targetRow, col, playerType);
     }
 
-    async function onPieceLanded() {
-      const row = fallingBlock.targetRow;
-      const col = fallingBlock.col;
-      const player = fallingBlock.player;
-      
-      board[row][col] = player;
-      fallingBlock = null;
-
+    function proceedToNextTurn(row, col, player) {
       // 勝敗判定
-      if (checkWin(row, col, player)) {
-        gameState = STATE.ENDED;
-        const msg = (player === PLAYER_MINE) ? 'あなたの勝利！' : '相手の勝利...';
-        endGame(msg);
-        return;
+      if (player === PLAYER_MINE || player === PLAYER_THEIRS) {
+        if (checkWin(row, col, player)) {
+          const msg = (player === PLAYER_MINE) ? 'あなたの勝利！' : '相手の勝利...';
+          endGame(msg);
+          return;
+        }
       }
-
       // 引き分け判定
       if (board[0].every(cell => cell !== 0)) {
-        gameState = STATE.ENDED;
         endGame('引き分け');
         return;
       }
 
-      // 特殊ルール用フック (お互いの手番の間にイベントを挟む場合ここに追加)
-      await handleSpecialRules();
+      totalMoves++;
 
-      // ターン交代
+      // イベントのフック
+      if (activeRule !== RULE_NONE) {
+        if (totalMoves === nextEventMove - 1) {
+          const msg = activeRule === RULE_OBSTACLE ? "【ゲームアナウンス】次のターン、おじゃまストーンが落ちてきます・・・" : "【ゲームアナウンス】次のターン、重たいストーンが落ちてきます・・・";
+          addChat(msg, false, true);
+        }
+        if (totalMoves === nextEventMove) {
+          if (isHost) {
+            triggerEvent();
+          }
+          return; // イベント処理が終わるまでターンを進めない
+        }
+      }
+
+      reallyProceedToNextTurn();
+    }
+
+    function reallyProceedToNextTurn() {
       isMyTurn = !isMyTurn;
-      if (isHost && isMyTurn) turnCount++; // ホストにターンが戻ってきたらカウントアップ
+      if (isHost && isMyTurn) turnCount++;
       if (!isHost && !isMyTurn) turnCount++;
-
       gameState = STATE.PLAYING;
       updateUI();
     }
 
-    async function handleSpecialRules() {
-      // 例: 10ターンごとに特定のアクションを起こす等、将来の拡張用
-      return Promise.resolve();
+    function triggerEvent() {
+      let cols = [];
+      if (activeRule === RULE_OBSTACLE) {
+        let availableCols = [];
+        for(let c=0; c<COLS; c++) if(board[0][c] === 0) availableCols.push(c);
+        availableCols.sort(() => Math.random() - 0.5);
+        cols = availableCols.slice(0, Math.min(eventM, availableCols.length));
+      } else if (activeRule === RULE_HEAVY) {
+        cols = [Math.floor(Math.random() * COLS)];
+      }
+      
+      const nextParams = getNextEventParams(activeRule);
+      sendData({ type: 'event_trigger', rule: activeRule, cols: cols, nextParams: nextParams });
+      
+      executeEventBlocks(activeRule, cols, () => {
+        nextEventMove = totalMoves + nextParams.N;
+        eventM = nextParams.M;
+        reallyProceedToNextTurn();
+      });
+    }
+
+    function executeEventBlocks(rule, cols, callback) {
+      gameState = STATE.ANIMATING;
+      fallingBlocks = [];
+      if (rule === RULE_OBSTACLE) {
+        cols.forEach(col => {
+          let targetRow = ROWS - 1;
+          for (let r = 0; r < ROWS; r++) {
+            if (board[r][col] !== 0) { targetRow = r - 1; break; }
+          }
+          if (targetRow >= 0) {
+            fallingBlocks.push({ col, targetRow, currentY: -1, targetY: targetRow, player: BLOCK_GRAY, landed: false });
+          }
+        });
+      } else if (rule === RULE_HEAVY) {
+        if (cols.length > 0) {
+          fallingBlocks.push({ col: cols[0], targetRow: ROWS - 1, currentY: -1, targetY: ROWS - 1, player: BLOCK_HEAVY, landed: false });
+        }
+      }
+
+      if (fallingBlocks.length === 0) {
+        if (callback) callback();
+      } else {
+        currentDropCallback = callback;
+      }
     }
 
     function checkWin(row, col, player) {
-      const directions = [
-        [0, 1],  // 横
-        [1, 0],  // 縦
-        [1, 1],  // 右下斜め
-        [1, -1]  // 左下斜め
-      ];
-
+      if (player !== PLAYER_MINE && player !== PLAYER_THEIRS) return false;
+      const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
       for (let [dr, dc] of directions) {
         let count = 1;
-        // プラス方向
         for (let i = 1; i < 4; i++) {
-          const r = row + dr * i;
-          const c = col + dc * i;
+          const r = row + dr * i, c = col + dc * i;
           if (r < 0 || r >= ROWS || c < 0 || c >= COLS || board[r][c] !== player) break;
           count++;
         }
-        // マイナス方向
         for (let i = 1; i < 4; i++) {
-          const r = row - dr * i;
-          const c = col - dc * i;
+          const r = row - dr * i, c = col - dc * i;
           if (r < 0 || r >= ROWS || c < 0 || c >= COLS || board[r][c] !== player) break;
           count++;
         }
@@ -519,7 +628,7 @@
       ui.resultText.innerText = resultMessage;
       ui.infoBar.innerText = "ゲーム終了";
       ui.gameOverOverlay.style.display = 'flex';
-      renderCanvas(); // 最終盤面を描画
+      renderCanvas();
     }
 
     // ==========================================
@@ -533,7 +642,7 @@
 
     function updateUI() {
       ui.turnDisp.innerText = `Turn: ${turnCount}`;
-      if (gameState === STATE.WAITING) {
+      if (gameState === STATE.WAITING || gameState === STATE.VOTING) {
         ui.playerTurnDisp.innerText = "-";
       } else {
         ui.playerTurnDisp.innerText = isMyTurn ? "あなたの番" : "あいての番";
@@ -546,128 +655,106 @@
       const container = document.getElementById('canvas-container');
       const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
-      
-      // 論理サイズをプロパティとして保持
       canvas.logicalWidth = rect.width;
       canvas.logicalHeight = rect.height;
     }
 
     function renderCanvas() {
       if (!canvas.logicalWidth) return;
-      const w = canvas.logicalWidth;
-      const h = canvas.logicalHeight;
-      const cellW = w / COLS;
-      const cellH = h / (ROWS + 1); // 矢印領域(1) + 盤面(10)
+      const w = canvas.logicalWidth, h = canvas.logicalHeight;
+      const cellW = w / COLS, cellH = h / (ROWS + 1);
 
       ctx.clearRect(0, 0, w, h);
 
-      // グリッド線の描画 (白い細い実線)
       ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let r = 1; r <= ROWS + 1; r++) { // Y座標線
-        ctx.moveTo(0, r * cellH);
-        ctx.lineTo(w, r * cellH);
-      }
-      for (let c = 0; c <= COLS; c++) { // X座標線
-        ctx.moveTo(c * cellW, cellH); // 矢印領域には縦線を引かない
-        ctx.lineTo(c * cellW, h);
-      }
+      for (let r = 1; r <= ROWS + 1; r++) { ctx.moveTo(0, r * cellH); ctx.lineTo(w, r * cellH); }
+      for (let c = 0; c <= COLS; c++) { ctx.moveTo(c * cellW, cellH); ctx.lineTo(c * cellW, h); }
       ctx.stroke();
 
-      // 矢印の描画 (自分のターンかつプレイ中の場合のみ、置ける列に表示)
       if (isMyTurn && gameState === STATE.PLAYING) {
-        ctx.fillStyle = "#e74c3c"; // 赤
+        ctx.fillStyle = "#e74c3c";
         for (let c = 0; c < COLS; c++) {
           if (board[0][c] === 0) {
             const centerX = c * cellW + cellW / 2;
-            const topY = cellH * 0.2;
-            const bottomY = cellH * 0.8;
-            const arrowW = cellW * 0.4;
-            
+            const topY = cellH * 0.2, bottomY = cellH * 0.8, arrowW = cellW * 0.4;
             ctx.beginPath();
-            ctx.moveTo(centerX - arrowW/4, topY);
-            ctx.lineTo(centerX + arrowW/4, topY);
-            ctx.lineTo(centerX + arrowW/4, bottomY - arrowW/2);
-            ctx.lineTo(centerX + arrowW/2, bottomY - arrowW/2);
-            ctx.lineTo(centerX, bottomY);
-            ctx.lineTo(centerX - arrowW/2, bottomY - arrowW/2);
-            ctx.lineTo(centerX - arrowW/4, bottomY - arrowW/2);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(centerX - arrowW/4, topY); ctx.lineTo(centerX + arrowW/4, topY);
+            ctx.lineTo(centerX + arrowW/4, bottomY - arrowW/2); ctx.lineTo(centerX + arrowW/2, bottomY - arrowW/2);
+            ctx.lineTo(centerX, bottomY); ctx.lineTo(centerX - arrowW/2, bottomY - arrowW/2);
+            ctx.lineTo(centerX - arrowW/4, bottomY - arrowW/2); ctx.closePath(); ctx.fill();
           }
         }
       }
 
-      // 配置済みブロックの描画
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
-          if (board[r][c] !== 0) {
-            drawBlock(c, r, board[r][c], cellW, cellH);
+          if (board[r][c] !== 0) drawBlockAbsolute(c, r, board[r][c], cellW, cellH);
+        }
+      }
+
+      if (fallingBlocks.length > 0) {
+        let allLanded = true;
+        fallingBlocks.forEach(fb => {
+          fb.currentY += 0.35; // 落下速度
+          if (fb.currentY >= fb.targetY) {
+            fb.currentY = fb.targetY;
+            if (!fb.landed) {
+              fb.landed = true;
+              if (fb.player === BLOCK_HEAVY) {
+                for(let r=0; r<ROWS; r++) board[r][fb.col] = 0; // 重たいストーンによる列の消去
+              }
+              board[fb.targetY][fb.col] = fb.player;
+            }
+          } else {
+            allLanded = false;
           }
+          drawBlockAbsolute(fb.col, fb.currentY, fb.player, cellW, cellH);
+        });
+
+        if (allLanded) {
+          const cb = currentDropCallback;
+          fallingBlocks = [];
+          currentDropCallback = null;
+          if (cb) setTimeout(cb, 50); // 描画完了を待ってからコールバック
         }
       }
 
-      // 落下中ブロックのアニメーションと描画
-      if (fallingBlock) {
-        // 落下速度 (1フレームあたりの移動量, 行単位)
-        fallingBlock.currentY += 0.3; 
-        if (fallingBlock.currentY >= fallingBlock.targetY) {
-          fallingBlock.currentY = fallingBlock.targetY;
-          drawBlockAbsolute(fallingBlock.col, fallingBlock.currentY, fallingBlock.player, cellW, cellH);
-          onPieceLanded();
-        } else {
-          drawBlockAbsolute(fallingBlock.col, fallingBlock.currentY, fallingBlock.player, cellW, cellH);
-        }
-      }
-
-      // アニメーションまたはゲーム進行中ならループ
       if (gameState === STATE.PLAYING || gameState === STATE.ANIMATING) {
         requestAnimationFrame(renderCanvas);
       }
     }
 
-    function drawBlock(col, row, player, cellW, cellH) {
-      // 盤面は矢印領域(行インデックス0相当)の下から始まるため、描画Y座標は +1 する
-      drawBlockAbsolute(col, row, player, cellW, cellH);
-    }
-
     function drawBlockAbsolute(col, logicalY, player, cellW, cellH) {
-      // logicalY は盤面の行インデックス(-1〜9)。実際の描画は矢印領域分オフセット(+1)する
-      const x = col * cellW;
-      const y = (logicalY + 1) * cellH; 
+      const x = col * cellW, y = (logicalY + 1) * cellH; 
+      const margin = cellW * 0.08, sizeW = cellW - margin * 2, sizeH = cellH - margin * 2;
       
-      const margin = cellW * 0.08;
-      const sizeW = cellW - margin * 2;
-      const sizeH = cellH - margin * 2;
-      
-      // 色の定義 (半透明でキャンディ風)
-      // ホスト(PLAYER 1): 水色, ゲスト(PLAYER 2): ピンク
-      const isHostColor = (isHost && player === PLAYER_MINE) || (!isHost && player === PLAYER_THEIRS);
-      const baseColor = isHostColor ? "rgba(0, 200, 255, 0.7)" : "rgba(255, 100, 150, 0.7)";
-      const lightColor = "rgba(255, 255, 255, 0.6)";
+      let baseColor = "transparent";
+      if (player === PLAYER_MINE) {
+        baseColor = isHost ? "rgba(0, 200, 255, 0.7)" : "rgba(255, 100, 150, 0.7)";
+      } else if (player === PLAYER_THEIRS) {
+        baseColor = isHost ? "rgba(255, 100, 150, 0.7)" : "rgba(0, 200, 255, 0.7)";
+      } else if (player === BLOCK_GRAY) {
+        baseColor = "rgba(150, 150, 150, 0.8)";
+      } else if (player === BLOCK_HEAVY) {
+        baseColor = "rgba(70, 70, 70, 0.95)"; // 重たいストーンは濃いグレー
+      }
 
       ctx.fillStyle = baseColor;
       ctx.beginPath();
-      // 角丸矩形 (主要ブラウザでサポートされている roundRect を使用)
-      if (ctx.roundRect) {
-        ctx.roundRect(x + margin, y + margin, sizeW, sizeH, 12);
-      } else {
-        ctx.rect(x + margin, y + margin, sizeW, sizeH);
-      }
+      if (ctx.roundRect) ctx.roundRect(x + margin, y + margin, sizeW, sizeH, 12);
+      else ctx.rect(x + margin, y + margin, sizeW, sizeH);
       ctx.fill();
 
-      // キャンディのテカリ表現
-      ctx.fillStyle = lightColor;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       ctx.beginPath();
       ctx.ellipse(x + cellW * 0.3, y + cellH * 0.3, sizeW * 0.2, sizeH * 0.1, Math.PI / 4, 0, 2 * Math.PI);
       ctx.fill();
     }
-
 
     // ==========================================
     // Chat System
@@ -675,43 +762,29 @@
     function sendChat() {
       const text = ui.chatInput.value.trim();
       if (!text) return;
-
       const now = Date.now();
       if (now - lastChatTime < 5000) {
-        // インフォバーに警告を出す
         const originalText = ui.infoBar.innerText;
         ui.infoBar.innerText = "※チャットは5秒間隔をあけてください";
         ui.infoBar.style.color = "red";
-        setTimeout(() => {
-          ui.infoBar.innerText = originalText;
-          ui.infoBar.style.color = "#475569";
-        }, 2000);
+        setTimeout(() => { ui.infoBar.innerText = originalText; ui.infoBar.style.color = "#475569"; }, 2000);
         return;
       }
-
-      addChat(text, true);
+      addChat(text, true, false);
       sendData({ type: 'chat', text: text });
-      
       ui.chatInput.value = '';
       lastChatTime = now;
     }
 
-    function addChat(text, isMine) {
+    function addChat(text, isMine, isSystem = false) {
       const msgDiv = document.createElement('div');
-      msgDiv.className = `chat-msg ${isMine ? 'mine' : 'theirs'}`;
+      msgDiv.className = isSystem ? `chat-msg system` : `chat-msg ${isMine ? 'mine' : 'theirs'}`;
       msgDiv.innerText = text;
-      
       ui.chatMsgs.appendChild(msgDiv);
       ui.chatMsgs.scrollTop = ui.chatMsgs.scrollHeight;
-
-      // 30秒後に削除
       setTimeout(() => {
         msgDiv.style.opacity = '0';
-        setTimeout(() => {
-          if (ui.chatMsgs.contains(msgDiv)) {
-            ui.chatMsgs.removeChild(msgDiv);
-          }
-        }, 300); // フェードアウト分待つ
+        setTimeout(() => { if (ui.chatMsgs.contains(msgDiv)) ui.chatMsgs.removeChild(msgDiv); }, 300);
       }, 30000);
     }
 
@@ -720,14 +793,8 @@
     // ==========================================
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-          wakeLock.addEventListener('release', () => {
-            console.log('Wake Lock was released');
-          });
-        } catch (err) {
-          console.warn(`${err.name}, ${err.message}`);
-        }
+        try { wakeLock = await navigator.wakeLock.request('screen'); }
+        catch (err) { console.warn(err); }
       }
     }
   </script>
