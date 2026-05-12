@@ -102,7 +102,7 @@ const BLOCK_DEFS = {
     'grass': { hp: 1, color: '#2ecc71' }, 'surface_dirt': { hp: 2, color: '#d35400' },
     'dirt': { hp: 3, color: '#b87333' }, 'rock': { hp: 4, color: '#95a5a6' },
     'deep_rock': { hp: 6, color: '#34495e' }, 'obsidian': { hp: 10, color: '#111111' },
-    'iron': { hp: 999999, color: '#bdc3c7' } // Infinity を 999999 に変更し、通信エラーを回避
+    'iron': { hp: 999999, color: '#bdc3c7' }
 };
 
 const ORES = [
@@ -127,7 +127,8 @@ const state = {
     countdownValue: 3,
     entities: [],
     particles: [],
-    scores: {}
+    scores: {},
+    oreCounts: {} /* 鉱石のカウント用に追加 */
 };
 
 const showScreen = (id) => {
@@ -136,7 +137,7 @@ const showScreen = (id) => {
 };
 
 const drawCharacterShape = (ctx, x, y, size, color) => {
-    ctx.clearRect(x, y, size, size);
+    /* ctx.clearRect(x, y, size, size); ここを削除することで透過(背景維持)を実現 */
     ctx.fillStyle = color;
     ctx.fillRect(x, y, size, size * 0.6);
     ctx.fillRect(x + size * 0.15, y + size * 0.6, size * 0.25, size * 0.4);
@@ -152,6 +153,8 @@ window.onload = () => {
         const c = document.getElementById(`prev-${key}`);
         c.width = 40; c.height = 40;
         const ctx = c.getContext('2d');
+        /* プレビュー画面では背景を消すため特別にclearRectを行う */
+        ctx.clearRect(0, 0, 40, 40);
         drawCharacterShape(ctx, 0, 0, 40, CHARACTERS[key].color);
     });
 
@@ -196,9 +199,10 @@ const generateMap = () => {
                 const chosenType = validTypes.length > 0 ? validTypes[Math.floor(Math.random() * validTypes.length)] : 'obsidian';
                 
                 if (depth >= 10 && Math.random() < 0.08 && x !== mainPathX) {
-                    block = { type: 'iron', hp: 999999 }; // Infinity を 999999 に変更
+                    block = { type: 'iron', hp: 999999 };
                 } 
-                else if (depth >= 10 && Math.random() < 0.05) {
+                /* 木箱の確率を 0.05 から 1/3程度の 0.016 に修正 */
+                else if (depth >= 10 && Math.random() < 0.016) {
                     block = { type: 'item_box', hp: 2 };
                 }
                 else {
@@ -320,6 +324,13 @@ const handleNetworkData = (data) => {
         if (data.val) {
             if(!state.scores[data.playerId]) state.scores[data.playerId] = 0;
             state.scores[data.playerId] += data.val;
+
+            /* ネットワーク経由での鉱石カウント追加 */
+            if (data.oreType) {
+                if(!state.oreCounts[data.playerId]) state.oreCounts[data.playerId] = {};
+                if(!state.oreCounts[data.playerId][data.oreType]) state.oreCounts[data.playerId][data.oreType] = 0;
+                state.oreCounts[data.playerId][data.oreType]++;
+            }
         }
     }
     if (data.type === 'USE_BOMB') {
@@ -487,6 +498,7 @@ const spawnEntities = (x, y, targetBlock, diggerChar) => {
         for (let i = 0; i < count; i++) {
             spawned.push({
                 id: Math.random().toString(36).substr(2, 9), type: 'ore',
+                oreType: targetBlock.ore.type, /* 鉱石タイプを追加 */
                 x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
                 vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5,
                 color: targetBlock.ore.color, val: targetBlock.ore.val,
@@ -652,9 +664,17 @@ const update = () => {
 
         if (state.gameState === 'playing' && Math.abs(me.x + CONFIG.TILE_SIZE/2 - e.x) < CONFIG.TILE_SIZE && Math.abs(me.y + CONFIG.TILE_SIZE/2 - e.y) < CONFIG.TILE_SIZE) {
             if (e.type === 'ore') {
-                broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId, val: e.val });
+                /* oreTypeを送信データに追加 */
+                broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId, val: e.val, oreType: e.oreType });
+                
                 if(!state.scores[state.myId]) state.scores[state.myId] = 0;
                 state.scores[state.myId] += e.val;
+
+                /* ローカル用の鉱石カウント追加 */
+                if(!state.oreCounts[state.myId]) state.oreCounts[state.myId] = {};
+                if(!state.oreCounts[state.myId][e.oreType]) state.oreCounts[state.myId][e.oreType] = 0;
+                state.oreCounts[state.myId][e.oreType]++;
+
                 e.collected = true; 
             } else if (e.type === 'item_drop' && e.landed) { 
                 if (!me.item) {
@@ -871,10 +891,33 @@ const gameOver = () => {
     showScreen('result-screen');
     const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
     const myScore = state.scores[state.myId] || 0;
+
+    /* リザルトの鉱石内訳表示を追加 */
+    const myOreCounts = state.oreCounts[state.myId] || {};
+    const ORE_NAMES = {
+        'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 
+        'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ'
+    };
+    let oreDetailsHtml = '<ul style="list-style: none; padding: 0; font-size: 1rem; margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">';
+    let hasOre = false;
+    ORES.forEach(ore => {
+        const count = myOreCounts[ore.type] || 0;
+        if (count > 0) {
+            oreDetailsHtml += `<li style="color:${ore.color}; text-shadow: 1px 1px 0 #000;">${ORE_NAMES[ore.type]}: ${count}個</li>`;
+            hasOre = true;
+        }
+    });
+    if (!hasOre) oreDetailsHtml += '<li>なし</li>';
+    oreDetailsHtml += '</ul>';
+
     document.getElementById('result-details').innerHTML = `
         <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
         <p>獲得した鉱石スコア: <span style="color:#3498db; font-size:1.5rem;">${myScore} pts</span></p>
         <p>総合スコア: <span style="color:#2ecc71; font-size:1.5rem;">${finalDepth * 4 + myScore} pts</span></p>
+        <div style="margin-top: 15px; border-top: 1px solid #7f8c8d; padding-top: 10px;">
+            <p style="margin:0; font-size: 1rem; color: #ecf0f1;">【獲得鉱石内訳】</p>
+            ${oreDetailsHtml}
+        </div>
     `;
 };
 
