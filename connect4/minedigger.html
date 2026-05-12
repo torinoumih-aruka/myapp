@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MINE DIGGER'S</title>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #222; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
+        .active { display: flex; }
+        h1 { font-size: 2.5rem; color: #f1c40f; text-shadow: 3px 3px #000; text-align: center; }
+        button { padding: 15px 30px; margin: 10px; font-size: 1.2rem; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.1s; }
+        button:active { background-color: #2980b9; transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        button:disabled { background-color: #7f8c8d; cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        #title-screen, #result-screen { background-color: #2c3e50; }
+        #char-screen { background-color: #34495e; }
+        .char-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .char-plate { width: 85px; height: 120px; border: 3px solid #7f8c8d; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #2c3e50; font-size: 0.9rem; font-weight: bold; transition: 0.2s; cursor: pointer;}
+        .char-plate.selected { border-color: #f1c40f; background-color: #1a252f; transform: scale(1.05); }
+        .char-color-preview { width: 40px; height: 40px; margin-bottom: 10px; background-color: transparent; }
+        input[type="text"] { padding: 12px; font-size: 1.2rem; text-align: center; width: 200px; border-radius: 5px; border: 2px solid #bdc3c7; margin-bottom: 10px; background: #ecf0f1; color: #2c3e50; font-weight: bold;}
+        
+        #game-screen { display: none; background-color: #000; }
+        #game-screen.active { display: block; }
+        #gameCanvas { display: block; width: 100vw; height: calc(100vh - 140px); background-color: #D2B48C; }
+        
+        .ui-header { position: absolute; top: env(safe-area-inset-top, 0px); left: 0; width: 100%; height: 60px; pointer-events: none; z-index: 10; }
+        .ui-controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 140px; background: #2c3e50; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; padding-bottom: env(safe-area-inset-bottom, 20px); box-sizing: border-box; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); }
+        .move-pads { display: flex; gap: 15px; }
+        .pad-btn { width: 90px; height: 90px; background: #7f8c8d; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 3rem; font-weight: bold; user-select: none; box-shadow: 0 5px 0 #555; color: white; cursor: pointer; }
+        .pad-btn:active { transform: translateY(5px); box-shadow: none; background: #95a5a6; }
+        .item-slot { width: 75px; height: 75px; background: #34495e; border: 3px solid #bdc3c7; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 0.9rem; font-weight: bold; color: #ecf0f1; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); cursor: pointer; text-align: center; }
+        .item-slot:active { background: #2c3e50; border-color: #f1c40f; }
+
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+        #modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 80%; max-height: 80vh; overflow-y: auto; position: relative; }
+        #modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <span id="modal-close">×</span>
+            <h2>遊び方</h2>
+            <p><strong>ルール:</strong><br>下へ下へと掘り進めるゲームです。ブロックをタップして破壊し、奥深くを目指しましょう。</p>
+            <p><strong>操作:</strong><br>画面下部の矢印で左右移動。隣接するブロックをタップして採掘。アイテムは右下のスロットをタップして使用します。</p>
+            <p><strong>エネルギー:</strong><br>掘るたびにエネルギーを消費します。セッション内の「誰か1人でも」エネルギーが0になるか、制限時間が切れるとゲームオーバーです。</p>
+        </div>
+    </div>
+
+    <div id="title-screen" class="screen">
+        <h1>MINE DIGGER'S</h1>
+        <button id="btn-create-room">部屋を作成</button>
+        <button id="btn-how-to">遊び方</button>
+        <p id="room-status"></p>
+    </div>
+
+    <div id="char-screen" class="screen">
+        <h2>キャラクター選択</h2>
+        <div class="char-container">
+            <div class="char-plate selected" data-type="strong"><canvas class="char-color-preview" id="prev-strong"></canvas>力持ち</div>
+            <div class="char-plate" data-type="ear"><canvas class="char-color-preview" id="prev-ear"></canvas>耳が良い</div>
+            <div class="char-plate" data-type="dexterous"><canvas class="char-color-preview" id="prev-dexterous"></canvas>手先が器用</div>
+        </div>
+        <input type="text" id="player-name" maxlength="4">
+        <p id="waiting-text" style="color:#bdc3c7; font-weight:bold;"></p>
+        <button id="btn-start" style="display: none;">START</button>
+        <button id="btn-ready" style="display: none; background-color: #2ecc71;">準備OK</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="ui-header"></div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="ui-controls">
+            <div class="move-pads">
+                <div class="pad-btn" id="pad-left">←</div>
+                <div class="pad-btn" id="pad-right">→</div>
+            </div>
+            <div class="item-slot" id="ui-item">空</div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h1>GAME OVER</h1>
+        <div id="result-details" style="font-size: 1.2rem; text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px;"></div>
+        <button id="btn-title">TITLEに戻る</button>
+    </div>
+
+<script>
+const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 200, TILE_SIZE: 0, FPS: 30 };
+const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
+
+const CHARACTERS = {
+    strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5 },
+    ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0 },
+    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8 }
+};
+
+const BLOCK_DEFS = {
+    'grass': { hp: 1, color: '#2ecc71' }, 'surface_dirt': { hp: 2, color: '#d35400' },
+    'dirt': { hp: 3, color: '#b87333' }, 'rock': { hp: 4, color: '#95a5a6' },
+    'deep_rock': { hp: 6, color: '#34495e' }, 'obsidian': { hp: 10, color: '#111111' },
+    'iron': { hp: 999999, color: '#bdc3c7' } // Infinity を 999999 に変更し、通信エラーを回避
+};
+
+const ORES = [
+    { type: 'copper', min: 5, max: 20, val: 1, color: '#e67e22', prob: 0.1 },
+    { type: 'iron', min: 15, max: 30, val: 2, color: '#ecf0f1', prob: 0.1 },
+    { type: 'gold', min: 25, max: 180, val: 3, color: '#f1c40f', prob: 0.08 },
+    { type: 'ruby', min: 40, max: 150, val: 4, color: '#e74c3c', prob: 0.05 },
+    { type: 'sapphire', min: 60, max: 170, val: 5, color: '#3498db', prob: 0.05 },
+    { type: 'emerald', min: 80, max: 190, val: 6, color: '#2ecc71', prob: 0.04 },
+    { type: 'diamond', min: 100, max: 200, val: 10, color: '#00ffff', prob: 0.02 }
+];
+
+const ITEMS_LIST = ['bomb', 'candle', 'energy'];
+const ITEM_NAMES = { 'bomb': '爆弾', 'candle': 'ろうそく', 'energy': 'エネルギー\n分配' };
+const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
+
+const state = {
+    peer: null, connections: [], isHost: false, players: {}, myId: null,
+    map: [], fog: [], gameTime: 60,
+    loopId: null, cameraX: 0, cameraY: 0,
+    gameState: 'lobby',
+    countdownValue: 3,
+    entities: [],
+    particles: [],
+    scores: {}
+};
+
+const showScreen = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+};
+
+const drawCharacterShape = (ctx, x, y, size, color) => {
+    ctx.clearRect(x, y, size, size);
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size * 0.6);
+    ctx.fillRect(x + size * 0.15, y + size * 0.6, size * 0.25, size * 0.4);
+    ctx.fillRect(x + size * 0.6, y + size * 0.6, size * 0.25, size * 0.4);
+    ctx.fillStyle = '#000';
+    const eyeSize = size * 0.2;
+    ctx.fillRect(x + size * 0.15, y + size * 0.15, eyeSize, eyeSize);
+    ctx.fillRect(x + size * 0.65, y + size * 0.15, eyeSize, eyeSize);
+};
+
+window.onload = () => {
+    Object.keys(CHARACTERS).forEach(key => {
+        const c = document.getElementById(`prev-${key}`);
+        c.width = 40; c.height = 40;
+        const ctx = c.getContext('2d');
+        drawCharacterShape(ctx, 0, 0, 40, CHARACTERS[key].color);
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('id');
+    if (roomParam) {
+        showScreen('char-screen');
+        document.getElementById('waiting-text').innerText = "ホストに接続中...";
+        initPeer(false, roomParam);
+    } else {
+        showScreen('title-screen');
+    }
+};
+
+document.getElementById('btn-how-to').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'flex');
+document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'none');
+
+const generateMap = () => {
+    const map = []; const fog = [];
+    let mainPathX = 4;
+
+    for (let y = 0; y < CONFIG.MAP_HEIGHT; y++) {
+        const row = []; const fogRow = [];
+        const depth = y + 1;
+        
+        if (y > 0) {
+            mainPathX += Math.floor(Math.random() * 3) - 1;
+            mainPathX = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, mainPathX));
+        }
+
+        for (let x = 0; x < CONFIG.MAP_WIDTH; x++) {
+            let block = { type: 'empty', hp: 0 };
+            if (y > 0) {
+                const validTypes = [];
+                if (depth <= 5) validTypes.push('grass');
+                if (depth >= 4 && depth <= 10) validTypes.push('surface_dirt');
+                if (depth >= 7 && depth <= 100) validTypes.push('dirt');
+                if (depth >= 10 && depth <= 150) validTypes.push('rock');
+                if (depth >= 40 && depth <= 150) validTypes.push('deep_rock');
+                if (depth >= 100 && depth <= 200) validTypes.push('obsidian');
+
+                const chosenType = validTypes.length > 0 ? validTypes[Math.floor(Math.random() * validTypes.length)] : 'obsidian';
+                
+                if (depth >= 10 && Math.random() < 0.08 && x !== mainPathX) {
+                    block = { type: 'iron', hp: 999999 }; // Infinity を 999999 に変更
+                } 
+                else if (depth >= 10 && Math.random() < 0.05) {
+                    block = { type: 'item_box', hp: 2 };
+                }
+                else {
+                    block = { type: chosenType, hp: BLOCK_DEFS[chosenType].hp };
+                    const possibleOres = ORES.filter(o => depth >= o.min && depth <= o.max);
+                    for (let ore of possibleOres) {
+                        if (Math.random() < ore.prob) { block.ore = ore; break; }
+                    }
+                }
+            }
+            row.push(block); fogRow.push(false);
+        }
+        map.push(row); fog.push(fogRow);
+    }
+
+    for (let y = CAVE_CONFIG.startDepth - 1; y < CONFIG.MAP_HEIGHT; y += CAVE_CONFIG.interval) {
+        let cx = Math.floor(Math.random() * CONFIG.MAP_WIDTH); let cy = y;
+        const targetSize = Math.floor(Math.random() * (CAVE_CONFIG.maxSize - CAVE_CONFIG.minSize + 1)) + CAVE_CONFIG.minSize;
+        for (let i = 0; i < targetSize; i++) {
+            if (map[cy] && map[cy][cx] && map[cy][cx].type !== 'iron') map[cy][cx] = { type: 'empty', hp: 0 };
+            const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
+            const dir = dirs[Math.floor(Math.random() * dirs.length)];
+            cx += dir[0]; cy += dir[1];
+            cx = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, cx)); cy = Math.max(0, Math.min(CONFIG.MAP_HEIGHT - 1, cy));
+        }
+    }
+    return { map, fog };
+};
+
+const initPeer = (isHost, hostId = null) => {
+    state.isHost = isHost;
+    state.peer = new Peer();
+
+    state.peer.on('open', (id) => {
+        state.myId = id;
+        if (isHost) {
+            const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
+            navigator.clipboard.writeText(url).then(() => {
+                alert("部屋のURLをクリップボードにコピーしました！\nゲストに送信してください。");
+            });
+            if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
+            showScreen('char-screen');
+            setupCharScreen();
+        } else {
+            const conn = state.peer.connect(hostId);
+            setupConnection(conn);
+        }
+    });
+
+    state.peer.on('connection', (conn) => {
+        if (isHost) setupConnection(conn);
+    });
+};
+
+const setupConnection = (conn) => {
+    conn.on('open', () => {
+        state.connections.push(conn);
+        if (!state.isHost) {
+            setupCharScreen();
+        } else {
+            broadcast({ type: 'LOBBY_UPDATE', players: state.players });
+        }
+    });
+    conn.on('data', handleNetworkData);
+};
+
+const broadcast = (data) => { state.connections.forEach(c => c.send(data)); };
+
+const spawnParticles = (x, y, color) => {
+    for (let i = 0; i < 6; i++) {
+        state.particles.push({
+            x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+            y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10 - 2,
+            color: color,
+            spawnTime: Date.now()
+        });
+    }
+};
+
+const handleNetworkData = (data) => {
+    if (data.type === 'PLAYER_READY') {
+        if (!state.players[data.id]) state.players[data.id] = {};
+        state.players[data.id] = { ...data.playerInfo, ready: true };
+        if (state.isHost) broadcast({ type: 'LOBBY_UPDATE', players: state.players });
+    }
+    if (data.type === 'LOBBY_UPDATE') {
+        state.players = data.players;
+        let readyCount = Object.values(state.players).filter(p => p.ready).length;
+        if (state.isHost) document.getElementById('waiting-text').innerText = `現在 ${readyCount} 人が準備完了 (最大2人まで参加可能)`;
+    }
+    if (data.type === 'GAME_START') {
+        if (!data.players[state.myId]) {
+            alert("定員により参加できませんでした。"); return;
+        }
+        state.map = data.map; state.fog = data.fog; state.players = data.players;
+        state.players[state.myId].item = null;
+        state.gameState = 'countdown';
+        startGameLoop();
+    }
+    if (data.type === 'PLAYER_MOVE') {
+        if(state.players[data.id]) {
+            state.players[data.id].x = data.x; state.players[data.id].y = data.y;
+        }
+    }
+    if (data.type === 'BLOCK_DIG') {
+        state.map[data.y][data.x] = { type: 'empty', hp: 0 };
+        if (data.color) spawnParticles(data.x, data.y, data.color);
+        if (state.players[data.id]) state.players[data.id].energy = data.energy;
+        if (data.spawnedEntities) {
+            state.entities.push(...data.spawnedEntities);
+            while (state.entities.length > 100) state.entities.shift();
+        }
+        checkGameOver();
+    }
+    if (data.type === 'COLLECT_ENTITY') {
+        state.entities = state.entities.filter(e => e.id !== data.entityId);
+        if (data.val) {
+            if(!state.scores[data.playerId]) state.scores[data.playerId] = 0;
+            state.scores[data.playerId] += data.val;
+        }
+    }
+    if (data.type === 'USE_BOMB') {
+        data.dugBlocks.forEach(b => {
+            if(state.map[b.y] && state.map[b.y][b.x]) {
+                state.map[b.y][b.x] = {type: 'empty', hp: 0};
+                spawnParticles(b.x, b.y, '#95a5a6');
+            }
+        });
+    }
+    if (data.type === 'USE_CANDLE') {
+        applySharedVision(data.y, data.range);
+    }
+    if (data.type === 'USE_ENERGY_DIST') {
+        if (data.id !== state.myId && state.players[state.myId]) {
+            state.players[state.myId].energy = Math.min(state.players[state.myId].maxEnergy, state.players[state.myId].energy + 20);
+        } else if (data.id === state.myId) {
+            state.players[state.myId].energy = data.newEnergy;
+        }
+    }
+    if (data.type === 'GAME_OVER') {
+        gameOver();
+    }
+};
+
+const applySharedVision = (centerY, range) => {
+    for (let y = centerY - range; y <= centerY + range; y++) {
+        if (y >= 0 && y < CONFIG.MAP_HEIGHT) {
+            for (let x = 0; x < CONFIG.MAP_WIDTH; x++) {
+                state.fog[y][x] = true;
+            }
+        }
+    }
+};
+
+document.getElementById('btn-create-room').addEventListener('click', () => initPeer(true));
+
+const setupCharScreen = () => {
+    const nameInput = document.getElementById('player-name');
+    nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+    let selectedChar = 'strong';
+    
+    document.querySelectorAll('.char-plate').forEach(plate => {
+        plate.addEventListener('click', (e) => {
+            if (!state.isHost && state.players[state.myId]?.ready) return; 
+            document.querySelectorAll('.char-plate').forEach(p => p.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+            selectedChar = e.currentTarget.dataset.type;
+        });
+    });
+
+    if (state.isHost) {
+        document.getElementById('waiting-text').innerText = "準備ができたゲストとプレイします (最大3人)";
+        const startBtn = document.getElementById('btn-start');
+        startBtn.style.display = 'block';
+
+        startBtn.addEventListener('click', () => {
+            const generated = generateMap();
+            CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
+            
+            const activePlayers = { [state.myId]: { 
+                x: 4 * CONFIG.TILE_SIZE, y: 0, 
+                char: selectedChar, name: nameInput.value, 
+                energy: CHARACTERS[selectedChar].energy, maxEnergy: CHARACTERS[selectedChar].energy, item: null 
+            }};
+            
+            let guestCount = 0;
+            for (let id in state.players) {
+                if (id !== state.myId && state.players[id].ready && guestCount < 2) {
+                    activePlayers[id] = {
+                        x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
+                        char: state.players[id].char, name: state.players[id].name,
+                        energy: CHARACTERS[state.players[id].char].energy, maxEnergy: CHARACTERS[state.players[id].char].energy, item: null
+                    };
+                    guestCount++;
+                }
+            }
+
+            state.players = activePlayers;
+            broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: state.players });
+            
+            state.map = generated.map; state.fog = generated.fog;
+            state.gameState = 'countdown';
+            startGameLoop();
+        });
+    } else {
+        document.getElementById('waiting-text').innerText = "ホストの開始を待っています...";
+        const readyBtn = document.getElementById('btn-ready');
+        readyBtn.style.display = 'block';
+        readyBtn.addEventListener('click', () => {
+            readyBtn.disabled = true;
+            readyBtn.innerText = "準備完了";
+            const playerInfo = { char: selectedChar, name: nameInput.value };
+            state.players[state.myId] = { ...playerInfo, ready: true };
+            broadcast({ type: 'PLAYER_READY', id: state.myId, playerInfo });
+        });
+    }
+};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let inputState = { left: false, right: false };
+
+document.getElementById('pad-left').addEventListener('touchstart', (e) => { e.preventDefault(); inputState.left = true; });
+document.getElementById('pad-left').addEventListener('touchend', (e) => { e.preventDefault(); inputState.left = false; });
+document.getElementById('pad-right').addEventListener('touchstart', (e) => { e.preventDefault(); inputState.right = true; });
+document.getElementById('pad-right').addEventListener('touchend', (e) => { e.preventDefault(); inputState.right = false; });
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (state.gameState !== 'playing') return;
+    const rect = canvas.getBoundingClientRect();
+    const mapX = Math.floor((e.touches[0].clientX - rect.left + state.cameraX) / CONFIG.TILE_SIZE);
+    const mapY = Math.floor((e.touches[0].clientY - rect.top + state.cameraY) / CONFIG.TILE_SIZE);
+    digBlock(mapX, mapY);
+});
+
+// アイテム使用
+document.getElementById('ui-item').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const me = state.players[state.myId];
+    if (!me || !me.item || state.gameState !== 'playing') return;
+
+    const item = me.item;
+    me.item = null;
+    document.getElementById('ui-item').innerText = "空";
+    
+    const myGridX = Math.floor((me.x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const isDex = me.char === 'dexterous';
+
+    if (item === 'bomb') {
+        const radius = isDex ? 3 : 2;
+        const dugBlocks = [];
+        for(let dy=-radius; dy<=radius; dy++) {
+            for(let dx=-radius; dx<=radius; dx++) {
+                let targetX = myGridX + dx; let targetY = myGridY + dy;
+                if (targetY>=0 && targetY<CONFIG.MAP_HEIGHT && targetX>=0 && targetX<CONFIG.MAP_WIDTH) {
+                    const blk = state.map[targetY][targetX];
+                    if (blk && blk.type !== 'empty' && blk.type !== 'iron') {
+                        state.map[targetY][targetX] = {type: 'empty', hp: 0};
+                        dugBlocks.push({x: targetX, y: targetY});
+                        spawnParticles(targetX, targetY, '#95a5a6');
+                    }
+                }
+            }
+        }
+        broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks });
+    } else if (item === 'candle') {
+        const range = isDex ? 13 : 10;
+        applySharedVision(myGridY, range);
+        broadcast({ type: 'USE_CANDLE', y: myGridY, range: range });
+    } else if (item === 'energy') {
+        if (!isDex) me.energy -= 10;
+        broadcast({ type: 'USE_ENERGY_DIST', id: state.myId, newEnergy: me.energy });
+    }
+});
+
+const spawnEntities = (x, y, targetBlock, diggerChar) => {
+    const isDex = diggerChar === 'dexterous';
+    const spawned = [];
+    
+    if (targetBlock.ore) {
+        const count = isDex ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < count; i++) {
+            spawned.push({
+                id: Math.random().toString(36).substr(2, 9), type: 'ore',
+                x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+                vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5,
+                color: targetBlock.ore.color, val: targetBlock.ore.val,
+                spawnTime: Date.now(), landed: false
+            });
+        }
+    } else if (targetBlock.type === 'item_box') {
+        spawned.push({
+            id: Math.random().toString(36).substr(2, 9), type: 'item_drop',
+            x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+            vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 8 - 5,
+            spawnTime: Date.now(), landed: false
+        });
+    }
+    return spawned;
+};
+
+const digBlock = (x, y) => {
+    const me = state.players[state.myId];
+    if (!me) return;
+
+    const myGridX = Math.floor((me.x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const isAdjacent = (Math.abs(myGridX - x) === 1 && myGridY === y) || (Math.abs(myGridY - y) === 1 && myGridX === x);
+    
+    if (isAdjacent && state.map[y] && state.map[y][x] && state.map[y][x].type !== 'empty' && state.map[y][x].type !== 'iron') {
+        const charData = CHARACTERS[me.char];
+        let cost = Math.max(1, state.map[y][x].hp + charData.digCostBonus);
+        me.energy -= cost;
+        
+        const targetBlock = state.map[y][x];
+        const blockColor = targetBlock.type === 'surface_dirt' ? '#8B4513' : (targetBlock.type === 'item_box' ? '#b87333' : BLOCK_DEFS[targetBlock.type].color);
+        
+        state.map[y][x] = { type: 'empty', hp: 0 };
+        spawnParticles(x, y, blockColor);
+
+        let newEntities = spawnEntities(x, y, targetBlock, me.char);
+        state.entities.push(...newEntities);
+        while (state.entities.length > 100) state.entities.shift();
+
+        broadcast({ type: 'BLOCK_DIG', id: state.myId, x, y, energy: me.energy, spawnedEntities: newEntities, color: blockColor });
+        checkGameOver();
+    }
+};
+
+const checkGameOver = () => {
+    for(let id in state.players) {
+        if(state.players[id].energy <= 0) {
+            broadcast({ type: 'GAME_OVER' });
+            gameOver();
+            return;
+        }
+    }
+};
+
+const startGameLoop = () => {
+    showScreen('game-screen');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    CONFIG.TILE_SIZE = canvas.width / 7.5;
+
+    state.countdownValue = 3;
+    let cdInterval = setInterval(() => {
+        state.countdownValue--;
+        if (state.countdownValue < 0) {
+            clearInterval(cdInterval);
+            state.gameState = 'playing';
+        }
+    }, 1000);
+
+    state.loopId = requestAnimationFrame(update);
+    setInterval(() => { 
+        if (state.gameState === 'playing') {
+            state.gameTime--; 
+            if(state.gameTime <= 0) { broadcast({ type: 'GAME_OVER' }); gameOver(); }
+        }
+    }, 1000);
+};
+
+const update = () => {
+    const me = state.players[state.myId];
+    if (!me) return;
+
+    if (state.gameState === 'playing') {
+        const speed = 6 * CHARACTERS[me.char].speedMult;
+        const padding = 2; 
+
+        if (inputState.left) {
+            let nextX = me.x - speed;
+            let leftGridX = Math.floor(nextX / CONFIG.TILE_SIZE);
+            let topGridY = Math.floor((me.y + padding) / CONFIG.TILE_SIZE);
+            let bottomGridY = Math.floor((me.y + CONFIG.TILE_SIZE - padding) / CONFIG.TILE_SIZE);
+            if (leftGridX >= 0 && ((state.map[topGridY] && state.map[topGridY][leftGridX].type !== 'empty') || (state.map[bottomGridY] && state.map[bottomGridY][leftGridX].type !== 'empty'))) {
+                nextX = (leftGridX + 1) * CONFIG.TILE_SIZE;
+            }
+            me.x = Math.max(0, nextX);
+        }
+        
+        if (inputState.right) {
+            let nextX = me.x + speed;
+            let rightGridX = Math.floor((nextX + CONFIG.TILE_SIZE - 1) / CONFIG.TILE_SIZE);
+            let topGridY = Math.floor((me.y + padding) / CONFIG.TILE_SIZE);
+            let bottomGridY = Math.floor((me.y + CONFIG.TILE_SIZE - padding) / CONFIG.TILE_SIZE);
+            if (rightGridX < CONFIG.MAP_WIDTH && ((state.map[topGridY] && state.map[topGridY][rightGridX].type !== 'empty') || (state.map[bottomGridY] && state.map[bottomGridY][rightGridX].type !== 'empty'))) {
+                nextX = rightGridX * CONFIG.TILE_SIZE - CONFIG.TILE_SIZE;
+            }
+            me.x = Math.min(CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - CONFIG.TILE_SIZE, nextX);
+        }
+    }
+
+    const gridXCenter = Math.floor((me.x + CONFIG.TILE_SIZE / 2) / CONFIG.TILE_SIZE);
+    const bottomY = me.y + CONFIG.TILE_SIZE;
+    const gridYBottom = Math.floor(bottomY / CONFIG.TILE_SIZE);
+
+    if (gridYBottom < CONFIG.MAP_HEIGHT && state.map[gridYBottom] && state.map[gridYBottom][gridXCenter].type === 'empty') {
+        me.y += 10; 
+    } else {
+        me.y = gridYBottom * CONFIG.TILE_SIZE - CONFIG.TILE_SIZE;
+    }
+
+    const now = Date.now();
+    state.entities = state.entities.filter(e => now - e.spawnTime < 5000); 
+
+    state.entities.forEach(e => {
+        e.vy += 1.5; 
+        e.vy *= 0.98; e.vx *= 0.98;
+        
+        let hw = 5; 
+        let nextX = e.x + e.vx;
+        let gridXLeft = Math.floor((nextX - hw) / CONFIG.TILE_SIZE);
+        let gridXRight = Math.floor((nextX + hw) / CONFIG.TILE_SIZE);
+        let gridYTop = Math.floor((e.y - hw) / CONFIG.TILE_SIZE);
+        let gridYBottom = Math.floor((e.y + hw) / CONFIG.TILE_SIZE);
+        
+        let hitX = false;
+        if (e.vx < 0 && gridXLeft >= 0) {
+            if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty') hitX = true;
+        } else if (e.vx > 0 && gridXRight < CONFIG.MAP_WIDTH) {
+            if (state.map[gridYTop]?.[gridXRight]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitX = true;
+        } else if (gridXLeft < 0 || gridXRight >= CONFIG.MAP_WIDTH) { hitX = true; }
+        if (hitX) e.vx *= -0.5; else e.x = nextX;
+
+        let nextY = e.y + e.vy;
+        gridXLeft = Math.floor((e.x - hw) / CONFIG.TILE_SIZE);
+        gridXRight = Math.floor((e.x + hw) / CONFIG.TILE_SIZE);
+        gridYTop = Math.floor((nextY - hw) / CONFIG.TILE_SIZE);
+        gridYBottom = Math.floor((nextY + hw) / CONFIG.TILE_SIZE);
+
+        let hitY = false;
+        if (e.vy < 0 && gridYTop >= 0) {
+            if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYTop]?.[gridXRight]?.type !== 'empty') hitY = true;
+        } else if (e.vy > 0 && gridYBottom < CONFIG.MAP_HEIGHT) {
+            if (state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitY = true;
+        } else if (gridYBottom >= CONFIG.MAP_HEIGHT) { hitY = true; }
+        
+        if (hitY) { 
+            if (e.vy > 0) e.landed = true; 
+            e.vy *= -0.5; e.vx *= 0.8; 
+        } else { 
+            e.y = nextY; 
+            e.landed = false; 
+        }
+
+        if (state.gameState === 'playing' && Math.abs(me.x + CONFIG.TILE_SIZE/2 - e.x) < CONFIG.TILE_SIZE && Math.abs(me.y + CONFIG.TILE_SIZE/2 - e.y) < CONFIG.TILE_SIZE) {
+            if (e.type === 'ore') {
+                broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId, val: e.val });
+                if(!state.scores[state.myId]) state.scores[state.myId] = 0;
+                state.scores[state.myId] += e.val;
+                e.collected = true; 
+            } else if (e.type === 'item_drop' && e.landed) { 
+                if (!me.item) {
+                    const randItem = ITEMS_LIST[Math.floor(Math.random() * ITEMS_LIST.length)];
+                    me.item = randItem;
+                    document.getElementById('ui-item').innerText = ITEM_NAMES[randItem];
+                    broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId });
+                    e.collected = true;
+                }
+            }
+        }
+    });
+    state.entities = state.entities.filter(e => !e.collected);
+
+    state.particles = state.particles.filter(p => now - p.spawnTime < 400); 
+    state.particles.forEach(p => { p.vy += 1; p.x += p.vx; p.y += p.vy; });
+
+    const myGridX = Math.floor((me.x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+    const visionRadius = CHARACTERS[me.char].vision;
+
+    for (let dy = -visionRadius; dy <= visionRadius; dy++) {
+        for (let dx = -visionRadius; dx <= visionRadius; dx++) {
+            if (Math.abs(dx) + Math.abs(dy) <= visionRadius) {
+                const vx = myGridX + dx; const vy = myGridY + dy;
+                if (vy >= 0 && vy < CONFIG.MAP_HEIGHT && vx >= 0 && vx < CONFIG.MAP_WIDTH) {
+                    state.fog[vy][vx] = true; 
+                }
+            }
+        }
+    }
+
+    state.cameraX = Math.max(0, Math.min(me.x - (canvas.width / 2) + (CONFIG.TILE_SIZE / 2), CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - canvas.width));
+    state.cameraY = Math.max(0, me.y - (canvas.height / 3));
+
+    broadcast({ type: 'PLAYER_MOVE', id: state.myId, x: me.x, y: me.y });
+
+    draw();
+    if(state.gameState !== 'gameover') state.loopId = requestAnimationFrame(update);
+};
+
+const drawOutlinedText = (ctx, text, x, y, size, align = "left", color = "#fff") => {
+    ctx.font = `bold ${size}px sans-serif`; ctx.textAlign = align; ctx.textBaseline = "top";
+    ctx.strokeStyle = "#000"; ctx.lineWidth = size / 5; ctx.strokeText(text, x, y);
+    ctx.fillStyle = color; ctx.fillText(text, x, y);
+};
+
+const drawIronWall = (ctx, drawX, drawY, size) => {
+    ctx.fillStyle = '#bdc3c7'; ctx.fillRect(drawX, drawY, size, size);
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4; ctx.strokeRect(drawX, drawY, size, size);
+    ctx.fillStyle = '#7f8c8d'; const r = size * 0.12;
+    [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]].forEach(pos => {
+        ctx.beginPath(); ctx.arc(drawX + size * pos[0], drawY + size * pos[1], r, 0, Math.PI * 2); ctx.fill();
+    });
+};
+
+const drawItemBox = (ctx, drawX, drawY, size) => {
+    ctx.fillStyle = '#b87333'; ctx.fillRect(drawX, drawY, size, size); 
+    ctx.fillStyle = '#8B4513'; ctx.fillRect(drawX + 4, drawY + 4, size - 8, size - 8); 
+    ctx.fillStyle = '#5c2e0b'; ctx.fillRect(drawX + 8, drawY + 12, size - 16, size - 24); 
+};
+
+const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const startX = Math.max(0, Math.floor(state.cameraX / CONFIG.TILE_SIZE));
+    const endX = Math.min(CONFIG.MAP_WIDTH, startX + Math.ceil(canvas.width / CONFIG.TILE_SIZE) + 1);
+    const startY = Math.max(0, Math.floor(state.cameraY / CONFIG.TILE_SIZE));
+    const endY = Math.min(CONFIG.MAP_HEIGHT, startY + Math.ceil(canvas.height / CONFIG.TILE_SIZE) + 1);
+
+    for (let y = startY; y < endY; y++) {
+        const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
+        const leftWallX = -1 * CONFIG.TILE_SIZE - state.cameraX;
+        if (leftWallX + CONFIG.TILE_SIZE > 0) drawIronWall(ctx, leftWallX, drawY, CONFIG.TILE_SIZE);
+        const rightWallX = CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - state.cameraX;
+        if (rightWallX < canvas.width) drawIronWall(ctx, rightWallX, drawY, CONFIG.TILE_SIZE);
+    }
+
+    const now = Date.now();
+    const blinkCycle = now % 5000;
+    const isGlobalGlowing = blinkCycle < 1000;
+
+    for (let y = startY; y < endY; y++) {
+        for (let x = startX; x < endX; x++) {
+            const drawX = x * CONFIG.TILE_SIZE - state.cameraX;
+            const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
+
+            if (!state.fog[y][x]) {
+                ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1);
+                continue;
+            }
+
+            const block = state.map[y][x];
+            if (block && block.type !== 'empty') {
+                if (block.type === 'surface_dirt') {
+                    ctx.fillStyle = '#2ecc71'; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE * 0.3);
+                    ctx.fillStyle = '#8B4513'; ctx.fillRect(drawX, drawY + CONFIG.TILE_SIZE * 0.3, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE * 0.7);
+                } else if (block.type === 'item_box') {
+                    drawItemBox(ctx, drawX, drawY, CONFIG.TILE_SIZE);
+                } else if (block.type === 'iron') {
+                    drawIronWall(ctx, drawX, drawY, CONFIG.TILE_SIZE);
+                } else {
+                    ctx.fillStyle = BLOCK_DEFS[block.type].color; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+                }
+                ctx.strokeStyle = "#4a2f1d"; ctx.lineWidth = 3; ctx.strokeRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+                
+                if (block.ore) {
+                    ctx.fillStyle = isGlobalGlowing ? "#ffffff" : block.ore.color;
+                    if(isGlobalGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = block.ore.color; } 
+                    
+                    const triSize = CONFIG.TILE_SIZE * 0.25;
+                    [[0.2, 0.25], [0.6, 0.35], [0.35, 0.65]].forEach(pos => {
+                        ctx.beginPath();
+                        ctx.moveTo(drawX + CONFIG.TILE_SIZE * pos[0], drawY + CONFIG.TILE_SIZE * pos[1] - triSize/2);
+                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] - triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2);
+                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] + triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2);
+                        ctx.fill();
+                    });
+                    ctx.shadowBlur = 0; 
+                }
+            }
+        }
+    }
+
+    state.particles.forEach(p => {
+        const drawX = p.x - state.cameraX; const drawY = p.y - state.cameraY;
+        const alpha = Math.max(0, 1 - (now - p.spawnTime) / 400);
+        ctx.globalAlpha = alpha; ctx.fillStyle = p.color; ctx.fillRect(drawX, drawY, 8, 8);
+    });
+    ctx.globalAlpha = 1.0;
+
+    state.entities.forEach(e => {
+        const age = now - e.spawnTime;
+        if (age > 3000 && Math.floor(now / 100) % 2 === 0) return; 
+
+        const drawX = e.x - state.cameraX; const drawY = e.y - state.cameraY;
+        
+        if (e.type === 'ore') {
+            const triSize = CONFIG.TILE_SIZE * 0.3;
+            ctx.fillStyle = isGlobalGlowing ? "#ffffff" : e.color;
+            if(isGlobalGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = e.color; }
+
+            ctx.beginPath();
+            ctx.moveTo(drawX, drawY - triSize/2);
+            ctx.lineTo(drawX - triSize/2, drawY + triSize/2);
+            ctx.lineTo(drawX + triSize/2, drawY + triSize/2);
+            ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+            ctx.shadowBlur = 0;
+        } else if (e.type === 'item_drop') {
+            const w = CONFIG.TILE_SIZE * 0.4; const h = CONFIG.TILE_SIZE * 0.6;
+            let grad = ctx.createLinearGradient(drawX, drawY - h/2, drawX, drawY + h/2);
+            grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#00bfff');
+            
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(drawX, drawY - h/2);
+            ctx.lineTo(drawX + w/2, drawY);
+            ctx.lineTo(drawX, drawY + h/2);
+            ctx.lineTo(drawX - w/2, drawY);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        }
+    });
+
+    Object.values(state.players).forEach(p => {
+        const drawX = p.x - state.cameraX; const drawY = p.y - state.cameraY;
+        drawCharacterShape(ctx, drawX, drawY, CONFIG.TILE_SIZE, CHARACTERS[p.char].color);
+        drawOutlinedText(ctx, p.name, drawX + CONFIG.TILE_SIZE/2, drawY - 20, 14, "center");
+    });
+
+    const grad = ctx.createLinearGradient(0, canvas.height / 2, 0, canvas.height);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.7)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+    if (state.gameState === 'countdown') {
+        const text = state.countdownValue > 0 ? state.countdownValue : "GO";
+        drawOutlinedText(ctx, text, canvas.width/2, canvas.height/2 - 50, 80, "center", "#f1c40f");
+    }
+
+    const me = state.players[state.myId];
+    if (me) {
+        const depth = Math.floor(me.y / CONFIG.TILE_SIZE) + 1;
+        const timeStr = `${Math.floor(state.gameTime/60)}:${(state.gameTime%60).toString().padStart(2,'0')}`;
+        drawOutlinedText(ctx, `⬇️ ${depth}m`, 10, 10, 20);
+        drawOutlinedText(ctx, `⏱️ ${timeStr}`, 10, 40, 20);
+        
+        let barOffset = 10;
+        Object.keys(state.players).forEach((id) => {
+            const p = state.players[id];
+            const barWidth = 100; const barHeight = 15;
+            const barX = canvas.width - barWidth - 10;
+            
+            drawOutlinedText(ctx, p.name, barX - 10, barOffset, 12, "right", CHARACTERS[p.char].color);
+            ctx.fillStyle = '#555'; ctx.fillRect(barX, barOffset, barWidth, barHeight);
+            
+            const energyRatio = Math.max(0, p.energy / p.maxEnergy);
+            ctx.fillStyle = energyRatio > 0.5 ? '#2ecc71' : (energyRatio > 0.2 ? '#f1c40f' : '#e74c3c');
+            ctx.fillRect(barX, barOffset, barWidth * energyRatio, barHeight);
+            
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(barX, barOffset, barWidth, barHeight);
+            barOffset += 25;
+        });
+    }
+};
+
+const gameOver = () => {
+    if (state.gameState === 'gameover') return;
+    state.gameState = 'gameover';
+    showScreen('result-screen');
+    const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
+    const myScore = state.scores[state.myId] || 0;
+    document.getElementById('result-details').innerHTML = `
+        <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
+        <p>獲得した鉱石スコア: <span style="color:#3498db; font-size:1.5rem;">${myScore} pts</span></p>
+        <p>総合スコア: <span style="color:#2ecc71; font-size:1.5rem;">${finalDepth * 4 + myScore} pts</span></p>
+    `;
+};
+
+document.getElementById('btn-title').addEventListener('click', () => { window.location.href = window.location.pathname.split('?')[0]; });
+</script>
+</body>
+</html>
