@@ -6,7 +6,6 @@
     <title>MINE DIGGER'S</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
-        /* 100dvhを追加し、iOSのアドレスバーによる高さ変動バグを回避 */
         body { margin: 0; padding: 0; background-color: #222; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; height: 100vh; height: 100dvh; }
         .screen { display: none; width: 100vw; height: 100vh; height: 100dvh; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
         .active { display: flex; }
@@ -36,18 +35,24 @@
         .move-pads { display: flex; gap: 15px; }
         .pad-btn { width: 90px; height: 90px; background: #7f8c8d; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 3rem; font-weight: bold; user-select: none; box-shadow: 0 5px 0 #555; color: white; cursor: pointer; }
         .pad-btn:active { transform: translateY(5px); box-shadow: none; background: #95a5a6; }
-        .item-slot { width: 75px; height: 75px; background: #34495e; border: 3px solid #bdc3c7; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 0.9rem; font-weight: bold; color: #ecf0f1; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); cursor: pointer; text-align: center; }
+        .item-slot { width: 75px; height: 75px; background: #34495e; border: 3px solid #bdc3c7; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 0.9rem; font-weight: bold; color: #ecf0f1; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); cursor: pointer; text-align: center; white-space: pre-wrap; line-height: 1.2; }
         .item-slot:active { background: #2c3e50; border-color: #f1c40f; }
 
-        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
-        #modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 80%; max-height: 80vh; overflow-y: auto; position: relative; }
-        #modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+        .modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
+        
+        #shop-list { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #shop-list td { border: 1px solid #bdc3c7; padding: 8px; font-size: 0.95rem; }
+        .shop-row-title { background: #34495e; color: #fff; font-weight: bold; }
+        .shop-row-desc { background: #ecf0f1; font-size: 0.8rem !important; color: #2c3e50; }
+        .shop-btn { padding: 5px 10px; font-size: 0.85rem; margin: 0; border-radius: 3px; }
     </style>
 </head>
 <body>
-    <div id="modal-overlay">
-        <div id="modal-content">
-            <span id="modal-close">×</span>
+    <div id="modal-howto" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" onclick="document.getElementById('modal-howto').style.display='none'">×</span>
             <h2>遊び方</h2>
             <p><strong>ルール:</strong><br>下へ下へと掘り進めるゲームです。ブロックをタップして破壊し、奥深くを目指しましょう。</p>
             <p><strong>操作:</strong><br>画面下部の矢印で左右移動。隣接するブロックをタップして採掘。アイテムは右下のスロットをタップして使用します。</p>
@@ -55,15 +60,31 @@
         </div>
     </div>
 
+    <div id="modal-shop" class="modal-overlay" style="z-index: 200;">
+        <div class="modal-content" style="background:#2c3e50; color:#fff;">
+            <span class="modal-close" onclick="document.getElementById('modal-shop').style.display='none'">×</span>
+            <h2 style="color:#f1c40f; text-align:center; margin-top:0;">SHOP</h2>
+            <p id="shop-pts-display" style="text-align:center; font-size:1.2rem; font-weight:bold; margin-bottom:10px;"></p>
+            <table id="shop-list">
+                <tbody id="shop-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="title-screen" class="screen">
         <h1>MINE DIGGER'S</h1>
         <button id="btn-create-room">部屋を作成</button>
-        <button id="btn-how-to">遊び方</button>
+        <button id="btn-how-to" onclick="document.getElementById('modal-howto').style.display='flex'">遊び方</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-shop" style="background-color: #e67e22;">🏠SHOP</button>
+            <button id="btn-reset" style="background-color: #c0392b;">データ初期化</button>
+        </div>
         <p id="room-status"></p>
     </div>
 
     <div id="char-screen" class="screen">
         <h2>キャラクター選択</h2>
+        
         <div class="char-container">
             <div class="char-plate selected" data-type="strong"><canvas class="char-color-preview" id="prev-strong"></canvas>力持ち</div>
             <div class="char-plate" data-type="ear"><canvas class="char-color-preview" id="prev-ear"></canvas>耳が良い</div>
@@ -74,7 +95,7 @@
 
         <div class="name-input-container">
             <label for="player-name" style="font-weight: bold; font-size: 1.2rem;">なまえ</label>
-            <input type="text" id="player-name" maxlength="4">
+            <input type="text" id="player-name" maxlength="5">
         </div>
         
         <p id="waiting-text" style="color:#bdc3c7; font-weight:bold; margin-top:0;"></p>
@@ -99,18 +120,38 @@
     <div id="result-screen" class="screen">
         <h1>GAME OVER</h1>
         <div id="result-details" style="font-size: 1.2rem; text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px;"></div>
-        <button id="btn-title">TITLEに戻る</button>
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 350px;">
+            <button id="btn-continue" style="background-color: #2ecc71; flex: 1; display: none;">続けて遊ぶ</button>
+            <button id="btn-title" style="flex: 1;">TITLEに戻る</button>
+        </div>
     </div>
 
 <script>
 const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 200, TILE_SIZE: 0, FPS: 30 };
 const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
 
-/* キャラクター紹介文(desc)を追加 */
 const CHARACTERS = {
     strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
     ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
     dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, desc: "アイテムの効果範囲が広く、鉱石の獲得量も多い。" }
+};
+
+const SHOP_ITEMS = [
+    { id: "item_00", price: 0, name: "「爆弾」アンロック", desc: "使用すると、周囲2マスの範囲のブロックを破壊します。手先が器用が使うと、周囲3マスの範囲に広がります。" },
+    { id: "item_01", price: 150, name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得します。手先が器用が使うと、上下10マスの範囲に広がります。" },
+    { id: "item_02", price: 1000, name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に7マス掘削します。鉄壁も掘削します。手先が器用が使うと、真下に10マス掘削します。" },
+    { id: "item_03", price: 1000, name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1されます。手先が器用が使うと、20秒間、視界範囲が+2されます。" },
+    { id: "item_04", price: 1500, name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが+10されます。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを+5します。手先が器用が使うと、全プレイヤーのエネルギーを+10します。" },
+    { id: "item_05", price: 800, name: "「タイマー」アンロック", desc: "使用すると、制限時間が+10秒されます。手先が器用が使うと、制限時間が+20秒されます。" },
+    { id: "item_06", price: 1000, name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20します。手先が器用が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20します。" },
+    { id: "st1spd1", price: 200, name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1。" },
+    { id: "st2ene1", price: 1000, name: "耳が良いのエネルギー追加", desc: "耳が良いのエネルギー上限値が+10。" },
+    { id: "st3dex1", price: 5000, name: "手先が器用の視界+", desc: "手先が器用の視界が+1。" }
+];
+
+const ITEM_NAMES = {
+    'item_00':'爆弾', 'item_01':'ろうそく', 'item_02':'ドリル', 
+    'item_03':'マイク', 'item_04':'スペア\nエネ', 'item_05':'タイマー', 'item_06':'エネ\n分配'
 };
 
 const BLOCK_DEFS = {
@@ -130,20 +171,32 @@ const ORES = [
     { type: 'diamond', min: 100, max: 200, val: 10, color: '#00ffff', prob: 0.02 }
 ];
 
-const ITEMS_LIST = ['bomb', 'candle', 'energy'];
-const ITEM_NAMES = { 'bomb': '爆弾', 'candle': 'ろうそく', 'energy': 'エネルギー\n分配' };
 const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
 
+/* タイマーID（timerId, cdTimerId）をstateで一元管理 */
 const state = {
     peer: null, connections: [], isHost: false, players: {}, myId: null,
-    map: [], fog: [], gameTime: 60,
-    loopId: null, cameraX: 0, cameraY: 0,
-    gameState: 'lobby',
-    countdownValue: 3,
-    entities: [],
-    particles: [],
-    scores: {},
-    oreCounts: {}
+    map: [], fog: [], gameTime: 60, loopId: null, timerId: null, cdTimerId: null, cameraX: 0, cameraY: 0,
+    gameState: 'lobby', countdownValue: 3, entities: [], particles: [],
+    scores: {}, oreCounts: {}, sharedItems: []
+};
+
+const getUnlocks = () => {
+    let unl = JSON.parse(localStorage.getItem('minedigger_unlock_items'));
+    if (!unl || !Array.isArray(unl)) unl = ["item_00"];
+    if (!unl.includes("item_00")) unl.push("item_00");
+    return unl;
+};
+
+const getPts = () => parseInt(localStorage.getItem('minedigger_metalpoint')) || 0;
+const setPts = (val) => localStorage.setItem('minedigger_metalpoint', val);
+
+const getCalculatedCharStats = (charType, unlocks) => {
+    const base = { ...CHARACTERS[charType] };
+    if (charType === 'strong' && unlocks.includes('st1spd1')) base.speedMult += 0.1;
+    if (charType === 'ear' && unlocks.includes('st2ene1')) base.energy += 10;
+    if (charType === 'dexterous' && unlocks.includes('st3dex1')) base.vision += 1;
+    return base;
 };
 
 const showScreen = (id) => {
@@ -162,19 +215,58 @@ const drawCharacterShape = (ctx, x, y, size, color) => {
     ctx.fillRect(x + size * 0.65, y + size * 0.15, eyeSize, eyeSize);
 };
 
-/* キャラクター情報パネルの更新関数 */
 const updateCharInfo = (type) => {
-    const c = CHARACTERS[type];
-    const infoDiv = document.getElementById('char-info');
-    infoDiv.innerHTML = `
+    const unlocks = getUnlocks();
+    const c = getCalculatedCharStats(type, unlocks);
+    document.getElementById('char-info').innerHTML = `
         <div style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">【${c.name}】</div>
         <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">
             エネルギー: <span style="color:#2ecc71">${c.energy}</span> &nbsp;|&nbsp; 
-            速さ: <span style="color:#3498db">x${c.speedMult}</span> &nbsp;|&nbsp; 
+            速さ: <span style="color:#3498db">x${c.speedMult.toFixed(1)}</span> &nbsp;|&nbsp; 
             視界: <span style="color:#e74c3c">${c.vision}</span>
         </div>
         <div style="font-size: 0.8rem; color: #ecf0f1; line-height: 1.3;">${c.desc}</div>
     `;
+};
+
+const renderShop = () => {
+    const unlocks = getUnlocks();
+    const pts = getPts();
+    document.getElementById('shop-pts-display').innerText = `所持ポイント: ${pts} pts`;
+    const tbody = document.getElementById('shop-tbody');
+    tbody.innerHTML = '';
+    
+    SHOP_ITEMS.forEach(item => {
+        const isUnlocked = unlocks.includes(item.id);
+        const canBuy = pts >= item.price && !isUnlocked;
+        
+        let btnHtml = isUnlocked ? `<button class="shop-btn" disabled>購入済み</button>` :
+            `<button class="shop-btn" style="background:${canBuy?'#2ecc71':'#7f8c8d'}" ${canBuy?'':'disabled'} onclick="buyShopItem('${item.id}', ${item.price})">購入</button>`;
+
+        tbody.innerHTML += `
+            <tr class="shop-row-title">
+                <td style="width:60%;">${item.name}</td>
+                <td style="width:20%; text-align:center;">${item.price} pts</td>
+                <td style="width:20%; text-align:center;">${btnHtml}</td>
+            </tr>
+            <tr class="shop-row-desc">
+                <td colspan="3">${item.desc}</td>
+            </tr>
+        `;
+    });
+};
+
+window.buyShopItem = (id, price) => {
+    const pts = getPts();
+    if(pts >= price) {
+        setPts(pts - price);
+        const unlocks = getUnlocks();
+        if(!unlocks.includes(id)) {
+            unlocks.push(id);
+            localStorage.setItem('minedigger_unlock_items', JSON.stringify(unlocks));
+        }
+        renderShop();
+    }
 };
 
 window.onload = () => {
@@ -197,8 +289,21 @@ window.onload = () => {
     }
 };
 
-document.getElementById('btn-how-to').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'flex');
-document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'none');
+document.getElementById('btn-shop').addEventListener('click', () => {
+    renderShop();
+    document.getElementById('modal-shop').style.display = 'flex';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    if(confirm('セーブデータを初期化します。よろしいですか？')) {
+        if(confirm('後悔しませんね？')) {
+            localStorage.removeItem('minedigger_metalpoint');
+            localStorage.removeItem('minedigger_player_name');
+            localStorage.setItem('minedigger_unlock_items', JSON.stringify(['item_00']));
+            alert('初期化しました。');
+        }
+    }
+});
 
 const generateMap = () => {
     const map = []; const fog = [];
@@ -207,12 +312,10 @@ const generateMap = () => {
     for (let y = 0; y < CONFIG.MAP_HEIGHT; y++) {
         const row = []; const fogRow = [];
         const depth = y + 1;
-        
         if (y > 0) {
             mainPathX += Math.floor(Math.random() * 3) - 1;
             mainPathX = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, mainPathX));
         }
-
         for (let x = 0; x < CONFIG.MAP_WIDTH; x++) {
             let block = { type: 'empty', hp: 0 };
             if (y > 0) {
@@ -244,7 +347,6 @@ const generateMap = () => {
         }
         map.push(row); fog.push(fogRow);
     }
-
     for (let y = CAVE_CONFIG.startDepth - 1; y < CONFIG.MAP_HEIGHT; y += CAVE_CONFIG.interval) {
         let cx = Math.floor(Math.random() * CONFIG.MAP_WIDTH); let cy = y;
         const targetSize = Math.floor(Math.random() * (CAVE_CONFIG.maxSize - CAVE_CONFIG.minSize + 1)) + CAVE_CONFIG.minSize;
@@ -253,7 +355,9 @@ const generateMap = () => {
             const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
             const dir = dirs[Math.floor(Math.random() * dirs.length)];
             cx += dir[0]; cy += dir[1];
-            cx = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, cx)); cy = Math.max(0, Math.min(CONFIG.MAP_HEIGHT - 1, cy));
+            cx = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, cx)); 
+            /* 【修正】空洞の生成が地表付近（startDepthより上）に侵食しないようリミッターを追加 */
+            cy = Math.max(CAVE_CONFIG.startDepth - 1, Math.min(CONFIG.MAP_HEIGHT - 1, cy));
         }
     }
     return { map, fog };
@@ -267,12 +371,9 @@ const initPeer = (isHost, hostId = null) => {
         state.myId = id;
         if (isHost) {
             const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
-            /* Safariのセキュリティ制限回避のためpromptを使用 */
             window.prompt("以下のURLをコピーしてゲストに送信してください。", url);
-            
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
-            showScreen('char-screen');
-            setupCharScreen();
+            initCharScreen();
         } else {
             const conn = state.peer.connect(hostId);
             setupConnection(conn);
@@ -284,14 +385,13 @@ const initPeer = (isHost, hostId = null) => {
     });
 };
 
+document.getElementById('btn-create-room').addEventListener('click', () => initPeer(true));
+
 const setupConnection = (conn) => {
     conn.on('open', () => {
         state.connections.push(conn);
-        if (!state.isHost) {
-            setupCharScreen();
-        } else {
-            broadcast({ type: 'LOBBY_UPDATE', players: state.players });
-        }
+        if (!state.isHost) initCharScreen();
+        else broadcast({ type: 'LOBBY_UPDATE', players: state.players });
     });
     conn.on('data', handleNetworkData);
 };
@@ -300,14 +400,7 @@ const broadcast = (data) => { state.connections.forEach(c => c.send(data)); };
 
 const spawnParticles = (x, y, color) => {
     for (let i = 0; i < 6; i++) {
-        state.particles.push({
-            x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-            y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-            vx: (Math.random() - 0.5) * 10,
-            vy: (Math.random() - 0.5) * 10 - 2,
-            color: color,
-            spawnTime: Date.now()
-        });
+        state.particles.push({ x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10 - 2, color: color, spawnTime: Date.now() });
     }
 };
 
@@ -323,27 +416,23 @@ const handleNetworkData = (data) => {
         if (state.isHost) document.getElementById('waiting-text').innerText = `現在 ${readyCount} 人が準備完了 (最大2人まで参加可能)`;
     }
     if (data.type === 'GAME_START') {
-        if (!data.players[state.myId]) {
-            alert("定員により参加できませんでした。"); return;
-        }
-        state.map = data.map; state.fog = data.fog; state.players = data.players;
+        if (!data.players[state.myId]) { alert("今回のゲームには不参加です。次のゲームをお待ちください。"); return; }
+        state.map = data.map; state.fog = data.fog; state.players = data.players; state.sharedItems = data.sharedItems;
         state.players[state.myId].item = null;
         state.gameState = 'countdown';
         startGameLoop();
     }
+    if (data.type === 'RETURN_TO_LOBBY') {
+        returnToLobby();
+    }
     if (data.type === 'PLAYER_MOVE') {
-        if(state.players[data.id]) {
-            state.players[data.id].x = data.x; state.players[data.id].y = data.y;
-        }
+        if(state.players[data.id]) { state.players[data.id].x = data.x; state.players[data.id].y = data.y; }
     }
     if (data.type === 'BLOCK_DIG') {
         state.map[data.y][data.x] = { type: 'empty', hp: 0 };
         if (data.color) spawnParticles(data.x, data.y, data.color);
         if (state.players[data.id]) state.players[data.id].energy = data.energy;
-        if (data.spawnedEntities) {
-            state.entities.push(...data.spawnedEntities);
-            while (state.entities.length > 100) state.entities.shift();
-        }
+        if (data.spawnedEntities) { state.entities.push(...data.spawnedEntities); while (state.entities.length > 100) state.entities.shift(); }
         checkGameOver();
     }
     if (data.type === 'COLLECT_ENTITY') {
@@ -351,7 +440,6 @@ const handleNetworkData = (data) => {
         if (data.val) {
             if(!state.scores[data.playerId]) state.scores[data.playerId] = 0;
             state.scores[data.playerId] += data.val;
-
             if (data.oreType) {
                 if(!state.oreCounts[data.playerId]) state.oreCounts[data.playerId] = {};
                 if(!state.oreCounts[data.playerId][data.oreType]) state.oreCounts[data.playerId][data.oreType] = 0;
@@ -363,18 +451,36 @@ const handleNetworkData = (data) => {
         data.dugBlocks.forEach(b => {
             if(state.map[b.y] && state.map[b.y][b.x]) {
                 state.map[b.y][b.x] = {type: 'empty', hp: 0};
-                spawnParticles(b.x, b.y, '#95a5a6');
+                spawnParticles(b.x, b.y, b.color || '#95a5a6');
             }
         });
+        if (data.spawnedEntities) {
+            state.entities.push(...data.spawnedEntities);
+            while (state.entities.length > 100) state.entities.shift();
+        }
     }
     if (data.type === 'USE_CANDLE') {
         applySharedVision(data.y, data.range);
     }
+    if (data.type === 'USE_SPARE_ALL') {
+        for(let id in state.players) state.players[id].energy += data.add;
+    }
+    if (data.type === 'USE_SPARE_NEAR') {
+        data.ids.forEach(id => { if(state.players[id]) state.players[id].energy += data.add; });
+    }
+    if (data.type === 'UPDATE_ENERGY') {
+        if(state.players[data.id]) state.players[data.id].energy = data.energy;
+    }
+    if (data.type === 'ADD_TIME') {
+        state.gameTime += data.add;
+    }
     if (data.type === 'USE_ENERGY_DIST') {
-        if (data.id !== state.myId && state.players[state.myId]) {
-            state.players[state.myId].energy = Math.min(state.players[state.myId].maxEnergy, state.players[state.myId].energy + 20);
-        } else if (data.id === state.myId) {
-            state.players[state.myId].energy = data.newEnergy;
+        if (!data.isDex && data.id !== state.myId && state.players[state.myId]) {
+            state.players[state.myId].energy += 20;
+        } else if (data.id === state.myId && !data.isDex) {
+            state.players[state.myId].energy -= 10;
+        } else if (data.id !== state.myId) {
+            state.players[state.myId].energy += 20;
         }
     }
     if (data.type === 'GAME_OVER') {
@@ -392,78 +498,157 @@ const applySharedVision = (centerY, range) => {
     }
 };
 
-document.getElementById('btn-create-room').addEventListener('click', () => initPeer(true));
-
-const setupCharScreen = () => {
-    const nameInput = document.getElementById('player-name');
-    nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
-    let selectedChar = 'strong';
+/* --- 【修正】タイマー等の漏れがないよう完全に初期化 --- */
+const resetGameState = () => {
+    if (state.loopId) cancelAnimationFrame(state.loopId);
+    state.loopId = null;
     
-    /* 初期化時のキャラクター情報表示 */
-    updateCharInfo(selectedChar);
-
-    /* 保存されているポイントの表示 */
-    let savedPoints = parseInt(localStorage.getItem('minedigger_metalpoint')) || 0;
-    document.getElementById('saved-points-display').innerText = `所持ポイント: ${savedPoints} pts`;
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = null;
     
-    document.querySelectorAll('.char-plate').forEach(plate => {
-        plate.addEventListener('click', (e) => {
-            if (!state.isHost && state.players[state.myId]?.ready) return; 
-            document.querySelectorAll('.char-plate').forEach(p => p.classList.remove('selected'));
-            e.currentTarget.classList.add('selected');
-            selectedChar = e.currentTarget.dataset.type;
-            /* キャラ切り替え時の情報更新 */
-            updateCharInfo(selectedChar);
-        });
-    });
+    if (state.cdTimerId) clearInterval(state.cdTimerId);
+    state.cdTimerId = null;
+
+    state.map = [];
+    state.fog = [];
+    state.gameTime = 60;
+    state.gameState = 'lobby';
+    state.countdownValue = 3;
+    state.entities = [];
+    state.particles = [];
+    state.scores = {};
+    state.oreCounts = {};
+    state.sharedItems = [];
+
+    for (let id in state.players) {
+        if(state.players[id]) {
+            state.players[id].ready = false;
+            state.players[id].item = null;
+            state.players[id].buffs = null;
+        }
+    }
 
     if (state.isHost) {
+        broadcast({ type: 'LOBBY_UPDATE', players: state.players });
+    }
+};
+
+const returnToLobby = () => {
+    resetGameState();
+    showScreen('char-screen');
+    
+    if (state.isHost) {
         document.getElementById('waiting-text').innerText = "準備ができたゲストとプレイします (最大3人)";
-        const startBtn = document.getElementById('btn-start');
-        startBtn.style.display = 'block';
-
-        startBtn.addEventListener('click', () => {
-            const generated = generateMap();
-            CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
-            
-            const activePlayers = { [state.myId]: { 
-                x: 4 * CONFIG.TILE_SIZE, y: 0, 
-                char: selectedChar, name: nameInput.value, 
-                energy: CHARACTERS[selectedChar].energy, maxEnergy: CHARACTERS[selectedChar].energy, item: null 
-            }};
-            
-            let guestCount = 0;
-            for (let id in state.players) {
-                if (id !== state.myId && state.players[id].ready && guestCount < 2) {
-                    activePlayers[id] = {
-                        x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
-                        char: state.players[id].char, name: state.players[id].name,
-                        energy: CHARACTERS[state.players[id].char].energy, maxEnergy: CHARACTERS[state.players[id].char].energy, item: null
-                    };
-                    guestCount++;
-                }
-            }
-
-            state.players = activePlayers;
-            broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: state.players });
-            
-            state.map = generated.map; state.fog = generated.fog;
-            state.gameState = 'countdown';
-            startGameLoop();
-        });
+        document.getElementById('btn-start').style.display = 'block';
+        document.getElementById('btn-ready').style.display = 'none';
     } else {
         document.getElementById('waiting-text').innerText = "ホストの開始を待っています...";
         const readyBtn = document.getElementById('btn-ready');
         readyBtn.style.display = 'block';
-        readyBtn.addEventListener('click', () => {
-            readyBtn.disabled = true;
-            readyBtn.innerText = "準備完了";
-            const playerInfo = { char: selectedChar, name: nameInput.value };
-            state.players[state.myId] = { ...playerInfo, ready: true };
-            broadcast({ type: 'PLAYER_READY', id: state.myId, playerInfo });
-        });
+        readyBtn.disabled = false;
+        readyBtn.innerText = "準備OK";
+        document.getElementById('btn-start').style.display = 'none';
     }
+    document.getElementById('saved-points-display').innerText = `所持ポイント: ${getPts()} pts`;
+    document.getElementById('ui-item').innerText = "空";
+    const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
+    updateCharInfo(selectedChar);
 };
+
+const initCharScreen = () => {
+    const nameInput = document.getElementById('player-name');
+    const savedName = localStorage.getItem('minedigger_player_name');
+    if (savedName) {
+        nameInput.value = savedName;
+    } else {
+        nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+    }
+    returnToLobby();
+};
+
+document.querySelectorAll('.char-plate').forEach(plate => {
+    plate.addEventListener('click', (e) => {
+        if (!state.isHost && state.players[state.myId]?.ready) return; 
+        document.querySelectorAll('.char-plate').forEach(p => p.classList.remove('selected'));
+        e.currentTarget.classList.add('selected');
+        const selectedChar = e.currentTarget.dataset.type;
+        updateCharInfo(selectedChar);
+    });
+});
+
+document.getElementById('btn-start').addEventListener('click', () => {
+    if (!state.isHost) return;
+    const nameInput = document.getElementById('player-name');
+    
+    if (nameInput.value === "10000") {
+        setPts(getPts() + 10000);
+        alert("チートコード適用: 10000ポイント獲得しました。");
+        nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+        document.getElementById('saved-points-display').innerText = `所持ポイント: ${getPts()} pts`;
+    }
+
+    const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
+    const generated = generateMap();
+    CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
+    const myUnlocks = getUnlocks();
+    const myStats = getCalculatedCharStats(selectedChar, myUnlocks);
+    
+    const activePlayers = { [state.myId]: { 
+        x: 4 * CONFIG.TILE_SIZE, y: 0, 
+        char: selectedChar, name: nameInput.value, 
+        energy: myStats.energy, maxEnergy: myStats.energy, 
+        speedMult: myStats.speedMult, vision: myStats.vision,
+        unlocks: myUnlocks, item: null, buffs: null 
+    }};
+    
+    let guestCount = 0;
+    let commonItems = myUnlocks.filter(i => i.startsWith('item_'));
+
+    for (let id in state.players) {
+        if (id !== state.myId && state.players[id].ready && guestCount < 2) {
+            const gUnlocks = state.players[id].unlocks || ['item_00'];
+            const gStats = getCalculatedCharStats(state.players[id].char, gUnlocks);
+            activePlayers[id] = {
+                x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
+                char: state.players[id].char, name: state.players[id].name,
+                energy: gStats.energy, maxEnergy: gStats.energy,
+                speedMult: gStats.speedMult, vision: gStats.vision,
+                unlocks: gUnlocks, item: null, buffs: null
+            };
+            const guestItems = gUnlocks.filter(i => i.startsWith('item_'));
+            commonItems = commonItems.filter(i => guestItems.includes(i));
+            guestCount++;
+        }
+    }
+    if(commonItems.length === 0) commonItems = ['item_00'];
+    state.sharedItems = commonItems;
+    state.players = activePlayers;
+    broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: state.players, sharedItems: commonItems });
+    
+    state.map = generated.map; state.fog = generated.fog;
+    state.gameState = 'countdown';
+    startGameLoop();
+});
+
+document.getElementById('btn-ready').addEventListener('click', () => {
+    if (state.isHost) return;
+    const readyBtn = document.getElementById('btn-ready');
+    readyBtn.disabled = true;
+    readyBtn.innerText = "準備完了";
+    const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
+    const nameInput = document.getElementById('player-name');
+    const myUnlocks = getUnlocks();
+    const playerInfo = { char: selectedChar, name: nameInput.value, unlocks: myUnlocks };
+    state.players[state.myId] = { ...playerInfo, ready: true };
+    broadcast({ type: 'PLAYER_READY', id: state.myId, playerInfo });
+});
+
+document.getElementById('btn-continue').addEventListener('click', () => {
+    if (state.isHost) {
+        broadcast({ type: 'RETURN_TO_LOBBY' });
+        returnToLobby();
+    }
+});
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -497,56 +682,108 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
     const isDex = me.char === 'dexterous';
 
-    if (item === 'bomb') {
+    if (item === 'item_00') {
         const radius = isDex ? 3 : 2;
         const dugBlocks = [];
+        const newEntities = [];
         for(let dy=-radius; dy<=radius; dy++) {
             for(let dx=-radius; dx<=radius; dx++) {
-                let targetX = myGridX + dx; let targetY = myGridY + dy;
-                if (targetY>=0 && targetY<CONFIG.MAP_HEIGHT && targetX>=0 && targetX<CONFIG.MAP_WIDTH) {
-                    const blk = state.map[targetY][targetX];
-                    if (blk && blk.type !== 'empty' && blk.type !== 'iron') {
-                        state.map[targetY][targetX] = {type: 'empty', hp: 0};
-                        dugBlocks.push({x: targetX, y: targetY});
-                        spawnParticles(targetX, targetY, '#95a5a6');
+                if (Math.abs(dx) + Math.abs(dy) <= radius) {
+                    let targetX = myGridX + dx; let targetY = myGridY + dy;
+                    if (targetY>=0 && targetY<CONFIG.MAP_HEIGHT && targetX>=0 && targetX<CONFIG.MAP_WIDTH) {
+                        const targetBlock = state.map[targetY][targetX];
+                        if (targetBlock && targetBlock.type !== 'empty' && targetBlock.type !== 'iron') {
+                            const blockColor = targetBlock.type === 'surface_dirt' ? '#8B4513' : (targetBlock.type === 'item_box' ? '#b87333' : BLOCK_DEFS[targetBlock.type].color);
+                            state.map[targetY][targetX] = {type: 'empty', hp: 0};
+                            dugBlocks.push({x: targetX, y: targetY, color: blockColor});
+                            spawnParticles(targetX, targetY, blockColor);
+                            
+                            let spawned = spawnEntities(targetX, targetY, targetBlock, me.char);
+                            newEntities.push(...spawned);
+                        }
                     }
                 }
             }
         }
-        broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks });
-    } else if (item === 'candle') {
-        const range = isDex ? 13 : 10;
+        state.entities.push(...newEntities);
+        while (state.entities.length > 100) state.entities.shift();
+        broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks, spawnedEntities: newEntities });
+        
+    } else if (item === 'item_01') {
+        const range = isDex ? 10 : 5;
         applySharedVision(myGridY, range);
         broadcast({ type: 'USE_CANDLE', y: myGridY, range: range });
-    } else if (item === 'energy') {
+        
+    } else if (item === 'item_02') {
+        const depth = isDex ? 10 : 7;
+        const dugBlocks = [];
+        const newEntities = [];
+        for(let i=1; i<=depth; i++) {
+            let targetY = myGridY + i;
+            if(targetY < CONFIG.MAP_HEIGHT && state.map[targetY][myGridX]) {
+                const targetBlock = state.map[targetY][myGridX];
+                if(targetBlock && targetBlock.type !== 'empty') {
+                    const blockColor = targetBlock.type === 'surface_dirt' ? '#8B4513' : (targetBlock.type === 'item_box' ? '#b87333' : (targetBlock.type === 'iron' ? '#bdc3c7' : BLOCK_DEFS[targetBlock.type].color));
+                    state.map[targetY][myGridX] = {type: 'empty', hp: 0};
+                    dugBlocks.push({x: myGridX, y: targetY, color: blockColor});
+                    spawnParticles(myGridX, targetY, blockColor);
+                    
+                    if (targetBlock.type !== 'iron') {
+                        let spawned = spawnEntities(myGridX, targetY, targetBlock, me.char);
+                        newEntities.push(...spawned);
+                    }
+                }
+            }
+        }
+        state.entities.push(...newEntities);
+        while (state.entities.length > 100) state.entities.shift();
+        broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks, spawnedEntities: newEntities });
+        
+    } else if (item === 'item_03') {
+        const duration = isDex ? 20000 : 10000;
+        const vBonus = isDex ? 2 : 1;
+        me.buffs = { type: 'vision', val: vBonus, expire: Date.now() + duration };
+    } else if (item === 'item_04') {
+        if (isDex) {
+            broadcast({ type: 'USE_SPARE_ALL', add: 10 });
+            for(let id in state.players) state.players[id].energy += 10;
+        } else {
+            me.energy += 10;
+            broadcast({ type: 'UPDATE_ENERGY', id: state.myId, energy: me.energy });
+            const nearIds = [];
+            for(let id in state.players) {
+                if(id !== state.myId) {
+                    let ox = Math.floor((state.players[id].x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+                    let oy = Math.floor((state.players[id].y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
+                    if(Math.abs(ox - myGridX) <= 1 && Math.abs(oy - myGridY) <= 1) nearIds.push(id);
+                }
+            }
+            if(nearIds.length > 0) {
+                broadcast({ type: 'USE_SPARE_NEAR', ids: nearIds, add: 5 });
+                nearIds.forEach(id => state.players[id].energy += 5);
+            }
+        }
+    } else if (item === 'item_05') {
+        const addTime = isDex ? 20 : 10;
+        state.gameTime += addTime;
+        broadcast({ type: 'ADD_TIME', add: addTime });
+    } else if (item === 'item_06') {
         if (!isDex) me.energy -= 10;
-        broadcast({ type: 'USE_ENERGY_DIST', id: state.myId, newEnergy: me.energy });
+        for(let id in state.players) { if(id !== state.myId) state.players[id].energy += 20; }
+        broadcast({ type: 'USE_ENERGY_DIST', id: state.myId, isDex });
     }
 });
 
 const spawnEntities = (x, y, targetBlock, diggerChar) => {
     const isDex = diggerChar === 'dexterous';
     const spawned = [];
-    
     if (targetBlock.ore) {
         const count = isDex ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < count; i++) {
-            spawned.push({
-                id: Math.random().toString(36).substr(2, 9), type: 'ore',
-                oreType: targetBlock.ore.type,
-                x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-                vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5,
-                color: targetBlock.ore.color, val: targetBlock.ore.val,
-                spawnTime: Date.now(), landed: false
-            });
+            spawned.push({ id: Math.random().toString(36).substr(2, 9), type: 'ore', oreType: targetBlock.ore.type, x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5, color: targetBlock.ore.color, val: targetBlock.ore.val, spawnTime: Date.now(), landed: false });
         }
     } else if (targetBlock.type === 'item_box') {
-        spawned.push({
-            id: Math.random().toString(36).substr(2, 9), type: 'item_drop',
-            x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-            vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 8 - 5,
-            spawnTime: Date.now(), landed: false
-        });
+        spawned.push({ id: Math.random().toString(36).substr(2, 9), type: 'item_drop', x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 8 - 5, spawnTime: Date.now(), landed: false });
     }
     return spawned;
 };
@@ -589,6 +826,7 @@ const checkGameOver = () => {
     }
 };
 
+/* --- 【修正】タイマーの発火処理も確実にクリアし直す --- */
 const startGameLoop = () => {
     showScreen('game-screen');
     canvas.width = canvas.clientWidth;
@@ -596,16 +834,22 @@ const startGameLoop = () => {
     CONFIG.TILE_SIZE = canvas.width / 7.5;
 
     state.countdownValue = 3;
-    let cdInterval = setInterval(() => {
+    
+    if (state.cdTimerId) clearInterval(state.cdTimerId);
+    state.cdTimerId = setInterval(() => {
         state.countdownValue--;
         if (state.countdownValue < 0) {
-            clearInterval(cdInterval);
+            clearInterval(state.cdTimerId);
+            state.cdTimerId = null;
             state.gameState = 'playing';
         }
     }, 1000);
 
+    if (state.loopId) cancelAnimationFrame(state.loopId);
     state.loopId = requestAnimationFrame(update);
-    setInterval(() => { 
+    
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(() => { 
         if (state.gameState === 'playing') {
             state.gameTime--; 
             if(state.gameTime <= 0) { broadcast({ type: 'GAME_OVER' }); gameOver(); }
@@ -618,7 +862,7 @@ const update = () => {
     if (!me) return;
 
     if (state.gameState === 'playing') {
-        const speed = 6 * CHARACTERS[me.char].speedMult;
+        const speed = 6 * me.speedMult;
         const padding = 2; 
 
         if (inputState.left) {
@@ -658,60 +902,43 @@ const update = () => {
     state.entities = state.entities.filter(e => now - e.spawnTime < 5000); 
 
     state.entities.forEach(e => {
-        e.vy += 1.5; 
-        e.vy *= 0.98; e.vx *= 0.98;
-        
-        let hw = 5; 
-        let nextX = e.x + e.vx;
+        e.vy += 1.5; e.vy *= 0.98; e.vx *= 0.98;
+        let hw = 5; let nextX = e.x + e.vx;
         let gridXLeft = Math.floor((nextX - hw) / CONFIG.TILE_SIZE);
         let gridXRight = Math.floor((nextX + hw) / CONFIG.TILE_SIZE);
         let gridYTop = Math.floor((e.y - hw) / CONFIG.TILE_SIZE);
         let gridYBottom = Math.floor((e.y + hw) / CONFIG.TILE_SIZE);
         
         let hitX = false;
-        if (e.vx < 0 && gridXLeft >= 0) {
-            if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty') hitX = true;
-        } else if (e.vx > 0 && gridXRight < CONFIG.MAP_WIDTH) {
-            if (state.map[gridYTop]?.[gridXRight]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitX = true;
-        } else if (gridXLeft < 0 || gridXRight >= CONFIG.MAP_WIDTH) { hitX = true; }
+        if (e.vx < 0 && gridXLeft >= 0) { if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty') hitX = true; } 
+        else if (e.vx > 0 && gridXRight < CONFIG.MAP_WIDTH) { if (state.map[gridYTop]?.[gridXRight]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitX = true; } 
+        else if (gridXLeft < 0 || gridXRight >= CONFIG.MAP_WIDTH) { hitX = true; }
         if (hitX) e.vx *= -0.5; else e.x = nextX;
 
         let nextY = e.y + e.vy;
-        gridXLeft = Math.floor((e.x - hw) / CONFIG.TILE_SIZE);
-        gridXRight = Math.floor((e.x + hw) / CONFIG.TILE_SIZE);
-        gridYTop = Math.floor((nextY - hw) / CONFIG.TILE_SIZE);
-        gridYBottom = Math.floor((nextY + hw) / CONFIG.TILE_SIZE);
+        gridXLeft = Math.floor((e.x - hw) / CONFIG.TILE_SIZE); gridXRight = Math.floor((e.x + hw) / CONFIG.TILE_SIZE);
+        gridYTop = Math.floor((nextY - hw) / CONFIG.TILE_SIZE); gridYBottom = Math.floor((nextY + hw) / CONFIG.TILE_SIZE);
 
         let hitY = false;
-        if (e.vy < 0 && gridYTop >= 0) {
-            if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYTop]?.[gridXRight]?.type !== 'empty') hitY = true;
-        } else if (e.vy > 0 && gridYBottom < CONFIG.MAP_HEIGHT) {
-            if (state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitY = true;
-        } else if (gridYBottom >= CONFIG.MAP_HEIGHT) { hitY = true; }
+        if (e.vy < 0 && gridYTop >= 0) { if (state.map[gridYTop]?.[gridXLeft]?.type !== 'empty' || state.map[gridYTop]?.[gridXRight]?.type !== 'empty') hitY = true; } 
+        else if (e.vy > 0 && gridYBottom < CONFIG.MAP_HEIGHT) { if (state.map[gridYBottom]?.[gridXLeft]?.type !== 'empty' || state.map[gridYBottom]?.[gridXRight]?.type !== 'empty') hitY = true; } 
+        else if (gridYBottom >= CONFIG.MAP_HEIGHT) { hitY = true; }
         
-        if (hitY) { 
-            if (e.vy > 0) e.landed = true; 
-            e.vy *= -0.5; e.vx *= 0.8; 
-        } else { 
-            e.y = nextY; 
-            e.landed = false; 
-        }
+        if (hitY) { if (e.vy > 0) e.landed = true; e.vy *= -0.5; e.vx *= 0.8; } 
+        else { e.y = nextY; e.landed = false; }
 
         if (state.gameState === 'playing' && Math.abs(me.x + CONFIG.TILE_SIZE/2 - e.x) < CONFIG.TILE_SIZE && Math.abs(me.y + CONFIG.TILE_SIZE/2 - e.y) < CONFIG.TILE_SIZE) {
             if (e.type === 'ore') {
                 broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId, val: e.val, oreType: e.oreType });
-                
                 if(!state.scores[state.myId]) state.scores[state.myId] = 0;
                 state.scores[state.myId] += e.val;
-
                 if(!state.oreCounts[state.myId]) state.oreCounts[state.myId] = {};
                 if(!state.oreCounts[state.myId][e.oreType]) state.oreCounts[state.myId][e.oreType] = 0;
                 state.oreCounts[state.myId][e.oreType]++;
-
                 e.collected = true; 
             } else if (e.type === 'item_drop' && e.landed) { 
                 if (!me.item) {
-                    const randItem = ITEMS_LIST[Math.floor(Math.random() * ITEMS_LIST.length)];
+                    const randItem = state.sharedItems[Math.floor(Math.random() * state.sharedItems.length)];
                     me.item = randItem;
                     document.getElementById('ui-item').innerText = ITEM_NAMES[randItem];
                     broadcast({ type: 'COLLECT_ENTITY', entityId: e.id, playerId: state.myId });
@@ -721,21 +948,24 @@ const update = () => {
         }
     });
     state.entities = state.entities.filter(e => !e.collected);
-
     state.particles = state.particles.filter(p => now - p.spawnTime < 400); 
     state.particles.forEach(p => { p.vy += 1; p.x += p.vx; p.y += p.vy; });
 
     const myGridX = Math.floor((me.x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
     const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
-    const visionRadius = CHARACTERS[me.char].vision;
+    
+    let vBonus = 0;
+    if (me.buffs && me.buffs.type === 'vision') {
+        if (now > me.buffs.expire) me.buffs = null;
+        else vBonus = me.buffs.val;
+    }
+    const visionRadius = me.vision + vBonus;
 
     for (let dy = -visionRadius; dy <= visionRadius; dy++) {
         for (let dx = -visionRadius; dx <= visionRadius; dx++) {
             if (Math.abs(dx) + Math.abs(dy) <= visionRadius) {
                 const vx = myGridX + dx; const vy = myGridY + dy;
-                if (vy >= 0 && vy < CONFIG.MAP_HEIGHT && vx >= 0 && vx < CONFIG.MAP_WIDTH) {
-                    state.fog[vy][vx] = true; 
-                }
+                if (vy >= 0 && vy < CONFIG.MAP_HEIGHT && vx >= 0 && vx < CONFIG.MAP_WIDTH) { state.fog[vy][vx] = true; }
             }
         }
     }
@@ -759,9 +989,7 @@ const drawIronWall = (ctx, drawX, drawY, size) => {
     ctx.fillStyle = '#bdc3c7'; ctx.fillRect(drawX, drawY, size, size);
     ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4; ctx.strokeRect(drawX, drawY, size, size);
     ctx.fillStyle = '#7f8c8d'; const r = size * 0.12;
-    [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]].forEach(pos => {
-        ctx.beginPath(); ctx.arc(drawX + size * pos[0], drawY + size * pos[1], r, 0, Math.PI * 2); ctx.fill();
-    });
+    [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]].forEach(pos => { ctx.beginPath(); ctx.arc(drawX + size * pos[0], drawY + size * pos[1], r, 0, Math.PI * 2); ctx.fill(); });
 };
 
 const drawItemBox = (ctx, drawX, drawY, size) => {
@@ -795,37 +1023,23 @@ const draw = () => {
             const drawX = x * CONFIG.TILE_SIZE - state.cameraX;
             const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
 
-            if (!state.fog[y][x]) {
-                ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1);
-                continue;
-            }
+            if (!state.fog[y][x]) { ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); continue; }
 
             const block = state.map[y][x];
             if (block && block.type !== 'empty') {
                 if (block.type === 'surface_dirt') {
                     ctx.fillStyle = '#2ecc71'; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE * 0.3);
                     ctx.fillStyle = '#8B4513'; ctx.fillRect(drawX, drawY + CONFIG.TILE_SIZE * 0.3, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE * 0.7);
-                } else if (block.type === 'item_box') {
-                    drawItemBox(ctx, drawX, drawY, CONFIG.TILE_SIZE);
-                } else if (block.type === 'iron') {
-                    drawIronWall(ctx, drawX, drawY, CONFIG.TILE_SIZE);
-                } else {
-                    ctx.fillStyle = BLOCK_DEFS[block.type].color; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
-                }
+                } else if (block.type === 'item_box') { drawItemBox(ctx, drawX, drawY, CONFIG.TILE_SIZE); } 
+                else if (block.type === 'iron') { drawIronWall(ctx, drawX, drawY, CONFIG.TILE_SIZE); } 
+                else { ctx.fillStyle = BLOCK_DEFS[block.type].color; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE); }
                 ctx.strokeStyle = "#4a2f1d"; ctx.lineWidth = 3; ctx.strokeRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
                 
                 if (block.ore) {
                     ctx.fillStyle = isGlobalGlowing ? "#ffffff" : block.ore.color;
                     if(isGlobalGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = block.ore.color; } 
-                    
                     const triSize = CONFIG.TILE_SIZE * 0.25;
-                    [[0.2, 0.25], [0.6, 0.35], [0.35, 0.65]].forEach(pos => {
-                        ctx.beginPath();
-                        ctx.moveTo(drawX + CONFIG.TILE_SIZE * pos[0], drawY + CONFIG.TILE_SIZE * pos[1] - triSize/2);
-                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] - triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2);
-                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] + triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2);
-                        ctx.fill();
-                    });
+                    [[0.2, 0.25], [0.6, 0.35], [0.35, 0.65]].forEach(pos => { ctx.beginPath(); ctx.moveTo(drawX + CONFIG.TILE_SIZE * pos[0], drawY + CONFIG.TILE_SIZE * pos[1] - triSize/2); ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] - triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] + triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); ctx.fill(); });
                     ctx.shadowBlur = 0; 
                 }
             }
@@ -844,34 +1058,17 @@ const draw = () => {
         if (age > 3000 && Math.floor(now / 100) % 2 === 0) return; 
 
         const drawX = e.x - state.cameraX; const drawY = e.y - state.cameraY;
-        
         if (e.type === 'ore') {
             const triSize = CONFIG.TILE_SIZE * 0.3;
             ctx.fillStyle = isGlobalGlowing ? "#ffffff" : e.color;
             if(isGlobalGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = e.color; }
-
-            ctx.beginPath();
-            ctx.moveTo(drawX, drawY - triSize/2);
-            ctx.lineTo(drawX - triSize/2, drawY + triSize/2);
-            ctx.lineTo(drawX + triSize/2, drawY + triSize/2);
-            ctx.fill();
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
-            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.moveTo(drawX, drawY - triSize/2); ctx.lineTo(drawX - triSize/2, drawY + triSize/2); ctx.lineTo(drawX + triSize/2, drawY + triSize/2); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         } else if (e.type === 'item_drop') {
             const w = CONFIG.TILE_SIZE * 0.4; const h = CONFIG.TILE_SIZE * 0.6;
-            let grad = ctx.createLinearGradient(drawX, drawY - h/2, drawX, drawY + h/2);
-            grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#00bfff');
-            
-            ctx.fillStyle = grad;
-            ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 2;
-            
-            ctx.beginPath();
-            ctx.moveTo(drawX, drawY - h/2);
-            ctx.lineTo(drawX + w/2, drawY);
-            ctx.lineTo(drawX, drawY + h/2);
-            ctx.lineTo(drawX - w/2, drawY);
-            ctx.closePath();
-            ctx.fill(); ctx.stroke();
+            let grad = ctx.createLinearGradient(drawX, drawY - h/2, drawX, drawY + h/2); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#00bfff');
+            ctx.fillStyle = grad; ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(drawX, drawY - h/2); ctx.lineTo(drawX + w/2, drawY); ctx.lineTo(drawX, drawY + h/2); ctx.lineTo(drawX - w/2, drawY); ctx.closePath(); ctx.fill(); ctx.stroke();
         }
     });
 
@@ -882,10 +1079,7 @@ const draw = () => {
     });
 
     const grad = ctx.createLinearGradient(0, canvas.height / 2, 0, canvas.height);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.7)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+    grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.7)'); ctx.fillStyle = grad; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
     if (state.gameState === 'countdown') {
         const text = state.countdownValue > 0 ? state.countdownValue : "GO";
@@ -902,16 +1096,12 @@ const draw = () => {
         let barOffset = 10;
         Object.keys(state.players).forEach((id) => {
             const p = state.players[id];
-            const barWidth = 100; const barHeight = 15;
-            const barX = canvas.width - barWidth - 10;
-            
+            const barWidth = 100; const barHeight = 15; const barX = canvas.width - barWidth - 10;
             drawOutlinedText(ctx, p.name, barX - 10, barOffset, 12, "right", CHARACTERS[p.char].color);
             ctx.fillStyle = '#555'; ctx.fillRect(barX, barOffset, barWidth, barHeight);
-            
             const energyRatio = Math.max(0, p.energy / p.maxEnergy);
             ctx.fillStyle = energyRatio > 0.5 ? '#2ecc71' : (energyRatio > 0.2 ? '#f1c40f' : '#e74c3c');
             ctx.fillRect(barX, barOffset, barWidth * energyRatio, barHeight);
-            
             ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(barX, barOffset, barWidth, barHeight);
             barOffset += 25;
         });
@@ -925,30 +1115,38 @@ const gameOver = () => {
     const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
     const myScore = state.scores[state.myId] || 0;
 
-    /* ローカルストレージへのポイント保存追加 (人数で等分・切り捨て) */
+    const myName = state.players[state.myId].name;
+    if (!DEFAULT_NAMES.includes(myName)) {
+        localStorage.setItem('minedigger_player_name', myName);
+    }
+
     const playerCount = Object.keys(state.players).length || 1;
     const earnedPoints = Math.floor(myScore / playerCount);
-    
-    let currentStoredPoints = parseInt(localStorage.getItem('minedigger_metalpoint')) || 0;
-    currentStoredPoints += earnedPoints;
-    localStorage.setItem('minedigger_metalpoint', currentStoredPoints);
+    setPts(getPts() + earnedPoints);
 
     const myOreCounts = state.oreCounts[state.myId] || {};
-    const ORE_NAMES = {
-        'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 
-        'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ'
-    };
+    const ORE_NAMES = { 'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ' };
     let oreDetailsHtml = '<ul style="list-style: none; padding: 0; font-size: 1rem; margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">';
     let hasOre = false;
     ORES.forEach(ore => {
         const count = myOreCounts[ore.type] || 0;
-        if (count > 0) {
-            oreDetailsHtml += `<li style="color:${ore.color}; text-shadow: 1px 1px 0 #000;">${ORE_NAMES[ore.type]}: ${count}個</li>`;
-            hasOre = true;
-        }
+        if (count > 0) { oreDetailsHtml += `<li style="color:${ore.color}; text-shadow: 1px 1px 0 #000;">${ORE_NAMES[ore.type]}: ${count}個</li>`; hasOre = true; }
     });
     if (!hasOre) oreDetailsHtml += '<li>なし</li>';
     oreDetailsHtml += '</ul>';
+
+    const btnContinue = document.getElementById('btn-continue');
+    if (state.isHost) {
+        btnContinue.style.display = 'block';
+        btnContinue.disabled = false;
+        btnContinue.innerText = "続けて遊ぶ";
+        btnContinue.style.backgroundColor = '#2ecc71';
+    } else {
+        btnContinue.style.display = 'block';
+        btnContinue.disabled = true;
+        btnContinue.innerText = "ホストの操作待ち...";
+        btnContinue.style.backgroundColor = '#7f8c8d';
+    }
 
     document.getElementById('result-details').innerHTML = `
         <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
