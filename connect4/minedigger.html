@@ -74,6 +74,12 @@
     <div id="title-screen" class="screen">
         <h1>MINE DIGGER'S</h1>
         <button id="btn-create-room">部屋を作成</button>
+        
+        <div style="display: flex; gap: 10px; align-items: center; margin: 10px 0;">
+            <input type="text" id="input-room-id" maxlength="4" placeholder="部屋番号(4桁)" style="width: 130px; font-size: 1rem; padding: 10px; margin: 0;">
+            <button id="btn-join-room" style="margin: 0; padding: 10px 20px; font-size: 1rem; background-color: #2ecc71;">部屋に入る</button>
+        </div>
+
         <button id="btn-how-to" onclick="document.getElementById('modal-howto').style.display='flex'">遊び方</button>
         <div style="display: flex; gap: 10px;">
             <button id="btn-shop" style="background-color: #e67e22;">🏠SHOP</button>
@@ -173,7 +179,6 @@ const ORES = [
 
 const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
 
-/* タイマーID（timerId, cdTimerId）をstateで一元管理 */
 const state = {
     peer: null, connections: [], isHost: false, players: {}, myId: null,
     map: [], fog: [], gameTime: 60, loopId: null, timerId: null, cdTimerId: null, cameraX: 0, cameraY: 0,
@@ -289,6 +294,15 @@ window.onload = () => {
     }
 };
 
+document.getElementById('btn-join-room').addEventListener('click', () => {
+    const roomCode = document.getElementById('input-room-id').value;
+    if (/^\d{4}$/.test(roomCode)) {
+        window.location.href = `${window.location.pathname}?id=minedigger${roomCode}`;
+    } else {
+        alert("4桁の数字を入力してください。");
+    }
+});
+
 document.getElementById('btn-shop').addEventListener('click', () => {
     renderShop();
     document.getElementById('modal-shop').style.display = 'flex';
@@ -356,7 +370,6 @@ const generateMap = () => {
             const dir = dirs[Math.floor(Math.random() * dirs.length)];
             cx += dir[0]; cy += dir[1];
             cx = Math.max(0, Math.min(CONFIG.MAP_WIDTH - 1, cx)); 
-            /* 【修正】空洞の生成が地表付近（startDepthより上）に侵食しないようリミッターを追加 */
             cy = Math.max(CAVE_CONFIG.startDepth - 1, Math.min(CONFIG.MAP_HEIGHT - 1, cy));
         }
     }
@@ -365,13 +378,26 @@ const generateMap = () => {
 
 const initPeer = (isHost, hostId = null) => {
     state.isHost = isHost;
-    state.peer = new Peer();
+    
+    if (state.peer) {
+        state.peer.destroy();
+    }
+    
+    let peerId = undefined;
+    if (isHost) {
+        const random4 = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        peerId = `minedigger${random4}`;
+        state.peer = new Peer(peerId);
+    } else {
+        state.peer = new Peer();
+    }
 
     state.peer.on('open', (id) => {
         state.myId = id;
         if (isHost) {
+            const roomCode = id.replace('minedigger', '');
             const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
-            window.prompt("以下のURLをコピーしてゲストに送信してください。", url);
+            window.prompt(`部屋番号は【 ${roomCode} 】です。\nゲストに部屋番号を伝えるか、以下のURLをコピーして送信してください。`, url);
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
             initCharScreen();
         } else {
@@ -382,6 +408,16 @@ const initPeer = (isHost, hostId = null) => {
 
     state.peer.on('connection', (conn) => {
         if (isHost) setupConnection(conn);
+    });
+
+    state.peer.on('error', (err) => {
+        if (err.type === 'unavailable-id' && isHost) {
+            console.log("IDが重複しました。別のIDで再試行します...");
+            initPeer(true);
+        } else {
+            alert("通信エラーが発生しました: " + err.type);
+            console.error(err);
+        }
     });
 };
 
@@ -417,7 +453,17 @@ const handleNetworkData = (data) => {
     }
     if (data.type === 'GAME_START') {
         if (!data.players[state.myId]) { alert("今回のゲームには不参加です。次のゲームをお待ちください。"); return; }
-        state.map = data.map; state.fog = data.fog; state.players = data.players; state.sharedItems = data.sharedItems;
+        state.map = data.map; state.fog = data.fog; state.sharedItems = data.sharedItems;
+        
+        /* プレイヤー座標を論理座標からローカルピクセルに変換 */
+        state.players = data.players;
+        for (let pid in state.players) {
+            if (state.players[pid].gridX !== undefined) {
+                state.players[pid].x = state.players[pid].gridX * CONFIG.TILE_SIZE;
+                state.players[pid].y = state.players[pid].gridY * CONFIG.TILE_SIZE;
+            }
+        }
+        
         state.players[state.myId].item = null;
         state.gameState = 'countdown';
         startGameLoop();
@@ -426,13 +472,27 @@ const handleNetworkData = (data) => {
         returnToLobby();
     }
     if (data.type === 'PLAYER_MOVE') {
-        if(state.players[data.id]) { state.players[data.id].x = data.x; state.players[data.id].y = data.y; }
+        /* ピクセル座標の直接上書きをやめ、論理比率から再計算 */
+        if(state.players[data.id]) { 
+            state.players[data.id].x = data.gridX * CONFIG.TILE_SIZE; 
+            state.players[data.id].y = data.gridY * CONFIG.TILE_SIZE; 
+        }
     }
     if (data.type === 'BLOCK_DIG') {
         state.map[data.y][data.x] = { type: 'empty', hp: 0 };
         if (data.color) spawnParticles(data.x, data.y, data.color);
         if (state.players[data.id]) state.players[data.id].energy = data.energy;
-        if (data.spawnedEntities) { state.entities.push(...data.spawnedEntities); while (state.entities.length > 100) state.entities.shift(); }
+        
+        if (data.spawnedEntities) { 
+            data.spawnedEntities.forEach(e => {
+                if (e.gridX !== undefined) {
+                    e.x = e.gridX * CONFIG.TILE_SIZE;
+                    e.y = e.gridY * CONFIG.TILE_SIZE;
+                }
+                state.entities.push(e);
+            });
+            while (state.entities.length > 100) state.entities.shift(); 
+        }
         checkGameOver();
     }
     if (data.type === 'COLLECT_ENTITY') {
@@ -455,7 +515,13 @@ const handleNetworkData = (data) => {
             }
         });
         if (data.spawnedEntities) {
-            state.entities.push(...data.spawnedEntities);
+            data.spawnedEntities.forEach(e => {
+                if (e.gridX !== undefined) {
+                    e.x = e.gridX * CONFIG.TILE_SIZE;
+                    e.y = e.gridY * CONFIG.TILE_SIZE;
+                }
+                state.entities.push(e);
+            });
             while (state.entities.length > 100) state.entities.shift();
         }
     }
@@ -498,7 +564,6 @@ const applySharedVision = (centerY, range) => {
     }
 };
 
-/* --- 【修正】タイマー等の漏れがないよう完全に初期化 --- */
 const resetGameState = () => {
     if (state.loopId) cancelAnimationFrame(state.loopId);
     state.loopId = null;
@@ -595,6 +660,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
     
     const activePlayers = { [state.myId]: { 
         x: 4 * CONFIG.TILE_SIZE, y: 0, 
+        gridX: 4, gridY: 0, // 論理座標を追加
         char: selectedChar, name: nameInput.value, 
         energy: myStats.energy, maxEnergy: myStats.energy, 
         speedMult: myStats.speedMult, vision: myStats.vision,
@@ -610,6 +676,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
             const gStats = getCalculatedCharStats(state.players[id].char, gUnlocks);
             activePlayers[id] = {
                 x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
+                gridX: (4 + guestCount * 2), gridY: 0, // 論理座標を追加
                 char: state.players[id].char, name: state.players[id].name,
                 energy: gStats.energy, maxEnergy: gStats.energy,
                 speedMult: gStats.speedMult, vision: gStats.vision,
@@ -622,8 +689,19 @@ document.getElementById('btn-start').addEventListener('click', () => {
     }
     if(commonItems.length === 0) commonItems = ['item_00'];
     state.sharedItems = commonItems;
+    
+    /* 通信用に論理座標をベースにしたデータを構築 */
+    let playersToSend = {};
+    for (let pid in activePlayers) {
+        playersToSend[pid] = {
+            ...activePlayers[pid],
+            gridX: activePlayers[pid].x / CONFIG.TILE_SIZE,
+            gridY: activePlayers[pid].y / CONFIG.TILE_SIZE
+        };
+    }
+    
     state.players = activePlayers;
-    broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: state.players, sharedItems: commonItems });
+    broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: playersToSend, sharedItems: commonItems });
     
     state.map = generated.map; state.fog = generated.fog;
     state.gameState = 'countdown';
@@ -780,10 +858,35 @@ const spawnEntities = (x, y, targetBlock, diggerChar) => {
     if (targetBlock.ore) {
         const count = isDex ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < count; i++) {
-            spawned.push({ id: Math.random().toString(36).substr(2, 9), type: 'ore', oreType: targetBlock.ore.type, x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 12 - 5, color: targetBlock.ore.color, val: targetBlock.ore.val, spawnTime: Date.now(), landed: false });
+            spawned.push({ 
+                id: Math.random().toString(36).substr(2, 9), 
+                type: 'ore', 
+                oreType: targetBlock.ore.type, 
+                gridX: x + 0.5, // 論理座標を持たせる
+                gridY: y + 0.5,
+                x: (x + 0.5) * CONFIG.TILE_SIZE, 
+                y: (y + 0.5) * CONFIG.TILE_SIZE, 
+                vx: (Math.random() - 0.5) * 16, 
+                vy: -Math.random() * 12 - 5, 
+                color: targetBlock.ore.color, 
+                val: targetBlock.ore.val, 
+                spawnTime: Date.now(), 
+                landed: false 
+            });
         }
     } else if (targetBlock.type === 'item_box') {
-        spawned.push({ id: Math.random().toString(36).substr(2, 9), type: 'item_drop', x: x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, y: y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2, vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 8 - 5, spawnTime: Date.now(), landed: false });
+        spawned.push({ 
+            id: Math.random().toString(36).substr(2, 9), 
+            type: 'item_drop', 
+            gridX: x + 0.5, // 論理座標を持たせる
+            gridY: y + 0.5,
+            x: (x + 0.5) * CONFIG.TILE_SIZE, 
+            y: (y + 0.5) * CONFIG.TILE_SIZE, 
+            vx: (Math.random() - 0.5) * 8, 
+            vy: -Math.random() * 8 - 5, 
+            spawnTime: Date.now(), 
+            landed: false 
+        });
     }
     return spawned;
 };
@@ -826,7 +929,6 @@ const checkGameOver = () => {
     }
 };
 
-/* --- 【修正】タイマーの発火処理も確実にクリアし直す --- */
 const startGameLoop = () => {
     showScreen('game-screen');
     canvas.width = canvas.clientWidth;
@@ -973,7 +1075,8 @@ const update = () => {
     state.cameraX = Math.max(0, Math.min(me.x - (canvas.width / 2) + (CONFIG.TILE_SIZE / 2), CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - canvas.width));
     state.cameraY = Math.max(0, me.y - (canvas.height / 3));
 
-    broadcast({ type: 'PLAYER_MOVE', id: state.myId, x: me.x, y: me.y });
+    /* 通信する座標をピクセルから論理比率に変更 */
+    broadcast({ type: 'PLAYER_MOVE', id: state.myId, gridX: me.x / CONFIG.TILE_SIZE, gridY: me.y / CONFIG.TILE_SIZE });
 
     draw();
     if(state.gameState !== 'gameover') state.loopId = requestAnimationFrame(update);
