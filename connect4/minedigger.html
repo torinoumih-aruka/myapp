@@ -26,6 +26,8 @@
         
         #char-info { margin-bottom: 15px; text-align: center; background: #2c3e50; padding: 10px; border-radius: 8px; width: 85%; max-width: 320px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         
+        #lobby-players-list { background: #1a252f; padding: 15px; border-radius: 8px; width: 85%; max-width: 320px; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+
         #game-screen { display: none; background-color: #000; }
         #game-screen.active { display: block; }
         #gameCanvas { display: block; width: 100vw; height: calc(100vh - 140px); height: calc(100dvh - 140px); background-color: #D2B48C; }
@@ -80,6 +82,11 @@
             <button id="btn-join-room" style="margin: 0; padding: 10px 20px; font-size: 1rem; background-color: #2ecc71;">部屋に入る</button>
         </div>
 
+        <div class="name-input-container" style="margin: 10px 0;">
+            <label for="title-player-name" style="font-weight: bold; font-size: 1.2rem;">なまえ</label>
+            <input type="text" id="title-player-name" maxlength="5">
+        </div>
+
         <button id="btn-how-to" onclick="document.getElementById('modal-howto').style.display='flex'">遊び方</button>
         <div style="display: flex; gap: 10px;">
             <button id="btn-shop" style="background-color: #e67e22;">🏠SHOP</button>
@@ -89,7 +96,7 @@
     </div>
 
     <div id="char-screen" class="screen">
-        <h2>キャラクター選択</h2>
+        <h2 id="lobby-room-display" style="margin-bottom: 5px; color: #f1c40f;">部屋番号: ----</h2>
         
         <div class="char-container">
             <div class="char-plate selected" data-type="strong"><canvas class="char-color-preview" id="prev-strong"></canvas>力持ち</div>
@@ -99,10 +106,7 @@
         
         <div id="char-info"></div>
 
-        <div class="name-input-container">
-            <label for="player-name" style="font-weight: bold; font-size: 1.2rem;">なまえ</label>
-            <input type="text" id="player-name" maxlength="5">
-        </div>
+        <div id="lobby-players-list"></div>
         
         <p id="waiting-text" style="color:#bdc3c7; font-weight:bold; margin-top:0;"></p>
         <button id="btn-start" style="display: none;">START</button>
@@ -179,11 +183,24 @@ const ORES = [
 
 const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
 
+/* lobbyPlayersを追加し、ロビーの表示とゲームプレイの状態を分離 */
 const state = {
-    peer: null, connections: [], isHost: false, players: {}, myId: null,
-    map: [], fog: [], gameTime: 60, loopId: null, timerId: null, cdTimerId: null, cameraX: 0, cameraY: 0,
+    peer: null, connections: [], isHost: false, myId: null,
+    lobbyPlayers: {}, players: {}, 
+    map: [], fog: [], gameTime: 60, loopId: null, timerId: null, cdTimerId: null, gameOverTimerId: null, cameraX: 0, cameraY: 0,
     gameState: 'lobby', countdownValue: 3, entities: [], particles: [],
-    scores: {}, oreCounts: {}, sharedItems: []
+    scores: {}, oreCounts: {}, sharedItems: [], deadPlayerName: ""
+};
+
+const savePlayerName = () => {
+    const input = document.getElementById('title-player-name');
+    let name = input.value.trim();
+    if (!name) {
+        name = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+        input.value = name;
+    }
+    localStorage.setItem('minedigger_player_name', name);
+    return name;
 };
 
 const getUnlocks = () => {
@@ -232,6 +249,26 @@ const updateCharInfo = (type) => {
         </div>
         <div style="font-size: 0.8rem; color: #ecf0f1; line-height: 1.3;">${c.desc}</div>
     `;
+};
+
+/* ロビーのプレイヤー一覧UI更新 */
+const updateLobbyUI = () => {
+    const listDiv = document.getElementById('lobby-players-list');
+    listDiv.innerHTML = '';
+    
+    let hostHtml = '';
+    let guestHtml = '';
+    
+    for (let id in state.lobbyPlayers) {
+        const p = state.lobbyPlayers[id];
+        if (p.isHost) {
+            hostHtml = `<div style="color: #f1c40f;">${p.name} <span style="font-size: 0.9rem;">【ホスト】</span></div>`;
+        } else {
+            const readyText = p.ready ? '<span style="color: #2ecc71; font-size: 0.9rem;">【準備OK】</span>' : '';
+            guestHtml += `<div style="color: #ecf0f1;">${p.name} ${readyText}</div>`;
+        }
+    }
+    listDiv.innerHTML = hostHtml + guestHtml;
 };
 
 const renderShop = () => {
@@ -283,9 +320,20 @@ window.onload = () => {
         drawCharacterShape(ctx, 0, 0, 40, CHARACTERS[key].color);
     });
 
+    const nameInput = document.getElementById('title-player-name');
+    const savedName = localStorage.getItem('minedigger_player_name');
+    if (savedName) {
+        nameInput.value = savedName;
+    } else {
+        nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+        savePlayerName();
+    }
+    nameInput.addEventListener('blur', savePlayerName);
+
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('id');
     if (roomParam) {
+        savePlayerName();
         showScreen('char-screen');
         document.getElementById('waiting-text').innerText = "ホストに接続中...";
         initPeer(false, roomParam);
@@ -294,7 +342,13 @@ window.onload = () => {
     }
 };
 
+document.getElementById('btn-create-room').addEventListener('click', () => {
+    savePlayerName();
+    initPeer(true);
+});
+
 document.getElementById('btn-join-room').addEventListener('click', () => {
+    savePlayerName();
     const roomCode = document.getElementById('input-room-id').value;
     if (/^\d{4}$/.test(roomCode)) {
         window.location.href = `${window.location.pathname}?id=minedigger${roomCode}`;
@@ -395,12 +449,13 @@ const initPeer = (isHost, hostId = null) => {
     state.peer.on('open', (id) => {
         state.myId = id;
         if (isHost) {
+            initCharScreen(id);
             const roomCode = id.replace('minedigger', '');
             const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
             window.prompt(`部屋番号は【 ${roomCode} 】です。\nゲストに部屋番号を伝えるか、以下のURLをコピーして送信してください。`, url);
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
-            initCharScreen();
         } else {
+            initCharScreen(hostId);
             const conn = state.peer.connect(hostId);
             setupConnection(conn);
         }
@@ -421,13 +476,15 @@ const initPeer = (isHost, hostId = null) => {
     });
 };
 
-document.getElementById('btn-create-room').addEventListener('click', () => initPeer(true));
-
 const setupConnection = (conn) => {
     conn.on('open', () => {
         state.connections.push(conn);
-        if (!state.isHost) initCharScreen();
-        else broadcast({ type: 'LOBBY_UPDATE', players: state.players });
+        if (!state.isHost) {
+            // ゲストは入室時に自身の名前を送付
+            conn.send({ type: 'JOIN_LOBBY', id: state.myId, name: localStorage.getItem('minedigger_player_name') });
+        } else {
+            broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+        }
     });
     conn.on('data', handleNetworkData);
 };
@@ -441,21 +498,36 @@ const spawnParticles = (x, y, color) => {
 };
 
 const handleNetworkData = (data) => {
-    if (data.type === 'PLAYER_READY') {
-        if (!state.players[data.id]) state.players[data.id] = {};
-        state.players[data.id] = { ...data.playerInfo, ready: true };
-        if (state.isHost) broadcast({ type: 'LOBBY_UPDATE', players: state.players });
+    // ロビー関連の通信処理
+    if (data.type === 'JOIN_LOBBY' && state.isHost) {
+        state.lobbyPlayers[data.id] = { name: data.name, isHost: false, ready: false };
+        updateLobbyUI();
+        broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+    }
+    if (data.type === 'LOBBY_READY' && state.isHost) {
+        if (state.lobbyPlayers[data.id]) {
+            state.lobbyPlayers[data.id].ready = true;
+            state.lobbyPlayers[data.id].charInfo = data.playerInfo;
+            updateLobbyUI();
+            broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+        }
     }
     if (data.type === 'LOBBY_UPDATE') {
-        state.players = data.players;
-        let readyCount = Object.values(state.players).filter(p => p.ready).length;
-        if (state.isHost) document.getElementById('waiting-text').innerText = `現在 ${readyCount} 人が準備完了 (最大2人まで参加可能)`;
+        state.lobbyPlayers = data.lobbyPlayers;
+        updateLobbyUI();
     }
+    if (data.type === 'GAME_START_ANNOUNCE') {
+        document.getElementById('waiting-text').innerText = "まもなく開始します・・・";
+    }
+
+    // ゲーム関連の通信処理
     if (data.type === 'GAME_START') {
-        if (!data.players[state.myId]) { alert("今回のゲームには不参加です。次のゲームをお待ちください。"); return; }
+        if (!data.players[state.myId]) { 
+            document.getElementById('waiting-text').innerText = "他のプレイヤーがゲーム中です...";
+            return; 
+        }
         state.map = data.map; state.fog = data.fog; state.sharedItems = data.sharedItems;
         
-        /* プレイヤー座標を論理座標からローカルピクセルに変換 */
         state.players = data.players;
         for (let pid in state.players) {
             if (state.players[pid].gridX !== undefined) {
@@ -472,13 +544,13 @@ const handleNetworkData = (data) => {
         returnToLobby();
     }
     if (data.type === 'PLAYER_MOVE') {
-        /* ピクセル座標の直接上書きをやめ、論理比率から再計算 */
-        if(state.players[data.id]) { 
+        if(state.players[data.id] && state.gameState !== 'lobby') { 
             state.players[data.id].x = data.gridX * CONFIG.TILE_SIZE; 
             state.players[data.id].y = data.gridY * CONFIG.TILE_SIZE; 
         }
     }
     if (data.type === 'BLOCK_DIG') {
+        if (state.gameState === 'lobby') return;
         state.map[data.y][data.x] = { type: 'empty', hp: 0 };
         if (data.color) spawnParticles(data.x, data.y, data.color);
         if (state.players[data.id]) state.players[data.id].energy = data.energy;
@@ -496,6 +568,7 @@ const handleNetworkData = (data) => {
         checkGameOver();
     }
     if (data.type === 'COLLECT_ENTITY') {
+        if (state.gameState === 'lobby') return;
         state.entities = state.entities.filter(e => e.id !== data.entityId);
         if (data.val) {
             if(!state.scores[data.playerId]) state.scores[data.playerId] = 0;
@@ -508,6 +581,7 @@ const handleNetworkData = (data) => {
         }
     }
     if (data.type === 'USE_BOMB') {
+        if (state.gameState === 'lobby') return;
         data.dugBlocks.forEach(b => {
             if(state.map[b.y] && state.map[b.y][b.x]) {
                 state.map[b.y][b.x] = {type: 'empty', hp: 0};
@@ -549,6 +623,10 @@ const handleNetworkData = (data) => {
             state.players[state.myId].energy += 20;
         }
     }
+    if (data.type === 'GAME_OVER_WAIT') {
+        state.gameState = 'gameover_wait';
+        state.deadPlayerName = data.deadPlayerName;
+    }
     if (data.type === 'GAME_OVER') {
         gameOver();
     }
@@ -558,7 +636,7 @@ const applySharedVision = (centerY, range) => {
     for (let y = centerY - range; y <= centerY + range; y++) {
         if (y >= 0 && y < CONFIG.MAP_HEIGHT) {
             for (let x = 0; x < CONFIG.MAP_WIDTH; x++) {
-                state.fog[y][x] = true;
+                if(state.fog[y]) state.fog[y][x] = true;
             }
         }
     }
@@ -567,12 +645,12 @@ const applySharedVision = (centerY, range) => {
 const resetGameState = () => {
     if (state.loopId) cancelAnimationFrame(state.loopId);
     state.loopId = null;
-    
     if (state.timerId) clearInterval(state.timerId);
     state.timerId = null;
-    
     if (state.cdTimerId) clearInterval(state.cdTimerId);
     state.cdTimerId = null;
+    if (state.gameOverTimerId) clearTimeout(state.gameOverTimerId);
+    state.gameOverTimerId = null;
 
     state.map = [];
     state.fog = [];
@@ -584,17 +662,12 @@ const resetGameState = () => {
     state.scores = {};
     state.oreCounts = {};
     state.sharedItems = [];
+    state.players = {};
 
-    for (let id in state.players) {
-        if(state.players[id]) {
-            state.players[id].ready = false;
-            state.players[id].item = null;
-            state.players[id].buffs = null;
+    for (let id in state.lobbyPlayers) {
+        if(state.lobbyPlayers[id]) {
+            state.lobbyPlayers[id].ready = false;
         }
-    }
-
-    if (state.isHost) {
-        broadcast({ type: 'LOBBY_UPDATE', players: state.players });
     }
 };
 
@@ -602,38 +675,49 @@ const returnToLobby = () => {
     resetGameState();
     showScreen('char-screen');
     
+    if (state.lobbyPlayers[state.myId]) {
+        state.lobbyPlayers[state.myId].ready = state.isHost;
+    }
+
     if (state.isHost) {
-        document.getElementById('waiting-text').innerText = "準備ができたゲストとプレイします (最大3人)";
+        document.getElementById('waiting-text').innerText = "";
         document.getElementById('btn-start').style.display = 'block';
         document.getElementById('btn-ready').style.display = 'none';
+        updateLobbyUI();
+        broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
     } else {
-        document.getElementById('waiting-text').innerText = "ホストの開始を待っています...";
+        document.getElementById('waiting-text').innerText = "";
         const readyBtn = document.getElementById('btn-ready');
         readyBtn.style.display = 'block';
         readyBtn.disabled = false;
         readyBtn.innerText = "準備OK";
         document.getElementById('btn-start').style.display = 'none';
     }
+    
     document.getElementById('saved-points-display').innerText = `所持ポイント: ${getPts()} pts`;
     document.getElementById('ui-item').innerText = "空";
     const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
     updateCharInfo(selectedChar);
 };
 
-const initCharScreen = () => {
-    const nameInput = document.getElementById('player-name');
-    const savedName = localStorage.getItem('minedigger_player_name');
-    if (savedName) {
-        nameInput.value = savedName;
-    } else {
-        nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+const initCharScreen = (roomId) => {
+    const roomCode = roomId ? roomId.replace('minedigger', '') : '';
+    if (roomCode) {
+        document.getElementById('lobby-room-display').innerText = `部屋番号: ${roomCode}`;
     }
+    
+    if (state.isHost) {
+        state.lobbyPlayers = {
+            [state.myId]: { name: localStorage.getItem('minedigger_player_name'), isHost: true, ready: true }
+        };
+    }
+    showScreen('char-screen');
     returnToLobby();
 };
 
 document.querySelectorAll('.char-plate').forEach(plate => {
     plate.addEventListener('click', (e) => {
-        if (!state.isHost && state.players[state.myId]?.ready) return; 
+        if (!state.isHost && state.lobbyPlayers[state.myId]?.ready) return; 
         document.querySelectorAll('.char-plate').forEach(p => p.classList.remove('selected'));
         e.currentTarget.classList.add('selected');
         const selectedChar = e.currentTarget.dataset.type;
@@ -643,69 +727,81 @@ document.querySelectorAll('.char-plate').forEach(plate => {
 
 document.getElementById('btn-start').addEventListener('click', () => {
     if (!state.isHost) return;
-    const nameInput = document.getElementById('player-name');
     
-    if (nameInput.value === "10000") {
+    // チートコードの処理
+    const myName = localStorage.getItem('minedigger_player_name');
+    if (myName === "10000") {
         setPts(getPts() + 10000);
         alert("チートコード適用: 10000ポイント獲得しました。");
-        nameInput.value = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+        const newName = DEFAULT_NAMES[Math.floor(Math.random() * DEFAULT_NAMES.length)];
+        localStorage.setItem('minedigger_player_name', newName);
+        state.lobbyPlayers[state.myId].name = newName;
         document.getElementById('saved-points-display').innerText = `所持ポイント: ${getPts()} pts`;
+        updateLobbyUI();
+        broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
     }
 
-    const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
-    const generated = generateMap();
-    CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
-    const myUnlocks = getUnlocks();
-    const myStats = getCalculatedCharStats(selectedChar, myUnlocks);
-    
-    const activePlayers = { [state.myId]: { 
-        x: 4 * CONFIG.TILE_SIZE, y: 0, 
-        gridX: 4, gridY: 0, // 論理座標を追加
-        char: selectedChar, name: nameInput.value, 
-        energy: myStats.energy, maxEnergy: myStats.energy, 
-        speedMult: myStats.speedMult, vision: myStats.vision,
-        unlocks: myUnlocks, item: null, buffs: null 
-    }};
-    
-    let guestCount = 0;
-    let commonItems = myUnlocks.filter(i => i.startsWith('item_'));
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('waiting-text').innerText = "まもなく開始します・・・";
+    broadcast({ type: 'GAME_START_ANNOUNCE' });
 
-    for (let id in state.players) {
-        if (id !== state.myId && state.players[id].ready && guestCount < 2) {
-            const gUnlocks = state.players[id].unlocks || ['item_00'];
-            const gStats = getCalculatedCharStats(state.players[id].char, gUnlocks);
-            activePlayers[id] = {
-                x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
-                gridX: (4 + guestCount * 2), gridY: 0, // 論理座標を追加
-                char: state.players[id].char, name: state.players[id].name,
-                energy: gStats.energy, maxEnergy: gStats.energy,
-                speedMult: gStats.speedMult, vision: gStats.vision,
-                unlocks: gUnlocks, item: null, buffs: null
-            };
-            const guestItems = gUnlocks.filter(i => i.startsWith('item_'));
-            commonItems = commonItems.filter(i => guestItems.includes(i));
-            guestCount++;
+    // 2秒後に実際のゲーム開始
+    setTimeout(() => {
+        const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
+        const generated = generateMap();
+        CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
+        const myUnlocks = getUnlocks();
+        const myStats = getCalculatedCharStats(selectedChar, myUnlocks);
+        
+        const activePlayers = { [state.myId]: { 
+            x: 4 * CONFIG.TILE_SIZE, y: 0, 
+            gridX: 4, gridY: 0, 
+            char: selectedChar, name: localStorage.getItem('minedigger_player_name'), 
+            energy: myStats.energy, maxEnergy: myStats.energy, 
+            speedMult: myStats.speedMult, vision: myStats.vision,
+            unlocks: myUnlocks, item: null, buffs: null 
+        }};
+        
+        let guestCount = 0;
+        let commonItems = myUnlocks.filter(i => i.startsWith('item_'));
+
+        for (let id in state.lobbyPlayers) {
+            const lp = state.lobbyPlayers[id];
+            if (!lp.isHost && lp.ready && guestCount < 2) {
+                const gUnlocks = lp.charInfo.unlocks || ['item_00'];
+                const gStats = getCalculatedCharStats(lp.charInfo.char, gUnlocks);
+                activePlayers[id] = {
+                    x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
+                    gridX: (4 + guestCount * 2), gridY: 0,
+                    char: lp.charInfo.char, name: lp.name,
+                    energy: gStats.energy, maxEnergy: gStats.energy,
+                    speedMult: gStats.speedMult, vision: gStats.vision,
+                    unlocks: gUnlocks, item: null, buffs: null
+                };
+                const guestItems = gUnlocks.filter(i => i.startsWith('item_'));
+                commonItems = commonItems.filter(i => guestItems.includes(i));
+                guestCount++;
+            }
         }
-    }
-    if(commonItems.length === 0) commonItems = ['item_00'];
-    state.sharedItems = commonItems;
-    
-    /* 通信用に論理座標をベースにしたデータを構築 */
-    let playersToSend = {};
-    for (let pid in activePlayers) {
-        playersToSend[pid] = {
-            ...activePlayers[pid],
-            gridX: activePlayers[pid].x / CONFIG.TILE_SIZE,
-            gridY: activePlayers[pid].y / CONFIG.TILE_SIZE
-        };
-    }
-    
-    state.players = activePlayers;
-    broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: playersToSend, sharedItems: commonItems });
-    
-    state.map = generated.map; state.fog = generated.fog;
-    state.gameState = 'countdown';
-    startGameLoop();
+        if(commonItems.length === 0) commonItems = ['item_00'];
+        state.sharedItems = commonItems;
+        
+        let playersToSend = {};
+        for (let pid in activePlayers) {
+            playersToSend[pid] = {
+                ...activePlayers[pid],
+                gridX: activePlayers[pid].x / CONFIG.TILE_SIZE,
+                gridY: activePlayers[pid].y / CONFIG.TILE_SIZE
+            };
+        }
+        
+        state.players = activePlayers;
+        broadcast({ type: 'GAME_START', map: generated.map, fog: generated.fog, players: playersToSend, sharedItems: commonItems });
+        
+        state.map = generated.map; state.fog = generated.fog;
+        state.gameState = 'countdown';
+        startGameLoop();
+    }, 2000);
 });
 
 document.getElementById('btn-ready').addEventListener('click', () => {
@@ -714,11 +810,17 @@ document.getElementById('btn-ready').addEventListener('click', () => {
     readyBtn.disabled = true;
     readyBtn.innerText = "準備完了";
     const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
-    const nameInput = document.getElementById('player-name');
     const myUnlocks = getUnlocks();
-    const playerInfo = { char: selectedChar, name: nameInput.value, unlocks: myUnlocks };
-    state.players[state.myId] = { ...playerInfo, ready: true };
-    broadcast({ type: 'PLAYER_READY', id: state.myId, playerInfo });
+    const playerInfo = { char: selectedChar, unlocks: myUnlocks };
+    
+    state.lobbyPlayers[state.myId].ready = true;
+    updateLobbyUI();
+    
+    // 自身のコネクションを使ってホストに送信
+    const connKey = Object.keys(state.peer.connections)[0];
+    if (connKey && state.peer.connections[connKey][0]) {
+        state.peer.connections[connKey][0].send({ type: 'LOBBY_READY', id: state.myId, playerInfo: playerInfo });
+    }
 });
 
 document.getElementById('btn-continue').addEventListener('click', () => {
@@ -862,7 +964,7 @@ const spawnEntities = (x, y, targetBlock, diggerChar) => {
                 id: Math.random().toString(36).substr(2, 9), 
                 type: 'ore', 
                 oreType: targetBlock.ore.type, 
-                gridX: x + 0.5, // 論理座標を持たせる
+                gridX: x + 0.5,
                 gridY: y + 0.5,
                 x: (x + 0.5) * CONFIG.TILE_SIZE, 
                 y: (y + 0.5) * CONFIG.TILE_SIZE, 
@@ -878,7 +980,7 @@ const spawnEntities = (x, y, targetBlock, diggerChar) => {
         spawned.push({ 
             id: Math.random().toString(36).substr(2, 9), 
             type: 'item_drop', 
-            gridX: x + 0.5, // 論理座標を持たせる
+            gridX: x + 0.5,
             gridY: y + 0.5,
             x: (x + 0.5) * CONFIG.TILE_SIZE, 
             y: (y + 0.5) * CONFIG.TILE_SIZE, 
@@ -920,10 +1022,17 @@ const digBlock = (x, y) => {
 };
 
 const checkGameOver = () => {
+    if (state.gameState === 'gameover_wait' || state.gameState === 'gameover') return;
     for(let id in state.players) {
         if(state.players[id].energy <= 0) {
-            broadcast({ type: 'GAME_OVER' });
-            gameOver();
+            state.gameState = 'gameover_wait';
+            state.deadPlayerName = state.players[id].name;
+            broadcast({ type: 'GAME_OVER_WAIT', deadPlayerName: state.deadPlayerName });
+            
+            state.gameOverTimerId = setTimeout(() => {
+                broadcast({ type: 'GAME_OVER' });
+                gameOver();
+            }, 2000);
             return;
         }
     }
@@ -954,7 +1063,7 @@ const startGameLoop = () => {
     state.timerId = setInterval(() => { 
         if (state.gameState === 'playing') {
             state.gameTime--; 
-            if(state.gameTime <= 0) { broadcast({ type: 'GAME_OVER' }); gameOver(); }
+            if(state.gameTime <= 0) checkGameOver();
         }
     }, 1000);
 };
@@ -1067,7 +1176,9 @@ const update = () => {
         for (let dx = -visionRadius; dx <= visionRadius; dx++) {
             if (Math.abs(dx) + Math.abs(dy) <= visionRadius) {
                 const vx = myGridX + dx; const vy = myGridY + dy;
-                if (vy >= 0 && vy < CONFIG.MAP_HEIGHT && vx >= 0 && vx < CONFIG.MAP_WIDTH) { state.fog[vy][vx] = true; }
+                if (vy >= 0 && vy < CONFIG.MAP_HEIGHT && vx >= 0 && vx < CONFIG.MAP_WIDTH) { 
+                    if(state.fog[vy]) state.fog[vy][vx] = true; 
+                }
             }
         }
     }
@@ -1075,7 +1186,6 @@ const update = () => {
     state.cameraX = Math.max(0, Math.min(me.x - (canvas.width / 2) + (CONFIG.TILE_SIZE / 2), CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - canvas.width));
     state.cameraY = Math.max(0, me.y - (canvas.height / 3));
 
-    /* 通信する座標をピクセルから論理比率に変更 */
     broadcast({ type: 'PLAYER_MOVE', id: state.myId, gridX: me.x / CONFIG.TILE_SIZE, gridY: me.y / CONFIG.TILE_SIZE });
 
     draw();
@@ -1126,9 +1236,9 @@ const draw = () => {
             const drawX = x * CONFIG.TILE_SIZE - state.cameraX;
             const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
 
-            if (!state.fog[y][x]) { ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); continue; }
+            if (state.fog[y] && !state.fog[y][x]) { ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); continue; }
 
-            const block = state.map[y][x];
+            const block = state.map[y]?.[x];
             if (block && block.type !== 'empty') {
                 if (block.type === 'surface_dirt') {
                     ctx.fillStyle = '#2ecc71'; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE * 0.3);
@@ -1189,8 +1299,16 @@ const draw = () => {
         drawOutlinedText(ctx, text, canvas.width/2, canvas.height/2 - 50, 80, "center", "#f1c40f");
     }
 
+    /* ゲーム終了時のテロップ描画 */
+    if (state.gameState === 'gameover_wait') {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawOutlinedText(ctx, `${state.deadPlayerName}のエネルギーが`, canvas.width/2, canvas.height/2 - 20, 20, "center", "#f1c40f");
+        drawOutlinedText(ctx, `無くなったので終了します`, canvas.width/2, canvas.height/2 + 10, 20, "center", "#f1c40f");
+    }
+
     const me = state.players[state.myId];
-    if (me) {
+    if (me && state.gameState !== 'gameover_wait') {
         const depth = Math.floor(me.y / CONFIG.TILE_SIZE) + 1;
         const timeStr = `${Math.floor(state.gameTime/60)}:${(state.gameTime%60).toString().padStart(2,'0')}`;
         drawOutlinedText(ctx, `⬇️ ${depth}m`, 10, 10, 20);
@@ -1217,11 +1335,6 @@ const gameOver = () => {
     showScreen('result-screen');
     const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
     const myScore = state.scores[state.myId] || 0;
-
-    const myName = state.players[state.myId].name;
-    if (!DEFAULT_NAMES.includes(myName)) {
-        localStorage.setItem('minedigger_player_name', myName);
-    }
 
     const playerCount = Object.keys(state.players).length || 1;
     const earnedPoints = Math.floor(myScore / playerCount);
