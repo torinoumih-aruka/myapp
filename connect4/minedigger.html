@@ -80,16 +80,29 @@
             <h2>ブロックの種類</h2>
             <table style="width: 98%;">
             	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            		<th style="width:30%;">見た目</th>
+            		<th style="width:70%;">説明</th>
+            	</tr>
+                <tr>
+            		<td><div style="width:10px;height:10px;background-color: #2ecc71; border: 2px solid #881111;"></div></td><td>草ブロック：消費エネルギー１</td>
             	</tr>
             	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="width:10px;height:10px;background-color: #d35400; border: 2px solid #881111;"></div></td><td>苔むしたブロック：消費エネルギー２</td>
             	</tr>
             	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="width:10px;height:10px;background-color: #b87333; border: 2px solid #881111;"></div></td><td>土ブロック：消費エネルギー３</td>
             	</tr>
             	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="width:10px;height:10px;background-color: #95a5a6; border: 2px solid #881111;"></div></td><td>岩ブロック：消費エネルギー４</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #34495e; border: 2px solid #881111;"></div></td><td>深層岩ブロック：消費エネルギー６</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #111111; border: 2px solid #881111;"></div></td><td>黒曜石ブロック：消費エネルギー１０</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #bdc3c7; border: 2px solid #881111;"></div></td><td>４つの点がついているブロック。鉄壁：壊せない</td>
             	</tr>
             </table>
 
@@ -100,16 +113,16 @@
             		<th style="width:70%;">説明</th>
             	</tr>
             	<tr>
-            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="color: #e67e22;">▲</div></td><td>銅。１ポイント</td>
             	</tr>
             	<tr>
-            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="color: #6c6a69;">▲</div></td><td>鉄。２ポイント</td>
             	</tr>
             	<tr>
-            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="color: #f1c40f;">▲</div></td><td>金。３ポイント</td>
             	</tr>
             	<tr>
-            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            		<td><div style="color: #e74c3c;">▲</div></td><td>ルビー。４ポイント</td>
             	</tr>
             </table>
             <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p><br><br><br><br>
@@ -294,7 +307,7 @@ const BLOCK_DEFS = {
 
 const ORES = [
     { type: 'copper', min: 5, max: 20, val: 1, color: '#e67e22', prob: 0.1 },
-    { type: 'iron', min: 15, max: 30, val: 2, color: '#ecf0f1', prob: 0.1 },
+    { type: 'iron', min: 15, max: 30, val: 2, color: '#6c6a69', prob: 0.1 },
     { type: 'gold', min: 25, max: 180, val: 3, color: '#f1c40f', prob: 0.08 },
     { type: 'ruby', min: 40, max: 150, val: 4, color: '#e74c3c', prob: 0.05 },
     { type: 'sapphire', min: 60, max: 170, val: 5, color: '#3498db', prob: 0.05 },
@@ -611,7 +624,7 @@ const generateMap = (itemBoxProb) => {
                     block = { type: 'iron', hp: 999999 };
                 } 
                 else if (depth >= 10 && Math.random() < itemBoxProb) {
-                    block = { type: 'item_box', hp: 2 };
+                    block = { type: 'item_box', hp: 1 };
                 }
                 else {
                     block = { type: chosenType, hp: BLOCK_DEFS[chosenType].hp };
