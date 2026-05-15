@@ -73,9 +73,12 @@
             <p><strong>ホストプレイヤー:</strong><br>ホストとなるプレイヤーは「部屋を作成」を押します。押すと、部屋番号とURLが表示されます。URLを友達に配るか、OKを押したあと、キャラクター選択画面に書いてある部屋番号を教えてあげましょう。</p>
             <p><strong>ゲストプレイヤー:</strong><br>タイトル画面で部屋番号を入力し「部屋に入る」を押すと、ホストと一緒に遊ぶことができます。同時にホスト１、ゲスト３人まで遊べます。</p>
             <p><strong>通信:</strong><br>ホストプレイヤーは参加プレイヤー全員のいろんな情報を毎秒60回集約しながら遊ぶため、安定したネットワーク環境であることが望ましいです。<br>また、LINEや別のアプリに切り替えることで通信が切断される可能性もあるため、ホストプレイヤーはゲームに集中しサーバーになった気分でプレイしましょう。<br>尚、ホストプレイヤーは画面が暗くならないような設定も入れているので、バッテリーも食います。</p>
+            <p><strong>鉱石の分け方:</strong><br>マルチプレイで取得した鉱石は、全プレイヤーの合計を人数で割って均等に分配されます。</p>
+            <p><strong>アイテム:</strong><br>マルチプレイでは、参加プレイヤー全員がアンロックしたアイテムのみが出るようになっています。例えば、参加者のうち１人でも「ろうそく」をアンロックしていない場合「ろうそく」は出てきません。</p>
+            <p><strong>ステータス:</strong><br>キャラクターのステータスを上昇させるアイテムを購入した場合、マルチプレイでもそのステータスで遊ぶことができます。</p>
 
             <h2>セーブデータ</h2>
-            <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いてもLINEで遊んだときのセーブデータは読み込まれません。遊ぶブラウザを決めておくと、良いかと思います。</p>
+            <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いても、LINEで遊んだときのセーブデータは読み込まれません。遊ぶブラウザを決めておくと、良いかと思います。</p>
 
             <h2>ブロックの種類</h2>
             <table style="width: 98%;">
@@ -1605,11 +1608,20 @@ const gameOver = () => {
     state.gameState = 'gameover';
     showScreen('result-screen');
     const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
-    const myScore = state.scores[state.myId] || 0;
+
+    /* ▼▼▼ ここから修正 ▼▼▼ */
+    // 全プレイヤーのスコアを合計する
+    let totalScore = 0;
+    for (let id in state.scores) {
+        totalScore += state.scores[id];
+    }
 
     const playerCount = Object.keys(state.players).length || 1;
-    const earnedPoints = Math.floor(myScore / playerCount);
+    // 合計スコアを人数で割り、端数を切り捨て
+    const earnedPoints = Math.floor(totalScore / playerCount);
     setPts(getPts() + earnedPoints);
+    /* ▲▲▲ ここまで修正 ▲▲▲ */
+
 
     const myOreCounts = state.oreCounts[state.myId] || {};
     const ORE_NAMES = { 'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ' };
@@ -1636,15 +1648,15 @@ const gameOver = () => {
     }
 
     document.getElementById('result-details').innerHTML = `
-        <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
-        <p>獲得した鉱石スコア: <span style="color:#3498db; font-size:1.5rem;">${myScore} pts</span></p>
-        <p>総合スコア: <span style="color:#2ecc71; font-size:1.5rem;">${finalDepth * 4 + myScore} pts</span></p>
-        <p style="font-size: 0.9rem; color: #bdc3c7; margin-top: -10px;">(獲得ポイント ${earnedPoints} pts を保存しました)</p>
-        <div style="margin-top: 15px; border-top: 1px solid #7f8c8d; padding-top: 10px;">
-            <p style="margin:0; font-size: 1rem; color: #ecf0f1;">【獲得鉱石内訳】</p>
-            ${oreDetailsHtml}
-        </div>
-    `;
+            <p>最終到達深度: <span style="color:#f1c40f; font-size:1.5rem;">${finalDepth}m</span></p>
+            <p>獲得した鉱石スコア(全体): <span style="color:#3498db; font-size:1.5rem;">${totalScore} pts</span></p>
+            <p>総合スコア(全体): <span style="color:#2ecc71; font-size:1.5rem;">${finalDepth * 4 + totalScore} pts</span></p>
+            <p style="font-size: 0.9rem; color: #bdc3c7; margin-top: -10px;">(1人あたり ${earnedPoints} pts を保存しました)</p>
+            <div style="margin-top: 15px; border-top: 1px solid #7f8c8d; padding-top: 10px;">
+                <p style="margin:0; font-size: 1rem; color: #ecf0f1;">【あなたが獲得した鉱石内訳】</p>
+                ${oreDetailsHtml}
+            </div>
+        `;
 };
 
 document.getElementById('btn-title').addEventListener('click', () => { window.location.href = window.location.pathname.split('?')[0]; });
