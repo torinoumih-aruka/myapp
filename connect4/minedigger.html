@@ -55,10 +55,58 @@
     <div id="modal-howto" class="modal-overlay">
         <div class="modal-content">
             <span class="modal-close" onclick="document.getElementById('modal-howto').style.display='none'">×</span>
+
             <h2>遊び方</h2>
             <p><strong>ルール:</strong><br>下へ下へと掘り進めるゲームです。ブロックをタップして破壊し、奥深くを目指しましょう。</p>
             <p><strong>操作:</strong><br>画面下部の矢印で左右移動。隣接するブロックをタップして採掘。アイテムは右下のスロットをタップして使用します。</p>
             <p><strong>エネルギー:</strong><br>掘るたびにエネルギーを消費します。セッション内の「誰か1人でも」エネルギーが0になるか、制限時間が切れるとゲームオーバーです。</p>
+            <p><strong>お店:</strong><br>獲得した鉱石(▲のやつ)は、ポイントとして貯まっていきます。貯まったポイントは🏠SHOPで使うことができます。いろいろな効果をアンロック（開放）したり、ステータスを強化したりできます。</p>
+
+            <h2>マルチプレイ</h2>
+            <p><strong>ホストプレイヤー:</strong><br>ホストとなるプレイヤーは「部屋を作成」を押します。押すと、部屋番号とURLが表示されます。URLを友達に配るか、OKを押したあと、キャラクター選択画面に書いてある部屋番号を教えてあげましょう。</p>
+            <p><strong>ゲストプレイヤー:</strong><br>タイトル画面で部屋番号を入力し「部屋に入る」を押すと、ホストと一緒に遊ぶことができます。同時にホスト１、ゲスト２人まで遊べます。</p>
+            <p><strong>通信:</strong><br>ホストプレイヤーは参加プレイヤー全員のいろんな情報を毎秒60回集約しながら遊ぶため、安定したネットワーク環境であることが望ましいです。<br>また、LINEや別のアプリに切り替えることで通信が切断される可能性もあるため、ホストプレイヤーはゲームに集中しサーバーになった気分でプレイしましょう。<br>尚、ホストプレイヤーは画面が暗くならないような設定も入れているので、バッテリーも食います。</p>
+
+            <h2>セーブデータ</h2>
+            <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いてもセーブデータはLINEのセーブデータは共有されません。遊ぶブラウザを決めておくと、良いかと思います。</p>
+
+            <h2>ブロックの種類</h2>
+            <table style="width: 98%;">
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #00ff00; border: 2px solid #881111;"></div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            </table>
+
+            <h2>鉱石の種類</h2>
+            <table style="width: 98%;">
+            	<tr>
+            		<th style="width:30%;">見た目</th>
+            		<th style="width:70%;">説明</th>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #00ff00;">▲</div></td><td>あいうえおかきくけこ</td>
+            	</tr>
+            </table>
+            <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p>
+
         </div>
     </div>
 
@@ -113,6 +161,7 @@
         <button id="btn-ready" style="display: none; background-color: #2ecc71;">準備OK</button>
         
         <div id="saved-points-display" style="font-size: 0.6rem; text-align: left; width: 100%; padding-left: 20px; box-sizing: border-box; margin-top: 10px; color: #bdc3c7;"></div>
+        <div id="item-box-prob-display" style="font-size: 0.6rem; text-align: left; width: 100%; padding-left: 20px; box-sizing: border-box; margin-top: 5px; color: #bdc3c7;"></div>
     </div>
 
     <div id="game-screen" class="screen">
@@ -141,9 +190,9 @@ const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 200, TILE_SIZE: 0, FPS: 30 };
 const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
 
 const CHARACTERS = {
-    strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
-    ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
-    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, desc: "アイテムの効果範囲が広く、鉱石の獲得量も多い。" }
+    strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, dropMin: 1, dropMax: 3, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
+    ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, dropMin: 1, dropMax: 3, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
+    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 2, dropMax: 4, desc: "アイテムの効果範囲が広く、鉱石の獲得量も多い。" }
 };
 
 const SHOP_ITEMS = [
@@ -156,7 +205,16 @@ const SHOP_ITEMS = [
     { id: "item_06", price: 1000, name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20します。手先が器用が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20します。" },
     { id: "st1spd1", price: 200, name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1。" },
     { id: "st2ene1", price: 1000, name: "耳が良いのエネルギー追加", desc: "耳が良いのエネルギー上限値が+10。" },
-    { id: "st3dex1", price: 5000, name: "手先が器用の視界+", desc: "手先が器用の視界が+1。" }
+    { id: "st3dex1", price: 5000, name: "手先が器用の視界+", desc: "手先が器用の視界が+1。" },
+    { id: "stAluk1", price: 5000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    { id: "stAluk2", price: 10000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    { id: "stAluk3", price: 15000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    { id: "st1dpn1", price: 5000, name: "力持ちの鉱石+", desc: "力持ちが鉱石を掘ったときに1個多くドロップ" },
+    { id: "st1dpn2", price: 30000, name: "力持ちの鉱石++", desc: "力持ちが鉱石を掘ったときに更に1個多くドロップ" },
+    { id: "st2dpn1", price: 5000, name: "耳が良いの鉱石+", desc: "耳が良いが鉱石を掘ったときに1個多くドロップ" },
+    { id: "st2dpn2", price: 30000, name: "耳が良いの鉱石++", desc: "耳が良いが鉱石を掘ったときに更に1個多くドロップ" },
+    { id: "st3dpn1", price: 5000, name: "手先が器用の鉱石+", desc: "手先が器用が鉱石を掘ったときに1個多くドロップ" },
+    { id: "st3dpn2", price: 30000, name: "手先が器用の鉱石++", desc: "手先が器用が鉱石を掘ったときに更に1個多くドロップ" }
 ];
 
 const ITEM_NAMES = {
@@ -183,13 +241,12 @@ const ORES = [
 
 const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
 
-/* lobbyPlayersを追加し、ロビーの表示とゲームプレイの状態を分離 */
 const state = {
     peer: null, connections: [], isHost: false, myId: null,
     lobbyPlayers: {}, players: {}, 
     map: [], fog: [], gameTime: 60, loopId: null, timerId: null, cdTimerId: null, gameOverTimerId: null, cameraX: 0, cameraY: 0,
     gameState: 'lobby', countdownValue: 3, entities: [], particles: [],
-    scores: {}, oreCounts: {}, sharedItems: [], deadPlayerName: ""
+    scores: {}, oreCounts: {}, sharedItems: [], deadPlayerName: "", isTimeOver: false
 };
 
 const savePlayerName = () => {
@@ -215,10 +272,42 @@ const setPts = (val) => localStorage.setItem('minedigger_metalpoint', val);
 
 const getCalculatedCharStats = (charType, unlocks) => {
     const base = { ...CHARACTERS[charType] };
-    if (charType === 'strong' && unlocks.includes('st1spd1')) base.speedMult += 0.1;
-    if (charType === 'ear' && unlocks.includes('st2ene1')) base.energy += 10;
-    if (charType === 'dexterous' && unlocks.includes('st3dex1')) base.vision += 1;
+    
+    if (charType === 'strong') {
+        const spdCount = unlocks.filter(id => id.startsWith('st1spd')).length;
+        base.speedMult += 0.1 * spdCount;
+        const dpnCount = unlocks.filter(id => id.startsWith('st1dpn')).length;
+        base.dropMin += dpnCount;
+        base.dropMax += dpnCount;
+    }
+    if (charType === 'ear') {
+        const eneCount = unlocks.filter(id => id.startsWith('st2ene')).length;
+        base.energy += 10 * eneCount;
+        const dpnCount = unlocks.filter(id => id.startsWith('st2dpn')).length;
+        base.dropMin += dpnCount;
+        base.dropMax += dpnCount;
+    }
+    if (charType === 'dexterous') {
+        const dexCount = unlocks.filter(id => id.startsWith('st3dex')).length;
+        base.vision += 1 * dexCount;
+        const dpnCount = unlocks.filter(id => id.startsWith('st3dpn')).length;
+        base.dropMin += dpnCount;
+        base.dropMax += dpnCount;
+    }
     return base;
+};
+
+const calcItemBoxProb = () => {
+    let baseProb = 0.016;
+    for (let id in state.lobbyPlayers) {
+        const p = state.lobbyPlayers[id];
+        if (p && p.unlocks) {
+            if (p.unlocks.includes('stAluk1')) baseProb += 0.002;
+            if (p.unlocks.includes('stAluk2')) baseProb += 0.002;
+            if (p.unlocks.includes('stAluk3')) baseProb += 0.002;
+        }
+    }
+    return baseProb;
 };
 
 const showScreen = (id) => {
@@ -245,13 +334,13 @@ const updateCharInfo = (type) => {
         <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">
             エネルギー: <span style="color:#2ecc71">${c.energy}</span> &nbsp;|&nbsp; 
             速さ: <span style="color:#3498db">x${c.speedMult.toFixed(1)}</span> &nbsp;|&nbsp; 
-            視界: <span style="color:#e74c3c">${c.vision}</span>
+            視界: <span style="color:#e74c3c">${c.vision}</span> &nbsp;|&nbsp;
+            鉱石: <span style="color:#9b59b6">${c.dropMin}〜${c.dropMax}個</span>
         </div>
         <div style="font-size: 0.8rem; color: #ecf0f1; line-height: 1.3;">${c.desc}</div>
     `;
 };
 
-/* ロビーのプレイヤー一覧UI更新 */
 const updateLobbyUI = () => {
     const listDiv = document.getElementById('lobby-players-list');
     listDiv.innerHTML = '';
@@ -269,6 +358,11 @@ const updateLobbyUI = () => {
         }
     }
     listDiv.innerHTML = hostHtml + guestHtml;
+
+    const probDisplay = document.getElementById('item-box-prob-display');
+    if (probDisplay) {
+        probDisplay.innerText = `ゲームに採用されるアイテムボックス出現確率: ${(calcItemBoxProb() * 100).toFixed(1)}%`;
+    }
 };
 
 const renderShop = () => {
@@ -308,6 +402,7 @@ window.buyShopItem = (id, price) => {
             localStorage.setItem('minedigger_unlock_items', JSON.stringify(unlocks));
         }
         renderShop();
+        if (state.gameState === 'lobby') updateLobbyUI();
     }
 };
 
@@ -373,7 +468,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     }
 });
 
-const generateMap = () => {
+const generateMap = (itemBoxProb) => {
     const map = []; const fog = [];
     let mainPathX = 4;
 
@@ -400,7 +495,7 @@ const generateMap = () => {
                 if (depth >= 10 && Math.random() < 0.08 && x !== mainPathX) {
                     block = { type: 'iron', hp: 999999 };
                 } 
-                else if (depth >= 10 && Math.random() < 0.016) {
+                else if (depth >= 10 && Math.random() < itemBoxProb) {
                     block = { type: 'item_box', hp: 2 };
                 }
                 else {
@@ -480,8 +575,7 @@ const setupConnection = (conn) => {
     conn.on('open', () => {
         state.connections.push(conn);
         if (!state.isHost) {
-            // ゲストは入室時に自身の名前を送付
-            conn.send({ type: 'JOIN_LOBBY', id: state.myId, name: localStorage.getItem('minedigger_player_name') });
+            conn.send({ type: 'JOIN_LOBBY', id: state.myId, name: localStorage.getItem('minedigger_player_name'), unlocks: getUnlocks() });
         } else {
             broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
         }
@@ -498,9 +592,8 @@ const spawnParticles = (x, y, color) => {
 };
 
 const handleNetworkData = (data) => {
-    // ロビー関連の通信処理
     if (data.type === 'JOIN_LOBBY' && state.isHost) {
-        state.lobbyPlayers[data.id] = { name: data.name, isHost: false, ready: false };
+        state.lobbyPlayers[data.id] = { name: data.name, isHost: false, ready: false, unlocks: data.unlocks };
         updateLobbyUI();
         broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
     }
@@ -520,7 +613,6 @@ const handleNetworkData = (data) => {
         document.getElementById('waiting-text').innerText = "まもなく開始します・・・";
     }
 
-    // ゲーム関連の通信処理
     if (data.type === 'GAME_START') {
         if (!data.players[state.myId]) { 
             document.getElementById('waiting-text').innerText = "他のプレイヤーがゲーム中です...";
@@ -625,7 +717,12 @@ const handleNetworkData = (data) => {
     }
     if (data.type === 'GAME_OVER_WAIT') {
         state.gameState = 'gameover_wait';
+        state.isTimeOver = data.isTimeOver;
         state.deadPlayerName = data.deadPlayerName;
+        state.gameOverTimerId = setTimeout(() => {
+            if (state.isHost) broadcast({ type: 'GAME_OVER' });
+            gameOver();
+        }, 2000);
     }
     if (data.type === 'GAME_OVER') {
         gameOver();
@@ -663,6 +760,8 @@ const resetGameState = () => {
     state.oreCounts = {};
     state.sharedItems = [];
     state.players = {};
+    state.isTimeOver = false;
+    state.deadPlayerName = "";
 
     for (let id in state.lobbyPlayers) {
         if(state.lobbyPlayers[id]) {
@@ -708,7 +807,7 @@ const initCharScreen = (roomId) => {
     
     if (state.isHost) {
         state.lobbyPlayers = {
-            [state.myId]: { name: localStorage.getItem('minedigger_player_name'), isHost: true, ready: true }
+            [state.myId]: { name: localStorage.getItem('minedigger_player_name'), isHost: true, ready: true, unlocks: getUnlocks() }
         };
     }
     showScreen('char-screen');
@@ -728,7 +827,6 @@ document.querySelectorAll('.char-plate').forEach(plate => {
 document.getElementById('btn-start').addEventListener('click', () => {
     if (!state.isHost) return;
     
-    // チートコードの処理
     const myName = localStorage.getItem('minedigger_player_name');
     if (myName === "10000") {
         setPts(getPts() + 10000);
@@ -745,44 +843,60 @@ document.getElementById('btn-start').addEventListener('click', () => {
     document.getElementById('waiting-text').innerText = "まもなく開始します・・・";
     broadcast({ type: 'GAME_START_ANNOUNCE' });
 
-    // 2秒後に実際のゲーム開始
     setTimeout(() => {
         const selectedChar = document.querySelector('.char-plate.selected').dataset.type;
-        const generated = generateMap();
+        const currentProb = calcItemBoxProb();
+        const generated = generateMap(currentProb);
         CONFIG.TILE_SIZE = window.innerWidth / 7.5; 
         const myUnlocks = getUnlocks();
         const myStats = getCalculatedCharStats(selectedChar, myUnlocks);
         
-        const activePlayers = { [state.myId]: { 
-            x: 4 * CONFIG.TILE_SIZE, y: 0, 
-            gridX: 4, gridY: 0, 
-            char: selectedChar, name: localStorage.getItem('minedigger_player_name'), 
-            energy: myStats.energy, maxEnergy: myStats.energy, 
-            speedMult: myStats.speedMult, vision: myStats.vision,
-            unlocks: myUnlocks, item: null, buffs: null 
-        }};
-        
-        let guestCount = 0;
+        let playerIds = [state.myId];
+        for (let id in state.lobbyPlayers) {
+            if (id !== state.myId && state.lobbyPlayers[id].ready) {
+                playerIds.push(id);
+            }
+        }
+        playerIds = playerIds.slice(0, 3);
+        playerIds.sort(() => Math.random() - 0.5);
+
+        const startGridXs = [4, 5, 6];
+        let activePlayers = {};
         let commonItems = myUnlocks.filter(i => i.startsWith('item_'));
 
-        for (let id in state.lobbyPlayers) {
-            const lp = state.lobbyPlayers[id];
-            if (!lp.isHost && lp.ready && guestCount < 2) {
-                const gUnlocks = lp.charInfo.unlocks || ['item_00'];
-                const gStats = getCalculatedCharStats(lp.charInfo.char, gUnlocks);
-                activePlayers[id] = {
-                    x: (4 + guestCount * 2) * CONFIG.TILE_SIZE, y: 0,
-                    gridX: (4 + guestCount * 2), gridY: 0,
-                    char: lp.charInfo.char, name: lp.name,
+        playerIds.forEach((pid, index) => {
+            const gridX = startGridXs[index];
+            const gridY = 0;
+            
+            if (pid === state.myId) {
+                activePlayers[pid] = { 
+                    x: gridX * CONFIG.TILE_SIZE, y: gridY * CONFIG.TILE_SIZE, 
+                    gridX: gridX, gridY: gridY, 
+                    char: selectedChar, name: localStorage.getItem('minedigger_player_name'), 
+                    energy: myStats.energy, maxEnergy: myStats.energy, 
+                    speedMult: myStats.speedMult, vision: myStats.vision,
+                    dropMin: myStats.dropMin, dropMax: myStats.dropMax,
+                    unlocks: myUnlocks, item: null, buffs: null 
+                };
+            } else {
+                const lp = state.lobbyPlayers[pid];
+                const gUnlocks = lp.charInfo ? (lp.charInfo.unlocks || ['item_00']) : (lp.unlocks || ['item_00']);
+                const charType = lp.charInfo ? lp.charInfo.char : 'strong';
+                const gStats = getCalculatedCharStats(charType, gUnlocks);
+                activePlayers[pid] = {
+                    x: gridX * CONFIG.TILE_SIZE, y: gridY * CONFIG.TILE_SIZE,
+                    gridX: gridX, gridY: gridY,
+                    char: charType, name: lp.name,
                     energy: gStats.energy, maxEnergy: gStats.energy,
                     speedMult: gStats.speedMult, vision: gStats.vision,
+                    dropMin: gStats.dropMin, dropMax: gStats.dropMax,
                     unlocks: gUnlocks, item: null, buffs: null
                 };
                 const guestItems = gUnlocks.filter(i => i.startsWith('item_'));
                 commonItems = commonItems.filter(i => guestItems.includes(i));
-                guestCount++;
             }
-        }
+        });
+
         if(commonItems.length === 0) commonItems = ['item_00'];
         state.sharedItems = commonItems;
         
@@ -816,7 +930,6 @@ document.getElementById('btn-ready').addEventListener('click', () => {
     state.lobbyPlayers[state.myId].ready = true;
     updateLobbyUI();
     
-    // 自身のコネクションを使ってホストに送信
     const connKey = Object.keys(state.peer.connections)[0];
     if (connKey && state.peer.connections[connKey][0]) {
         state.peer.connections[connKey][0].send({ type: 'LOBBY_READY', id: state.myId, playerInfo: playerInfo });
@@ -878,7 +991,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
                             dugBlocks.push({x: targetX, y: targetY, color: blockColor});
                             spawnParticles(targetX, targetY, blockColor);
                             
-                            let spawned = spawnEntities(targetX, targetY, targetBlock, me.char);
+                            let spawned = spawnEntities(targetX, targetY, targetBlock, state.myId);
                             newEntities.push(...spawned);
                         }
                     }
@@ -909,7 +1022,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
                     spawnParticles(myGridX, targetY, blockColor);
                     
                     if (targetBlock.type !== 'iron') {
-                        let spawned = spawnEntities(myGridX, targetY, targetBlock, me.char);
+                        let spawned = spawnEntities(myGridX, targetY, targetBlock, state.myId);
                         newEntities.push(...spawned);
                     }
                 }
@@ -954,11 +1067,14 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     }
 });
 
-const spawnEntities = (x, y, targetBlock, diggerChar) => {
-    const isDex = diggerChar === 'dexterous';
+const spawnEntities = (x, y, targetBlock, diggerId) => {
+    const pStats = state.players[diggerId];
+    const dropMin = pStats ? pStats.dropMin : 1;
+    const dropMax = pStats ? pStats.dropMax : 3;
+
     const spawned = [];
     if (targetBlock.ore) {
-        const count = isDex ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 3) + 1;
+        const count = Math.floor(Math.random() * (dropMax - dropMin + 1)) + dropMin;
         for (let i = 0; i < count; i++) {
             spawned.push({ 
                 id: Math.random().toString(36).substr(2, 9), 
@@ -1012,7 +1128,7 @@ const digBlock = (x, y) => {
         state.map[y][x] = { type: 'empty', hp: 0 };
         spawnParticles(x, y, blockColor);
 
-        let newEntities = spawnEntities(x, y, targetBlock, me.char);
+        let newEntities = spawnEntities(x, y, targetBlock, state.myId);
         state.entities.push(...newEntities);
         while (state.entities.length > 100) state.entities.shift();
 
@@ -1023,14 +1139,30 @@ const digBlock = (x, y) => {
 
 const checkGameOver = () => {
     if (state.gameState === 'gameover_wait' || state.gameState === 'gameover') return;
+
+    if (state.gameTime <= 0) {
+        state.gameState = 'gameover_wait';
+        state.isTimeOver = true;
+        if (state.isHost) {
+            broadcast({ type: 'GAME_OVER_WAIT', isTimeOver: true });
+        }
+        state.gameOverTimerId = setTimeout(() => {
+            if (state.isHost) broadcast({ type: 'GAME_OVER' });
+            gameOver();
+        }, 2000);
+        return;
+    }
+
     for(let id in state.players) {
         if(state.players[id].energy <= 0) {
             state.gameState = 'gameover_wait';
+            state.isTimeOver = false;
             state.deadPlayerName = state.players[id].name;
-            broadcast({ type: 'GAME_OVER_WAIT', deadPlayerName: state.deadPlayerName });
-            
+            if (state.isHost) {
+                broadcast({ type: 'GAME_OVER_WAIT', deadPlayerName: state.deadPlayerName, isTimeOver: false });
+            }
             state.gameOverTimerId = setTimeout(() => {
-                broadcast({ type: 'GAME_OVER' });
+                if (state.isHost) broadcast({ type: 'GAME_OVER' });
                 gameOver();
             }, 2000);
             return;
@@ -1062,8 +1194,8 @@ const startGameLoop = () => {
     if (state.timerId) clearInterval(state.timerId);
     state.timerId = setInterval(() => { 
         if (state.gameState === 'playing') {
-            state.gameTime--; 
-            if(state.gameTime <= 0) checkGameOver();
+            if (state.gameTime > 0) state.gameTime--; 
+            if (state.gameTime <= 0) checkGameOver();
         }
     }, 1000);
 };
@@ -1299,12 +1431,16 @@ const draw = () => {
         drawOutlinedText(ctx, text, canvas.width/2, canvas.height/2 - 50, 80, "center", "#f1c40f");
     }
 
-    /* ゲーム終了時のテロップ描画 */
     if (state.gameState === 'gameover_wait') {
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        drawOutlinedText(ctx, `${state.deadPlayerName}のエネルギーが`, canvas.width/2, canvas.height/2 - 20, 20, "center", "#f1c40f");
-        drawOutlinedText(ctx, `無くなったので終了します`, canvas.width/2, canvas.height/2 + 10, 20, "center", "#f1c40f");
+        
+        if (state.isTimeOver) {
+            drawOutlinedText(ctx, `タイムオーバー`, canvas.width/2, canvas.height/2 - 20, 30, "center", "#e74c3c");
+        } else {
+            drawOutlinedText(ctx, `${state.deadPlayerName}のエネルギーが`, canvas.width/2, canvas.height/2 - 20, 20, "center", "#f1c40f");
+            drawOutlinedText(ctx, `無くなったので終了します`, canvas.width/2, canvas.height/2 + 10, 20, "center", "#f1c40f");
+        }
     }
 
     const me = state.players[state.myId];
