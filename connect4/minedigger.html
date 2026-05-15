@@ -48,7 +48,12 @@
         
         #shop-list { width: 100%; border-collapse: collapse; margin-top: 10px; }
         #shop-list td { border: 1px solid #bdc3c7; padding: 8px; font-size: 0.95rem; }
-        .shop-row-title { background: #34495e; color: #fff; font-weight: bold; }
+        .shop-row-title-item { background: #34495e; color: #fff; font-weight: bold; }
+        .shop-row-title-st1 { background: #5e343f; color: #fff; font-weight: bold; }
+        .shop-row-title-st2 { background: #703767; color: #fff; font-weight: bold; }
+        .shop-row-title-st3 { background: #5e5e34; color: #fff; font-weight: bold; }
+        .shop-row-title-st4 { background: #234722; color: #fff; font-weight: bold; }
+        .shop-row-title-all { background: #323232; color: #fff; font-weight: bold; }
         .shop-row-desc { background: #ecf0f1; font-size: 0.8rem !important; color: #2c3e50; }
         .shop-btn { padding: 5px 10px; font-size: 0.85rem; margin: 0; border-radius: 3px; }
     </style>
@@ -204,71 +209,71 @@ const CHARACTERS = {
 const SHOP_ITEMS = [
     { id: "item_00", price: 0, act:"全", name: "「爆弾」アンロック", desc: "使用すると、周囲2マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲3マスの範囲に広がる。" },
     { id: "item_01", price: 150, act:"全",name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。" },
-    { id: "item_02", price: 1000, act:"全",name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に7マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に10マス掘削する。" },
+    { id: "item_02", price: 1000, act:"全",name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に4マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に7マス掘削する。" },
     { id: "item_03", price: 500, act:"全",name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1。【手先が器用】が使うと、20秒間、視界範囲が+2。" },
     { id: "item_04", price: 1500, act:"全",name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが10回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを5回復。【手先が器用】が使うと、全プレイヤーのエネルギーを10回復。" },
     { id: "item_05", price: 800, act:"全",name: "「タイマー」アンロック", desc: "使用すると、制限時間が+10秒。【手先が器用】が使うと、制限時間が+20秒。" },
     { id: "item_06", price: 1000, act:"全",name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20。【手先が器用】が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20。" },
-	{id: "st1spd1", price:200,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
-	{id: "st1spd2", price:500,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
-	{id: "st1dpn1", price:200,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
-	{id: "st1dpn2", price:800,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
-	{id: "st1sho1", price:1500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1sho2", price:2500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1sho3", price:3500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1ene5", price:4500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-	{id: "st1sho2", price:5000,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1sho3", price:500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1spd1", price:6000,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
-	{id: "st1sho2", price:600,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1sho3", price:1500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st1sho4", price:2500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-	{id: "st2ene2", price:6000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2ene3", price:7500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2ene1", price:150,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2ene2", price:500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2ene6", price:600,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2spd1", price:1500,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
-	{id: "st2spd2", price:3000,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
-	{id: "st2ene1", price:4500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2sho3", price:200,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-	{id: "st2ene1", price:1000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2ene2", price:2000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-	{id: "st2spd2", price:500,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
-	{id: "st2dex1", price:6000,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
-	{id: "st2sho5", price:400,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-	{id: "st2sho6", price:1500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-	{id: "st2sho7", price:2500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-	{id: "st3ene4", price:600,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-	{id: "st3dex1", price:1500,act: "手", name: "手先が器用の視界+", desc: "手先が器用の視界が+1"},
-	{id: "st3dex2", price:3000,act: "手", name: "手先が器用の視界+", desc: "手先が器用の視界が+1"},
-	{id: "st3dex3", price:5000,act: "手", name: "手先が器用の視界+", desc: "手先が器用の視界が+1"},
-	{id: "st3spd2", price:1500,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
-	{id: "st3spd3", price:2500,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
-	{id: "st3ene3", price:200,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-	{id: "st3ene4", price:500,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-	{id: "st3ene3", price:4000,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-	{id: "st3dpn1", price:300,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
-	{id: "st3dpn2", price:3000,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
-	{id: "st3spd1", price:400,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
-	{id: "st4dpn1", price:300,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-	{id: "st4ene2", price:400,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4ene3", price:1000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4dex1", price:2000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
-	{id: "st4dex2", price:3000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
-	{id: "st4dpn1", price:4000,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-	{id: "st4dpn2", price:5000,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-	{id: "st4dpn3", price:6000,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-	{id: "st4ene5", price:100,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4ene6", price:300,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4dex1", price:700,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
-	{id: "st4dpn2", price:2000,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-	{id: "st4sho1", price:4000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-	{id: "st4ene4", price:2000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4sho2", price:4000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-	{id: "st4sho1", price:500,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-	{id: "st4ene1", price:1500,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-	{id: "st4sho1", price:2500,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st1spd1", price:200,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
+{id: "st1spd2", price:500,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
+{id: "st1ene1", price:200,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1ene2", price:800,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1ene3", price:1500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1ene4", price:2500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1ene5", price:3500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1ene6", price:4500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
+{id: "st1dex1", price:5000,act: "力", name: "力持ちの視界+", desc: "力持ちの視界が+1"},
+{id: "st1dpn1", price:500,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
+{id: "st1dpn2", price:6000,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
+{id: "st1sho1", price:600,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
+{id: "st1sho2", price:1500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
+{id: "st1sho3", price:2500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
+{id: "st2ene5", price:6000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2ene6", price:7500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2spd1", price:150,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
+{id: "st2spd2", price:500,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
+{id: "st2ene1", price:600,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2ene2", price:1500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2ene3", price:3000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2ene4", price:4500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
+{id: "st2dex1", price:200,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
+{id: "st2dex2", price:1000,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
+{id: "st2dex3", price:2000,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
+{id: "st2dpn1", price:500,act: "耳", name: "耳が良いの鉱石+", desc: "耳が良いの鉱石ドロップ数が+1"},
+{id: "st2dpn2", price:6000,act: "耳", name: "耳が良いの鉱石+", desc: "耳が良いの鉱石ドロップ数が+1"},
+{id: "st2sho1", price:400,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
+{id: "st2sho2", price:1500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
+{id: "st2sho3", price:2500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
+{id: "st3ene1", price:600,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
+{id: "st3ene2", price:1500,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
+{id: "st3ene3", price:3000,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
+{id: "st3ene4", price:5000,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
+{id: "st3sho2", price:1500,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
+{id: "st3sho3", price:2500,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
+{id: "st3spd1", price:200,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
+{id: "st3spd2", price:500,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
+{id: "st3dex1", price:4000,act: "手", name: "手先が器用の視界+", desc: "手先が器用の視界が+1"},
+{id: "st3dpn1", price:300,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
+{id: "st3dpn2", price:3000,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
+{id: "st3sho1", price:400,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
+{id: "st4ene1", price:300,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
+{id: "st4sho1", price:400,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho2", price:1000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho3", price:2000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho4", price:3000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho5", price:4000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho6", price:5000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4sho7", price:6000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
+{id: "st4spd1", price:100,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
+{id: "st4spd2", price:300,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
+{id: "st4spd3", price:700,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
+{id: "st4ene2", price:2000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
+{id: "st4ene3", price:4000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
+{id: "st4dex1", price:2000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
+{id: "st4dex2", price:4000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
+{id: "st4dpn1", price:500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
+{id: "st4dpn2", price:1500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
+{id: "st4dpn3", price:2500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
     { id: "stAluk1", price: 5000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
     { id: "stAluk2", price: 10000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
     { id: "stAluk3", price: 15000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
@@ -469,8 +474,25 @@ const renderShop = () => {
         let btnHtml = isUnlocked ? `<button class="shop-btn" disabled>購入済み</button>` :
             `<button class="shop-btn" style="background:${canBuy?'#2ecc71':'#7f8c8d'}" ${canBuy?'':'disabled'} onclick="buyShopItem('${item.id}', ${item.price})">購入</button>`;
 
+        let style_ext = "item";
+        if(item.id.startsWith("item")){
+            style_ext = "item";
+        }else{
+            if(item.act === "全"){
+                style_ext = "all";
+            }else if(item.act === "力"){
+                style_ext = "st1";
+            }else if(item.act === "耳"){
+                style_ext = "st2";
+            }else if(item.act === "手"){
+                style_ext = "st3";
+            }else if(item.act === "こ"){
+                style_ext = "st4";
+            }
+        }
+
         tbody.innerHTML += `
-            <tr class="shop-row-title">
+            <tr class="shop-row-title-${style_ext}">
                 <td style="width:10%;">${item.act}</td>
                 <td style="width:50%;">${item.name}</td>
                 <td style="width:20%; text-align:center;">${item.price} pts</td>
@@ -1103,7 +1125,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         broadcast({ type: 'USE_CANDLE', y: myGridY, range: range });
         
     } else if (item === 'item_02') {
-        const depth = isDex ? 10 : 7;
+        const depth = isDex ? 7 : 4;
         const dugBlocks = [];
         const newEntities = [];
         for(let i=1; i<=depth; i++) {
