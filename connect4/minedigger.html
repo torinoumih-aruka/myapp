@@ -182,9 +182,23 @@
         <div id="lobby-players-list"></div>
         
         <p id="waiting-text" style="color:#bdc3c7; font-weight:bold; margin-top:0;"></p>
-        <button id="btn-start" style="display: none;">START</button>
-        <button id="btn-ready" style="display: none; background-color: #2ecc71;">準備OK</button>
         
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 85%; max-width: 320px; margin-top: 5px;">
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <select id="chat-select" style="padding: 10px; border-radius: 5px; background: #34495e; color: #fff; border: 1px solid #7f8c8d; font-size: 0.9rem; font-weight: bold;">
+                    <option value="さあ行こう！">さあ行こう！</option>
+                    <option value="ちょっと待って！">ちょっと待って！</option>
+                    <option value="あと１回！">あと１回！</option>
+                    <option value="バイバイ！">バイバイ！</option>
+                    <option value="LINE送ります">LINE送ります</option>
+                </select>
+                <button id="btn-chat-send" style="margin:0; padding: 10px 15px; font-size: 0.9rem; background-color: #9b59b6;">送信</button>
+            </div>
+            <div>
+                <button id="btn-start" style="display: none; margin:0;">START</button>
+                <button id="btn-ready" style="display: none; background-color: #2ecc71; margin:0;">準備OK</button>
+            </div>
+        </div>
         <div id="saved-points-display" style="font-size: 0.6rem; text-align: left; width: 100%; padding-left: 20px; box-sizing: border-box; margin-top: 10px; color: #bdc3c7;"></div>
         <div id="item-box-prob-display" style="font-size: 0.6rem; text-align: left; width: 100%; padding-left: 20px; box-sizing: border-box; margin-top: 5px; color: #bdc3c7;"></div>
     </div>
@@ -458,14 +472,38 @@ const updateLobbyUI = () => {
     
     let hostHtml = '';
     let guestHtml = '';
+
+    // 現在自分が選択しているキャラ
+    const mySelectedChar = document.querySelector('.char-plate.selected')?.dataset.type || 'strong';
     
     for (let id in state.lobbyPlayers) {
         const p = state.lobbyPlayers[id];
+        
+        // 強化数の計算
+        let charType = p.charInfo ? p.charInfo.char : null;
+        if (id === state.myId) charType = mySelectedChar;
+
+        let upCountText = '';
+        if (charType && p.unlocks) {
+            let prefix = '';
+            if (charType === 'strong') prefix = 'st1';
+            if (charType === 'ear') prefix = 'st2';
+            if (charType === 'dexterous') prefix = 'st3';
+            if (charType === 'thief') prefix = 'st4';
+            
+            const count = p.unlocks.filter(u => u.startsWith(prefix)).length;
+            if (count > 0) {
+                upCountText = ` <span style="color: #f39c12; font-size: 0.9rem;">(⬆${count})</span>`;
+            }
+        }
+
+        const chatText = p.chatMessage ? `<span style="float: right; color: #fff; font-size: 0.9rem;">${p.chatMessage}</span>` : '';
+
         if (p.isHost) {
-            hostHtml = `<div style="color: #f1c40f;">${p.name} <span style="font-size: 0.9rem;">【ホスト】</span></div>`;
+            hostHtml = `<div style="color: #f1c40f; padding: 4px 0;">${p.name} <span style="font-size: 0.9rem;">【ホスト】</span>${upCountText}${chatText}</div>`;
         } else {
             const readyText = p.ready ? '<span style="color: #2ecc71; font-size: 0.9rem;">【準備OK】</span>' : '';
-            guestHtml += `<div style="color: #ecf0f1;">${p.name} ${readyText}</div>`;
+            guestHtml += `<div style="color: #ecf0f1; padding: 4px 0;">${p.name} ${readyText}${upCountText}${chatText}</div>`;
         }
     }
     listDiv.innerHTML = hostHtml + guestHtml;
@@ -633,7 +671,13 @@ const generateMap = (itemBoxProb) => {
                     block = { type: chosenType, hp: BLOCK_DEFS[chosenType].hp };
                     const possibleOres = ORES.filter(o => depth >= o.min && depth <= o.max);
                     for (let ore of possibleOres) {
-                        if (Math.random() < ore.prob) { block.ore = ore; break; }
+                        if (Math.random() < ore.prob) { 
+                            block.ore = ore; 
+                            // ▼▼ リッチ鉱石ブロックの判定を追加 (0.2%) ▼▼
+                            if (Math.random() < 0.002) block.isRichOre = true;
+                            // ▲▲▲▲
+                            break; 
+                        }
                     }
                 }
             }
@@ -727,6 +771,13 @@ const handleNetworkData = (data) => {
         state.lobbyPlayers[data.id] = { name: data.name, isHost: false, ready: false, unlocks: data.unlocks };
         updateLobbyUI();
         broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+    }
+    if (data.type === 'LOBBY_CHAT' && state.isHost) {
+        if (state.lobbyPlayers[data.id]) {
+            state.lobbyPlayers[data.id].chatMessage = data.message;
+            updateLobbyUI();
+            broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+        }
     }
     if (data.type === 'LOBBY_READY' && state.isHost) {
         if (state.lobbyPlayers[data.id]) {
@@ -897,6 +948,7 @@ const resetGameState = () => {
     for (let id in state.lobbyPlayers) {
         if(state.lobbyPlayers[id]) {
             state.lobbyPlayers[id].ready = false;
+            state.lobbyPlayers[id].chatMessage = ""; // チャットのクリア
         }
     }
 };
@@ -952,7 +1004,23 @@ document.querySelectorAll('.char-plate').forEach(plate => {
         e.currentTarget.classList.add('selected');
         const selectedChar = e.currentTarget.dataset.type;
         updateCharInfo(selectedChar);
+        updateLobbyUI(); // キャラ変更時に (⬆N) を自画面に即時反映させる
     });
+});
+
+// ▼▼ チャット送信ボタンの処理を追加 ▼▼
+document.getElementById('btn-chat-send').addEventListener('click', () => {
+    const msg = document.getElementById('chat-select').value;
+    if (state.isHost) {
+        state.lobbyPlayers[state.myId].chatMessage = msg;
+        updateLobbyUI();
+        broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
+    } else {
+        const connKey = Object.keys(state.peer.connections)[0];
+        if (connKey && state.peer.connections[connKey][0]) {
+            state.peer.connections[connKey][0].send({ type: 'LOBBY_CHAT', id: state.myId, message: msg });
+        }
+    }
 });
 
 document.getElementById('btn-start').addEventListener('click', () => {
@@ -1208,6 +1276,9 @@ const spawnEntities = (x, y, targetBlock, diggerId) => {
     const spawned = [];
     if (targetBlock.ore) {
         const count = Math.floor(Math.random() * (dropMax - dropMin + 1)) + dropMin;
+        // ▼▼ リッチ鉱石の場合はドロップ数を10倍にする ▼▼
+        if (targetBlock.isRichOre) count *= 10;
+        // ▲▲▲▲
         for (let i = 0; i < count; i++) {
             spawned.push({ 
                 id: Math.random().toString(36).substr(2, 9), 
@@ -1521,8 +1592,26 @@ const draw = () => {
                 if (block.ore) {
                     ctx.fillStyle = isGlobalGlowing ? "#ffffff" : block.ore.color;
                     if(isGlobalGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = block.ore.color; } 
-                    const triSize = CONFIG.TILE_SIZE * 0.25;
-                    [[0.2, 0.25], [0.6, 0.35], [0.35, 0.65]].forEach(pos => { ctx.beginPath(); ctx.moveTo(drawX + CONFIG.TILE_SIZE * pos[0], drawY + CONFIG.TILE_SIZE * pos[1] - triSize/2); ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] - triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] + triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); ctx.fill(); });
+                    
+                    // ▼▼ リッチ鉱石と通常鉱石の描画の分岐 ▼▼
+                    if (block.isRichOre) {
+                        const triSize = CONFIG.TILE_SIZE * 0.6;
+                        ctx.beginPath();
+                        ctx.moveTo(drawX + CONFIG.TILE_SIZE * 0.5, drawY + CONFIG.TILE_SIZE * 0.5 - triSize/2);
+                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * 0.5 - triSize/2, drawY + CONFIG.TILE_SIZE * 0.5 + triSize/2);
+                        ctx.lineTo(drawX + CONFIG.TILE_SIZE * 0.5 + triSize/2, drawY + CONFIG.TILE_SIZE * 0.5 + triSize/2);
+                        ctx.fill();
+                    } else {
+                        const triSize = CONFIG.TILE_SIZE * 0.25;
+                        [[0.2, 0.25], [0.6, 0.35], [0.35, 0.65]].forEach(pos => { 
+                            ctx.beginPath(); 
+                            ctx.moveTo(drawX + CONFIG.TILE_SIZE * pos[0], drawY + CONFIG.TILE_SIZE * pos[1] - triSize/2); 
+                            ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] - triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); 
+                            ctx.lineTo(drawX + CONFIG.TILE_SIZE * pos[0] + triSize/2, drawY + CONFIG.TILE_SIZE * pos[1] + triSize/2); 
+                            ctx.fill(); 
+                        });
+                    }
+                    // ▲▲ ここまで ▲▲
                     ctx.shadowBlur = 0; 
                 }
             }
