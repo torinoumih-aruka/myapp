@@ -95,6 +95,69 @@
 
             <h2>遊び方</h2>
             <p><strong>ルール:</strong><br>下へ下へと掘り進めるゲームです。ブロックをタップして破壊し、奥深くを目指しましょう。</p>
+            <p><strong>操作:</strong><br>画面下部の矢印で左右移動。隣接するブロックをタップして採掘。アイテムは右下のスロットをタップして使用します。</p>
+            <p><strong>エネルギー:</strong><br>掘るたびにエネルギーを消費します。セッション内の「誰か1人でも」エネルギーが0になるか、制限時間が切れるとゲームオーバーです。</p>
+            <p><strong>お店:</strong><br>獲得した鉱石(▲のやつ)は、ポイントとして貯まっていきます。貯まったポイントは🏠SHOPで使うことができます。いろいろな効果をアンロック(開放)したり、ステータスを強化したりできます。</p>
+
+            <h2>マルチプレイ</h2>
+            <p><strong>ホストプレイヤー:</strong><br>ホストとなるプレイヤーは「部屋を作成」を押します。押すと、部屋番号とURLが表示されます。URLを友達に配るか、OKを押したあと、キャラクター選択画面に書いてある部屋番号を教えてあげましょう。</p>
+            <p><strong>ゲストプレイヤー:</strong><br>タイトル画面で部屋番号を入力し「部屋に入る」を押すと、ホストと一緒に遊ぶことができます。同時にホスト１、ゲスト３人まで遊べます。</p>
+            <p><strong>通信:</strong><br>ホストプレイヤーは参加プレイヤー全員のいろんな情報を毎秒60回集約しながら遊ぶため、安定したネットワーク環境であることが望ましいです。<br>また、LINEや別のアプリに切り替えることで通信が切断される可能性もあるため、ホストプレイヤーはゲームに集中しサーバーになった気分でプレイしましょう。<br>尚、ホストプレイヤーは画面が暗くならないような設定も入れているので、バッテリーも食います。</p>
+            <p><strong>鉱石の分け方:</strong><br>マルチプレイで取得した鉱石は、全プレイヤーの合計を人数で割って均等に分配されます。</p>
+            <p><strong>アイテム:</strong><br>マルチプレイでは、参加プレイヤー全員がアンロックしたアイテムのみが出るようになっています。例えば、参加者のうち１人でも「ろうそく」をアンロックしていない場合「ろうそく」は出てきません。</p>
+            <p><strong>ステータス:</strong><br>キャラクターのステータスを上昇させるアイテムを購入した場合、マルチプレイでもそのステータスで遊ぶことができます。</p>
+
+            <h2>セーブデータ</h2>
+            <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いても、LINEで遊んだときのセーブデータは読み込まれません。遊ぶブラウザを決めておくと、良いかと思います。</p>
+
+            <h2>ブロックの種類</h2>
+            <table style="width: 98%;">
+            	<tr>
+            		<th style="width:30%;">見た目</th>
+            		<th style="width:70%;">説明</th>
+            	</tr>
+                <tr>
+            		<td><div style="width:10px;height:10px;background-color: #2ecc71; border: 2px solid #881111;"></div></td><td>草ブロック：消費エネルギー１</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #d35400; border: 2px solid #881111;"></div></td><td>苔むしたブロック：消費エネルギー２</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #b87333; border: 2px solid #881111;"></div></td><td>土ブロック：消費エネルギー３</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #95a5a6; border: 2px solid #881111;"></div></td><td>岩ブロック：消費エネルギー４</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #34495e; border: 2px solid #881111;"></div></td><td>深層岩ブロック：消費エネルギー６</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #111111; border: 2px solid #881111;"></div></td><td>黒曜石ブロック：消費エネルギー１０</td>
+            	</tr>
+            	<tr>
+            		<td><div style="width:10px;height:10px;background-color: #bdc3c7; border: 2px solid #881111;"></div></td><td>４つの点がついているブロック。鉄壁：壊せない</td>
+            	</tr>
+            </table>
+
+            <h2>鉱石の種類</h2>
+            <table style="width: 98%;">
+            	<tr>
+            		<th style="width:30%;">見た目</th>
+            		<th style="width:70%;">説明</th>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #e67e22;">▲</div></td><td>銅。１ポイント</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #6c6a69;">▲</div></td><td>鉄。２ポイント</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #f1c40f;">▲</div></td><td>金。３ポイント</td>
+            	</tr>
+            	<tr>
+            		<td><div style="color: #e74c3c;">▲</div></td><td>ルビー。４ポイント</td>
+            	</tr>
+            </table>
             <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p><br><br><br><br>
 
         </div>
@@ -232,13 +295,13 @@ const SHOP_ITEMS = [
     {id: "st1dex1",   type:"st1",  subtype:"dex", before:null,        price:5000, name: "視界+", desc: "視界が+1"},
     {id: "st1dpn1",   type:"st1",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st1dpn2",   type:"st1",  subtype:"dpn", before:"st1dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
-    {id: "st1ene1",   type:"st1",  subtype:"ene", before:null,        price:200,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene2",   type:"st1",  subtype:"ene", before:"st1ene1",   price:800,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene3",   type:"st1",  subtype:"ene", before:"st1ene2",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene4",   type:"st1",  subtype:"ene", before:"st1ene3",   price:2500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene5",   type:"st1",  subtype:"ene", before:"st1ene4",   price:3500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene6",   type:"st1",  subtype:"ene", before:"st1ene5",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene7",   type:"st1",  subtype:"ene", before:"st1ene6",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene1",   type:"st1",  subtype:"ene", before:null,        price:150,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene2",   type:"st1",  subtype:"ene", before:"st1ene1",   price:500,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene3",   type:"st1",  subtype:"ene", before:"st1ene2",   price:1000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene4",   type:"st1",  subtype:"ene", before:"st1ene3",   price:2000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene5",   type:"st1",  subtype:"ene", before:"st1ene4",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene6",   type:"st1",  subtype:"ene", before:"st1ene5",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene7",   type:"st1",  subtype:"ene", before:"st1ene6",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st1sho1",   type:"st1",  subtype:"sho", before:null,        price:600,  name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st1sho2",   type:"st1",  subtype:"sho", before:"st1sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st1sho3",   type:"st1",  subtype:"sho", before:"st1sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
@@ -253,10 +316,10 @@ const SHOP_ITEMS = [
     {id: "st2dpn2",   type:"st2",  subtype:"dpn", before:"st2dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st2ene1",   type:"st2",  subtype:"ene", before:null,        price:600,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene2",   type:"st2",  subtype:"ene", before:"st2ene1",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st2ene3",   type:"st2",  subtype:"ene", before:"st2ene2",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st2ene4",   type:"st2",  subtype:"ene", before:"st2ene3",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st2ene5",   type:"st2",  subtype:"ene", before:"st2ene4",   price:6000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st2ene6",   type:"st2",  subtype:"ene", before:"st2ene5",   price:7500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene3",   type:"st2",  subtype:"ene", before:"st2ene2",   price:2500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene4",   type:"st2",  subtype:"ene", before:"st2ene3",   price:3500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene5",   type:"st2",  subtype:"ene", before:"st2ene4",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene6",   type:"st2",  subtype:"ene", before:"st2ene5",   price:5500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2sho1",   type:"st2",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st2sho2",   type:"st2",  subtype:"sho", before:"st2sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st2sho3",   type:"st2",  subtype:"sho", before:"st2sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
@@ -298,9 +361,9 @@ const SHOP_ITEMS = [
     {id: "st4spd3",   type:"st4",  subtype:"spd", before:"st4spd2",   price:700,  name: "移動速度+", desc: "移動速度が+0.1"},
 
     // --- その他 (stA) ---
-    {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:5000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:10000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:15000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" }
+    {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:4000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:8000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" }
 ];
 
 const ITEM_NAMES = {
