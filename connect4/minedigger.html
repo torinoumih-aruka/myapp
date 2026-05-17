@@ -26,7 +26,7 @@
         input[type="text"] { padding: 12px; font-size: 1.2rem; text-align: center; width: 160px; border-radius: 5px; border: 2px solid #bdc3c7; margin-bottom: 0; background: #ecf0f1; color: #2c3e50; font-weight: bold;}
         .name-input-container { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        #char-info { margin-bottom: 15px; text-align: center; background: #2c3e50; padding: 10px; border-radius: 8px; width: 90%; max-width: 340px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        #char-info { margin-bottom: 15px; text-align: center; background: #2c3e50; padding: 5px; border-radius: 8px; width: 90%; max-width: 340px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         
         #lobby-players-list { background: #1a252f; padding: 15px; border-radius: 8px; width: 85%; max-width: 320px; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
 
@@ -46,14 +46,44 @@
         .modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
         
-        #shop-list { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        #shop-list td { border: 1px solid #bdc3c7; padding: 8px; font-size: 0.95rem; }
-        .shop-row-title-item { background: #34495e; color: #fff; font-weight: bold; }
-        .shop-row-title-st1 { background: #5e343f; color: #fff; font-weight: bold; }
-        .shop-row-title-st2 { background: #703767; color: #fff; font-weight: bold; }
-        .shop-row-title-st3 { background: #5e5e34; color: #fff; font-weight: bold; }
-        .shop-row-title-st4 { background: #234722; color: #fff; font-weight: bold; }
-        .shop-row-title-all { background: #323232; color: #fff; font-weight: bold; }
+        /* ▼▼ スキルツリーSHOP用スタイル ▼▼ */
+        .shop-category { padding: 15px; margin-bottom: 15px; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .bg-item { background-color: #b8d4e9; }
+        .bg-st1  { background-color: #e5cbaa; }
+        .bg-st2  { background-color: #f4c2c2; }
+        .bg-st3  { background-color: #fdfd96; }
+        .bg-st4  { background-color: #ccffcc; }
+        .bg-stA  { background-color: #d3d3d3; }
+        .category-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid rgba(0,0,0,0.2); display: inline-block; padding-right: 20px;}
+        .subtype-title { font-size: 1rem; font-weight: bold; margin: 10px 0 5px 0; color: #2c3e50; }
+        
+        .tree-row { display: flex; align-items: center; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .tree-node-wrapper { display: flex; align-items: center; }
+        .tree-node-item {
+            width: 55px; height: 55px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: bold; text-align: center; cursor: pointer; position: relative; z-index: 2;
+            color: #fff; padding: 2px; box-sizing: border-box; transition: transform 0.1s; /*white-space: pre-wrap;*/ line-height: 1.2;
+        }
+        .tree-node {
+            width: 40px; height: 55px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: bold; text-align: center; cursor: pointer; position: relative; z-index: 2;
+            color: #fff; padding: 2px; box-sizing: border-box; transition: transform 0.1s; /*white-space: pre-wrap;*/ line-height: 1.2;
+        }
+        .tree-node:active { transform: scale(0.95); }
+        .tree-node-item:active { transform: scale(0.95); }
+        .node-locked { background-color: #2e7d32; border: 3px solid #1b5e20; } /* 未開放: 暗い緑 */
+        .node-unlocked { background-color: #00e676; border: 3px solid #00c853; box-shadow: 0 0 10px #00e676; text-shadow: 1px 1px #000; } /* 開放済: 発光緑 */
+        .tree-line { width: 5px; height: 3px; background-color: #2c3e50; z-index: 1; }
+        
+        /* ポップアップ詳細用 */
+        #modal-shop-detail .modal-content { background: #ecf0f1; color: #2c3e50; max-width: 350px; padding: 20px; text-align: left; }
+        .detail-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; }
+        .detail-desc { font-size: 0.95rem; margin-bottom: 20px; line-height: 1.4; }
+        .detail-footer { display: flex; justify-content: space-between; align-items: center; background: #95a5a6; padding: 10px; border-radius: 8px; color: white;}
+        .detail-price { font-size: 1.2rem; font-weight: bold; }
+        .btn-buy { background: #00e676; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .btn-bought { font-weight: bold; font-size: 1.1rem; color: #7f8c8d; }
+        /* ▲▲ ここまで ▲▲ */
         .shop-row-desc { background: #ecf0f1; font-size: 0.8rem !important; color: #2c3e50; }
         .shop-btn { padding: 5px 10px; font-size: 0.85rem; margin: 0; border-radius: 3px; }
     </style>
@@ -65,83 +95,30 @@
 
             <h2>遊び方</h2>
             <p><strong>ルール:</strong><br>下へ下へと掘り進めるゲームです。ブロックをタップして破壊し、奥深くを目指しましょう。</p>
-            <p><strong>操作:</strong><br>画面下部の矢印で左右移動。隣接するブロックをタップして採掘。アイテムは右下のスロットをタップして使用します。</p>
-            <p><strong>エネルギー:</strong><br>掘るたびにエネルギーを消費します。セッション内の「誰か1人でも」エネルギーが0になるか、制限時間が切れるとゲームオーバーです。</p>
-            <p><strong>お店:</strong><br>獲得した鉱石(▲のやつ)は、ポイントとして貯まっていきます。貯まったポイントは🏠SHOPで使うことができます。いろいろな効果をアンロック(開放)したり、ステータスを強化したりできます。</p>
-
-            <h2>マルチプレイ</h2>
-            <p><strong>ホストプレイヤー:</strong><br>ホストとなるプレイヤーは「部屋を作成」を押します。押すと、部屋番号とURLが表示されます。URLを友達に配るか、OKを押したあと、キャラクター選択画面に書いてある部屋番号を教えてあげましょう。</p>
-            <p><strong>ゲストプレイヤー:</strong><br>タイトル画面で部屋番号を入力し「部屋に入る」を押すと、ホストと一緒に遊ぶことができます。同時にホスト１、ゲスト３人まで遊べます。</p>
-            <p><strong>通信:</strong><br>ホストプレイヤーは参加プレイヤー全員のいろんな情報を毎秒60回集約しながら遊ぶため、安定したネットワーク環境であることが望ましいです。<br>また、LINEや別のアプリに切り替えることで通信が切断される可能性もあるため、ホストプレイヤーはゲームに集中しサーバーになった気分でプレイしましょう。<br>尚、ホストプレイヤーは画面が暗くならないような設定も入れているので、バッテリーも食います。</p>
-            <p><strong>鉱石の分け方:</strong><br>マルチプレイで取得した鉱石は、全プレイヤーの合計を人数で割って均等に分配されます。</p>
-            <p><strong>アイテム:</strong><br>マルチプレイでは、参加プレイヤー全員がアンロックしたアイテムのみが出るようになっています。例えば、参加者のうち１人でも「ろうそく」をアンロックしていない場合「ろうそく」は出てきません。</p>
-            <p><strong>ステータス:</strong><br>キャラクターのステータスを上昇させるアイテムを購入した場合、マルチプレイでもそのステータスで遊ぶことができます。</p>
-
-            <h2>セーブデータ</h2>
-            <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いても、LINEで遊んだときのセーブデータは読み込まれません。遊ぶブラウザを決めておくと、良いかと思います。</p>
-
-            <h2>ブロックの種類</h2>
-            <table style="width: 98%;">
-            	<tr>
-            		<th style="width:30%;">見た目</th>
-            		<th style="width:70%;">説明</th>
-            	</tr>
-                <tr>
-            		<td><div style="width:10px;height:10px;background-color: #2ecc71; border: 2px solid #881111;"></div></td><td>草ブロック：消費エネルギー１</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #d35400; border: 2px solid #881111;"></div></td><td>苔むしたブロック：消費エネルギー２</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #b87333; border: 2px solid #881111;"></div></td><td>土ブロック：消費エネルギー３</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #95a5a6; border: 2px solid #881111;"></div></td><td>岩ブロック：消費エネルギー４</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #34495e; border: 2px solid #881111;"></div></td><td>深層岩ブロック：消費エネルギー６</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #111111; border: 2px solid #881111;"></div></td><td>黒曜石ブロック：消費エネルギー１０</td>
-            	</tr>
-            	<tr>
-            		<td><div style="width:10px;height:10px;background-color: #bdc3c7; border: 2px solid #881111;"></div></td><td>４つの点がついているブロック。鉄壁：壊せない</td>
-            	</tr>
-            </table>
-
-            <h2>鉱石の種類</h2>
-            <table style="width: 98%;">
-            	<tr>
-            		<th style="width:30%;">見た目</th>
-            		<th style="width:70%;">説明</th>
-            	</tr>
-            	<tr>
-            		<td><div style="color: #e67e22;">▲</div></td><td>銅。１ポイント</td>
-            	</tr>
-            	<tr>
-            		<td><div style="color: #6c6a69;">▲</div></td><td>鉄。２ポイント</td>
-            	</tr>
-            	<tr>
-            		<td><div style="color: #f1c40f;">▲</div></td><td>金。３ポイント</td>
-            	</tr>
-            	<tr>
-            		<td><div style="color: #e74c3c;">▲</div></td><td>ルビー。４ポイント</td>
-            	</tr>
-            </table>
             <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p><br><br><br><br>
 
         </div>
     </div>
 
     <div id="modal-shop" class="modal-overlay" style="z-index: 200;">
-        <div class="modal-content" style="background:#2c3e50; color:#fff;">
+        <div class="modal-content" style="background:#2c3e50; color:#fff; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 10px;">
             <span class="modal-close" onclick="document.getElementById('modal-shop').style.display='none'">×</span>
-            <h2 style="color:#f1c40f; text-align:center; margin-top:0;">SHOP</h2>
-            <p id="shop-pts-display" style="text-align:center; font-size:1.2rem; font-weight:bold; margin-bottom:10px;"></p>
-            <table id="shop-list">
-                <tbody id="shop-tbody"></tbody>
-            </table>
-            <br><br><br><br>
+            <h2 style="color:#f1c40f; text-align:center; margin-top:10px; flex-shrink: 0;">SHOP</h2>
+            <p id="shop-pts-display" style="text-align:center; font-size:1.2rem; font-weight:bold; margin-bottom:10px; flex-shrink: 0;"></p>
+            <div id="shop-tree-container" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; border-radius: 8px;">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-shop-detail" class="modal-overlay" style="z-index: 300;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="document.getElementById('modal-shop-detail').style.display='none'">×</span>
+            <div class="detail-title" id="detail-title"></div>
+            <div class="detail-desc" id="detail-desc"></div>
+            <div class="detail-footer">
+                <div style="font-size: 0.9rem;">価格 <span class="detail-price" id="detail-price"></span></div>
+                <div id="detail-btn-container"></div>
+            </div>
         </div>
     </div>
 
@@ -233,86 +210,104 @@ const CHARACTERS = {
     strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
     ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
     dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "アイテムの効果がより強力になる。" },
-    thief: { name: "こそどろ", color: "#2ecc71", energy: 55, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 2, dropMax: 4, saveEnergyProb: 5, desc: "ブロックを掘るときに、一定確率でエネルギーを消費しない。" }
+    thief: { name: "こそどろ", color: "#2ecc71", energy: 55, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 2, dropMax: 4, saveEnergyProb: 5, desc: "他の人より多く鉱石が拾える、がめついドロボー。" }
 };
 
 const SHOP_ITEMS = [
-    { id: "item_00", price: 0, act:"全", name: "「爆弾」アンロック", desc: "使用すると、周囲2マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲3マスの範囲に広がる。" },
-    { id: "item_01", price: 150, act:"全",name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。" },
-    { id: "item_02", price: 1000, act:"全",name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に4マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に7マス掘削する。" },
-    { id: "item_03", price: 500, act:"全",name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1。【手先が器用】が使うと、20秒間、視界範囲が+2。" },
-    { id: "item_04", price: 1500, act:"全",name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが10回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを5回復。【手先が器用】が使うと、全プレイヤーのエネルギーを10回復。" },
-    { id: "item_05", price: 800, act:"全",name: "「タイマー」アンロック", desc: "使用すると、制限時間が+10秒。【手先が器用】が使うと、制限時間が+20秒。" },
-    { id: "item_06", price: 1000, act:"全",name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20。【手先が器用】が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20。" },
-{id: "st1dex1", price:5000,act: "力", name: "力持ちの視界+", desc: "力持ちの視界が+1"},
-{id: "st1dpn1", price:500,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
-{id: "st1dpn2", price:6000,act: "力", name: "力持ちの鉱石+", desc: "力持ちの鉱石ドロップ数が+1"},
-{id: "st1ene1", price:200,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1ene2", price:800,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1ene3", price:1500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1ene4", price:2500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1ene5", price:3500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1ene6", price:4500,act: "力", name: "力持ちのエネルギー上限+", desc: "力持ちのエネルギー上限値が+10"},
-{id: "st1sho1", price:600,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-{id: "st1sho2", price:1500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-{id: "st1sho3", price:2500,act: "力", name: "力持ちの省エネ+", desc: "力持ちの省エネ掘削が+2%"},
-{id: "st1spd1", price:200,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
-{id: "st1spd2", price:500,act: "力", name: "力持ちの移動速度+", desc: "力持ちの移動速度が+0.1"},
-{id: "st2dex1", price:200,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
-{id: "st2dex2", price:1000,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
-{id: "st2dex3", price:2000,act: "耳", name: "耳が良いの視界+", desc: "耳が良いの視界が+1"},
-{id: "st2dpn1", price:500,act: "耳", name: "耳が良いの鉱石+", desc: "耳が良いの鉱石ドロップ数が+1"},
-{id: "st2dpn2", price:6000,act: "耳", name: "耳が良いの鉱石+", desc: "耳が良いの鉱石ドロップ数が+1"},
-{id: "st2ene1", price:600,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2ene2", price:1500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2ene3", price:3000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2ene4", price:4500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2ene5", price:6000,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2ene6", price:7500,act: "耳", name: "耳が良いのエネルギー上限+", desc: "耳が良いのエネルギー上限値が+10"},
-{id: "st2sho1", price:400,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-{id: "st2sho2", price:1500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-{id: "st2sho3", price:2500,act: "耳", name: "耳が良いの省エネ+", desc: "耳が良いの省エネ掘削が+2%"},
-{id: "st2spd1", price:150,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
-{id: "st2spd2", price:500,act: "耳", name: "耳が良いの移動速度+", desc: "耳が良いの移動速度が+0.1"},
-{id: "st3dex1", price:4000,act: "手", name: "手先が器用の視界+", desc: "手先が器用の視界が+1"},
-{id: "st3dpn1", price:300,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
-{id: "st3dpn2", price:3000,act: "手", name: "手先が器用の鉱石+", desc: "手先が器用の鉱石ドロップ数が+1"},
-{id: "st3ene1", price:600,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-{id: "st3ene2", price:1500,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-{id: "st3ene3", price:3000,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-{id: "st3ene4", price:5000,act: "手", name: "手先が器用のエネルギー上限+", desc: "手先が器用のエネルギー上限値が+10"},
-{id: "st3sho1", price:400,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
-{id: "st3sho2", price:1500,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
-{id: "st3sho3", price:2500,act: "手", name: "手先が器用の省エネ+", desc: "手先が器用の省エネ掘削が+2%"},
-{id: "st3spd1", price:200,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
-{id: "st3spd2", price:500,act: "手", name: "手先が器用の移動速度+", desc: "手先が器用の移動速度が+0.1"},
-{id: "st4dex1", price:2000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
-{id: "st4dex2", price:4000,act: "こ", name: "こそどろの視界+", desc: "こそどろの視界が+1"},
-{id: "st4dpn1", price:500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-{id: "st4dpn2", price:1500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-{id: "st4dpn3", price:2500,act: "こ", name: "こそどろの鉱石+", desc: "こそどろの鉱石ドロップ数が+1"},
-{id: "st4ene1", price:300,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-{id: "st4ene2", price:2000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-{id: "st4ene3", price:4000,act: "こ", name: "こそどろのエネルギー上限+", desc: "こそどろのエネルギー上限値が+10"},
-{id: "st4sho1", price:400,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho2", price:1000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho3", price:2000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho4", price:3000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho5", price:4000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho6", price:5000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4sho7", price:6000,act: "こ", name: "こそどろの省エネ+", desc: "こそどろの省エネ掘削が+2%"},
-{id: "st4spd1", price:100,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
-{id: "st4spd2", price:300,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
-{id: "st4spd3", price:700,act: "こ", name: "こそどろの移動速度+", desc: "こそどろの移動速度が+0.1"},
-    { id: "stAluk1", price: 5000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    { id: "stAluk2", price: 10000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    { id: "stAluk3", price: 15000, act:"全",name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    // --- アイテム (item) ---
+    {id: "item_00",   type:"item", subtype:null,  before:null,        price:0,    name: "「爆弾」アンロック", desc: "使用すると、周囲2マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲3マスの範囲に広がる。" },
+    {id: "item_00_2", type:"item", subtype:null,  before:"item_00",   price:800,  name: "爆弾Lv2", desc: "使用すると、周囲3マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲4マスの範囲に広がる。" },
+    {id: "item_00_3", type:"item", subtype:null,  before:"item_00_2", price:3000, name: "爆弾Lv3", desc: "使用すると、周囲4マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲5マスの範囲に広がる。" },
+    {id: "item_01",   type:"item", subtype:null,  before:null,        price:150,  name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。" },
+    {id: "item_01_2", type:"item", subtype:null,  before:"item_01",   price:700,  name: "ろうそくLv2", desc: "使用すると、上下7マスの視界を獲得。【手先が器用】が使うと、上下12マスの範囲に広がる。" },
+    {id: "item_02",   type:"item", subtype:null,  before:null,        price:1000, name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に4マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に7マス掘削する。" },
+    {id: "item_02_2", type:"item", subtype:null,  before:"item_02",   price:2000, name: "ドリルLv2", desc: "使用すると、使用した場所から真下に5マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に8マス掘削する。" },
+    {id: "item_03",   type:"item", subtype:null,  before:null,        price:500,  name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1。【手先が器用】が使うと、20秒間、視界範囲が+2。" },
+    {id: "item_04",   type:"item", subtype:null,  before:null,        price:800,  name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが10回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを5回復。【手先が器用】が使うと、全プレイヤーのエネルギーを10回復。" },
+    {id: "item_04_2", type:"item", subtype:null,  before:"item_04",   price:1600, name: "スペアエネルギーLv2", desc: "使用すると、自分のエネルギーが20回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを10回復。【手先が器用】が使うと、自分のエネルギーが40回復し、全プレイヤーのエネルギーを15回復。" },
+    {id: "item_05",   type:"item", subtype:null,  before:null,        price:800,  name: "「タイマー」アンロック", desc: "使用すると、制限時間が+10秒。【手先が器用】が使うと、制限時間が+20秒。" },
+    {id: "item_06",   type:"item", subtype:null,  before:null,        price:1000, name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20。【手先が器用】が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20。※ひとりプレイでは出現しません" },
+    
+    // --- 力持ち (st1) ---
+    {id: "st1dex1",   type:"st1",  subtype:"dex", before:null,        price:5000, name: "視界+", desc: "視界が+1"},
+    {id: "st1dpn1",   type:"st1",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st1dpn2",   type:"st1",  subtype:"dpn", before:"st1dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st1ene1",   type:"st1",  subtype:"ene", before:null,        price:200,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene2",   type:"st1",  subtype:"ene", before:"st1ene1",   price:800,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene3",   type:"st1",  subtype:"ene", before:"st1ene2",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene4",   type:"st1",  subtype:"ene", before:"st1ene3",   price:2500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene5",   type:"st1",  subtype:"ene", before:"st1ene4",   price:3500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene6",   type:"st1",  subtype:"ene", before:"st1ene5",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene7",   type:"st1",  subtype:"ene", before:"st1ene6",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1sho1",   type:"st1",  subtype:"sho", before:null,        price:600,  name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st1sho2",   type:"st1",  subtype:"sho", before:"st1sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st1sho3",   type:"st1",  subtype:"sho", before:"st1sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st1spd1",   type:"st1",  subtype:"spd", before:null,        price:200,  name: "移動速度+", desc: "移動速度が+0.1"},
+    {id: "st1spd2",   type:"st1",  subtype:"spd", before:"st1spd1",   price:500,  name: "移動速度+", desc: "移動速度が+0.1"},
+    
+    // --- 耳が良い (st2) ---
+    {id: "st2dex1",   type:"st2",  subtype:"dex", before:null,        price:200,  name: "視界+", desc: "視界が+1"},
+    {id: "st2dex2",   type:"st2",  subtype:"dex", before:"st2dex1",   price:1000, name: "視界+", desc: "視界が+1"},
+    {id: "st2dex3",   type:"st2",  subtype:"dex", before:"st2dex2",   price:2000, name: "視界+", desc: "視界が+1"},
+    {id: "st2dpn1",   type:"st2",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st2dpn2",   type:"st2",  subtype:"dpn", before:"st2dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st2ene1",   type:"st2",  subtype:"ene", before:null,        price:600,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene2",   type:"st2",  subtype:"ene", before:"st2ene1",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene3",   type:"st2",  subtype:"ene", before:"st2ene2",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene4",   type:"st2",  subtype:"ene", before:"st2ene3",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene5",   type:"st2",  subtype:"ene", before:"st2ene4",   price:6000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene6",   type:"st2",  subtype:"ene", before:"st2ene5",   price:7500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2sho1",   type:"st2",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st2sho2",   type:"st2",  subtype:"sho", before:"st2sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st2sho3",   type:"st2",  subtype:"sho", before:"st2sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st2spd1",   type:"st2",  subtype:"spd", before:null,        price:150,  name: "移動速度+", desc: "移動速度が+0.1"},
+    {id: "st2spd2",   type:"st2",  subtype:"spd", before:"st2spd1",   price:500,  name: "移動速度+", desc: "移動速度が+0.1"},
 
+    // --- 手先が器用 (st3) ---
+    {id: "st3dex1",   type:"st3",  subtype:"dex", before:null,        price:4000, name: "視界+", desc: "視界が+1"},
+    {id: "st3dpn1",   type:"st3",  subtype:"dpn", before:null,        price:300,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st3dpn2",   type:"st3",  subtype:"dpn", before:"st3dpn1",   price:3000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st3ene1",   type:"st3",  subtype:"ene", before:null,        price:600,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st3ene2",   type:"st3",  subtype:"ene", before:"st3ene1",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st3ene3",   type:"st3",  subtype:"ene", before:"st3ene2",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st3ene4",   type:"st3",  subtype:"ene", before:"st3ene3",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st3sho1",   type:"st3",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st3sho2",   type:"st3",  subtype:"sho", before:"st3sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st3sho3",   type:"st3",  subtype:"sho", before:"st3sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st3spd1",   type:"st3",  subtype:"spd", before:null,        price:200,  name: "移動速度+", desc: "移動速度が+0.1"},
+    {id: "st3spd2",   type:"st3",  subtype:"spd", before:"st3spd1",   price:500,  name: "移動速度+", desc: "移動速度が+0.1"},
+
+    // --- こそどろ (st4) ---
+    {id: "st4dex1",   type:"st4",  subtype:"dex", before:null,        price:2000, name: "視界+", desc: "視界が+1"},
+    {id: "st4dex2",   type:"st4",  subtype:"dex", before:"st4dex1",   price:4000, name: "視界+", desc: "視界が+1"},
+    {id: "st4dpn1",   type:"st4",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st4dpn2",   type:"st4",  subtype:"dpn", before:"st4dpn1",   price:1500, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st4dpn3",   type:"st4",  subtype:"dpn", before:"st4dpn2",   price:2500, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st4ene1",   type:"st4",  subtype:"ene", before:null,        price:300,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st4ene2",   type:"st4",  subtype:"ene", before:"st4ene1",   price:2000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st4ene3",   type:"st4",  subtype:"ene", before:"st4ene2",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st4sho1",   type:"st4",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho2",   type:"st4",  subtype:"sho", before:"st4sho1",   price:1000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho3",   type:"st4",  subtype:"sho", before:"st4sho2",   price:2000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho4",   type:"st4",  subtype:"sho", before:"st4sho3",   price:3000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho5",   type:"st4",  subtype:"sho", before:"st4sho4",   price:4000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho6",   type:"st4",  subtype:"sho", before:"st4sho5",   price:5000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho7",   type:"st4",  subtype:"sho", before:"st4sho6",   price:6000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4spd1",   type:"st4",  subtype:"spd", before:null,        price:100,  name: "移動速度+", desc: "移動速度が+0.1"},
+    {id: "st4spd2",   type:"st4",  subtype:"spd", before:"st4spd1",   price:300,  name: "移動速度+", desc: "移動速度が+0.1"},
+    {id: "st4spd3",   type:"st4",  subtype:"spd", before:"st4spd2",   price:700,  name: "移動速度+", desc: "移動速度が+0.1"},
+
+    // --- その他 (stA) ---
+    {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:5000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:10000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
+    {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:15000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" }
 ];
 
 const ITEM_NAMES = {
-    'item_00':'爆弾', 'item_01':'ろうそく', 'item_02':'ドリル', 
-    'item_03':'マイク', 'item_04':'スペア\nエネ', 'item_05':'タイマー', 'item_06':'エネ\n分配'
+    'item_00':'爆弾', 'item_00_2':'爆弾\nLv2', 'item_00_3':'爆弾\nLv3', 
+    'item_01':'ろうそく', 'item_01_2':'ろうそく\nLv2', 
+    'item_02':'ドリル', 'item_02_2':'ドリル\nLv2', 
+    'item_03':'収音\nマイク', 'item_04':'スペア\nエネ','item_04_2':'スペア\nエネ\nLv2', 'item_05':'タイマー', 'item_06':'エネ\n分配'
 };
 
 const BLOCK_DEFS = {
@@ -453,16 +448,54 @@ const drawCharacterShape = (ctx, x, y, size, color) => {
 const updateCharInfo = (type) => {
     const unlocks = getUnlocks();
     const c = getCalculatedCharStats(type, unlocks);
+    const base = CHARACTERS[type];
+
+    // 差分の計算とテキスト生成
+    const diffEnergy = c.energy - base.energy;
+    const energyText = `${c.energy}` + (diffEnergy > 0 ? ` <span style="color:#f1c40f;">(+${diffEnergy})</span>` : "");
+
+    const diffSpeed = c.speedMult - base.speedMult;
+    const speedText = `x${c.speedMult.toFixed(1)}` + (diffSpeed > 0.01 ? ` <span style="color:#f1c40f;">(+${diffSpeed.toFixed(1)})</span>` : "");
+
+    const diffVision = c.vision - base.vision;
+    const visionText = `${c.vision}` + (diffVision > 0 ? ` <span style="color:#f1c40f;">(+${diffVision})</span>` : "");
+
+    const diffDrop = c.dropMin - base.dropMin; // 最小と最大は同じだけ増える前提
+    const dropText = `${c.dropMin}〜${c.dropMax}個` + (diffDrop > 0 ? ` <span style="color:#f1c40f;">(+${diffDrop})</span>` : "");
+
+    const diffSave = c.saveEnergyProb - base.saveEnergyProb;
+    const saveText = `${c.saveEnergyProb}%` + (diffSave > 0 ? ` <span style="color:#f1c40f;">(+${diffSave}%)</span>` : "");
+
+    // HTMLの構築 (左揃え＆グリッドレイアウト)
     document.getElementById('char-info').innerHTML = `
-        <div style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">【${c.name}】</div>
-        <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; line-height: 1.4;">
-            エネ: <span style="color:#2ecc71">${c.energy}</span> &nbsp;|&nbsp; 
-            速さ: <span style="color:#3498db">x${c.speedMult.toFixed(1)}</span> &nbsp;|&nbsp; 
-            視界: <span style="color:#e74c3c">${c.vision}</span> <br>
-            鉱石: <span style="color:#9b59b6">${c.dropMin}〜${c.dropMax}個</span> &nbsp;|&nbsp;
-            省エネ: <span style="color:#f39c12">${c.saveEnergyProb}%</span>
+        <div style="text-align: left; padding: 2px;">
+            <div style="color: #f1c40f; font-weight: bold; margin-bottom: 12px; font-size: 1.2rem;">【${c.name}】</div>
+            
+            <div style="display: grid; grid-template-columns: auto auto auto; gap: 3px 2px; margin-bottom: 5px; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="background-color: #2b4984; color: white; padding: 2px 4px; width:35%; border-radius: 4px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">エネ</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; white-space: nowrap;width:65%;">${energyText}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="background-color: #2b4984; color: white; padding: 2px 4px; width:35%; border-radius: 4px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">速さ</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; white-space: nowrap;width:65%;">${speedText}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="background-color: #2b4984; color: white; padding: 2px 4px; width:35%; border-radius: 4px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">視界</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; white-space: nowrap;width:65%;">${visionText}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="background-color: #2b4984; color: white; padding: 2px 4px; width:35%; border-radius: 4px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">鉱石</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; white-space: nowrap;width:65%;">${dropText}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="background-color: #2b4984; color: white; padding: 2px 4px; width:35%; border-radius: 4px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">省エネ</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; white-space: nowrap;width:65%;">${saveText}</div>
+                </div>
+            </div>
+            
+            <div style="font-size: 0.85rem; color: #ecf0f1; line-height: 1.4;">${c.desc}</div>
         </div>
-        <div style="font-size: 0.8rem; color: #ecf0f1; line-height: 1.3;">${c.desc}</div>
     `;
 };
 
@@ -518,45 +551,135 @@ const renderShop = () => {
     const unlocks = getUnlocks();
     const pts = getPts();
     document.getElementById('shop-pts-display').innerText = `所持ポイント: ${pts} pts`;
-    const tbody = document.getElementById('shop-tbody');
-    tbody.innerHTML = '';
     
+    const container = document.getElementById('shop-tree-container');
+    container.innerHTML = '';
+    
+    // 大分類の定義と背景色
+    const categories = [
+        { type: 'item', name: 'アイテム', bg: 'bg-item' },
+        { type: 'st1', name: '力持ち', bg: 'bg-st1' },
+        { type: 'st2', name: '耳が良い', bg: 'bg-st2' },
+        { type: 'st3', name: '手先が器用', bg: 'bg-st3' },
+        { type: 'st4', name: 'こそどろ', bg: 'bg-st4' },
+        { type: 'stA', name: 'その他', bg: 'bg-stA' }
+    ];
+
+    // SHOP_ITEMS を大分類ごとにグループ化
+    const grouped = {};
     SHOP_ITEMS.forEach(item => {
-        const isUnlocked = unlocks.includes(item.id);
-        const canBuy = pts >= item.price && !isUnlocked;
-        
-        let btnHtml = isUnlocked ? `<button class="shop-btn" disabled>購入済み</button>` :
-            `<button class="shop-btn" style="background:${canBuy?'#2ecc71':'#7f8c8d'}" ${canBuy?'':'disabled'} onclick="buyShopItem('${item.id}', ${item.price})">購入</button>`;
-
-        let style_ext = "item";
-        if(item.id.startsWith("item")){
-            style_ext = "item";
-        }else{
-            if(item.act === "全"){
-                style_ext = "all";
-            }else if(item.act === "力"){
-                style_ext = "st1";
-            }else if(item.act === "耳"){
-                style_ext = "st2";
-            }else if(item.act === "手"){
-                style_ext = "st3";
-            }else if(item.act === "こ"){
-                style_ext = "st4";
-            }
-        }
-
-        tbody.innerHTML += `
-            <tr class="shop-row-title-${style_ext}">
-                <td style="width:10%;">${item.act}</td>
-                <td style="width:50%;">${item.name}</td>
-                <td style="width:20%; text-align:center;">${item.price} pts</td>
-                <td style="width:20%; text-align:center;">${btnHtml}</td>
-            </tr>
-            <tr class="shop-row-desc">
-                <td colspan="4">${item.desc}</td>
-            </tr>
-        `;
+        if (!grouped[item.type]) grouped[item.type] = [];
+        grouped[item.type].push(item);
     });
+
+    categories.forEach(cat => {
+        if (!grouped[cat.type] || grouped[cat.type].length === 0) return;
+        
+        let html = `<div class="shop-category ${cat.bg}">`;
+        html += `<div class="category-title">${cat.name}</div>`;
+        
+        // ツリーの起点（beforeがnullのもの）を取得
+        const baseItems = grouped[cat.type].filter(i => i.before === null);
+        
+        baseItems.forEach(base => {
+            // サブタイプのタイトル表示（item以外）
+            if (cat.type !== 'item' && cat.type !== 'stA') {
+                let subName = "";
+                if (base.subtype === 'dex') subName = "視界+";
+                if (base.subtype === 'dpn') subName = "鉱石+";
+                if (base.subtype === 'ene') subName = "エネルギー上限+";
+                if (base.subtype === 'sho') subName = "省エネ+";
+                if (base.subtype === 'spd') subName = "移動速度+";
+                if (subName) html += `<div class="subtype-title">${subName}</div>`;
+            } else if (cat.type === 'stA') {
+                html += `<div class="subtype-title">アイテム出現率+</div>`;
+            }
+
+            html += `<div class="tree-row">`;
+            
+            let current = base;
+            while (current) {
+                const isUnlocked = unlocks.includes(current.id);
+                const nodeClass = isUnlocked ? 'node-unlocked' : 'node-locked';
+                
+                // ノード内に表示する短い名前の生成
+                let shortName = current.name;
+                if (current.type !== 'item' && current.type !== 'stA') {
+                    let level = 1;
+                    let temp = current;
+                    while(temp.before) { level++; temp = SHOP_ITEMS.find(i => i.id === temp.before); }
+                    shortName = `Lv${level}`;
+                } else if (current.type === 'stA') {
+                    let level = 1;
+                    let temp = current;
+                    while(temp.before) { level++; temp = SHOP_ITEMS.find(i => i.id === temp.before); }
+                    shortName = `Lv${level}`;
+                } else {
+                    if (current.name.includes('Lv')) shortName = current.name.match(/Lv\d+/)[0];
+                    else {
+                        shortName = current.name.replace('「','').replace('」アンロック','');
+                        if (shortName === 'スペアエネルギー') shortName = 'スペア\nエネ';
+                    }
+                }
+
+                let itemExt = current.type === 'item' ? '-item' : '';
+                if (current.before !== null) itemExt = ''; 
+
+                html += `
+                    <div class="tree-node-wrapper">
+                        <div class="tree-node${itemExt} ${nodeClass}" onclick="openShopDetail('${current.id}')">
+                            ${shortName}
+                        </div>
+                `;
+                
+                // 次のノード（自分をbeforeに指定しているもの）を探す
+                const nextItem = grouped[cat.type].find(i => i.before === current.id);
+                if (nextItem) html += `<div class="tree-line"></div>`;
+                
+                html += `</div>`; // end wrapper
+                current = nextItem;
+            }
+            html += `</div>`; // end tree-row
+        });
+        
+        html += `</div>`;
+        container.innerHTML += html;
+    });
+};
+
+// アイテム詳細ポップアップを表示する処理
+window.openShopDetail = (id) => {
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    if (!item) return;
+    
+    const unlocks = getUnlocks();
+    const pts = getPts();
+    const isUnlocked = unlocks.includes(id);
+    
+    // 購入条件の判定（前提アイテムを持っているか）
+    const prereqMet = item.before === null || unlocks.includes(item.before);
+    
+    document.getElementById('detail-title').innerText = item.name;
+    document.getElementById('detail-desc').innerText = item.desc;
+    document.getElementById('detail-price').innerText = `${item.price} pts`;
+    
+    const btnContainer = document.getElementById('detail-btn-container');
+    if (isUnlocked) {
+        btnContainer.innerHTML = `<span class="btn-bought">購入済み</span>`;
+    } else if (!prereqMet) {
+        // 前提条件を満たしていない場合はボタンを非表示
+        btnContainer.innerHTML = ``;
+    } else {
+        // 前提条件を満たしている場合
+        if (pts >= item.price) {
+            btnContainer.innerHTML = `<button class="btn-buy" onclick="buyShopItem('${id}', ${item.price})">購入</button>`;
+        } else {
+            // ポイント不足だが条件は満たしている場合（見せるだけ押せない）
+            btnContainer.innerHTML = `<button class="btn-buy" style="background:#7f8c8d; box-shadow:none; opacity:0.5;" disabled>購入</button>`;
+        }
+    }
+    
+    document.getElementById('modal-shop-detail').style.display = 'flex';
 };
 
 window.buyShopItem = (id, price) => {
@@ -568,6 +691,7 @@ window.buyShopItem = (id, price) => {
             unlocks.push(id);
             localStorage.setItem('minedigger_unlock_items', JSON.stringify(unlocks));
         }
+        document.getElementById('modal-shop-detail').style.display = 'none'; // 購入後は詳細を閉じる
         renderShop();
         if (state.gameState === 'lobby') updateLobbyUI();
     }
@@ -1099,6 +1223,30 @@ document.getElementById('btn-start').addEventListener('click', () => {
         });
 
         if(commonItems.length === 0) commonItems = ['item_00'];
+
+        // ▼▼ 同じ種類のアイテムは最大レベルのものだけ残す ▼▼
+        let finalCommonItems = [];
+        // 全アイテムIDの先頭7文字（"item_00"など）を取り出して、アイテムの種類（ベースID）のリストを作成
+        const baseIds = [...new Set(commonItems.map(i => i.substring(0, 7)))]; 
+        
+        baseIds.forEach(baseId => {
+            // ベースIDが一致するアイテム（例: item_00, item_00_2, item_00_3）を抽出
+            const family = commonItems.filter(i => i.startsWith(baseId));
+            // 名前順にソートすると、未印字 < _2 < _3 の順番になる
+            family.sort(); 
+            // 配列の最後（一番レベルの高いもの）だけを採用リストに入れる
+            finalCommonItems.push(family[family.length - 1]); 
+        });
+        commonItems = finalCommonItems;
+        // ▲▲ ここまで ▲▲
+        // ▼▼ 参加者が1人（ソロプレイ）の場合、エネルギー分配を除外 ▼▼
+        if (playerIds.length === 1) {
+            commonItems = commonItems.filter(i => !i.startsWith('item_06'));
+            
+            // 除外した結果アイテムが0個になった場合のフェールセーフ
+            if(commonItems.length === 0) commonItems = ['item_00'];
+        }
+        // ▲▲ ここまで ▲▲
         state.sharedItems = commonItems;
         
         let playersToSend = {};
@@ -1176,8 +1324,10 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
     const isDex = me.char === 'dexterous';
 
-    if (item === 'item_00') {
-        const radius = isDex ? 3 : 2;
+    if (item.startsWith('item_00')) {
+        let radius = isDex ? 3 : 2;
+        if (item === 'item_00_2') radius++;
+        if (item === 'item_00_3') radius += 2;
         const dugBlocks = [];
         const newEntities = [];
         for(let dy=-radius; dy<=radius; dy++) {
@@ -1203,13 +1353,15 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         while (state.entities.length > 100) state.entities.shift();
         broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks, spawnedEntities: newEntities });
         
-    } else if (item === 'item_01') {
-        const range = isDex ? 10 : 5;
+    } else if (item.startsWith('item_01')) {
+        let range = isDex ? 10 : 5;
+        if (item === 'item_01_2') range += 2;
         applySharedVision(myGridY, range);
         broadcast({ type: 'USE_CANDLE', y: myGridY, range: range });
         
-    } else if (item === 'item_02') {
-        const depth = isDex ? 7 : 4;
+    } else if (item.startsWith('item_02')) {
+        let depth = isDex ? 7 : 4;
+        if (item === 'item_02_2') depth++;
         const dugBlocks = [];
         const newEntities = [];
         for(let i=1; i<=depth; i++) {
@@ -1233,17 +1385,39 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         while (state.entities.length > 100) state.entities.shift();
         broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks, spawnedEntities: newEntities });
         
-    } else if (item === 'item_03') {
+    } else if (item.startsWith('item_03')) {
         const duration = isDex ? 20000 : 10000;
         const vBonus = isDex ? 2 : 1;
         me.buffs = { type: 'vision', val: vBonus, expire: Date.now() + duration };
-    } else if (item === 'item_04') {
+    } else if (item.startsWith('item_04')) {
+        const isLv2 = (item === 'item_04_2');
+        
         if (isDex) {
-            broadcast({ type: 'USE_SPARE_ALL', add: 10 });
-            for(let id in state.players) state.players[id].energy += 10;
-        } else {
-            me.energy += 10;
+            // 手先が器用の場合
+            const addAll = isLv2 ? 15 : 10;
+            const addSelf = isLv2 ? 40 : 10;
+            
+            // 自分自身を回復
+            me.energy += addSelf;
+            // 他のプレイヤーを回復
+            for(let id in state.players) {
+                if (id !== state.myId) state.players[id].energy += addAll;
+            }
+            
+            // 通信同期: 他プレイヤー全員に加算させた後、自分の最終エネルギーを送信してズレを防ぐ
+            broadcast({ type: 'USE_SPARE_ALL', add: addAll });
             broadcast({ type: 'UPDATE_ENERGY', id: state.myId, energy: me.energy });
+            
+        } else {
+            // 通常キャラクターの場合
+            const addSelf = isLv2 ? 20 : 10;
+            const addNear = isLv2 ? 10 : 5;
+            
+            // 自分自身を回復
+            me.energy += addSelf;
+            broadcast({ type: 'UPDATE_ENERGY', id: state.myId, energy: me.energy });
+            
+            // 隣接プレイヤーの判定と回復
             const nearIds = [];
             for(let id in state.players) {
                 if(id !== state.myId) {
@@ -1253,15 +1427,15 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
                 }
             }
             if(nearIds.length > 0) {
-                broadcast({ type: 'USE_SPARE_NEAR', ids: nearIds, add: 5 });
-                nearIds.forEach(id => state.players[id].energy += 5);
+                broadcast({ type: 'USE_SPARE_NEAR', ids: nearIds, add: addNear });
+                nearIds.forEach(id => state.players[id].energy += addNear);
             }
         }
-    } else if (item === 'item_05') {
+    } else if (item.startsWith('item_05')) {
         const addTime = isDex ? 20 : 10;
         state.gameTime += addTime;
         broadcast({ type: 'ADD_TIME', add: addTime });
-    } else if (item === 'item_06') {
+    } else if (item.startsWith('item_06')) {
         if (!isDex) me.energy -= 10;
         for(let id in state.players) { if(id !== state.myId) state.players[id].energy += 20; }
         broadcast({ type: 'USE_ENERGY_DIST', id: state.myId, isDex });
