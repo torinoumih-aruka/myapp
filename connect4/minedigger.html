@@ -187,7 +187,10 @@
 
     <div id="title-screen" class="screen">
         <h1>MINE DIGGER'S</h1>
-        <button id="btn-create-room">部屋を作成</button>
+        <div style="display: flex; gap: 10px; align-items: center; margin: 10px 0;">
+            <input type="text" id="input-host-room-id" maxlength="4" placeholder="部屋番号(任意4桁)" style="width: 140px; font-size: 1rem; padding: 10px; margin: 0;">
+            <button id="btn-create-room" style="margin: 0; padding: 10px 20px; font-size: 1rem; background-color: #3498db;">部屋を作成</button>
+        </div>
         
         <div style="display: flex; gap: 10px; align-items: center; margin: 10px 0;">
             <input type="text" id="input-room-id" maxlength="4" placeholder="部屋番号(4桁)" style="width: 130px; font-size: 1rem; padding: 10px; margin: 0;">
@@ -795,8 +798,18 @@ window.onload = () => {
 
 document.getElementById('btn-create-room').addEventListener('click', () => {
     savePlayerName();
-    initPeer(true);
+    const hostRoomCode = document.getElementById('input-host-room-id').value;
+    
+    // 入力がある場合、4桁の数字かチェック
+    if (hostRoomCode && !/^\d{4}$/.test(hostRoomCode)) {
+        alert("部屋番号を指定する場合は、4桁の数字を入力してください。");
+        return;
+    }
+    
+    // 空欄の場合は null を渡し、ランダム生成させる（案1）
+    initPeer(true, hostRoomCode || null);
 });
+
 
 document.getElementById('btn-join-room').addEventListener('click', () => {
     savePlayerName();
@@ -887,7 +900,7 @@ const generateMap = (itemBoxProb) => {
     return { map, fog };
 };
 
-const initPeer = (isHost, hostId = null) => {
+const initPeer = (isHost, customOrHostId = null) => {
     state.isHost = isHost;
     
     if (state.peer) {
@@ -896,10 +909,17 @@ const initPeer = (isHost, hostId = null) => {
     
     let peerId = undefined;
     if (isHost) {
-        const random4 = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        peerId = `minedigger${random4}`;
+        if (customOrHostId) {
+            // ホストが任意の4桁を指定した場合
+            peerId = `minedigger${customOrHostId}`;
+        } else {
+            // 未入力の場合はランダムな4桁を生成
+            const random4 = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            peerId = `minedigger${random4}`;
+        }
         state.peer = new Peer(peerId);
     } else {
+        // ゲストの場合
         state.peer = new Peer();
     }
 
@@ -908,12 +928,18 @@ const initPeer = (isHost, hostId = null) => {
         if (isHost) {
             initCharScreen(id);
             const roomCode = id.replace('minedigger', '');
-            const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
-            window.prompt(`部屋番号は【 ${roomCode} 】です。\nゲストに部屋番号を伝えるか、以下のURLをコピーして送信してください。`, url);
+            
+            // ランダム生成の時だけ、URL共有プロンプトを表示する
+            if (!customOrHostId) {
+                const url = `${window.location.origin}${window.location.pathname}?id=${id}`;
+                window.prompt(`部屋番号は【 ${roomCode} 】です。\nゲストに部屋番号を伝えるか、以下のURLをコピーして送信してください。`, url);
+            }
+            
             if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e => console.log(e));
         } else {
-            initCharScreen(hostId);
-            const conn = state.peer.connect(hostId);
+            // ゲストの場合は customOrHostId にホストのフルIDが入っている
+            initCharScreen(customOrHostId);
+            const conn = state.peer.connect(customOrHostId);
             setupConnection(conn);
         }
     });
@@ -924,8 +950,14 @@ const initPeer = (isHost, hostId = null) => {
 
     state.peer.on('error', (err) => {
         if (err.type === 'unavailable-id' && isHost) {
-            console.log("IDが重複しました。別のIDで再試行します...");
-            initPeer(true);
+            if (customOrHostId) {
+                // ホストが指定した番号が、すでに世界の誰かに使われていた場合
+                alert("指定した部屋番号はすでに使われています。別の番号にしてください。");
+            } else {
+                // ランダム生成で被った場合は、自動で別のIDで再試行
+                console.log("IDが重複しました。別のIDで再試行します...");
+                initPeer(true);
+            }
         } else {
             alert("通信エラーが発生しました: " + err.type);
             console.error(err);
