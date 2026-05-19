@@ -10,7 +10,7 @@
         .screen { display: none; width: 100vw; height: 100vh; height: 100dvh; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
         .active { display: flex; }
         h1 { font-size: 2.5rem; color: #f1c40f; text-shadow: 3px 3px #000; text-align: center; }
-        button { padding: 15px 30px; margin: 10px; font-size: 1.2rem; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.1s; }
+        button { padding: 7px 10px; margin: 10px; font-size: 1.2rem; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.1s; }
         button:active { background-color: #2980b9; transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
         button:disabled { background-color: #7f8c8d; cursor: not-allowed; box-shadow: none; transform: none; }
         
@@ -86,6 +86,24 @@
         /* ▲▲ ここまで ▲▲ */
         .shop-row-desc { background: #ecf0f1; font-size: 0.8rem !important; color: #2c3e50; }
         .shop-btn { padding: 5px 10px; font-size: 0.85rem; margin: 0; border-radius: 3px; }
+        /* ▼▼ ゲーム内チャット・設定用スタイル ▼▼ */
+        .ingame-chat-btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #f1c40f;
+            color: #fff;
+            border-radius: 20px;
+            margin: 0;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .ingame-chat-btn:active { background: rgba(241, 196, 15, 0.5); }
+        .preset-select {
+            padding: 10px; border-radius: 5px; background: #34495e; color: #fff; border: 1px solid #7f8c8d; font-size: 1rem; font-weight: bold; width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -99,29 +117,36 @@
             <p><strong>エネルギー:</strong><br>掘るたびにエネルギーを消費します。セッション内の「誰か1人でも」エネルギーが0になるか、制限時間が切れるとゲームオーバーです。</p>
             <p><strong>お店:</strong><br>獲得した鉱石(▲のやつ)は、ポイントとして貯まっていきます。貯まったポイントは🏠SHOPで使うことができます。いろいろな効果をアンロック(開放)したり、ステータスを強化したりできます。</p>
 
-<h2>ひとりプレイ</h2>
-<p>部屋番号を入力せずに「部屋を作成」ボタンを押して、ゲームを開始してください。</p>
+            <h2>ひとりプレイ</h2>
+            <p>部屋番号を入力せずに「部屋を作成」ボタンを押して、ゲームを開始してください。</p>
 
-<h2>マルチプレイ</h2>
-<p><strong>部屋番号を決めてから遊ぶ場合</strong><br>（LINEなどで部屋番号を教えあって遊ぶ場合に最適）<br>
-(1).決めておいた部屋番号をLINEで通知しておきます。<br>
-(2).部屋番号を入力してから「部屋を作成」ボタンを押して、キャラクター選択画面に移動。ゲストを待ちます。</p>
+            <h2>マルチプレイ</h2>
+            <p><strong>部屋番号を決めてから遊ぶ場合</strong><br><small>（LINEなどで部屋番号を教えあって遊ぶ場合に最適）</small><br>
+            (1).決めておいた部屋番号をLINEで通知しておきます。<br>
+            (2).部屋番号を入力してから「部屋を作成」ボタンを押して、キャラクター選択画面に移動。ゲストを待ちます。</p>
 
-<p><strong>部屋番号を決めずに遊ぶ場合</strong><br>（ゲストが近くにいるときはこっち）<br>
-(1).部屋番号を入力せずに「部屋を作成」ボタンを押して、キャラクター選択画面に移動。<br>
-(2).キャラクター選択画面に表示されている部屋番号を、ゲストプレイヤーに口頭で伝え、入室を待ちます。</p>
+            <p><strong>部屋番号を決めずに遊ぶ場合</strong><br><small>（ゲストが近くにいるときはこっち）</small><br>
+            (1).部屋番号を入力せずに「部屋を作成」ボタンを押して、キャラクター選択画面に移動。<br>
+            (2).キャラクター選択画面に表示されている部屋番号を、ゲストプレイヤーに口頭で伝え、入室を待ちます。</p>
 
-<p><strong>注意</strong><br>
-ホストもゲストも、入出後はブラウザから別のアプリに切り替えたり、過度なスクリーンショットの作成は控えてください。<br>
-<small>
-「部屋」はインターネット上に作成され、その部屋をホストプレイヤーが接続している間のみ有効になります。スマホはセキュリティが強く、アプリをブラウザからLINEに切り替えると、ブラウザの機能が停止し、"ホストプレイヤーが部屋から切断した"と判断されます。<br>
-このセキュリティ仕様があるため、ホストプレイヤーは部屋を作ってからはブラウザ以外のアプリへ切り替えを行わないようにしてください。<br>
-また、ゲストプレイヤーについても、入室後はLINEに切り替えると切断したと判断される場合があり、また、スクリーンショットを撮ったりすると、一時的にホストに情報が送られなくなり、全プレイヤーの進行の妨げになる場合があります。
-</small>
-</p>
+            <p><strong>ゲストプレイヤー</strong><br><small>（誰かに招待されている人）</small><br>
+            (1).ホストプレイヤーから教えてもらった部屋番号を「部屋に入る」ボタンの左隣の"部屋番号(4桁)"欄に入力してください。<br>
+            (2).「部屋に入る」ボタンを押すと、キャラクター選択画面に入ります。<br>
+            (3).キャラクターを選んで「準備OK」ボタンを押すと、ゲームに参加できるようになります。</p>
+
+            <p><strong>注意</strong><br>
+            ホストもゲストも、入出後はブラウザから別のアプリに切り替えたり、過度なスクリーンショットの作成は控えてください。<br>
+            <small>
+            「部屋」はインターネット上に作成され、その部屋をホストプレイヤーが接続している間のみ有効になります。スマホはセキュリティが強く、アプリをブラウザからLINEに切り替えると、ブラウザの機能が停止し、"ホストプレイヤーが部屋から切断した"と判断されます。<br>
+            このセキュリティ仕様があるため、ホストプレイヤーは部屋を作ってからはブラウザ以外のアプリへ切り替えを行わないようにしてください。<br>
+            また、ゲストプレイヤーについても、入室後はLINEに切り替えると切断したと判断される場合があり、また、スクリーンショットを撮ったりすると、一時的にホストに情報が送られなくなり、全プレイヤーの進行の妨げになる場合があります。
+            </small>
+            </p>
             <p><strong>鉱石の分け方:</strong><br>マルチプレイで取得した鉱石は、全プレイヤーの合計を人数で割って均等に分配されます。</p>
             <p><strong>アイテム:</strong><br>マルチプレイでは、参加プレイヤー全員がアンロックしたアイテムのみが出るようになっています。例えば、参加者のうち１人でも「ろうそく」をアンロックしていない場合「ろうそく」は出てきません。</p>
             <p><strong>ステータス:</strong><br>キャラクターのステータスを上昇させるアイテムを購入した場合、マルチプレイでもそのステータスで遊ぶことができます。</p>
+            <p><strong>チャット機能:</strong><br>タイトル画面で設定した３つの定型文でチャットができるようになりました。</p>
+
 
             <h2>セーブデータ</h2>
             <p><strong>仕様</strong><br>スマホ内のLocalStorageという領域に保存します。この領域の仕様上、以下の注意点があります。<br>１．ブラウザのキャッシュを全てクリアするとセーブデータも消えます。<br>２．ブラウザの種類ごとにセーブデータが作られます。例えば、LINEからURLを開いた場合、セーブデータはLINEブラウザのセーブデータとして保存されるため、その後、GoogleChromeやSafariでゲームを開いても、LINEで遊んだときのセーブデータは読み込まれません。遊ぶブラウザを決めておくと、良いかと思います。</p>
@@ -189,6 +214,20 @@
         </div>
     </div>
 
+    <div id="modal-settings" class="modal-overlay" style="z-index: 200;">
+        <div class="modal-content" style="background:#2c3e50; color:#fff; max-width: 350px;">
+            <span class="modal-close" onclick="document.getElementById('modal-settings').style.display='none'">×</span>
+            <h2 style="color:#f1c40f; text-align:center; margin-top:0;">設定</h2>
+            <h3 style="font-size: 1.1rem; border-bottom: 1px solid #7f8c8d; padding-bottom: 5px;">ゲーム内チャット定型文</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;">
+                <select id="chat-preset-1" class="preset-select"></select>
+                <select id="chat-preset-2" class="preset-select"></select>
+                <select id="chat-preset-3" class="preset-select"></select>
+            </div>
+            <button onclick="saveSettings()" style="background:#2ecc71; width:100%; margin:0;">保存して閉じる</button>
+        </div>
+    </div>
+
     <div id="modal-shop-detail" class="modal-overlay" style="z-index: 300;">
         <div class="modal-content">
             <span class="modal-close" onclick="document.getElementById('modal-shop-detail').style.display='none'">×</span>
@@ -219,8 +258,9 @@
         </div>
 
         <button id="btn-how-to" onclick="document.getElementById('modal-howto').style.display='flex'">遊び方</button>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 1px;">
             <button id="btn-shop" style="background-color: #e67e22;">🏠SHOP</button>
+            <button id="btn-settings-open" onclick="openSettingsModal()" style="background-color: #8e44ad;">⚙設定</button>
             <button id="btn-reset" style="background-color: #c0392b;">データ初期化</button>
         </div>
         <p id="room-status"></p>
@@ -265,6 +305,15 @@
     <div id="game-screen" class="screen">
         <div class="ui-header"></div>
         <canvas id="gameCanvas"></canvas>
+
+        <div id="in-game-chat-display" style="position: absolute; bottom: 150px; left: 10px; width: 60%; height: 80px; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; z-index: 10;"></div>
+        
+        <div id="in-game-chat-buttons" style="position: absolute; bottom: 150px; right: 10px; display: flex; flex-direction: column; gap: 8px; z-index: 10;">
+            <button class="ingame-chat-btn" id="btn-ingame-chat-1"></button>
+            <button class="ingame-chat-btn" id="btn-ingame-chat-2"></button>
+            <button class="ingame-chat-btn" id="btn-ingame-chat-3"></button>
+        </div>
+
         <div class="ui-controls">
             <div class="move-pads">
                 <div class="pad-btn" id="pad-left">←</div>
@@ -390,6 +439,91 @@ const ITEM_NAMES = {
     'item_01':'ろうそく', 'item_01_2':'ろうそく\nLv2', 
     'item_02':'ドリル', 'item_02_2':'ドリル\nLv2', 
     'item_03':'収音\nマイク', 'item_04':'スペア\nエネ','item_04_2':'スペア\nエネ\nLv2', 'item_05':'タイマー', 'item_06':'エネ\n分配'
+};
+
+const INGAME_CHAT_OPTIONS = [
+    "左！", "右！", "下！", "アイテムちょうだい", "アイテムあげる",
+    "回復するよ", "まかせて！", "掘ってください", "集まって！", "二手に分かれよう",
+    "慎重にいこう", "エネルギーピンチ！", "ありがとう！"
+];
+
+const getChatPresets = () => {
+    let presets = JSON.parse(localStorage.getItem('minedigger_chat_presets'));
+    if (!presets || presets.length !== 3) presets = ["助けて！", "ありがとう！", "ごめん！"];
+    return presets;
+};
+
+window.openSettingsModal = () => {
+    const presets = getChatPresets();
+    [1, 2, 3].forEach(num => {
+        const select = document.getElementById(`chat-preset-${num}`);
+        select.innerHTML = '';
+        INGAME_CHAT_OPTIONS.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt; option.text = opt;
+            if (opt === presets[num - 1]) option.selected = true;
+            select.appendChild(option);
+        });
+    });
+    document.getElementById('modal-settings').style.display = 'flex';
+};
+
+window.saveSettings = () => {
+    const presets = [
+        document.getElementById('chat-preset-1').value,
+        document.getElementById('chat-preset-2').value,
+        document.getElementById('chat-preset-3').value
+    ];
+    localStorage.setItem('minedigger_chat_presets', JSON.stringify(presets));
+    applyChatPresetsToGame();
+    document.getElementById('modal-settings').style.display = 'none';
+};
+
+const applyChatPresetsToGame = () => {
+    const presets = getChatPresets();
+    [1, 2, 3].forEach(num => {
+        document.getElementById(`btn-ingame-chat-${num}`).innerText = presets[num - 1];
+    });
+};
+
+const receiveInGameChat = (playerId, msg) => {
+// プレイヤーオブジェクトを一度変数に入れておきます
+    const player = state.players[playerId];
+
+    const playerName = state.players[playerId] ? state.players[playerId].name : (state.lobbyPlayers[playerId] ? state.lobbyPlayers[playerId].name : "プレイヤー");
+    const chatDiv = document.createElement('div');
+
+    let charColor = '#f1c40f'; // デフォルトの色（念のためのフォールバック）
+    if (player && player.char && CHARACTERS[player.char]) {
+        charColor = CHARACTERS[player.char].color;
+    }
+
+    // 指定通り、名前のサイズと同じ 12px で設定
+    chatDiv.innerHTML = `<span style="color:${charColor}; font-weight:bold;">${playerName}:</span> <span style="color:#fff;">${msg}</span>`;
+    chatDiv.style.background = 'rgba(0,0,0,0.6)';
+    chatDiv.style.padding = '4px 8px';
+    chatDiv.style.borderRadius = '4px';
+    chatDiv.style.fontSize = '12px';
+    chatDiv.style.fontFamily = 'sans-serif';
+    chatDiv.style.width = 'fit-content';
+    chatDiv.style.wordBreak = 'break-all';
+
+    const container = document.getElementById('in-game-chat-display');
+    container.appendChild(chatDiv);
+
+    // 最大3件まで表示
+    while (container.children.length > 3) {
+        container.removeChild(container.firstChild);
+    }
+
+    // 10秒後にフェードアウトして削除
+    setTimeout(() => {
+        if (container.contains(chatDiv)) {
+            chatDiv.style.transition = "opacity 0.5s";
+            chatDiv.style.opacity = "0";
+            setTimeout(() => { if (container.contains(chatDiv)) container.removeChild(chatDiv); }, 500);
+        }
+    }, 10000);
 };
 
 const BLOCK_DEFS = {
@@ -790,6 +924,8 @@ window.onload = () => {
         }
     });
 
+    applyChatPresetsToGame();
+
     const nameInput = document.getElementById('title-player-name');
     const savedName = localStorage.getItem('minedigger_player_name');
     if (savedName) {
@@ -1132,6 +1268,15 @@ const handleNetworkData = (data) => {
             state.players[state.myId].energy += 20;
         }
     }
+    // ▼ ゲストからのチャット送信リクエストをホストが受け取って全員に配る
+    if (data.type === 'IN_GAME_CHAT_REQ' && state.isHost) {
+        receiveInGameChat(data.id, data.message);
+        broadcast({ type: 'IN_GAME_CHAT', id: data.id, message: data.message });
+    }
+    // ▼ ホストから配信されたチャットをゲストが受け取る
+    if (data.type === 'IN_GAME_CHAT' && !state.isHost) {
+        receiveInGameChat(data.id, data.message);
+    }
     if (data.type === 'GAME_OVER_WAIT') {
         state.gameState = 'gameover_wait';
         state.isTimeOver = data.isTimeOver;
@@ -1165,6 +1310,8 @@ const resetGameState = () => {
     state.cdTimerId = null;
     if (state.gameOverTimerId) clearTimeout(state.gameOverTimerId);
     state.gameOverTimerId = null;
+
+    document.getElementById('in-game-chat-display').innerHTML = '';
 
     state.map = [];
     state.fog = [];
@@ -1551,6 +1698,25 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         for(let id in state.players) { if(id !== state.myId) state.players[id].energy += 20; }
         broadcast({ type: 'USE_ENERGY_DIST', id: state.myId, isDex });
     }
+});
+
+[1, 2, 3].forEach(num => {
+    const btn = document.getElementById(`btn-ingame-chat-${num}`);
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const msg = btn.innerText;
+        if (!msg || state.gameState !== 'playing') return;
+        
+        if (state.isHost) {
+            receiveInGameChat(state.myId, msg);
+            broadcast({ type: 'IN_GAME_CHAT', id: state.myId, message: msg });
+        } else {
+            const connKey = Object.keys(state.peer.connections)[0];
+            if (connKey && state.peer.connections[connKey][0]) {
+                state.peer.connections[connKey][0].send({ type: 'IN_GAME_CHAT_REQ', id: state.myId, message: msg });
+            }
+        }
+    });
 });
 
 const spawnEntities = (x, y, targetBlock, diggerId) => {
