@@ -104,6 +104,15 @@
         .preset-select {
             padding: 10px; border-radius: 5px; background: #34495e; color: #fff; border: 1px solid #7f8c8d; font-size: 1rem; font-weight: bold; width: 100%;
         }
+
+        /* ▼▼ 実績用スタイル ▼▼ */
+        .ach-panel { background: #34495e; border: 2px solid #7f8c8d; border-radius: 8px; padding: 10px; margin-bottom: 10px; position: relative; display: flex; flex-direction: column; }
+        .ach-achieved { border-color: #00e676; box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); }
+        .ach-title { font-size: 1.1rem; font-weight: bold; color: #f1c40f; margin-bottom: 5px; padding-right: 30px; }
+        .ach-desc { font-size: 0.9rem; margin-bottom: 5px; color: #ecf0f1; }
+        .ach-reward { font-size: 0.85rem; color: #3498db; font-weight: bold; }
+        .ach-gift-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; background: none; border: none; cursor: pointer; animation: bounce 1s infinite; padding: 0; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
     </style>
 </head>
 <body>
@@ -214,6 +223,14 @@
         </div>
     </div>
 
+    <div id="modal-achievements" class="modal-overlay" style="z-index: 200;">
+        <div class="modal-content" style="background:#2c3e50; color:#fff; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column;">
+            <span class="modal-close" onclick="document.getElementById('modal-achievements').style.display='none'">×</span>
+            <h2 style="color:#f1c40f; text-align:center; margin-top:0;">🏆 実績</h2>
+            <div id="achievements-list" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        </div>
+    </div>
+
     <div id="modal-settings" class="modal-overlay" style="z-index: 200;">
         <div class="modal-content" style="background:#2c3e50; color:#fff; max-width: 350px;">
             <span class="modal-close" onclick="document.getElementById('modal-settings').style.display='none'">×</span>
@@ -241,7 +258,7 @@
     </div>
 
     <div id="title-screen" class="screen">
-        <h1>MINE DIGGER'S</h1>
+        <h1 id="title-text" style="position: relative; display: inline-block; margin-bottom: 30px;">MINE DIGGER'S</h1>
         <div style="display: flex; gap: 10px; align-items: center; margin: 10px 0;">
             <input type="text" id="input-host-room-id" maxlength="4" placeholder="部屋番号(任意4桁)" style="width: 140px; font-size: 1rem; padding: 10px; margin: 0;">
             <button id="btn-create-room" style="margin: 0; padding: 10px 20px; font-size: 1rem; background-color: #3498db;">部屋を作成</button>
@@ -263,11 +280,17 @@
             <button id="btn-settings-open" onclick="openSettingsModal()" style="background-color: #8e44ad;">⚙設定</button>
             <button id="btn-reset" style="background-color: #c0392b;">データ初期化</button>
         </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button id="btn-achievements" onclick="openAchievementsModal()" style="background-color: #f39c12;">🏆実績</button>
+        </div>
         <p id="room-status"></p>
     </div>
 
     <div id="char-screen" class="screen">
-        <h2 id="lobby-room-display" style="margin-bottom: 5px; color: #f1c40f;">部屋番号: ----</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 90%; max-width: 360px; margin-bottom: 5px;">
+            <h2 id="lobby-room-display" style="margin: 0; color: #f1c40f; text-align: left; font-size: 1.3rem;">部屋番号: ----</h2>
+            <button id="btn-return-title" style="margin: 0; padding: 8px 12px; font-size: 0.9rem; background-color: #c0392b;">TITLEに戻る</button>
+        </div>
         
         <div class="char-container">
             <div class="char-plate selected" data-type="strong"><canvas class="char-color-preview" id="prev-strong"></canvas>力持ち</div>
@@ -333,7 +356,7 @@
     </div>
 
 <script>
-const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 200, TILE_SIZE: 0, FPS: 30 };
+const CONFIG = { MAP_WIDTH: 15, MAP_HEIGHT: 350, TILE_SIZE: 0, FPS: 30 };
 const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
 
 /* 省エネ掘削 (saveEnergyProb) と 新キャラクターを追加 */
@@ -347,12 +370,14 @@ const CHARACTERS = {
 const SHOP_ITEMS = [
     // --- アイテム (item) ---
     {id: "item_00",   type:"item", subtype:null,  before:null,        price:0,    name: "「爆弾」アンロック", desc: "使用すると、周囲2マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲3マスの範囲に広がる。" },
-    {id: "item_00_2", type:"item", subtype:null,  before:"item_00",   price:800,  name: "爆弾Lv2", desc: "使用すると、周囲3マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲4マスの範囲に広がる。" },
-    {id: "item_00_3", type:"item", subtype:null,  before:"item_00_2", price:3000, name: "爆弾Lv3", desc: "使用すると、周囲4マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲5マスの範囲に広がる。" },
-    {id: "item_01",   type:"item", subtype:null,  before:null,        price:150,  name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。" },
-    {id: "item_01_2", type:"item", subtype:null,  before:"item_01",   price:700,  name: "ろうそくLv2", desc: "使用すると、上下7マスの視界を獲得。【手先が器用】が使うと、上下12マスの範囲に広がる。" },
+    {id: "item_00_2", type:"item", subtype:null,  before:"item_00",   price:800,  name: "爆弾Lv2", desc: "使用すると、周囲3マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲4マスの範囲に広がる。" , reqAch: "ach_total_depth_3000"},
+    {id: "item_00_3", type:"item", subtype:null,  before:"item_00_2", price:3000, name: "爆弾Lv3", desc: "使用すると、周囲4マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲5マスの範囲に広がる。" , reqAch: "ach_total_depth_5000"},
+    {id: "item_00_4", type:"item", subtype:null,  before:"item_00_3", price:5000, name: "爆弾Lv4", desc: "使用すると、周囲5マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲6マスの範囲に広がる。" , reqAch: "ach_depth_200"},
+    {id: "item_01",   type:"item", subtype:null,  before:null,        price:150,  name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。"},
+    {id: "item_01_2", type:"item", subtype:null,  before:"item_01",   price:700,  name: "ろうそくLv2", desc: "使用すると、上下7マスの視界を獲得。【手先が器用】が使うと、上下12マスの範囲に広がる。" , reqAch: "ach_total_depth_1000"},
     {id: "item_02",   type:"item", subtype:null,  before:null,        price:1000, name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に4マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に7マス掘削する。" },
-    {id: "item_02_2", type:"item", subtype:null,  before:"item_02",   price:2000, name: "ドリルLv2", desc: "使用すると、使用した場所から真下に5マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に8マス掘削する。" },
+    {id: "item_02_2", type:"item", subtype:null,  before:"item_02",   price:2000, name: "ドリルLv2", desc: "使用すると、使用した場所から真下に5マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に8マス掘削する。" , reqAch: "ach_total_depth_2000"},
+    {id: "item_02_3", type:"item", subtype:null,  before:"item_02_2", price:5000, name: "ドリルLv3", desc: "使用すると、使用した場所から真下に6マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に9マス掘削する。" , reqAch: "ach_depth_200"},
     {id: "item_03",   type:"item", subtype:null,  before:null,        price:500,  name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1。【手先が器用】が使うと、20秒間、視界範囲が+2。" },
     {id: "item_04",   type:"item", subtype:null,  before:null,        price:800,  name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが10回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを5回復。【手先が器用】が使うと、全プレイヤーのエネルギーを10回復。" },
     {id: "item_04_2", type:"item", subtype:null,  before:"item_04",   price:1600, name: "スペアエネルギーLv2", desc: "使用すると、自分のエネルギーが20回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを10回復。【手先が器用】が使うと、自分のエネルギーが40回復し、全プレイヤーのエネルギーを15回復。" },
@@ -361,6 +386,7 @@ const SHOP_ITEMS = [
     
     // --- 力持ち (st1) ---
     {id: "st1dex1",   type:"st1",  subtype:"dex", before:null,        price:5000, name: "視界+", desc: "視界が+1"},
+    {id: "st1dex2",   type:"st1",  subtype:"dex", before:"st1dex1",   price:10000, name: "視界+", desc: "視界が+1", reqAch: "ach_depth_200"},
     {id: "st1dpn1",   type:"st1",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st1dpn2",   type:"st1",  subtype:"dpn", before:"st1dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st1ene1",   type:"st1",  subtype:"ene", before:null,        price:150,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
@@ -369,10 +395,12 @@ const SHOP_ITEMS = [
     {id: "st1ene4",   type:"st1",  subtype:"ene", before:"st1ene3",   price:2000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st1ene5",   type:"st1",  subtype:"ene", before:"st1ene4",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st1ene6",   type:"st1",  subtype:"ene", before:"st1ene5",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
-    {id: "st1ene7",   type:"st1",  subtype:"ene", before:"st1ene6",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st1ene7",   type:"st1",  subtype:"ene", before:"st1ene6",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10" , reqAch: "ach_depth_200"},
     {id: "st1sho1",   type:"st1",  subtype:"sho", before:null,        price:600,  name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st1sho2",   type:"st1",  subtype:"sho", before:"st1sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st1sho3",   type:"st1",  subtype:"sho", before:"st1sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st1sho4",   type:"st1",  subtype:"sho", before:"st1sho3",   price:4000, name: "省エネ+", desc: "省エネ掘削が+2%", reqAch: "ach_depth_200"},
+    {id: "st1sho5",   type:"st1",  subtype:"sho", before:"st1sho4",   price:4000, name: "省エネ+", desc: "省エネ掘削が+2%", reqAch: "ach_depth_200"},
     {id: "st1spd1",   type:"st1",  subtype:"spd", before:null,        price:200,  name: "移動速度+", desc: "移動速度が+0.1"},
     {id: "st1spd2",   type:"st1",  subtype:"spd", before:"st1spd1",   price:500,  name: "移動速度+", desc: "移動速度が+0.1"},
     
@@ -382,12 +410,16 @@ const SHOP_ITEMS = [
     {id: "st2dex3",   type:"st2",  subtype:"dex", before:"st2dex2",   price:2000, name: "視界+", desc: "視界が+1"},
     {id: "st2dpn1",   type:"st2",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st2dpn2",   type:"st2",  subtype:"dpn", before:"st2dpn1",   price:6000, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st2dpn3",   type:"st2",  subtype:"dpn", before:"st2dpn2",   price:3000, name: "鉱石+", desc: "鉱石ドロップ数が+1", reqAch: "ach_depth_200"},
+    {id: "st2dpn4",   type:"st2",  subtype:"dpn", before:"st2dpn3",   price:3000, name: "鉱石+", desc: "鉱石ドロップ数が+1", reqAch: "ach_depth_200"},
+    {id: "st2dpn5",   type:"st2",  subtype:"dpn", before:"st2dpn4",   price:3000, name: "鉱石+", desc: "鉱石ドロップ数が+1", reqAch: "ach_depth_200"},
     {id: "st2ene1",   type:"st2",  subtype:"ene", before:null,        price:600,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene2",   type:"st2",  subtype:"ene", before:"st2ene1",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene3",   type:"st2",  subtype:"ene", before:"st2ene2",   price:2500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene4",   type:"st2",  subtype:"ene", before:"st2ene3",   price:3500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene5",   type:"st2",  subtype:"ene", before:"st2ene4",   price:4500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st2ene6",   type:"st2",  subtype:"ene", before:"st2ene5",   price:5500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st2ene7",   type:"st2",  subtype:"ene", before:"st2ene6",   price:6000, name: "エネルギー上限+", desc: "エネルギー上限値が+10", reqAch: "ach_depth_200"},
     {id: "st2sho1",   type:"st2",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st2sho2",   type:"st2",  subtype:"sho", before:"st2sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st2sho3",   type:"st2",  subtype:"sho", before:"st2sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
@@ -402,9 +434,13 @@ const SHOP_ITEMS = [
     {id: "st3ene2",   type:"st3",  subtype:"ene", before:"st3ene1",   price:1500, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st3ene3",   type:"st3",  subtype:"ene", before:"st3ene2",   price:3000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st3ene4",   type:"st3",  subtype:"ene", before:"st3ene3",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
+    {id: "st3ene5",   type:"st3",  subtype:"ene", before:"st3ene4",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10", reqAch: "ach_depth_200"},
+    {id: "st3ene6",   type:"st3",  subtype:"ene", before:"st3ene5",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10", reqAch: "ach_depth_200"},
+    {id: "st3ene7",   type:"st3",  subtype:"ene", before:"st3ene6",   price:5000, name: "エネルギー上限+", desc: "エネルギー上限値が+10", reqAch: "ach_depth_200"},
     {id: "st3sho1",   type:"st3",  subtype:"sho", before:null,        price:400,  name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st3sho2",   type:"st3",  subtype:"sho", before:"st3sho1",   price:1500, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st3sho3",   type:"st3",  subtype:"sho", before:"st3sho2",   price:2500, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st3sho4",   type:"st3",  subtype:"sho", before:"st3sho3",   price:5000, name: "省エネ+", desc: "省エネ掘削が+2%", reqAch: "ach_depth_200"},
     {id: "st3spd1",   type:"st3",  subtype:"spd", before:null,        price:200,  name: "移動速度+", desc: "移動速度が+0.1"},
     {id: "st3spd2",   type:"st3",  subtype:"spd", before:"st3spd1",   price:500,  name: "移動速度+", desc: "移動速度が+0.1"},
 
@@ -414,6 +450,8 @@ const SHOP_ITEMS = [
     {id: "st4dpn1",   type:"st4",  subtype:"dpn", before:null,        price:500,  name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st4dpn2",   type:"st4",  subtype:"dpn", before:"st4dpn1",   price:1500, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
     {id: "st4dpn3",   type:"st4",  subtype:"dpn", before:"st4dpn2",   price:2500, name: "鉱石+", desc: "鉱石ドロップ数が+1"},
+    {id: "st4dpn4",   type:"st4",  subtype:"dpn", before:"st4dpn3",   price:10000, name: "鉱石+", desc: "鉱石ドロップ数が+1", reqAch: "ach_depth_200"},
+    {id: "st4dpn5",   type:"st4",  subtype:"dpn", before:"st4dpn4",   price:10000, name: "鉱石+", desc: "鉱石ドロップ数が+1", reqAch: "ach_depth_200"},
     {id: "st4ene1",   type:"st4",  subtype:"ene", before:null,        price:300,  name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st4ene2",   type:"st4",  subtype:"ene", before:"st4ene1",   price:2000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
     {id: "st4ene3",   type:"st4",  subtype:"ene", before:"st4ene2",   price:4000, name: "エネルギー上限+", desc: "エネルギー上限値が+10"},
@@ -424,20 +462,31 @@ const SHOP_ITEMS = [
     {id: "st4sho5",   type:"st4",  subtype:"sho", before:"st4sho4",   price:4000, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st4sho6",   type:"st4",  subtype:"sho", before:"st4sho5",   price:5000, name: "省エネ+", desc: "省エネ掘削が+2%"},
     {id: "st4sho7",   type:"st4",  subtype:"sho", before:"st4sho6",   price:6000, name: "省エネ+", desc: "省エネ掘削が+2%"},
+    {id: "st4sho8",   type:"st4",  subtype:"sho", before:"st4sho7",   price:6000, name: "省エネ+", desc: "省エネ掘削が+2%", reqAch: "ach_depth_200"},
+    {id: "st4sho9",   type:"st4",  subtype:"sho", before:"st4sho8",   price:6000, name: "省エネ+", desc: "省エネ掘削が+2%", reqAch: "ach_depth_200"},
     {id: "st4spd1",   type:"st4",  subtype:"spd", before:null,        price:100,  name: "移動速度+", desc: "移動速度が+0.1"},
     {id: "st4spd2",   type:"st4",  subtype:"spd", before:"st4spd1",   price:300,  name: "移動速度+", desc: "移動速度が+0.1"},
     {id: "st4spd3",   type:"st4",  subtype:"spd", before:"st4spd2",   price:700,  name: "移動速度+", desc: "移動速度が+0.1"},
 
     // --- その他 (stA) ---
-    {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:4000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:8000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" },
-    {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" }
+    {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:4000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_50"},
+    {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:8000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_100"},
+    {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_200"},
+
+    // 力持ち (st1) の最後
+    {id: "st1pcv1", type:"st1", subtype:"pcv", before:null, reqAch: "ach_st1_10", price:5000, name: "エネルギー吸収", desc: "省エネ効果発動時に、破壊したブロックの耐久値に応じたエネルギーを回復"},
+    // 耳が良い (st2) の最後
+    {id: "st2pcv1", type:"st2", subtype:"pcv", before:null, reqAch: "ach_st2_10", price:5000, name: "ダウジングマシン", desc: "鉱石とアイテムボックスの位置が常に表示されるようになる"},
+    // 手先が器用 (st3) の最後
+    {id: "st3pcv1", type:"st3", subtype:"pcv", before:null, reqAch: "ach_st3_10", price:5000, name: "やまびこシステム", desc: "アイテムを使ったときに5%の確率でアイテムを消費しない"},
+    // こそどろ (st4) の最後
+    {id: "st4pcv1", type:"st4", subtype:"pcv", before:null, reqAch: "ach_st4_10", price:5000, name: "高精度掘削技術", desc: "全てのブロックを破壊したときに50%の確率で深度に応じた鉱石が1～2個ドロップする"}
 ];
 
 const ITEM_NAMES = {
-    'item_00':'爆弾', 'item_00_2':'爆弾\nLv2', 'item_00_3':'爆弾\nLv3', 
+    'item_00':'爆弾', 'item_00_2':'爆弾\nLv2', 'item_00_3':'爆弾\nLv3', 'item_00_4':'爆弾\nLv4', 'item_00_5':'爆弾\nLv5', 
     'item_01':'ろうそく', 'item_01_2':'ろうそく\nLv2', 
-    'item_02':'ドリル', 'item_02_2':'ドリル\nLv2', 
+    'item_02':'ドリル', 'item_02_2':'ドリル\nLv2', 'item_02_3':'ドリル\nLv3', 'item_02_4':'ドリル\nLv4', 
     'item_03':'収音\nマイク', 'item_04':'スペア\nエネ','item_04_2':'スペア\nエネ\nLv2', 'item_05':'タイマー', 'item_06':'エネ\n分配'
 };
 
@@ -530,7 +579,11 @@ const BLOCK_DEFS = {
     'grass': { hp: 1, color: '#2ecc71' }, 'surface_dirt': { hp: 2, color: '#d35400' },
     'dirt': { hp: 3, color: '#b87333' }, 'rock': { hp: 4, color: '#95a5a6' },
     'deep_rock': { hp: 6, color: '#34495e' }, 'obsidian': { hp: 10, color: '#111111' },
-    'iron': { hp: 999999, color: '#bdc3c7' }
+    'iron': { hp: 999999, color: '#bdc3c7' },
+    'corrupted_grass': { hp: 12, color: '#4b0082' },
+    'corrupted_dirt': { hp: 14, color: '#3b2f2f' },
+    'corrupted_rock': { hp: 16, color: '#2f4f4f' },
+    'corrupted_obsidian': { hp: 20, color: '#191970' }
 };
 
 const ORES = [
@@ -540,7 +593,10 @@ const ORES = [
     { type: 'ruby', min: 40, max: 150, val: 4, color: '#e74c3c', prob: 0.05 },
     { type: 'sapphire', min: 60, max: 170, val: 5, color: '#3498db', prob: 0.05 },
     { type: 'emerald', min: 80, max: 190, val: 6, color: '#2ecc71', prob: 0.04 },
-    { type: 'diamond', min: 100, max: 200, val: 10, color: '#00ffff', prob: 0.02 }
+    { type: 'diamond', min: 100, max: 200, val: 10, color: '#00ffff', prob: 0.02 },
+    { type: 'mithril', min: 200, max: 250, val: 15, color: '#e0e0ff', prob: 0.05 },
+    { type: 'adamantite', min: 230, max: 270, val: 20, color: '#ff4500', prob: 0.04 },
+    { type: 'orichalcum', min: 250, max: 350, val: 30, color: '#ff1493', prob: 0.03 }
 ];
 
 const DEFAULT_NAMES = ["ハート", "スペード", "ダイヤ", "クラブ"];
@@ -552,6 +608,145 @@ const state = {
     gameState: 'lobby', countdownValue: 3, entities: [], particles: [],
     scores: {}, oreCounts: {}, sharedItems: [], deadPlayerName: "", isTimeOver: false
 };
+
+// ▼▼ 実績の定義と状態管理 ▼▼
+const ACHIEVEMENTS = [
+    { id: "ach_depth_1", title: "はじめの一歩", desc: "１プレイで1メートルに到達する", targetType: "max_depth_per_play", targetVal: 1, rewardType: "points", rewardVal: 100, rewardDesc: "100ポイント" },
+    { id: "ach_depth_25", title: "25m到達", desc: "１プレイで25メートルに到達する", targetType: "max_depth_per_play", targetVal: 25, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
+    { id: "ach_depth_50", title: "50m到達", desc: "１プレイで50メートルに到達する", targetType: "max_depth_per_play", targetVal: 50, rewardType: "unlock_shop", rewardVal: "stAluk1", rewardDesc: "SHOPに「アイテム出現率+:Lv1」追加" },
+    { id: "ach_depth_75", title: "75m到達", desc: "１プレイで75メートルに到達する", targetType: "max_depth_per_play", targetVal: 75, rewardType: "points", rewardVal: 100, rewardDesc: "100ポイント" },
+    { id: "ach_depth_100", title: "100m到達", desc: "１プレイで100メートルに到達する", targetType: "max_depth_per_play", targetVal: 100, rewardType: "unlock_shop", rewardVal: "stAluk2", rewardDesc: "SHOPに「アイテム出現率+:Lv2」追加" },
+    { id: "ach_depth_125", title: "125m到達", desc: "１プレイで125メートルに到達する", targetType: "max_depth_per_play", targetVal: 125, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
+    { id: "ach_depth_150", title: "150m到達", desc: "１プレイで150メートルに到達する", targetType: "max_depth_per_play", targetVal: 150, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
+    { id: "ach_depth_175", title: "175m到達", desc: "１プレイで175メートルに到達する", targetType: "max_depth_per_play", targetVal: 175, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
+    { id: "ach_blocks_50", title: "ロードランナー", desc: "１プレイ中に50個ブロックを壊す", targetType: "blocks_per_play", targetVal: 50, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
+    { id: "ach_blocks_100", title: "ディグダグ", desc: "１プレイ中に100個ブロックを壊す", targetType: "blocks_per_play", targetVal: 100, rewardType: "points", rewardVal: 300, rewardDesc: "300ポイント" },
+    { id: "ach_blocks_150", title: "ミスタードリラー", desc: "１プレイ中に150個ブロックを壊す", targetType: "blocks_per_play", targetVal: 150, rewardType: "points", rewardVal: 1000, rewardDesc: "1000ポイント" },
+    { id: "ach_blocks_200", title: "マインクラフト", desc: "１プレイ中に200個ブロックを壊す", targetType: "blocks_per_play", targetVal: 200, rewardType: "points", rewardVal: 4000, rewardDesc: "4000ポイント" },
+    { id: "ach_total_depth_1000", title: "累計1000m到達", desc: "累計で1000メートル掘り進める", targetType: "total_depth", targetVal: 1000, rewardType: "unlock_shop", rewardVal: "item_01_2", rewardDesc: "SHOPに「ろうそく：Lv2」追加" },
+    { id: "ach_total_depth_2000", title: "累計2000m到達", desc: "累計で2000メートル掘り進める", targetType: "total_depth", targetVal: 2000, rewardType: "unlock_shop", rewardVal: "item_02_2", rewardDesc: "SHOPに「ドリル：Lv2」追加" },
+    { id: "ach_total_depth_3000", title: "累計3000m到達", desc: "累計で3000メートル掘り進める", targetType: "total_depth", targetVal: 3000, rewardType: "unlock_shop", rewardVal: "item_00_2", rewardDesc: "SHOPに「爆弾：Lv2」追加" },
+    { id: "ach_total_depth_5000", title: "累計5000m到達", desc: "累計で5000メートル掘り進める", targetType: "total_depth", targetVal: 3000, rewardType: "unlock_shop", rewardVal: "item_00_3", rewardDesc: "SHOPに「爆弾：Lv3」追加" },
+    { id: "ach_total_depth_10000", title: "累計10000m到達", desc: "累計で10000メートル掘り進める", targetType: "total_depth", targetVal: 10000, rewardType: "points", rewardVal: 3000,  rewardDesc: "3000ポイント" },
+    { id: "ach_total_items_10", title: "アイテム収集家", desc: "累計で10個アイテムを使用する", targetType: "total_items", targetVal: 10, rewardType: "points", rewardVal: 100,  rewardDesc: "100ポイント" },
+    { id: "ach_total_items_50", title: "アイテムコレクター", desc: "累計で50個アイテムを使用する", targetType: "total_items", targetVal: 50, rewardType: "points", rewardVal: 500,  rewardDesc: "500ポイント" },
+    { id: "ach_total_items_100", title: "アイテム愛好家", desc: "累計で100個アイテムを使用する", targetType: "total_items", targetVal: 100, rewardType: "points", rewardVal: 1000,  rewardDesc: "1000ポイント" },
+    { id: "ach_total_items_500", title: "アイテムマニア", desc: "累計で500個アイテムを使用する", targetType: "total_items", targetVal: 500, rewardType: "points", rewardVal: 5000,  rewardDesc: "5000ポイント" },
+    { id: "ach_total_items_1000", title: "歩くアイテム図鑑", desc: "累計で1000個アイテムを使用する", targetType: "total_items", targetVal: 1000, rewardType: "points", rewardVal: 10000,  rewardDesc: "10000ポイント" },
+    { id: "ach_st1_10", title: "力が強いのパワーアップ", desc: "力が強いの力を10個購入", targetType: "unlock_count", targetPrefix: "st1", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st1pcv1", rewardDesc: "SHOPに「？？？？」追加" },
+    { id: "ach_st2_10", title: "耳が良いのパワーアップ", desc: "耳が良いの力を10個購入", targetType: "unlock_count", targetPrefix: "st2", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st2pcv1", rewardDesc: "SHOPに「？？？？」追加" },
+    { id: "ach_st3_10", title: "手先が器用のパワーアップ", desc: "手先が器用の力を10個購入", targetType: "unlock_count", targetPrefix: "st3", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st3pcv1", rewardDesc: "SHOPに「？？？？」追加" },
+    { id: "ach_st4_10", title: "こそどろのパワーアップ", desc: "こそどろの力を10個購入", targetType: "unlock_count", targetPrefix: "st4", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st4pcv1", rewardDesc: "SHOPに「？？？？」追加" },
+    { id: "ach_depth_200", title: "未知なる鉱石を求めて", desc: "１プレイで200メートルに到達する", targetType: "max_depth_per_play", targetVal: 200, rewardType: "unlock_game_content", rewardVal: "mithril", rewardDesc: "？？？？" }
+];
+
+const getAchStatus = () => JSON.parse(localStorage.getItem('minedigger_achievements')) || {};
+const setAchStatus = (status) => localStorage.setItem('minedigger_achievements', JSON.stringify(status));
+const getUserStats = () => JSON.parse(localStorage.getItem('minedigger_stats')) || { total_blocks: 0, total_energy: 0, total_depth: 0, total_points: 0, total_items: 0 };
+const setUserStats = (stats) => localStorage.setItem('minedigger_stats', JSON.stringify(stats));
+
+// ▼▼ 深度に応じた背景色の計算関数 ▼▼
+const getBgColorByDepth = (depth, isHardMode) => {
+    // 1〜5m (ハードモード時は色が変化)
+    if (depth <= 5) return isHardMode ? '#efb275' : '#19e5e5';
+    // 6〜10m
+    if (depth <= 10) return '#1e471e';
+    // 11〜25m
+    if (depth <= 25) return '#ada384';
+    // 26〜50m
+    if (depth <= 50) return '#998c66';
+    
+    // 51〜200m (段階的に #231e0f へ暗くする)
+    if (depth <= 75) return '#857a57';
+    if (depth <= 100) return '#716848';
+    if (depth <= 125) return '#5d5639';
+    if (depth <= 150) return '#49442a';
+    if (depth <= 175) return '#35321b';
+    if (depth <= 200) return '#231e0f';
+    
+    // 201〜225m
+    if (depth <= 225) return '#512314';
+    
+    // 226〜300m (段階的に #cc3300 へ変化)
+    if (depth <= 250) return '#7a280d';
+    if (depth <= 275) return '#a32d06';
+    if (depth <= 300) return '#cc3300';
+    
+    // 301〜350m (段階的に #ffffe5 へ変化)
+    if (depth <= 325) return '#e59972';
+    return '#ffffe5';
+};
+
+let currentPlayStats = { max_depth_per_play: 0, blocks_per_play: 0, energy_per_play: 0 };
+let prevEnergyTracker = 0;
+
+window.checkAchievements = () => {
+    const stats = getUserStats();
+    const status = getAchStatus();
+    let updated = false;
+
+    ACHIEVEMENTS.forEach(ach => {
+        if (!status[ach.id]) status[ach.id] = { achieved: false, rewarded: false };
+        if (!status[ach.id].achieved) {
+            let val = 0;
+            if (ach.targetType === "max_depth_per_play") val = currentPlayStats.max_depth_per_play;
+            if (ach.targetType === "blocks_per_play") val = currentPlayStats.blocks_per_play;
+            if (ach.targetType === "energy_per_play") val = currentPlayStats.energy_per_play;
+            if (ach.targetType === "total_depth") val = stats.total_depth;
+            if (ach.targetType === "total_blocks") val = stats.total_blocks;
+            if (ach.targetType === "total_energy") val = stats.total_energy;
+            if (ach.targetType === "total_points") val = stats.total_points;
+            if (ach.targetType === "total_items") val = stats.total_items;
+
+            if (ach.targetType === "unlock_count") {
+                const unlocks = getUnlocks();
+                val = unlocks.filter(id => id.startsWith(ach.targetPrefix)).length;
+            }
+
+            if (val >= ach.targetVal) {
+                status[ach.id].achieved = true;
+                updated = true;
+            }
+        }
+    });
+    if (updated) setAchStatus(status);
+};
+
+window.openAchievementsModal = () => {
+    checkAchievements();
+    const status = getAchStatus();
+    const container = document.getElementById('achievements-list');
+    container.innerHTML = '';
+
+    ACHIEVEMENTS.forEach(ach => {
+        const s = status[ach.id] || { achieved: false, rewarded: false };
+        const panelClass = s.achieved ? "ach-panel ach-achieved" : "ach-panel";
+        const giftBtnHtml = (s.achieved && !s.rewarded) ? `<button class="ach-gift-btn" onclick="claimReward('${ach.id}')">🎁</button>` : '';
+
+        container.innerHTML += `
+            <div class="${panelClass}">
+                ${giftBtnHtml}
+                <div class="ach-title">${ach.title}</div>
+                <div class="ach-desc">${ach.desc}</div>
+                <div class="ach-reward">🎁報酬: ${ach.rewardDesc}</div>
+            </div>
+        `;
+    });
+    document.getElementById('modal-achievements').style.display = 'flex';
+};
+
+window.claimReward = (id) => {
+    const status = getAchStatus();
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    if (!status[id] || !status[id].achieved || status[id].rewarded) return;
+
+    status[id].rewarded = true;
+    setAchStatus(status);
+
+    if (ach.rewardType === "points") setPts(getPts() + ach.rewardVal);
+    openAchievementsModal(); // 再描画
+};
+// ▲▲ ここまで ▲▲
 
 const savePlayerName = () => {
     const input = document.getElementById('title-player-name');
@@ -629,6 +824,12 @@ const getCalculatedCharStats = (charType, unlocks) => {
         const shoCount4 = unlocks.filter(id => id.startsWith('st4sho')).length;
         base.saveEnergyProb += 2 * shoCount4;
     }
+
+    base.hasPassive = false;
+    if (charType === 'strong' && unlocks.includes('st1pcv1')) base.hasPassive = true;
+    if (charType === 'ear' && unlocks.includes('st2pcv1')) base.hasPassive = true;
+    if (charType === 'dexterous' && unlocks.includes('st3pcv1')) base.hasPassive = true;
+    if (charType === 'thief' && unlocks.includes('st4pcv1')) base.hasPassive = true;
     return base;
 };
 
@@ -782,8 +983,12 @@ const renderShop = () => {
     ];
 
     // SHOP_ITEMS を大分類ごとにグループ化
+    const achStatus = getAchStatus(); // 追加
     const grouped = {};
     SHOP_ITEMS.forEach(item => {
+        // ▼ 実績が必要なアイテムで、まだ報酬を受け取っていない場合は非表示にする
+        if (item.reqAch && (!achStatus[item.reqAch] || !achStatus[item.reqAch].rewarded)) return;
+        
         if (!grouped[item.type]) grouped[item.type] = [];
         grouped[item.type].push(item);
     });
@@ -806,6 +1011,7 @@ const renderShop = () => {
                 if (base.subtype === 'ene') subName = "エネルギー上限+";
                 if (base.subtype === 'sho') subName = "省エネ+";
                 if (base.subtype === 'spd') subName = "移動速度+";
+                if (base.subtype === 'pcv') subName = "exパッシブ";
                 if (subName) html += `<div class="subtype-title">${subName}</div>`;
             } else if (cat.type === 'stA') {
                 html += `<div class="subtype-title">アイテム出現率+</div>`;
@@ -946,6 +1152,13 @@ window.onload = () => {
     } else {
         showScreen('title-screen');
     }
+
+    // ▼ 既存のハードモードタイトル表示処理を以下に差し替え
+    const achStatus = getAchStatus();
+    if (achStatus["ach_depth_200"] && achStatus["ach_depth_200"].rewarded) {
+        document.getElementById('title-text').innerHTML = 
+            'MINE DIGGER\'S<span style="position: absolute; right: 0; bottom: -20px; font-size: 0.4em; color: #e74c3c; text-shadow: 2px 2px #000; white-space: nowrap;">HARD MODE</span>';
+    }
 };
 
 document.getElementById('btn-create-room').addEventListener('click', () => {
@@ -984,6 +1197,14 @@ document.getElementById('btn-reset').addEventListener('click', () => {
             localStorage.removeItem('minedigger_metalpoint');
             localStorage.removeItem('minedigger_player_name');
             localStorage.setItem('minedigger_unlock_items', JSON.stringify(['item_00']));
+
+            // ▼ 実績関連のセーブデータも初期化（追加部分）
+            localStorage.removeItem('minedigger_achievements');
+            localStorage.removeItem('minedigger_stats');
+            
+            // （おまけ）設定機能で追加したチャット定型文も初期化したい場合は以下のコメントアウトを外してください
+            localStorage.removeItem('minedigger_chat_presets');
+
             alert('初期化しました。');
         }
     }
@@ -1004,15 +1225,45 @@ const generateMap = (itemBoxProb) => {
             let block = { type: 'empty', hp: 0 };
             if (y > 0) {
                 const validTypes = [];
+
+                const achStatus = getAchStatus();
+                const isMithrilUnlocked = achStatus["ach_depth_200"] && achStatus["ach_depth_200"].rewarded;
+
                 if (depth <= 5) validTypes.push('grass');
                 if (depth >= 4 && depth <= 10) validTypes.push('surface_dirt');
                 if (depth >= 7 && depth <= 100) validTypes.push('dirt');
                 if (depth >= 10 && depth <= 150) validTypes.push('rock');
                 if (depth >= 40 && depth <= 150) validTypes.push('deep_rock');
-                if (depth >= 100 && depth <= 200) validTypes.push('obsidian');
+                if (depth >= 100 && depth <= 350) validTypes.push('obsidian');
+                // ▼ 200m以降で実績報酬を受け取っている場合は新ブロック追加
+                if (depth >= 200 && isMithrilUnlocked) validTypes.push('corrupted_grass');
 
-                const chosenType = validTypes.length > 0 ? validTypes[Math.floor(Math.random() * validTypes.length)] : 'obsidian';
-                
+                const isHardMode = achStatus["ach_depth_200"] && achStatus["ach_depth_200"].rewarded;
+                let chosenType = validTypes.length > 0 ? validTypes[Math.floor(Math.random() * validTypes.length)] : 'obsidian';
+
+                // ▼▼ ハードモード時の汚染ブロック侵食ロジック ▼▼
+                if (isHardMode) {
+                    const rnd = Math.random();
+                    if (depth >= 5 && depth <= 99 && rnd < 0.01) {
+                        chosenType = Math.random() < 0.5 ? 'corrupted_grass' : 'corrupted_dirt';
+                    } else if (depth >= 100 && depth <= 199 && rnd < 0.02) {
+                        chosenType = Math.random() < 0.5 ? 'corrupted_grass' : 'corrupted_dirt';
+                    }
+                    if (depth >= 50 && depth <= 249 && rnd < 0.02) {
+                        chosenType = 'corrupted_rock';
+                    }
+                    // 200m以降の通常配置
+                    if (depth >= 200) {
+                        const deepValid = [];
+                        if (depth <= 250) { deepValid.push('corrupted_grass', 'corrupted_dirt', 'corrupted_rock'); }
+                        if (depth >= 250) { deepValid.push('corrupted_obsidian'); }
+                        if (deepValid.length > 0 && Math.random() < 0.3) {
+                            chosenType = deepValid[Math.floor(Math.random() * deepValid.length)];
+                        }
+                    }
+                }
+                // ▲▲ ここまで ▲▲
+
                 if (depth >= 10 && Math.random() < 0.08 && x !== mainPathX) {
                     block = { type: 'iron', hp: 999999 };
                 } 
@@ -1049,6 +1300,7 @@ const generateMap = (itemBoxProb) => {
             cy = Math.max(CAVE_CONFIG.startDepth - 1, Math.min(CONFIG.MAP_HEIGHT - 1, cy));
         }
     }
+
     return { map, fog };
 };
 
@@ -1458,6 +1710,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
                     speedMult: myStats.speedMult, vision: myStats.vision,
                     dropMin: myStats.dropMin, dropMax: myStats.dropMax,
                     saveEnergyProb: myStats.saveEnergyProb,
+                    hasPassive: myStats.hasPassive,
                     unlocks: myUnlocks, item: null, buffs: null 
                 };
             } else {
@@ -1473,6 +1726,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
                     speedMult: gStats.speedMult, vision: gStats.vision,
                     dropMin: gStats.dropMin, dropMax: gStats.dropMax,
                     saveEnergyProb: gStats.saveEnergyProb,
+                    hasPassive: gStats.hasPassive,
                     unlocks: gUnlocks, item: null, buffs: null
                 };
                 const guestItems = gUnlocks.filter(i => i.startsWith('item_'));
@@ -1550,6 +1804,12 @@ document.getElementById('btn-continue').addEventListener('click', () => {
     }
 });
 
+// ▼▼ タイトルに戻るボタンの処理 ▼▼
+document.getElementById('btn-return-title').addEventListener('click', () => {
+    // クエリパラメータを除外したURLにリダイレクトする
+    window.location.href = window.location.pathname.split('?')[0];
+});
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let inputState = { left: false, right: false };
@@ -1571,12 +1831,23 @@ canvas.addEventListener('touchstart', (e) => {
 // アイテム使用
 document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     e.preventDefault();
+
+    const statsItem = getUserStats();
+    statsItem.total_items++;
+    setUserStats(statsItem);
+    checkAchievements();
+
     const me = state.players[state.myId];
     if (!me || !me.item || state.gameState !== 'playing') return;
 
     const item = me.item;
-    me.item = null;
-    document.getElementById('ui-item').innerText = "空";
+    if (me.char === 'dexterous' && me.hasPassive && Math.random() < 0.05) {
+        // やまびこシステム発動：アイテムを消費しない（アイコンもそのまま）
+    } else {
+        me.item = null;
+        document.getElementById('ui-item').innerText = "空";
+    }
+    //document.getElementById('ui-item').innerText = "空";
     
     const myGridX = Math.floor((me.x + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
     const myGridY = Math.floor((me.y + CONFIG.TILE_SIZE/2) / CONFIG.TILE_SIZE);
@@ -1586,6 +1857,8 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         let radius = isDex ? 3 : 2;
         if (item === 'item_00_2') radius++;
         if (item === 'item_00_3') radius += 2;
+        if (item === 'item_00_4') radius += 3;
+        if (item === 'item_00_5') radius += 4;
         const dugBlocks = [];
         const newEntities = [];
         for(let dy=-radius; dy<=radius; dy++) {
@@ -1620,6 +1893,8 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     } else if (item.startsWith('item_02')) {
         let depth = isDex ? 7 : 4;
         if (item === 'item_02_2') depth++;
+        if (item === 'item_02_3') depth+=2;
+        if (item === 'item_02_4') depth+=3;
         const dugBlocks = [];
         const newEntities = [];
         for(let i=1; i<=depth; i++) {
@@ -1719,17 +1994,17 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
     });
 });
 
+// ▼▼ 修正: spawnEntities 関数を差し替え ▼▼
 const spawnEntities = (x, y, targetBlock, diggerId) => {
     const pStats = state.players[diggerId];
     const dropMin = pStats ? pStats.dropMin : 1;
     const dropMax = pStats ? pStats.dropMax : 3;
 
     const spawned = [];
+    
+    // 通常の鉱石ドロップ
     if (targetBlock.ore) {
         const count = Math.floor(Math.random() * (dropMax - dropMin + 1)) + dropMin;
-        // ▼▼ リッチ鉱石の場合はドロップ数を10倍にする ▼▼
-        if (targetBlock.isRichOre) count *= 10;
-        // ▲▲▲▲
         for (let i = 0; i < count; i++) {
             spawned.push({ 
                 id: Math.random().toString(36).substr(2, 9), 
@@ -1747,7 +2022,9 @@ const spawnEntities = (x, y, targetBlock, diggerId) => {
                 landed: false 
             });
         }
-    } else if (targetBlock.type === 'item_box') {
+    } 
+    // アイテムボックスのドロップ
+    else if (targetBlock.type === 'item_box') {
         spawned.push({ 
             id: Math.random().toString(36).substr(2, 9), 
             type: 'item_drop', 
@@ -1761,8 +2038,50 @@ const spawnEntities = (x, y, targetBlock, diggerId) => {
             landed: false 
         });
     }
+
+    // 💡【追加】こそどろパッシブ (高精度掘削技術) の共通判定
+    // 壊したブロックが空や鉄壁以外であれば、爆弾でもドリルでも判定する
+    if (pStats && pStats.char === 'thief' && pStats.hasPassive && targetBlock.type !== 'empty' && targetBlock.type !== 'iron') {
+        if (Math.random() < 0.50) {
+            const depth = y + 1;
+            let pOreType = 'copper';
+            if (depth >= 26 && depth <= 50) pOreType = 'silver';
+            else if (depth >= 51 && depth <= 75) pOreType = 'gold';
+            else if (depth >= 76 && depth <= 100) pOreType = 'ruby';
+            else if (depth >= 101 && depth <= 125) pOreType = 'sapphire';
+            else if (depth >= 126 && depth <= 150) pOreType = 'emerald';
+            else if (depth >= 151 && depth <= 200) pOreType = 'diamond';
+            else if (depth >= 201 && depth <= 250) pOreType = 'mithril';
+            else if (depth >= 251 && depth <= 300) pOreType = 'adamantite';
+            else if (depth >= 301) pOreType = 'orichalcum';
+            
+            const pOre = ORES.find(o => o.type === pOreType);
+            if (pOre) {
+                const count = Math.random() < 0.5 ? 1 : 2;
+                for(let i=0; i<count; i++) {
+                    spawned.push({
+                        id: Math.random().toString(36).substr(2, 9), 
+                        type: 'ore', 
+                        oreType: pOre.type, 
+                        gridX: x + 0.5,       // マルチプレイの同期ズレ防止のために追加
+                        gridY: y + 0.5,       // 同上
+                        x: (x + 0.5) * CONFIG.TILE_SIZE, 
+                        y: (y + 0.5) * CONFIG.TILE_SIZE, 
+                        vx: (Math.random() - 0.5) * 16, 
+                        vy: -Math.random() * 12 - 5, 
+                        color: pOre.color, 
+                        val: pOre.val, 
+                        spawnTime: Date.now(), 
+                        landed: false
+                    });
+                }
+            }
+        }
+    }
+
     return spawned;
 };
+// ▲▲ ここまで ▲▲
 
 const digBlock = (x, y) => {
     const me = state.players[state.myId];
@@ -1780,7 +2099,13 @@ const digBlock = (x, y) => {
             cost = 0;
         }
 
+        currentPlayStats.blocks_per_play++;
         me.energy -= cost;
+
+        // ▼ 力持ちパッシブ (エネルギー吸収)
+        if (cost === 0 && me.char === 'strong' && me.hasPassive) {
+            me.energy += (state.map[y][x].hp * 2);
+        }
         
         const targetBlock = state.map[y][x];
         const blockColor = targetBlock.type === 'surface_dirt' ? '#8B4513' : (targetBlock.type === 'item_box' ? '#b87333' : BLOCK_DEFS[targetBlock.type].color);
@@ -1788,9 +2113,12 @@ const digBlock = (x, y) => {
         state.map[y][x] = { type: 'empty', hp: 0 };
         spawnParticles(x, y, blockColor);
 
-        let newEntities = spawnEntities(x, y, targetBlock, state.myId);
+        let newEntities = spawnEntities(x, y, targetBlock, state.myId);      
+        
         state.entities.push(...newEntities);
         while (state.entities.length > 100) state.entities.shift();
+
+
 
         broadcast({ type: 'BLOCK_DIG', id: state.myId, x, y, energy: me.energy, spawnedEntities: newEntities, color: blockColor });
         checkGameOver();
@@ -1836,6 +2164,9 @@ const startGameLoop = () => {
     canvas.height = canvas.clientHeight;
     CONFIG.TILE_SIZE = canvas.width / 7.5;
 
+    currentPlayStats = { max_depth_per_play: 0, blocks_per_play: 0, energy_per_play: 0 };
+    if (state.players[state.myId]) prevEnergyTracker = state.players[state.myId].energy;
+
     state.countdownValue = 3;
     
     if (state.cdTimerId) clearInterval(state.cdTimerId);
@@ -1863,6 +2194,14 @@ const startGameLoop = () => {
 const update = () => {
     const me = state.players[state.myId];
     if (!me) return;
+
+    const depth = Math.floor(me.y / CONFIG.TILE_SIZE) + 1;
+    if (depth > currentPlayStats.max_depth_per_play) currentPlayStats.max_depth_per_play = depth;
+    
+    if (me.energy > prevEnergyTracker) {
+        currentPlayStats.energy_per_play += (me.energy - prevEnergyTracker);
+    }
+    prevEnergyTracker = me.energy;
 
     if (state.gameState === 'playing') {
         const speed = 6 * me.speedMult;
@@ -2006,10 +2345,30 @@ const drawItemBox = (ctx, drawX, drawY, size) => {
 const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 【追加】自分自身がダウジングパッシブを有効にしているか判定
+    const me = state.players[state.myId];
+    const hasDowsing = me && me.char === 'ear' && me.hasPassive;
+
+    // 実績「未知なる鉱石を求めて」が解除(報酬受け取り済み)かチェック
+    const achStatus = getAchStatus();
+    const isHardMode = achStatus["ach_depth_200"] && achStatus["ach_depth_200"].rewarded;
+    
     const startX = Math.max(0, Math.floor(state.cameraX / CONFIG.TILE_SIZE));
     const endX = Math.min(CONFIG.MAP_WIDTH, startX + Math.ceil(canvas.width / CONFIG.TILE_SIZE) + 1);
     const startY = Math.max(0, Math.floor(state.cameraY / CONFIG.TILE_SIZE));
     const endY = Math.min(CONFIG.MAP_HEIGHT, startY + Math.ceil(canvas.height / CONFIG.TILE_SIZE) + 1);
+
+    // ▼▼ 修正: 全画面一括ではなく、行（深度）ごとに背景色を塗り分ける ▼▼
+    for (let y = startY; y < endY; y++) {
+        const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
+        const depth = y + 1; // 1マスを1mとする
+        
+        // その行（深度）に応じた背景色を取得
+        ctx.fillStyle = getBgColorByDepth(depth, isHardMode);
+        // 画面の左端から右端まで、1行分の高さを塗りつぶす
+        ctx.fillRect(0, drawY, canvas.width, CONFIG.TILE_SIZE + 1);
+    }
+    // ▲▲ ここまで ▲▲
 
     for (let y = startY; y < endY; y++) {
         const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
@@ -2028,7 +2387,22 @@ const draw = () => {
             const drawX = x * CONFIG.TILE_SIZE - state.cameraX;
             const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
 
-            if (state.fog[y] && !state.fog[y][x]) { ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); continue; }
+            //if (state.fog[y] && !state.fog[y][x]) { ctx.fillStyle = "#000000"; ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); continue; }
+            let isFog = state.fog[y] && !state.fog[y][x];
+            
+            // 自分がダウジングマシン所持者の場合、鉱石かアイテムボックスがあるマスならフォグ（黒塗り）をスキップ
+            if (isFog && hasDowsing) {
+                const block = state.map[y]?.[x];
+                if (block && (block.ore || block.type === 'item_box')) {
+                    isFog = false;
+                }
+            }
+
+            if (isFog) { 
+                ctx.fillStyle = "#000000"; 
+                ctx.fillRect(drawX, drawY, CONFIG.TILE_SIZE + 1, CONFIG.TILE_SIZE + 1); 
+                continue; 
+            }
 
             const block = state.map[y]?.[x];
             if (block && block.type !== 'empty') {
@@ -2121,7 +2495,6 @@ const draw = () => {
         }
     }
 
-    const me = state.players[state.myId];
     if (me && state.gameState !== 'gameover_wait') {
         const depth = Math.floor(me.y / CONFIG.TILE_SIZE) + 1;
         const timeStr = `${Math.floor(state.gameTime/60)}:${(state.gameTime%60).toString().padStart(2,'0')}`;
@@ -2162,6 +2535,13 @@ const gameOver = () => {
     setPts(getPts() + earnedPoints);
     /* ▲▲▲ ここまで修正 ▲▲▲ */
 
+    const stats = getUserStats();
+    stats.total_points += earnedPoints;
+    stats.total_blocks += currentPlayStats.blocks_per_play;
+    stats.total_energy += currentPlayStats.energy_per_play;
+    stats.total_depth += currentPlayStats.max_depth_per_play;
+    setUserStats(stats);
+    checkAchievements();
 
     const myOreCounts = state.oreCounts[state.myId] || {};
     const ORE_NAMES = { 'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ' };
