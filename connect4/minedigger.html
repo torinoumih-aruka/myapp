@@ -43,7 +43,7 @@
         .item-slot:active { background: #2c3e50; border-color: #f1c40f; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
-        .modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-content { background: #ecf0f1; color: #2c3e50; padding: 20px; border-radius: 10px; width: 90%; max-height: 78vh; overflow-y: auto; position: relative; padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 35px) !important;}
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
         
         /* ▼▼ スキルツリーSHOP用スタイル ▼▼ */
@@ -208,7 +208,7 @@
             		<td><div style="color: #e74c3c;">▲</div></td><td>ルビー。４ポイント</td>
             	</tr>
             </table>
-            <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p><br><br><br><br>
+            <p>まだまだ鉱石の種類はあるとか無いとか…<br>自分の目で確かめよう！！</p>
 
         </div>
     </div>
@@ -228,6 +228,16 @@
             <span class="modal-close" onclick="document.getElementById('modal-achievements').style.display='none'">×</span>
             <h2 style="color:#f1c40f; text-align:center; margin-top:0;">🏆 実績</h2>
             <div id="achievements-list" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        </div>
+    </div>
+
+    <div id="modal-relnotes" class="modal-overlay" style="z-index: 200;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="document.getElementById('modal-relnotes').style.display='none'">×</span>
+            <h2 style="text-align: center; color: #2c3e50; margin-top: 0;">リリースノート</h2>
+            <div style="color: #2c3e50; line-height: 1.5; font-size: 0.95rem;">
+                <p><strong>Ver 1.0.1</strong><br>・実績の報酬が渋かった部分を少し緩和しました。<br>・実績の設定値が間違っていたのを修正しました。<br>・こそどろが一定条件下で鉄鉱石を取得できない不具合を修正しました。<br>・背景を"のっぺり"から、"パターン"柄に修正しました。</p>
+            </div>
         </div>
     </div>
 
@@ -275,6 +285,8 @@
         </div>
 
         <button id="btn-how-to" onclick="document.getElementById('modal-howto').style.display='flex'">遊び方</button>
+        <a href="#" id="link-relnotes" onclick="event.preventDefault(); document.getElementById('modal-relnotes').style.display='flex';" style="color: #3498db; font-size: 1rem; font-weight: bold; margin-left: 10px; text-decoration: underline; vertical-align: middle;">リリースノート</a>
+
         <div style="display: flex; gap: 1px;">
             <button id="btn-shop" style="background-color: #e67e22;">🏠SHOP</button>
             <button id="btn-settings-open" onclick="openSettingsModal()" style="background-color: #8e44ad;">⚙設定</button>
@@ -363,9 +375,9 @@ const CAVE_CONFIG = { minSize: 1, maxSize: 15, startDepth: 5, interval: 8 };
 const CHARACTERS = {
     strong: { name: "力持ち", color: "#8B4513", energy: 60, digCostBonus: -1, vision: 1, speedMult: 0.5, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "硬いブロックも少ないエネルギーで壊せるパワー型。" },
     ear: { name: "耳が良い", color: "#FF69B4", energy: 50, digCostBonus: 0, vision: 2, speedMult: 1.0, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "周囲の視界が広く、隠れたアイテムを見つけやすい。" },
-    dexterous: { name: "手先が器用", color: "#FFD700", energy: 50, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "アイテムの効果がより強力になる。" },
+    dexterous: { name: "手先が器用", color: "#FFD700", energy: 10050, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 1, dropMax: 3, saveEnergyProb: 0, desc: "アイテムの効果がより強力になる。" },
     thief: { name: "こそどろ", color: "#2ecc71", energy: 55, digCostBonus: 0, vision: 1, speedMult: 0.8, dropMin: 2, dropMax: 4, saveEnergyProb: 5, desc: "他の人より多く鉱石が拾える、がめついドロボー。" }
-};
+};//50
 
 const SHOP_ITEMS = [
     // --- アイテム (item) ---
@@ -373,15 +385,18 @@ const SHOP_ITEMS = [
     {id: "item_00_2", type:"item", subtype:null,  before:"item_00",   price:800,  name: "爆弾Lv2", desc: "使用すると、周囲3マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲4マスの範囲に広がる。" , reqAch: "ach_total_depth_3000"},
     {id: "item_00_3", type:"item", subtype:null,  before:"item_00_2", price:3000, name: "爆弾Lv3", desc: "使用すると、周囲4マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲5マスの範囲に広がる。" , reqAch: "ach_total_depth_5000"},
     {id: "item_00_4", type:"item", subtype:null,  before:"item_00_3", price:5000, name: "爆弾Lv4", desc: "使用すると、周囲5マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲6マスの範囲に広がる。" , reqAch: "ach_depth_200"},
+    {id: "item_00_5", type:"item", subtype:null,  before:"item_00_4", price:10000,name: "爆弾Lv5", desc: "使用すると、周囲6マスの範囲のブロックを破壊。【手先が器用】が使うと、周囲7マスの範囲に広がる。" , reqAch: "ach_total_ore_adamantite"},
     {id: "item_01",   type:"item", subtype:null,  before:null,        price:150,  name: "「ろうそく」アンロック", desc: "使用すると、上下5マスの視界を獲得。【手先が器用】が使うと、上下10マスの範囲に広がる。"},
     {id: "item_01_2", type:"item", subtype:null,  before:"item_01",   price:700,  name: "ろうそくLv2", desc: "使用すると、上下7マスの視界を獲得。【手先が器用】が使うと、上下12マスの範囲に広がる。" , reqAch: "ach_total_depth_1000"},
     {id: "item_02",   type:"item", subtype:null,  before:null,        price:1000, name: "「ドリル」アンロック", desc: "使用すると、使用した場所から真下に4マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に7マス掘削する。" },
     {id: "item_02_2", type:"item", subtype:null,  before:"item_02",   price:2000, name: "ドリルLv2", desc: "使用すると、使用した場所から真下に5マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に8マス掘削する。" , reqAch: "ach_total_depth_2000"},
     {id: "item_02_3", type:"item", subtype:null,  before:"item_02_2", price:5000, name: "ドリルLv3", desc: "使用すると、使用した場所から真下に6マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に9マス掘削する。" , reqAch: "ach_depth_200"},
+    {id: "item_02_4", type:"item", subtype:null,  before:"item_02_3", price:10000,name: "ドリルLv4", desc: "使用すると、使用した場所から真下に7マス掘削する。鉄壁も掘削する。【手先が器用】が使うと、真下に10マス掘削する。" , reqAch: "ach_total_ore_adamantite"},
     {id: "item_03",   type:"item", subtype:null,  before:null,        price:500,  name: "「収音マイク」アンロック", desc: "使用すると、10秒間、視界範囲が+1。【手先が器用】が使うと、20秒間、視界範囲が+2。" },
     {id: "item_04",   type:"item", subtype:null,  before:null,        price:800,  name: "「スペアエネルギー」アンロック", desc: "使用すると、自分のエネルギーが10回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを5回復。【手先が器用】が使うと、全プレイヤーのエネルギーを10回復。" },
     {id: "item_04_2", type:"item", subtype:null,  before:"item_04",   price:1600, name: "スペアエネルギーLv2", desc: "使用すると、自分のエネルギーが20回復。隣接したマスで使用すると、隣接している全てのキャラクターのエネルギーを10回復。【手先が器用】が使うと、自分のエネルギーが40回復し、全プレイヤーのエネルギーを15回復。" },
     {id: "item_05",   type:"item", subtype:null,  before:null,        price:800,  name: "「タイマー」アンロック", desc: "使用すると、制限時間が+10秒。【手先が器用】が使うと、制限時間が+20秒。" },
+    {id: "item_05_2", type:"item", subtype:null,  before:"item_05",   price:2000, name: "タイマーLv2", desc: "使用すると、制限時間が+20秒。【手先が器用】が使うと、制限時間が+40秒。" , reqAch: "ach_total_ore_diamond"},
     {id: "item_06",   type:"item", subtype:null,  before:null,        price:1000, name: "「エネルギー分配」アンロック", desc: "使用すると、自分のエネルギーを-10し、他のプレイヤーのエネルギーを+20。【手先が器用】が使うと、自分のエネルギーは減らず、他のプレイヤーのエネルギーを+20。※ひとりプレイでは出現しません" },
     
     // --- 力持ち (st1) ---
@@ -472,6 +487,8 @@ const SHOP_ITEMS = [
     {id: "stAluk1",   type:"stA",  subtype:"luk", before:null,        price:4000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_50"},
     {id: "stAluk2",   type:"stA",  subtype:"luk", before:"stAluk1",   price:8000, name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_100"},
     {id: "stAluk3",   type:"stA",  subtype:"luk", before:"stAluk2",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_depth_200"},
+    {id: "stAluk4",   type:"stA",  subtype:"luk", before:"stAluk3",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_total_ore_mithril"},
+    {id: "stAluk5",   type:"stA",  subtype:"luk", before:"stAluk4",   price:12000,name: "アイテム出現率+", desc: "アイテムボックスの出現率が0.2%上昇する。マルチプレイ時には全プレイヤーの購入数分上昇。" , reqAch: "ach_total_ore_adamantite"},
 
     // 力持ち (st1) の最後
     {id: "st1pcv1", type:"st1", subtype:"pcv", before:null, reqAch: "ach_st1_10", price:5000, name: "エネルギー吸収", desc: "省エネ効果発動時に、破壊したブロックの耐久値に応じたエネルギーを回復"},
@@ -487,7 +504,7 @@ const ITEM_NAMES = {
     'item_00':'爆弾', 'item_00_2':'爆弾\nLv2', 'item_00_3':'爆弾\nLv3', 'item_00_4':'爆弾\nLv4', 'item_00_5':'爆弾\nLv5', 
     'item_01':'ろうそく', 'item_01_2':'ろうそく\nLv2', 
     'item_02':'ドリル', 'item_02_2':'ドリル\nLv2', 'item_02_3':'ドリル\nLv3', 'item_02_4':'ドリル\nLv4', 
-    'item_03':'収音\nマイク', 'item_04':'スペア\nエネ','item_04_2':'スペア\nエネ\nLv2', 'item_05':'タイマー', 'item_06':'エネ\n分配'
+    'item_03':'収音\nマイク', 'item_04':'スペア\nエネ','item_04_2':'スペア\nエネ\nLv2', 'item_05':'タイマー', 'item_05_2':'タイマー\nLv2', 'item_06':'エネ\n分配'
 };
 
 const INGAME_CHAT_OPTIONS = [
@@ -590,12 +607,12 @@ const ORES = [
     { type: 'copper', min: 5, max: 20, val: 1, color: '#e67e22', prob: 0.1 },
     { type: 'iron', min: 15, max: 30, val: 2, color: '#6c6a69', prob: 0.1 },
     { type: 'gold', min: 25, max: 180, val: 3, color: '#f1c40f', prob: 0.08 },
-    { type: 'ruby', min: 40, max: 150, val: 4, color: '#e74c3c', prob: 0.05 },
-    { type: 'sapphire', min: 60, max: 170, val: 5, color: '#3498db', prob: 0.05 },
-    { type: 'emerald', min: 80, max: 190, val: 6, color: '#2ecc71', prob: 0.04 },
-    { type: 'diamond', min: 100, max: 200, val: 10, color: '#00ffff', prob: 0.02 },
-    { type: 'mithril', min: 200, max: 250, val: 15, color: '#e0e0ff', prob: 0.05 },
-    { type: 'adamantite', min: 230, max: 270, val: 20, color: '#ff4500', prob: 0.04 },
+    { type: 'ruby', min: 40, max: 210, val: 4, color: '#e74c3c', prob: 0.05 },
+    { type: 'sapphire', min: 60, max: 230, val: 5, color: '#3498db', prob: 0.05 },
+    { type: 'emerald', min: 80, max: 250, val: 6, color: '#2ecc71', prob: 0.04 },
+    { type: 'diamond', min: 100, max: 350, val: 10, color: '#00ffff', prob: 0.02 },
+    { type: 'mithril', min: 200, max: 350, val: 15, color: '#e0e0ff', prob: 0.05 },
+    { type: 'adamantite', min: 230, max: 350, val: 20, color: '#ff4500', prob: 0.04 },
     { type: 'orichalcum', min: 250, max: 350, val: 30, color: '#ff1493', prob: 0.03 }
 ];
 
@@ -614,11 +631,14 @@ const ACHIEVEMENTS = [
     { id: "ach_depth_1", title: "はじめの一歩", desc: "１プレイで1メートルに到達する", targetType: "max_depth_per_play", targetVal: 1, rewardType: "points", rewardVal: 100, rewardDesc: "100ポイント" },
     { id: "ach_depth_25", title: "25m到達", desc: "１プレイで25メートルに到達する", targetType: "max_depth_per_play", targetVal: 25, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
     { id: "ach_depth_50", title: "50m到達", desc: "１プレイで50メートルに到達する", targetType: "max_depth_per_play", targetVal: 50, rewardType: "unlock_shop", rewardVal: "stAluk1", rewardDesc: "SHOPに「アイテム出現率+:Lv1」追加" },
-    { id: "ach_depth_75", title: "75m到達", desc: "１プレイで75メートルに到達する", targetType: "max_depth_per_play", targetVal: 75, rewardType: "points", rewardVal: 100, rewardDesc: "100ポイント" },
+    { id: "ach_depth_75", title: "75m到達", desc: "１プレイで75メートルに到達する", targetType: "max_depth_per_play", targetVal: 75, rewardType: "points", rewardVal: 1000, rewardDesc: "1000ポイント" },
     { id: "ach_depth_100", title: "100m到達", desc: "１プレイで100メートルに到達する", targetType: "max_depth_per_play", targetVal: 100, rewardType: "unlock_shop", rewardVal: "stAluk2", rewardDesc: "SHOPに「アイテム出現率+:Lv2」追加" },
-    { id: "ach_depth_125", title: "125m到達", desc: "１プレイで125メートルに到達する", targetType: "max_depth_per_play", targetVal: 125, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
-    { id: "ach_depth_150", title: "150m到達", desc: "１プレイで150メートルに到達する", targetType: "max_depth_per_play", targetVal: 150, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
-    { id: "ach_depth_175", title: "175m到達", desc: "１プレイで175メートルに到達する", targetType: "max_depth_per_play", targetVal: 175, rewardType: "points", rewardVal: 500, rewardDesc: "500ポイント" },
+    { id: "ach_depth_125", title: "125m到達", desc: "１プレイで125メートルに到達する", targetType: "max_depth_per_play", targetVal: 125, rewardType: "points", rewardVal: 2000, rewardDesc: "2000ポイント" },
+    { id: "ach_depth_150", title: "150m到達", desc: "１プレイで150メートルに到達する", targetType: "max_depth_per_play", targetVal: 150, rewardType: "points", rewardVal: 4000, rewardDesc: "4000ポイント" },
+    { id: "ach_depth_175", title: "175m到達", desc: "１プレイで175メートルに到達する", targetType: "max_depth_per_play", targetVal: 175, rewardType: "points", rewardVal: 6000, rewardDesc: "6000ポイント" },
+    { id: "ach_depth_250", title: "250m到達", desc: "１プレイで250メートルに到達する", targetType: "max_depth_per_play", targetVal: 250, rewardType: "points", rewardVal: 10000, rewardDesc: "10000ポイント", before: "ach_depth_200" },
+    { id: "ach_depth_300", title: "300m到達", desc: "１プレイで300メートルに到達する", targetType: "max_depth_per_play", targetVal: 300, rewardType: "points", rewardVal: 50000, rewardDesc: "50000ポイント", before: "ach_depth_200" },
+    { id: "ach_depth_350", title: "350m到達", desc: "１プレイで350メートルに到達する", targetType: "max_depth_per_play", targetVal: 350, rewardType: "points", rewardVal: 100000, rewardDesc: "100000ポイント", before: "ach_depth_200" },
     { id: "ach_blocks_50", title: "ロードランナー", desc: "１プレイ中に50個ブロックを壊す", targetType: "blocks_per_play", targetVal: 50, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
     { id: "ach_blocks_100", title: "ディグダグ", desc: "１プレイ中に100個ブロックを壊す", targetType: "blocks_per_play", targetVal: 100, rewardType: "points", rewardVal: 300, rewardDesc: "300ポイント" },
     { id: "ach_blocks_150", title: "ミスタードリラー", desc: "１プレイ中に150個ブロックを壊す", targetType: "blocks_per_play", targetVal: 150, rewardType: "points", rewardVal: 1000, rewardDesc: "1000ポイント" },
@@ -626,7 +646,7 @@ const ACHIEVEMENTS = [
     { id: "ach_total_depth_1000", title: "累計1000m到達", desc: "累計で1000メートル掘り進める", targetType: "total_depth", targetVal: 1000, rewardType: "unlock_shop", rewardVal: "item_01_2", rewardDesc: "SHOPに「ろうそく：Lv2」追加" },
     { id: "ach_total_depth_2000", title: "累計2000m到達", desc: "累計で2000メートル掘り進める", targetType: "total_depth", targetVal: 2000, rewardType: "unlock_shop", rewardVal: "item_02_2", rewardDesc: "SHOPに「ドリル：Lv2」追加" },
     { id: "ach_total_depth_3000", title: "累計3000m到達", desc: "累計で3000メートル掘り進める", targetType: "total_depth", targetVal: 3000, rewardType: "unlock_shop", rewardVal: "item_00_2", rewardDesc: "SHOPに「爆弾：Lv2」追加" },
-    { id: "ach_total_depth_5000", title: "累計5000m到達", desc: "累計で5000メートル掘り進める", targetType: "total_depth", targetVal: 3000, rewardType: "unlock_shop", rewardVal: "item_00_3", rewardDesc: "SHOPに「爆弾：Lv3」追加" },
+    { id: "ach_total_depth_5000", title: "累計5000m到達", desc: "累計で5000メートル掘り進める", targetType: "total_depth", targetVal: 5000, rewardType: "unlock_shop", rewardVal: "item_00_3", rewardDesc: "SHOPに「爆弾：Lv3」追加" },
     { id: "ach_total_depth_10000", title: "累計10000m到達", desc: "累計で10000メートル掘り進める", targetType: "total_depth", targetVal: 10000, rewardType: "points", rewardVal: 3000,  rewardDesc: "3000ポイント" },
     { id: "ach_total_items_10", title: "アイテム収集家", desc: "累計で10個アイテムを使用する", targetType: "total_items", targetVal: 10, rewardType: "points", rewardVal: 100,  rewardDesc: "100ポイント" },
     { id: "ach_total_items_50", title: "アイテムコレクター", desc: "累計で50個アイテムを使用する", targetType: "total_items", targetVal: 50, rewardType: "points", rewardVal: 500,  rewardDesc: "500ポイント" },
@@ -637,12 +657,16 @@ const ACHIEVEMENTS = [
     { id: "ach_st2_10", title: "耳が良いのパワーアップ", desc: "耳が良いの力を10個購入", targetType: "unlock_count", targetPrefix: "st2", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st2pcv1", rewardDesc: "SHOPに「？？？？」追加" },
     { id: "ach_st3_10", title: "手先が器用のパワーアップ", desc: "手先が器用の力を10個購入", targetType: "unlock_count", targetPrefix: "st3", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st3pcv1", rewardDesc: "SHOPに「？？？？」追加" },
     { id: "ach_st4_10", title: "こそどろのパワーアップ", desc: "こそどろの力を10個購入", targetType: "unlock_count", targetPrefix: "st4", targetVal: 10, rewardType: "unlock_shop", rewardVal: "st4pcv1", rewardDesc: "SHOPに「？？？？」追加" },
-    { id: "ach_depth_200", title: "未知なる鉱石を求めて", desc: "１プレイで200メートルに到達する", targetType: "max_depth_per_play", targetVal: 200, rewardType: "unlock_game_content", rewardVal: "mithril", rewardDesc: "？？？？" }
+    { id: "ach_total_ore_diamond", title: "はじめてのダイヤモンド", desc: "ダイヤモンドをはじめて採掘する", targetType: "total_ore_diamond", targetVal: 1, rewardType: "unlock_shop", rewardVal: "item_05_1", rewardDesc: "SHOPに「タイマー：Lv2」追加" },
+    { id: "ach_depth_200", title: "未知なる鉱石を求めて", desc: "１プレイで200メートルに到達する", targetType: "max_depth_per_play", targetVal: 200, rewardType: "unlock_game_content", rewardVal: "mithril", rewardDesc: "？？？？" },
+    { id: "ach_total_ore_mithril", title: "はじめてのミスリル", desc: "ミスリルをはじめて採掘する", targetType: "total_ore_mithril", targetVal: 1, rewardType: "unlock_shop", rewardVal: "", rewardDesc: "？？？？" , before: "ach_depth_200" },
+    { id: "ach_total_ore_adamantite", title: "はじめてのアダマンタイト", desc: "アダマンタイトをはじめて採掘する", targetType: "total_ore_adamantite", targetVal: 1, rewardType: "unlock_shop", rewardVal: "", rewardDesc: "？？？？" , before: "ach_total_ore_mithril" },
+    { id: "ach_total_ore_orichalcum", title: "はじめてのオリハルコン", desc: "オリハルコンをはじめて採掘する", targetType: "total_ore_orichalcum", targetVal: 1, rewardType: "unlock_shop", rewardVal: "", rewardDesc: "？？？？" , before: "ach_total_ore_adamantite" }
 ];
 
 const getAchStatus = () => JSON.parse(localStorage.getItem('minedigger_achievements')) || {};
 const setAchStatus = (status) => localStorage.setItem('minedigger_achievements', JSON.stringify(status));
-const getUserStats = () => JSON.parse(localStorage.getItem('minedigger_stats')) || { total_blocks: 0, total_energy: 0, total_depth: 0, total_points: 0, total_items: 0 };
+const getUserStats = () => JSON.parse(localStorage.getItem('minedigger_stats')) || { total_blocks: 0, total_energy: 0, total_depth: 0, total_points: 0, total_items: 0 , total_ores:{copper:0,iron:0,gold:0,ruby:0,sapphire:0,emerald:0,diamond:0,mithril:0,adamantite:0,orichalcum:0}};
 const setUserStats = (stats) => localStorage.setItem('minedigger_stats', JSON.stringify(stats));
 
 // ▼▼ 深度に応じた背景色の計算関数 ▼▼
@@ -684,6 +708,7 @@ window.checkAchievements = () => {
     const stats = getUserStats();
     const status = getAchStatus();
     let updated = false;
+    stats.total_ores = stats.total_ores || {copper:0,iron:0,gold:0,ruby:0,sapphire:0,emerald:0,diamond:0,mithril:0,adamantite:0,orichalcum:0};
 
     ACHIEVEMENTS.forEach(ach => {
         if (!status[ach.id]) status[ach.id] = { achieved: false, rewarded: false };
@@ -697,6 +722,11 @@ window.checkAchievements = () => {
             if (ach.targetType === "total_energy") val = stats.total_energy;
             if (ach.targetType === "total_points") val = stats.total_points;
             if (ach.targetType === "total_items") val = stats.total_items;
+
+            if (ach.targetType === "total_ore_diamond") val = stats.total_ores.diamond;
+            if (ach.targetType === "total_ore_mithril") val = stats.total_ores.mithril;
+            if (ach.targetType === "total_ore_adamantite") val = stats.total_ores.adamantite;
+            if (ach.targetType === "total_ore_orichalcum") val = stats.total_ores.orichalcum;
 
             if (ach.targetType === "unlock_count") {
                 const unlocks = getUnlocks();
@@ -719,6 +749,12 @@ window.openAchievementsModal = () => {
     container.innerHTML = '';
 
     ACHIEVEMENTS.forEach(ach => {
+        if (ach.before) {
+            // 前提となる実績データが存在しない、または achieved が true でない場合は非表示（スキップ）
+            if (!status[ach.before] || status[ach.before].achieved !== true) {
+                return; 
+            }
+        }
         const s = status[ach.id] || { achieved: false, rewarded: false };
         const panelClass = s.achieved ? "ach-panel ach-achieved" : "ach-panel";
         const giftBtnHtml = (s.achieved && !s.rewarded) ? `<button class="ach-gift-btn" onclick="claimReward('${ach.id}')">🎁</button>` : '';
@@ -742,6 +778,11 @@ window.claimReward = (id) => {
 
     status[id].rewarded = true;
     setAchStatus(status);
+
+    // ▼▼ ach_depth_200 の報酬を受け取ったときのアラート処理を追加 ▼▼
+    if (id === "ach_depth_200") {
+        alert("⚠️ 【ハードモード解禁！】\n地下200m突破によりハードモードが解禁されました！\n一度、ゲームを起動しなおすといろいろ変わります。");
+    }
 
     if (ach.rewardType === "points") setPts(getPts() + ach.rewardVal);
     openAchievementsModal(); // 再描画
@@ -1919,7 +1960,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
         broadcast({ type: 'USE_BOMB', id: state.myId, dugBlocks, spawnedEntities: newEntities });
         
     } else if (item.startsWith('item_03')) {
-        const duration = isDex ? 20000 : 10000;
+        let duration = isDex ? 20000 : 10000;
         const vBonus = isDex ? 2 : 1;
         me.buffs = { type: 'vision', val: vBonus, expire: Date.now() + duration };
     } else if (item.startsWith('item_04')) {
@@ -1965,7 +2006,8 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
             }
         }
     } else if (item.startsWith('item_05')) {
-        const addTime = isDex ? 20 : 10;
+        let addTime = isDex ? 20 : 10;
+        if (item === 'item_05_2') addTime = isDex ? 40 : 20;
         state.gameTime += addTime;
         broadcast({ type: 'ADD_TIME', add: addTime });
     } else if (item.startsWith('item_06')) {
@@ -2045,7 +2087,7 @@ const spawnEntities = (x, y, targetBlock, diggerId) => {
         if (Math.random() < 0.50) {
             const depth = y + 1;
             let pOreType = 'copper';
-            if (depth >= 26 && depth <= 50) pOreType = 'silver';
+            if (depth >= 26 && depth <= 50) pOreType = 'iron';
             else if (depth >= 51 && depth <= 75) pOreType = 'gold';
             else if (depth >= 76 && depth <= 100) pOreType = 'ruby';
             else if (depth >= 101 && depth <= 125) pOreType = 'sapphire';
@@ -2342,6 +2384,38 @@ const drawItemBox = (ctx, drawX, drawY, size) => {
     ctx.fillStyle = '#5c2e0b'; ctx.fillRect(drawX + 8, drawY + 12, size - 16, size - 24); 
 };
 
+// ▼▼▼ `draw` 関数の「外（上）」に追加 ▼▼▼
+const bgPatternCache = {};
+
+const getZigzagPattern = (ctx, bgColor) => {
+    // すでに同じ色の模様を作ったことがあれば、キャッシュから返す（激重になるのを防ぐため）
+    if (bgPatternCache[bgColor]) return bgPatternCache[bgColor];
+
+    const patternCanvas = document.createElement('canvas');
+    const patternCtx = patternCanvas.getContext('2d');
+    const pSize = 20; 
+    patternCanvas.width = pSize;
+    patternCanvas.height = pSize;
+
+    // ベース色で塗りつぶす
+    patternCtx.fillStyle = bgColor;
+    patternCtx.fillRect(0, 0, pSize, pSize);
+
+    // 15%の黒色（半透明）を重ねてジグザグを描く
+    patternCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    patternCtx.beginPath();
+    patternCtx.moveTo(0, pSize);               // 左上
+    patternCtx.lineTo(pSize/2, 0);    // 右中央
+    patternCtx.lineTo(pSize, pSize);             // 左下
+    patternCtx.closePath();
+    patternCtx.fill();
+
+    const pattern = ctx.createPattern(patternCanvas, 'repeat');
+    bgPatternCache[bgColor] = pattern; // キャッシュに保存
+    return pattern;
+};
+// ▲▲▲ ここまで ▲▲▲
+
 const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2357,7 +2431,7 @@ const draw = () => {
     const endX = Math.min(CONFIG.MAP_WIDTH, startX + Math.ceil(canvas.width / CONFIG.TILE_SIZE) + 1);
     const startY = Math.max(0, Math.floor(state.cameraY / CONFIG.TILE_SIZE));
     const endY = Math.min(CONFIG.MAP_HEIGHT, startY + Math.ceil(canvas.height / CONFIG.TILE_SIZE) + 1);
-
+/*
     // ▼▼ 修正: 全画面一括ではなく、行（深度）ごとに背景色を塗り分ける ▼▼
     for (let y = startY; y < endY; y++) {
         const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
@@ -2369,6 +2443,36 @@ const draw = () => {
         ctx.fillRect(0, drawY, canvas.width, CONFIG.TILE_SIZE + 1);
     }
     // ▲▲ ここまで ▲▲
+*/
+
+    // ▼▼▼ 背景描画処理の修正 ▼▼▼
+    ctx.save();
+    // 縦方向(Y)だけでなく、横方向(X)もカメラのスクロール量に合わせてずらす
+    // これにより背景がブロックと完全に同じ座標系（ワールド）に固定されます
+    ctx.translate(-state.cameraX, -state.cameraY);
+
+    // 画面に見えている深さ（行）の分だけループして背景を塗る
+    for (let y = startY; y < endY; y++) {
+        const depth = y + 1;
+        const worldY = y * CONFIG.TILE_SIZE; // ワールド座標でのY位置
+        
+        // 元々の取得方法で、その深さの背景色を取得
+        const bgColor = getBgColorByDepth(depth, isHardMode); 
+
+        if (depth < 6) {
+            // 深さ6m未満は単色塗りつぶし
+            ctx.fillStyle = bgColor;
+        } else {
+            // 深さ6m以降はジグザグストライプ柄
+            ctx.fillStyle = getZigzagPattern(ctx, bgColor);
+        }
+        
+        // パフォーマンス最適化のため、見えている範囲（画面幅）だけを塗りつぶす
+        // Xの開始位置を 0 ではなく state.cameraX にする
+        ctx.fillRect(state.cameraX, worldY, canvas.width, CONFIG.TILE_SIZE);
+    }
+    ctx.restore();
+    // ▲▲▲ ここまで ▲▲▲
 
     for (let y = startY; y < endY; y++) {
         const drawY = y * CONFIG.TILE_SIZE - state.cameraY;
@@ -2536,6 +2640,27 @@ const gameOver = () => {
     /* ▲▲▲ ここまで修正 ▲▲▲ */
 
     const stats = getUserStats();
+
+    // ▼▼ 採掘した鉱石の累計数をLocalStorageに記録・加算 ▼▼
+    const myOreCounts = state.oreCounts[state.myId] || {};
+
+    stats.total_ores = stats.total_ores || {copper:0,iron:0,gold:0,ruby:0,sapphire:0,emerald:0,diamond:0,mithril:0,adamantite:0,orichalcum:0};
+
+    ORES.forEach(ore => {
+        const currentCount = myOreCounts[ore.type] || 0;
+        if(ore.type === 'copper') stats.total_ores.copper += currentCount || 0;
+        if(ore.type === 'iron') stats.total_ores.iron += currentCount || 0;
+        if(ore.type === 'gold') stats.total_ores.gold += currentCount || 0;
+        if(ore.type === 'ruby') stats.total_ores.ruby += currentCount || 0;
+        if(ore.type === 'sapphire') stats.total_ores.sapphire += currentCount || 0;
+        if(ore.type === 'emerald') stats.total_ores.emerald += currentCount || 0;
+        if(ore.type === 'diamond') stats.total_ores.diamond += currentCount || 0;
+        if(ore.type === 'mithril') stats.total_ores.mithril += currentCount || 0;
+        if(ore.type === 'adamantite') stats.total_ores.adamantite += currentCount || 0;
+        if(ore.type === 'orichalcum') stats.total_ores.orichalcum += currentCount || 0;
+    });
+    // ▲▲ ここまで ▲▲
+
     stats.total_points += earnedPoints;
     stats.total_blocks += currentPlayStats.blocks_per_play;
     stats.total_energy += currentPlayStats.energy_per_play;
@@ -2543,8 +2668,8 @@ const gameOver = () => {
     setUserStats(stats);
     checkAchievements();
 
-    const myOreCounts = state.oreCounts[state.myId] || {};
-    const ORE_NAMES = { 'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ' };
+    //const myOreCounts = state.oreCounts[state.myId] || {};
+    const ORE_NAMES = { 'copper': '銅', 'iron': '鉄', 'gold': '金', 'ruby': 'ルビー', 'sapphire': 'サファイア', 'emerald': 'エメラルド', 'diamond': 'ダイヤ', 'mithril':'ミスリル', 'adamantite':'アダマンタイト', 'orichalcum':'オリハルコン' };
     let oreDetailsHtml = '<ul style="list-style: none; padding: 0; font-size: 1rem; margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">';
     let hasOre = false;
     ORES.forEach(ore => {
