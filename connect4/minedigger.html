@@ -1419,7 +1419,22 @@ const setupConnection = (conn) => {
             broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers });
         }
     });
-    conn.on('data', handleNetworkData);
+
+    // conn.on('data', handleNetworkData);
+   // ▼▼▼ 受信データの処理とリレー（転送）機構の追加 ▼▼▼
+    conn.on('data', (data) => {
+        handleNetworkData(data); // まずホスト自身がデータを処理する
+        
+        // 自分がホストの場合、送ってきた人「以外」の全ゲストにそのままデータを転送する
+        if (state.isHost) {
+            state.connections.forEach(c => {
+                if (c !== conn) {
+                    c.send(data);
+                }
+            });
+        }
+    });
+    // ▲▲▲ ここまで ▲▲▲
 };
 
 const broadcast = (data) => { state.connections.forEach(c => c.send(data)); };
@@ -1665,7 +1680,7 @@ const initCharScreen = (roomId) => {
     
     if (state.isHost) {
         state.lobbyPlayers = {
-            [state.myId]: { name: localStorage.getItem('minedigger_player_name'), isHost: true, ready: true, unlocks: getUnlocks() }
+            [state.myId]: { name: localStorage.getItem('minedigger_player_name'), isHost: true, ready: true, unlocks: getUnlocks(),charInfo: { char: 'strong' } }
         };
     }
     showScreen('char-screen');
@@ -1679,6 +1694,14 @@ document.querySelectorAll('.char-plate').forEach(plate => {
         e.currentTarget.classList.add('selected');
         const selectedChar = e.currentTarget.dataset.type;
         updateCharInfo(selectedChar);
+
+        // ▼▼▼ ホストがキャラを変更した際、その情報をゲスト全員に同期する処理を追加 ▼▼▼
+        if (state.isHost) {
+            state.lobbyPlayers[state.myId].charInfo = { char: selectedChar };
+            updateLobbyUI(); // 自画面の更新
+            broadcast({ type: 'LOBBY_UPDATE', lobbyPlayers: state.lobbyPlayers }); // ゲストへの同期
+        }
+        // ▲▲▲▲
         updateLobbyUI(); // キャラ変更時に (⬆N) を自画面に即時反映させる
     });
 });
@@ -2624,7 +2647,17 @@ const gameOver = () => {
     if (state.gameState === 'gameover') return;
     state.gameState = 'gameover';
     showScreen('result-screen');
-    const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
+    //const finalDepth = Math.floor(state.players[state.myId].y / CONFIG.TILE_SIZE) + 1;
+    // ▼▼▼ 到達深度を「全プレイヤーの中で最も深い記録」にする修正 ▼▼▼
+    let maxDepth = 0;
+    for (let id in state.players) {
+        // 各プレイヤーの深度を計算
+        const depth = Math.floor(state.players[id].y / CONFIG.TILE_SIZE) + 1;
+        // 今までの最大値より深ければ更新
+        if (depth > maxDepth) maxDepth = depth;
+    }
+    const finalDepth = maxDepth;
+    // ▲▲▲ ここまで ▲▲▲
 
     /* ▼▼▼ ここから修正 ▼▼▼ */
     // 全プレイヤーのスコアを合計する
