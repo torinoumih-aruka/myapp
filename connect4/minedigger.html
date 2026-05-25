@@ -639,10 +639,10 @@ const ACHIEVEMENTS = [
     { id: "ach_depth_250", title: "250m到達", desc: "１プレイで250メートルに到達する", targetType: "max_depth_per_play", targetVal: 250, rewardType: "points", rewardVal: 10000, rewardDesc: "10000ポイント", before: "ach_depth_200" },
     { id: "ach_depth_300", title: "300m到達", desc: "１プレイで300メートルに到達する", targetType: "max_depth_per_play", targetVal: 300, rewardType: "points", rewardVal: 50000, rewardDesc: "50000ポイント", before: "ach_depth_200" },
     { id: "ach_depth_350", title: "350m到達", desc: "１プレイで350メートルに到達する", targetType: "max_depth_per_play", targetVal: 350, rewardType: "points", rewardVal: 100000, rewardDesc: "100000ポイント", before: "ach_depth_200" },
-    { id: "ach_blocks_50", title: "ロードランナー", desc: "１プレイ中に50個ブロックを壊す", targetType: "blocks_per_play", targetVal: 50, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
-    { id: "ach_blocks_100", title: "ディグダグ", desc: "１プレイ中に100個ブロックを壊す", targetType: "blocks_per_play", targetVal: 100, rewardType: "points", rewardVal: 300, rewardDesc: "300ポイント" },
-    { id: "ach_blocks_150", title: "ミスタードリラー", desc: "１プレイ中に150個ブロックを壊す", targetType: "blocks_per_play", targetVal: 150, rewardType: "points", rewardVal: 1000, rewardDesc: "1000ポイント" },
-    { id: "ach_blocks_200", title: "マインクラフト", desc: "１プレイ中に200個ブロックを壊す", targetType: "blocks_per_play", targetVal: 200, rewardType: "points", rewardVal: 4000, rewardDesc: "4000ポイント" },
+    { id: "ach_blocks_50", title: "ロードランナー", desc: "１プレイ中にひとりで50個ブロックを壊す", targetType: "blocks_per_play", targetVal: 50, rewardType: "points", rewardVal: 50, rewardDesc: "50ポイント" },
+    { id: "ach_blocks_100", title: "ディグダグ", desc: "１プレイ中にひとりで100個ブロックを壊す", targetType: "blocks_per_play", targetVal: 100, rewardType: "points", rewardVal: 300, rewardDesc: "300ポイント" },
+    { id: "ach_blocks_150", title: "ミスタードリラー", desc: "１プレイ中にひとりで150個ブロックを壊す", targetType: "blocks_per_play", targetVal: 150, rewardType: "points", rewardVal: 1000, rewardDesc: "1000ポイント" },
+    { id: "ach_blocks_200", title: "マインクラフト", desc: "１プレイ中にひとりで200個ブロックを壊す", targetType: "blocks_per_play", targetVal: 200, rewardType: "points", rewardVal: 4000, rewardDesc: "4000ポイント" },
     { id: "ach_total_depth_1000", title: "累計1000m到達", desc: "累計で1000メートル掘り進める", targetType: "total_depth", targetVal: 1000, rewardType: "unlock_shop", rewardVal: "item_01_2", rewardDesc: "SHOPに「ろうそく：Lv2」追加" },
     { id: "ach_total_depth_2000", title: "累計2000m到達", desc: "累計で2000メートル掘り進める", targetType: "total_depth", targetVal: 2000, rewardType: "unlock_shop", rewardVal: "item_02_2", rewardDesc: "SHOPに「ドリル：Lv2」追加" },
     { id: "ach_total_depth_3000", title: "累計3000m到達", desc: "累計で3000メートル掘り進める", targetType: "total_depth", targetVal: 3000, rewardType: "unlock_shop", rewardVal: "item_00_2", rewardDesc: "SHOPに「爆弾：Lv2」追加" },
@@ -1936,6 +1936,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
                             state.map[targetY][targetX] = {type: 'empty', hp: 0};
                             dugBlocks.push({x: targetX, y: targetY, color: blockColor});
                             spawnParticles(targetX, targetY, blockColor);
+                            currentPlayStats.blocks_per_play++;
                             
                             let spawned = spawnEntities(targetX, targetY, targetBlock, state.myId);
                             newEntities.push(...spawned);
@@ -1970,6 +1971,7 @@ document.getElementById('ui-item').addEventListener('touchstart', (e) => {
                     state.map[targetY][myGridX] = {type: 'empty', hp: 0};
                     dugBlocks.push({x: myGridX, y: targetY, color: blockColor});
                     spawnParticles(myGridX, targetY, blockColor);
+                    currentPlayStats.blocks_per_play++;
                     
                     if (targetBlock.type !== 'iron') {
                         let spawned = spawnEntities(myGridX, targetY, targetBlock, state.myId);
