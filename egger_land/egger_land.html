@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Step 4</title>
+    <title>Eggerland Clone - Step 5</title>
     <style>
         body {
             margin: 0; padding: 0;
@@ -82,96 +82,45 @@ const TILE_SIZE = 32;
 canvas.width = 13 * TILE_SIZE;
 canvas.height = 13 * TILE_SIZE;
 
-// --- カラーパレット ---
 const PALETTE = {
-    ".": null,
-    "1": "#002288", // プレイヤー (暗め)
-    "2": "#a05040", // 床レンガベース
-    "3": "#ff0055", // ハート赤
-    "4": "#8B4513", // 茶色 (宝・木)
-    "5": "#FFD700", // 金
-    "6": "#696969", // 影・岩ベース暗い
-    "7": "#A9A9A9", // 岩ハイライト
-    "8": "#808080", // 岩ベース
-    "9": "#ffffff", // 白
-    "A": "#00ffaa", // エメラルド明るい
-    "B": "#00aa77", // エメラルド暗い
-    "C": "#00ff00", // 木・スネーキー 明るい
-    "D": "#703020", // 床レンガの溝 (暗い赤茶)
-    "E": "#0000ff", // 川の青
-    "F": "#33ccff", // 川の水色
-    "G": "#aa0000", // メデューサの目 (怒り)
-    "H": "#aaaaaa"  // 針・卵の影
+    ".": null, "1": "#002288", "2": "#a05040", "3": "#ff0055", "4": "#8B4513", 
+    "5": "#FFD700", "6": "#696969", "7": "#A9A9A9", "8": "#808080", "9": "#ffffff", 
+    "A": "#00ffaa", "B": "#00aa77", "C": "#00ff00", "D": "#703020", "E": "#0000ff", 
+    "F": "#33ccff", "G": "#aa0000", "H": "#aaaaaa"
 };
 
-// --- スプライト ---
 const SPRITES = {
-    floor: [
-        "222222D2","222222D2","222222D2","DDDDDDDD",
-        "22D22222","22D22222","22D22222","DDDDDDDD"
-    ],
-    rock: [
-        "88888888","87777778","87666678","87688678",
-        "87688678","87666678","87777778","88888888"
-    ],
-    tree: [
-        "22CC2222","2CCCCCC2","CCCC6CCC","CC6666CC",
-        "2CC44CC2","22244222","22244222","22222222"
-    ],
-    river: [
-        "EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF",
-        "FFFFEEEE","FFFFEEEE","FFFFEEEE","FFFFEEEE"
-    ],
-    heart_normal: [
-        "22222222","22322322","23333332","23333332",
-        "22333322","22233222","22222222","22222222"
-    ],
-    heart_shot: [ 
-        "22222222","22322322","23999332","23393332",
-        "22333322","22233222","22222222","22222222"
-    ],
-    chest_closed: [
-        "22222222","24444442","46666664","46466464",
-        "46666664","46644664","24444442","22222222"
-    ],
-    chest_open: [
-        "22222222","24444442","46666664","46466464",
-        "46666664","44444444","25555552","22222222"
-    ],
-    framer: [
-        "99999999","9AAAAAA9","9ABBBBA9","9ABAAA99",
-        "9ABAAA99","9ABBBBA9","9AAAAAA9","99999999"
-    ],
-    snakey: [
-        "........","...CC...","..C9C9..",".CC9C9C.",
-        ".C.CCC.C",".CCCCCC.",".CCCCCC.","........"
-    ],
-    medusa_sleep: [
-        "........",".888888.","88688688","88888888",
-        "86888868","88666688",".888888.","........"
-    ],
-    medusa_awake: [
-        "........",".888888.","88G88G88","88888888",
-        "86888868","88666688",".888888.","........"
-    ],
-    egg: [
-        "........","..9999..",".999999.","99999999",
-        "9999999H","999999HH",".9999HH.","..HHHH.."
-    ],
-    needle_h: [
-        "........","........","........","79999997",
-        "........","........","........","........"
-    ],
-    needle_v: [
-        "...7....","...9....","...9....","...9....",
-        "...9....","...9....","...9....","...7...."
-    ],
-    bullet: [
-        "........","........","........","...99...",
-        "...99...","........","........","........"
-    ],
+    floor: ["222222D2","222222D2","222222D2","DDDDDDDD","22D22222","22D22222","22D22222","DDDDDDDD"],
+    rock: ["88888888","87777778","87666678","87688678","87688678","87666678","87777778","88888888"],
+    tree: ["22CC2222","2CCCCCC2","CCCC6CCC","CC6666CC","2CC44CC2","22244222","22244222","22222222"],
     
-    // --- 自キャラのアニメーション用（後ほど配列を書き換えてください） ---
+    // 川のアニメーション（配列を書き換えてください）
+    river_1: ["EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE","FFFFEEEE","FFFFEEEE"],
+    river_2: ["FFFFEEEE","EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE","FFFFEEEE"],
+    river_3: ["FFFFEEEE","FFFFEEEE","EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE"],
+    
+    heart_normal: ["22222222","22322322","23333332","23333332","22333322","22233222","22222222","22222222"],
+    heart_shot:   ["22222222","22322322","23999332","23393332","22333322","22233222","22222222","22222222"],
+    chest_closed: ["22222222","24444442","46666664","46466464","46666664","46644664","24444442","22222222"],
+    chest_open:   ["22222222","24444442","46666664","46466464","46666664","44444444","25555552","22222222"],
+    
+    // フレーマーのアニメーション
+    framer_1: ["99999999","9AAAAAA9","9ABBBBA9","9ABAAA99","9ABAAA99","9ABBBBA9","9AAAAAA9","99999999"],
+    framer_2: ["99999999","999AAAA9","99ABBBB9","99BAAA99","9ABAAA99","9ABBBBA9","9AAAAAA9","99999999"], // 光る表現用
+    
+    // スネーキーのアニメーション
+    snakey_left:    ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CCCCCC.",".CCCCCC.","........"],
+    snakey_right:   ["........","...CC...","..9C9C..",".C9C9CC.","C.CCC.C.",".CCCCCC.",".CCCCCC.","........"],
+    snakey_happy_1: ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CCCCCC.",".CCCCCC.","........"],
+    snakey_happy_2: ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CC..CC.",".CCCCCC.","........"],
+    
+    medusa_sleep: ["........",".888888.","88688688","88888888","86888868","88666688",".888888.","........"],
+    medusa_awake: ["........",".888888.","88G88G88","88888888","86888868","88666688",".888888.","........"],
+    egg:          ["........","..9999..",".999999.","99999999","9999999H","999999HH",".9999HH.","..HHHH.."],
+    needle_h:     ["........","........","........","79999997","........","........","........","........"],
+    needle_v:     ["...7....","...9....","...9....","...9....","...9....","...9....","...9....","...7...."],
+    bullet:       ["........","........","........","...99...","...99...","........","........","........"],
+    
     player_up_1:    ["..1111..",".111111.","11111111","11111111","11111111","11919111",".119111.",".333...."],
     player_up_2:    ["..1111..",".111111.","11111111","11111111","11111111","11191911",".111911.","....333."],
     player_down_1:  ["..1111..",".111111.","19911991","19311391","19911991","11111111",".331111.",".33..33."],
@@ -182,7 +131,6 @@ const SPRITES = {
     player_right_2: ["........","..1111..",".111111.",".1111991",".1111931","11111991","31111133",".311133."]
 };
 
-// --- マップ定義 ---
 const INITIAL_MAP = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,5,5,0,0,'M',0,1],
@@ -206,13 +154,8 @@ function initGame() {
     let pStartX = 12, pStartY = 20; 
 
     state = {
-        map: [],
-        entities: [],
-        floatingEggs: [], 
-        projectiles: [],
-        needle: null,
+        map: [], entities: [], floatingEggs: [], projectiles: [], needle: null,
         totalHearts: 0, collectedHearts: 0, shots: 0, chestOpen: false, cleared: false,
-        // 移動スピードを速く（120ミリ秒）
         animation: { active: false, duration: 120, startTime: 0, elapsed: 0 } 
     };
 
@@ -221,9 +164,7 @@ function initGame() {
         for (let x = 0; x < 13; x++) {
             let cell = INITIAL_MAP[y][x];
             if (cell === 'P') { 
-                pStartX = x * 2;
-                pStartY = y * 2;
-                row.push(0);
+                pStartX = x * 2; pStartY = y * 2; row.push(0);
             } else if (cell === 'F' || cell === 'S' || cell === 'M') {
                 state.entities.push({
                     type: cell === 'F' ? 'framer' : (cell === 'S' ? 'snakey' : 'medusa'),
@@ -241,12 +182,9 @@ function initGame() {
     }
     
     state.player = {
-        x: pStartX, y: pStartY, 
-        startX: pStartX, startY: pStartY, 
-        targetX: pStartX, targetY: pStartY, 
-        dir: 'down' // 初期向き
+        x: pStartX, y: pStartY, startX: pStartX, startY: pStartY, 
+        targetX: pStartX, targetY: pStartY, dir: 'down'
     };
-    
     updateUI();
 }
 
@@ -257,7 +195,6 @@ function updateUI() {
     else msgDiv.innerText = "";
 }
 
-// --- 入力制御 ---
 ['up', 'down', 'left', 'right'].forEach(id => {
     const btn = document.getElementById(`btn-${id}`);
     const press = (e) => { e.preventDefault(); input[id] = true; };
@@ -287,11 +224,9 @@ document.addEventListener('keyup', (e) => {
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = false;
 });
 
-// --- ロジック ---
-// 指定したエンティティ(ignore)以外を対象に当たり判定をとるよう修正
 function getEntityAt(hx, hy, ignore = null) {
     for (let e of state.entities) {
-        if (e === ignore) continue; // 自分自身は除外
+        if (e === ignore) continue;
         if (Math.abs(hx - e.x) < 2 && Math.abs(hy - e.y) < 2) return e;
     }
     return null;
@@ -304,34 +239,35 @@ function getFloatingEggAt(hx, hy) {
     return null;
 }
 
-function checkMapCollision(hx, hy) {
+// isPlayerフラグにより自キャラのみ宝箱(3)をスルー可能
+function checkMapCollision(hx, hy, isPlayer = false) {
     const minTx = Math.floor(hx / 2), maxTx = Math.floor((hx + 1.9) / 2);
     const minTy = Math.floor(hy / 2), maxTy = Math.floor((hy + 1.9) / 2);
     
     let isAllRiver = true;
+    let hasRiver = false;
 
     for (let y = minTy; y <= maxTy; y++) {
         for (let x = minTx; x <= maxTx; x++) {
-            if (y < 0 || y >= 13 || x < 0 || x >= 13) return { hit: true, tile: -1 };
+            if (y < 0 || y >= 13 || x < 0 || x >= 13) return { hit: true, tile: -1, hasRiver: false, allRiver: false };
             const tile = state.map[y][x];
-            if (tile === 1 || tile === 4 || (tile === 3 && !state.chestOpen)) {
-                return { hit: true, tile: tile };
+            
+            // プレイヤーなら宝箱はスルー、それ以外は当たる
+            if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) {
+                return { hit: true, tile: tile, hasRiver: false, allRiver: false };
             }
-            if (tile !== 5) isAllRiver = false;
+            if (tile === 5) hasRiver = true;
+            else isAllRiver = false;
         }
     }
     
     if (isAllRiver) {
         let onFloating = getFloatingEggAt(hx, hy);
-        if (!onFloating) return { hit: true, tile: 5, allRiver: true };
-    } else {
-        for (let y = minTy; y <= maxTy; y++) {
-            for (let x = minTx; x <= maxTx; x++) {
-                if (state.map[y][x] === 5) return { hit: true, tile: 5, allRiver: false };
-            }
-        }
+        if (!onFloating) return { hit: true, tile: 5, hasRiver: true, allRiver: true };
+    } else if (hasRiver) {
+        return { hit: true, tile: 5, hasRiver: true, allRiver: false };
     }
-    return { hit: false };
+    return { hit: false, hasRiver: false, allRiver: false };
 }
 
 function tryMove(dx, dy) {
@@ -345,28 +281,45 @@ function tryMove(dx, dy) {
     const pNextX = state.player.x + dx;
     const pNextY = state.player.y + dy;
 
-    if (checkMapCollision(pNextX, pNextY).hit) return;
+    if (checkMapCollision(pNextX, pNextY, true).hit) return;
 
-    // 前方のエンティティを探す (第3引数なし)
     const hitE = getEntityAt(pNextX, pNextY);
     if (hitE) {
         if (hitE.type === 'snakey' || hitE.type === 'medusa') return;
-
         if (dx !== 0 && hitE.y !== state.player.y) return;
         if (dy !== 0 && hitE.x !== state.player.x) return;
 
-        const fNextX = hitE.x + dx;
-        const fNextY = hitE.y + dy;
+        let fNextX = hitE.x + dx;
+        let fNextY = hitE.y + dy;
 
-        let col = checkMapCollision(fNextX, fNextY);
-        
-        if (hitE.type === 'egg' && col.hit && col.allRiver) {
-            hitE.willFloat = true;
-        } else if (col.hit) {
-            return;
+        if (hitE.type === 'egg') {
+            let nextCol = checkMapCollision(fNextX, fNextY, false);
+            
+            // 1〜3箇所が川マスの場合 (hasRiver=true, allRiver=false)
+            if (nextCol.hasRiver && !nextCol.allRiver) {
+                // さらに先の1マス先（dx*2, dy*2）が全て川かチェック
+                let fNextX2 = hitE.x + dx * 2;
+                let fNextY2 = hitE.y + dy * 2;
+                let nextCol2 = checkMapCollision(fNextX2, fNextY2, false);
+                
+                if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
+                    // 全て川マスの場合は一気に1マス落下
+                    fNextX = fNextX2;
+                    fNextY = fNextY2;
+                    hitE.willFloat = true;
+                } else {
+                    return; // 一部が川なのでブロック
+                }
+            } else if (nextCol.allRiver) {
+                hitE.willFloat = true;
+            } else if (nextCol.hit) {
+                return; // 障害物
+            }
+        } else {
+            let col = checkMapCollision(fNextX, fNextY, false);
+            if (col.hit) return;
         }
 
-        // ここが修正箇所：押し出す対象(hitE)自身は衝突判定から除外する
         if (getEntityAt(fNextX, fNextY, hitE)) return;
 
         hitE.startX = hitE.x; hitE.startY = hitE.y;
@@ -419,37 +372,17 @@ function checkLOS(m, p, axis) {
 function checkMedusa() {
     if (state.needle || state.animation.active || state.cleared) return;
     let p = state.player;
-
     for (let e of state.entities) {
         if (e.type !== 'medusa') continue;
-        
-        let wakeUp = false;
-        let attack = false;
-        
-        let overlapX = Math.abs(p.x - e.x);
-        let overlapY = Math.abs(p.y - e.y);
+        let wakeUp = false, attack = false;
+        let overlapX = Math.abs(p.x - e.x), overlapY = Math.abs(p.y - e.y);
 
-        if (overlapX < 2) {
-            if (checkLOS(e, p, 'y')) {
-                wakeUp = true;
-                if (overlapX === 0) attack = true;
-            }
-        }
-        if (overlapY < 2) {
-            if (checkLOS(e, p, 'x')) {
-                wakeUp = true;
-                if (overlapY === 0) attack = true;
-            }
-        }
+        if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
+        if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
         
         e.awake = wakeUp;
         if (attack) {
-            state.needle = {
-                x: e.x, y: e.y,
-                tx: p.x, ty: p.y,
-                axis: overlapX === 0 ? 'y' : 'x',
-                progress: 0
-            };
+            state.needle = { x: e.x, y: e.y, tx: p.x, ty: p.y, axis: overlapX === 0 ? 'y' : 'x', progress: 0 };
             break;
         }
     }
@@ -458,9 +391,7 @@ function checkMedusa() {
 function update(timestamp) {
     if (state.needle) {
         state.needle.progress += 0.1;
-        if (state.needle.progress >= 1) {
-            initGame();
-        }
+        if (state.needle.progress >= 1) initGame();
         return;
     }
 
@@ -473,7 +404,8 @@ function update(timestamp) {
         if (p.dir === 'left') p.x -= 1;
         if (p.dir === 'right') p.x += 1;
 
-        let col = checkMapCollision(p.x, p.y);
+        // 弾は宝箱(isPlayer=false)に当たって消滅
+        let col = checkMapCollision(p.x, p.y, false);
         if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || col.hit) {
             state.projectiles.splice(i, 1);
             continue;
@@ -481,11 +413,18 @@ function update(timestamp) {
         
         let hitE = getEntityAt(p.x, p.y);
         if (hitE) {
-            if (hitE.type === 'snakey') {
-                hitE.type = 'egg';
-                hitE.eggTimer = 16;
-            } else if (hitE.type === 'egg') {
-                state.entities = state.entities.filter(e => e !== hitE);
+            // 軸が完全に合っているかチェック（0.5マスずれでは当たらない）
+            let isAligned = false;
+            if ((p.dir === 'up' || p.dir === 'down') && p.x === hitE.x) isAligned = true;
+            if ((p.dir === 'left' || p.dir === 'right') && p.y === hitE.y) isAligned = true;
+
+            if (isAligned) {
+                if (hitE.type === 'snakey') {
+                    hitE.type = 'egg';
+                    hitE.eggTimer = 16;
+                } else if (hitE.type === 'egg') {
+                    state.entities = state.entities.filter(e => e !== hitE);
+                }
             }
             state.projectiles.splice(i, 1);
         }
@@ -504,10 +443,7 @@ function update(timestamp) {
             for (let i = state.entities.length - 1; i >= 0; i--) {
                 let e = state.entities[i];
                 if (e.isMoving) {
-                    e.x = e.targetX;
-                    e.y = e.targetY;
-                    e.isMoving = false;
-
+                    e.x = e.targetX; e.y = e.targetY; e.isMoving = false;
                     if (e.type === 'egg') {
                         e.eggTimer -= 1; 
                         if (e.eggTimer <= 0) e.type = 'snakey';
@@ -526,13 +462,10 @@ function update(timestamp) {
                 let isPlayerOn = (state.player.x === fe.x && state.player.y === fe.y);
                 
                 if (isPlayerOn && !fe.playerOn) {
-                    fe.playerOn = true;
-                    fe.walks--;
+                    fe.playerOn = true; fe.walks--;
                 } else if (!isPlayerOn && fe.playerOn) {
                     fe.playerOn = false;
-                    if (fe.walks <= 0) {
-                        state.floatingEggs.splice(i, 1);
-                    }
+                    if (fe.walks <= 0) state.floatingEggs.splice(i, 1);
                 }
             }
 
@@ -587,6 +520,12 @@ function draw(timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     let prog = state.animation.active ? Math.min(1, state.animation.elapsed / state.animation.duration) : 0;
+    
+    // 各種アニメーションフレームの算出
+    let time = timestamp || 0;
+    let riverSeq = Math.floor(time / 300) % 4; 
+    let riverFrame = riverSeq === 0 ? 1 : (riverSeq === 1 ? 2 : (riverSeq === 2 ? 3 : 2));
+    let fFrame = Math.floor(time / 500) % 2 + 1;
 
     for (let y = 0; y < 13; y++) {
         for (let x = 0; x < 13; x++) {
@@ -596,7 +535,7 @@ function draw(timestamp) {
             drawSprite(SPRITES.floor, px, py, TILE_SIZE);
             if (tile === 1) drawSprite(SPRITES.rock, px, py, TILE_SIZE);
             if (tile === 4) drawSprite(SPRITES.tree, px, py, TILE_SIZE);
-            if (tile === 5) drawSprite(SPRITES.river, px, py, TILE_SIZE);
+            if (tile === 5) drawSprite(SPRITES[`river_${riverFrame}`], px, py, TILE_SIZE);
             if (tile === 2) drawSprite(SPRITES.heart_normal, px, py, TILE_SIZE);
             if (tile === 7) drawSprite(SPRITES.heart_shot, px, py, TILE_SIZE);
             if (tile === 3) drawSprite(state.chestOpen ? SPRITES.chest_open : SPRITES.chest_closed, px, py, TILE_SIZE);
@@ -615,14 +554,32 @@ function draw(timestamp) {
         }
         const px = fx * (TILE_SIZE/2), py = fy * (TILE_SIZE/2);
         
-        if (e.type === 'framer') drawSprite(SPRITES.framer, px, py, TILE_SIZE);
-        if (e.type === 'snakey') drawSprite(SPRITES.snakey, px, py, TILE_SIZE);
+        if (e.type === 'framer') {
+            drawSprite(SPRITES[`framer_${fFrame}`], px, py, TILE_SIZE);
+        }
+        if (e.type === 'snakey') {
+            let sSprite;
+            if (state.chestOpen) {
+                sSprite = SPRITES[`snakey_happy_${Math.floor(time / 250) % 2 + 1}`];
+            } else {
+                sSprite = (state.player.x < e.x) ? SPRITES['snakey_left'] : SPRITES['snakey_right'];
+            }
+            drawSprite(sSprite, px, py, TILE_SIZE);
+        }
         if (e.type === 'medusa') drawSprite(e.awake ? SPRITES.medusa_awake : SPRITES.medusa_sleep, px, py, TILE_SIZE);
         if (e.type === 'egg') {
             drawSprite(SPRITES.egg, px, py, TILE_SIZE);
-            ctx.fillStyle = '#ff0000';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText(Math.ceil(e.eggTimer), px + TILE_SIZE - 14, py + TILE_SIZE - 2);
+            
+            // 白枠に青字の歩数カウンタ
+            let text = Math.ceil(e.eggTimer).toString();
+            let textX = px + TILE_SIZE - 18;
+            let textY = py + TILE_SIZE - 4;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeText(text, textX, textY);
+            ctx.fillStyle = '#0000ff';
+            ctx.fillText(text, textX, textY);
         }
     }
 
@@ -636,12 +593,8 @@ function draw(timestamp) {
         py = state.player.startY + (state.player.targetY - state.player.startY) * prog;
     }
     
-    // 自キャラのアニメーションフレーム算出 (0.25秒ごとに 1 と 2 を切り替え)
-    let frame = Math.floor((timestamp || 0) / 250) % 2 + 1;
-    let spriteName = `player_${state.player.dir}_${frame}`;
-    let pSprite = SPRITES[spriteName];
-    
-    drawSprite(pSprite, px * (TILE_SIZE/2), py * (TILE_SIZE/2), TILE_SIZE);
+    let pFrame = Math.floor(time / 250) % 2 + 1;
+    drawSprite(SPRITES[`player_${state.player.dir}_${pFrame}`], px * (TILE_SIZE/2), py * (TILE_SIZE/2), TILE_SIZE);
 
     if (state.needle) {
         let n = state.needle;
