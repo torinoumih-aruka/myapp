@@ -3,53 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Step 5</title>
+    <title>Eggerland Clone - Medusa Sight Fixed</title>
     <style>
-        body {
-            margin: 0; padding: 0;
-            background-color: #111; color: #fff;
-            display: flex; flex-direction: column; align-items: center;
-            touch-action: none; font-family: sans-serif;
-        }
-        #game-container {
-            width: 100vw; max-width: 600px;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        canvas {
-            background-color: #000;
-            width: 100vw; height: 100vw; max-width: 600px; max-height: 600px;
-            image-rendering: pixelated;
-        }
-        #ui-area {
-            width: 100%; height: 40vh;
-            display: flex; justify-content: center; align-items: center; position: relative;
-        }
-        .status-bar {
-            position: absolute; top: 5px; left: 10px; right: 10px;
-            display: flex; justify-content: space-between; font-weight: bold;
-        }
-        #message { color: yellow; }
-        #shots { color: #00ffaa; }
-        
+        body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
+        #game-container { width: 100vw; max-width: 600px; display: flex; flex-direction: column; align-items: center; }
+        canvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; }
+        #ui-area { width: 100%; height: 40vh; display: flex; justify-content: center; align-items: center; position: relative; }
+        .status-bar { position: absolute; top: 5px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+        #message { color: yellow; } #shots { color: #00ffaa; }
         .dpad { position: relative; width: 150px; height: 150px; left: -40px; }
-        .btn {
-            position: absolute; width: 50px; height: 50px;
-            background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 10px; display: flex; justify-content: center; align-items: center;
-            font-size: 20px; user-select: none;
-        }
+        .btn { position: absolute; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 20px; user-select: none; }
         .btn:active { background-color: rgba(255, 255, 255, 0.5); }
-        #btn-up { top: 0; left: 50px; }
-        #btn-down { bottom: 0; left: 50px; }
-        #btn-left { top: 50px; left: 0; }
-        #btn-right { top: 50px; right: 0; }
-        
-        #btn-shot {
-            position: absolute; right: 20px; bottom: 50px;
-            width: 70px; height: 70px; border-radius: 35px;
-            background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6);
-            display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none;
-        }
+        #btn-up { top: 0; left: 50px; } #btn-down { bottom: 0; left: 50px; } #btn-left { top: 50px; left: 0; } #btn-right { top: 50px; right: 0; }
+        #btn-shot { position: absolute; right: 20px; bottom: 50px; width: 70px; height: 70px; border-radius: 35px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
         #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
     </style>
 </head>
@@ -58,15 +24,10 @@
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     <div id="ui-area">
-        <div class="status-bar">
-            <div id="message"></div>
-            <div id="shots-disp">Shots: <span id="shots">0</span></div>
-        </div>
+        <div class="status-bar"><div id="message">Loading...</div><div id="shots-disp">Shots: <span id="shots">0</span></div></div>
         <div class="dpad">
-            <div class="btn" id="btn-up" data-dir="up">↑</div>
-            <div class="btn" id="btn-down" data-dir="down">↓</div>
-            <div class="btn" id="btn-left" data-dir="left">←</div>
-            <div class="btn" id="btn-right" data-dir="right">→</div>
+            <div class="btn" id="btn-up" data-dir="up">↑</div><div class="btn" id="btn-down" data-dir="down">↓</div>
+            <div class="btn" id="btn-left" data-dir="left">←</div><div class="btn" id="btn-right" data-dir="right">→</div>
         </div>
         <div id="btn-shot">SHOT</div>
     </div>
@@ -82,73 +43,33 @@ const TILE_SIZE = 32;
 canvas.width = 13 * TILE_SIZE;
 canvas.height = 13 * TILE_SIZE;
 
-const PALETTE = {
-    ".": null, "1": "#002288", "2": "#a05040", "3": "#ff0055", "4": "#8B4513", 
-    "5": "#FFD700", "6": "#696969", "7": "#A9A9A9", "8": "#808080", "9": "#ffffff", 
-    "A": "#00ffaa", "B": "#00aa77", "C": "#00ff00", "D": "#703020", "E": "#0000ff", 
-    "F": "#33ccff", "G": "#aa0000", "H": "#aaaaaa"
-};
-
-const SPRITES = {
-    floor: ["222222D2","222222D2","222222D2","DDDDDDDD","22D22222","22D22222","22D22222","DDDDDDDD"],
-    rock: ["88888888","87777778","87666678","87688678","87688678","87666678","87777778","88888888"],
-    tree: ["22CC2222","2CCCCCC2","CCCC6CCC","CC6666CC","2CC44CC2","22244222","22244222","22222222"],
-    
-    // 川のアニメーション（配列を書き換えてください）
-    river_1: ["EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE","FFFFEEEE","FFFFEEEE"],
-    river_2: ["FFFFEEEE","EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE","FFFFEEEE"],
-    river_3: ["FFFFEEEE","FFFFEEEE","EEEEFFFF","EEEEFFFF","EEEEFFFF","EEEEFFFF","FFFFEEEE","FFFFEEEE"],
-    
-    heart_normal: ["22222222","22322322","23333332","23333332","22333322","22233222","22222222","22222222"],
-    heart_shot:   ["22222222","22322322","23999332","23393332","22333322","22233222","22222222","22222222"],
-    chest_closed: ["22222222","24444442","46666664","46466464","46666664","46644664","24444442","22222222"],
-    chest_open:   ["22222222","24444442","46666664","46466464","46666664","44444444","25555552","22222222"],
-    
-    // フレーマーのアニメーション
-    framer_1: ["99999999","9AAAAAA9","9ABBBBA9","9ABAAA99","9ABAAA99","9ABBBBA9","9AAAAAA9","99999999"],
-    framer_2: ["99999999","999AAAA9","99ABBBB9","99BAAA99","9ABAAA99","9ABBBBA9","9AAAAAA9","99999999"], // 光る表現用
-    
-    // スネーキーのアニメーション
-    snakey_left:    ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CCCCCC.",".CCCCCC.","........"],
-    snakey_right:   ["........","...CC...","..9C9C..",".C9C9CC.","C.CCC.C.",".CCCCCC.",".CCCCCC.","........"],
-    snakey_happy_1: ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CCCCCC.",".CCCCCC.","........"],
-    snakey_happy_2: ["........","...CC...","..C9C9..",".CC9C9C.",".C.CCC.C",".CC..CC.",".CCCCCC.","........"],
-    
-    medusa_sleep: ["........",".888888.","88688688","88888888","86888868","88666688",".888888.","........"],
-    medusa_awake: ["........",".888888.","88G88G88","88888888","86888868","88666688",".888888.","........"],
-    egg:          ["........","..9999..",".999999.","99999999","9999999H","999999HH",".9999HH.","..HHHH.."],
-    needle_h:     ["........","........","........","79999997","........","........","........","........"],
-    needle_v:     ["...7....","...9....","...9....","...9....","...9....","...9....","...9....","...7...."],
-    bullet:       ["........","........","........","...99...","...99...","........","........","........"],
-    
-    player_up_1:    ["..1111..",".111111.","11111111","11111111","11111111","11919111",".119111.",".333...."],
-    player_up_2:    ["..1111..",".111111.","11111111","11111111","11111111","11191911",".111911.","....333."],
-    player_down_1:  ["..1111..",".111111.","19911991","19311391","19911991","11111111",".331111.",".33..33."],
-    player_down_2:  ["..1111..",".111111.","19911991","19311391","19911991","11111111",".111133.",".33..33."],
-    player_left_1:  ["..111...",".11111..","1991111.","1391111.","1991111.","11111111",".111111.","..3331.."],
-    player_left_2:  ["........","..1111..",".111111.","1991111.","1391111.","19911111","33111113",".331113."],
-    player_right_1: ["...111..","..11111.",".1111991",".1111931",".1111991","11111111",".111111.","..1333.."],
-    player_right_2: ["........","..1111..",".111111.",".1111991",".1111931","11111991","31111133",".311133."]
-};
-
-const INITIAL_MAP = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,5,5,0,0,'M',0,1],
-    [1,0,7,0,0,0,5,5,0,0, 0 ,0,1],
-    [1,0,0,'F',4,4,5,5,5,0,0,0,1],
-    [1,0,0,0,5,0,3,0,5,0,0,0,1],
-    [1,1,1,0,5,0,0,0,5,0,1,1,1],
-    [1,7,7,0,'S',0,0,0,0,0,0,0,1],
-    [1,7,7,0,0,0,0,0,0,0,2,0,1],
-    [1,0,0,0,0,1,1,1,0,0,0,0,1],
-    [1,1,1,1,0,0,0,0,0,1,1,1,1],
-    [1,0,0,0,0,0,'P',0,0,'S',0,0,1], 
-    [1,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
+// --- 外部ファイルから読み込むグローバル変数 ---
+let PALETTE = {};
+let SPRITES = {};
+let INITIAL_MAP = [];
 let state;
 const input = { up: false, down: false, left: false, right: false, shot: false };
+
+// --- データの非同期読み込み ---
+async function bootGame() {
+    try {
+        const assetsRes = await fetch('assets.json');
+        const assetsData = await assetsRes.json();
+        PALETTE = assetsData.palette;
+        SPRITES = assetsData.sprites;
+
+        const stageRes = await fetch('stage_01.json');
+        const stageData = await stageRes.json();
+        INITIAL_MAP = stageData.map;
+
+        initGame();
+        requestAnimationFrame(loop);
+    } catch (e) {
+        console.error(e);
+        msgDiv.innerText = "Error: ファイル読み込み失敗(ローカルサーバーを使用してください)";
+        msgDiv.style.color = "red";
+    }
+}
 
 function initGame() {
     let pStartX = 12, pStartY = 20; 
@@ -195,6 +116,7 @@ function updateUI() {
     else msgDiv.innerText = "";
 }
 
+// キー入力イベント群
 ['up', 'down', 'left', 'right'].forEach(id => {
     const btn = document.getElementById(`btn-${id}`);
     const press = (e) => { e.preventDefault(); input[id] = true; };
@@ -224,6 +146,7 @@ document.addEventListener('keyup', (e) => {
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = false;
 });
 
+// ゲームロジック群
 function getEntityAt(hx, hy, ignore = null) {
     for (let e of state.entities) {
         if (e === ignore) continue;
@@ -239,20 +162,17 @@ function getFloatingEggAt(hx, hy) {
     return null;
 }
 
-// isPlayerフラグにより自キャラのみ宝箱(3)をスルー可能
 function checkMapCollision(hx, hy, isPlayer = false) {
     const minTx = Math.floor(hx / 2), maxTx = Math.floor((hx + 1.9) / 2);
     const minTy = Math.floor(hy / 2), maxTy = Math.floor((hy + 1.9) / 2);
     
-    let isAllRiver = true;
-    let hasRiver = false;
+    let isAllRiver = true, hasRiver = false;
 
     for (let y = minTy; y <= maxTy; y++) {
         for (let x = minTx; x <= maxTx; x++) {
             if (y < 0 || y >= 13 || x < 0 || x >= 13) return { hit: true, tile: -1, hasRiver: false, allRiver: false };
             const tile = state.map[y][x];
             
-            // プレイヤーなら宝箱はスルー、それ以外は当たる
             if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) {
                 return { hit: true, tile: tile, hasRiver: false, allRiver: false };
             }
@@ -278,8 +198,7 @@ function tryMove(dx, dy) {
     if (dx === -1) state.player.dir = 'left';
     if (dx === 1) state.player.dir = 'right';
 
-    const pNextX = state.player.x + dx;
-    const pNextY = state.player.y + dy;
+    const pNextX = state.player.x + dx, pNextY = state.player.y + dy;
 
     if (checkMapCollision(pNextX, pNextY, true).hit) return;
 
@@ -289,35 +208,21 @@ function tryMove(dx, dy) {
         if (dx !== 0 && hitE.y !== state.player.y) return;
         if (dy !== 0 && hitE.x !== state.player.x) return;
 
-        let fNextX = hitE.x + dx;
-        let fNextY = hitE.y + dy;
+        let fNextX = hitE.x + dx, fNextY = hitE.y + dy;
 
         if (hitE.type === 'egg') {
             let nextCol = checkMapCollision(fNextX, fNextY, false);
-            
-            // 1〜3箇所が川マスの場合 (hasRiver=true, allRiver=false)
             if (nextCol.hasRiver && !nextCol.allRiver) {
-                // さらに先の1マス先（dx*2, dy*2）が全て川かチェック
-                let fNextX2 = hitE.x + dx * 2;
-                let fNextY2 = hitE.y + dy * 2;
+                let fNextX2 = hitE.x + dx * 2, fNextY2 = hitE.y + dy * 2;
                 let nextCol2 = checkMapCollision(fNextX2, fNextY2, false);
-                
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
-                    // 全て川マスの場合は一気に1マス落下
-                    fNextX = fNextX2;
-                    fNextY = fNextY2;
-                    hitE.willFloat = true;
-                } else {
-                    return; // 一部が川なのでブロック
-                }
+                    fNextX = fNextX2; fNextY = fNextY2; hitE.willFloat = true;
+                } else return;
             } else if (nextCol.allRiver) {
                 hitE.willFloat = true;
-            } else if (nextCol.hit) {
-                return; // 障害物
-            }
+            } else if (nextCol.hit) return;
         } else {
-            let col = checkMapCollision(fNextX, fNextY, false);
-            if (col.hit) return;
+            if (checkMapCollision(fNextX, fNextY, false).hit) return;
         }
 
         if (getEntityAt(fNextX, fNextY, hitE)) return;
@@ -329,22 +234,18 @@ function tryMove(dx, dy) {
 
     state.player.startX = state.player.x; state.player.startY = state.player.y;
     state.player.targetX = pNextX; state.player.targetY = pNextY;
-    state.animation.active = true;
-    state.animation.elapsed = 0;
-    state.animation.startTime = 0; 
+    state.animation.active = true; state.animation.elapsed = 0; state.animation.startTime = 0; 
 }
 
 function tryShoot() {
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
-        state.shots--;
-        updateUI();
-        state.projectiles.push({
-            x: state.player.x, y: state.player.y, dir: state.player.dir, active: true
-        });
+        state.shots--; updateUI();
+        state.projectiles.push({ x: state.player.x, y: state.player.y, dir: state.player.dir, active: true });
         input.shot = false; 
     }
 }
 
+// 修正箇所：メデューサの視線判定
 function checkLOS(m, p, axis) {
     let minX, maxX, minY, maxY;
     if (axis === 'y') {
@@ -359,7 +260,8 @@ function checkLOS(m, p, axis) {
     for(let ty = Math.floor(minY/2); ty <= Math.floor(maxY/2); ty++) {
         for(let tx = Math.floor(minX/2); tx <= Math.floor(maxX/2); tx++) {
             let tile = state.map[ty][tx];
-            if ([1,2,7,3,4].includes(tile)) return false;
+            // 4（木）を除外し、1（岩）、2（ハート）、7（ショットハート）、3（宝箱）のみ視線を遮るように変更
+            if ([1,2,7,3].includes(tile)) return false;
         }
     }
     for(let e of state.entities) {
@@ -399,32 +301,22 @@ function update(timestamp) {
 
     for (let i = state.projectiles.length - 1; i >= 0; i--) {
         let p = state.projectiles[i];
-        if (p.dir === 'up') p.y -= 1;
-        if (p.dir === 'down') p.y += 1;
-        if (p.dir === 'left') p.x -= 1;
-        if (p.dir === 'right') p.x += 1;
+        if (p.dir === 'up') p.y -= 1; else if (p.dir === 'down') p.y += 1;
+        else if (p.dir === 'left') p.x -= 1; else if (p.dir === 'right') p.x += 1;
 
-        // 弾は宝箱(isPlayer=false)に当たって消滅
-        let col = checkMapCollision(p.x, p.y, false);
-        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || col.hit) {
-            state.projectiles.splice(i, 1);
-            continue;
+        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
+            state.projectiles.splice(i, 1); continue;
         }
         
         let hitE = getEntityAt(p.x, p.y);
         if (hitE) {
-            // 軸が完全に合っているかチェック（0.5マスずれでは当たらない）
             let isAligned = false;
             if ((p.dir === 'up' || p.dir === 'down') && p.x === hitE.x) isAligned = true;
             if ((p.dir === 'left' || p.dir === 'right') && p.y === hitE.y) isAligned = true;
 
             if (isAligned) {
-                if (hitE.type === 'snakey') {
-                    hitE.type = 'egg';
-                    hitE.eggTimer = 16;
-                } else if (hitE.type === 'egg') {
-                    state.entities = state.entities.filter(e => e !== hitE);
-                }
+                if (hitE.type === 'snakey') { hitE.type = 'egg'; hitE.eggTimer = 16; }
+                else if (hitE.type === 'egg') state.entities = state.entities.filter(e => e !== hitE);
             }
             state.projectiles.splice(i, 1);
         }
@@ -432,13 +324,11 @@ function update(timestamp) {
 
     if (state.animation.active) {
         if (state.animation.startTime === 0) state.animation.startTime = timestamp;
-        
         const elapsed = timestamp - state.animation.startTime;
         state.animation.elapsed = elapsed;
         
         if (elapsed >= state.animation.duration) {
-            state.player.x = state.player.targetX;
-            state.player.y = state.player.targetY;
+            state.player.x = state.player.targetX; state.player.y = state.player.targetY;
 
             for (let i = state.entities.length - 1; i >= 0; i--) {
                 let e = state.entities[i];
@@ -447,7 +337,6 @@ function update(timestamp) {
                     if (e.type === 'egg') {
                         e.eggTimer -= 1; 
                         if (e.eggTimer <= 0) e.type = 'snakey';
-                        
                         if (e.willFloat) {
                             state.floatingEggs.push({ x: e.x, y: e.y, walks: 2, playerOn: false });
                             state.entities.splice(i, 1);
@@ -460,10 +349,8 @@ function update(timestamp) {
             for (let i = state.floatingEggs.length - 1; i >= 0; i--) {
                 let fe = state.floatingEggs[i];
                 let isPlayerOn = (state.player.x === fe.x && state.player.y === fe.y);
-                
-                if (isPlayerOn && !fe.playerOn) {
-                    fe.playerOn = true; fe.walks--;
-                } else if (!isPlayerOn && fe.playerOn) {
+                if (isPlayerOn && !fe.playerOn) { fe.playerOn = true; fe.walks--; }
+                else if (!isPlayerOn && fe.playerOn) {
                     fe.playerOn = false;
                     if (fe.walks <= 0) state.floatingEggs.splice(i, 1);
                 }
@@ -474,36 +361,30 @@ function update(timestamp) {
                 if (tx >= 0 && tx < 13 && ty >= 0 && ty < 13) {
                     const tile = state.map[ty][tx];
                     if (tile === 2 || tile === 7) {
-                        state.map[ty][tx] = 0;
-                        state.collectedHearts++;
+                        state.map[ty][tx] = 0; state.collectedHearts++;
                         if (tile === 7) state.shots++;
                         updateUI();
-                        if (state.collectedHearts >= state.totalHearts) {
-                            state.chestOpen = true; updateUI();
-                        }
+                        if (state.collectedHearts >= state.totalHearts) { state.chestOpen = true; updateUI(); }
                     } else if (tile === 3 && state.chestOpen && !state.cleared) {
-                        state.map[ty][tx] = 0;
-                        state.cleared = true; updateUI();
+                        state.map[ty][tx] = 0; state.cleared = true; updateUI();
                     }
                 }
             }
-            
             checkMedusa();
         }
     } else {
         if (input.shot) tryShoot();
         else {
             let dx = 0, dy = 0;
-            if (input.up) dy -= 1;
-            else if (input.down) dy += 1;
-            else if (input.left) dx -= 1;
-            else if (input.right) dx += 1;
+            if (input.up) dy -= 1; else if (input.down) dy += 1;
+            else if (input.left) dx -= 1; else if (input.right) dx += 1;
             if (dx !== 0 || dy !== 0) tryMove(dx, dy);
         }
     }
 }
 
 function drawSprite(spriteData, cx, cy, scale) {
+    if (!spriteData) return;
     const dotSize = scale / 8;
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
@@ -518,10 +399,10 @@ function drawSprite(spriteData, cx, cy, scale) {
 
 function draw(timestamp) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!state) return; 
 
     let prog = state.animation.active ? Math.min(1, state.animation.elapsed / state.animation.duration) : 0;
     
-    // 各種アニメーションフレームの算出
     let time = timestamp || 0;
     let riverSeq = Math.floor(time / 300) % 4; 
     let riverFrame = riverSeq === 0 ? 1 : (riverSeq === 1 ? 2 : (riverSeq === 2 ? 3 : 2));
@@ -542,9 +423,7 @@ function draw(timestamp) {
         }
     }
 
-    for (let fe of state.floatingEggs) {
-        drawSprite(SPRITES.egg, fe.x * (TILE_SIZE/2), fe.y * (TILE_SIZE/2), TILE_SIZE);
-    }
+    for (let fe of state.floatingEggs) drawSprite(SPRITES.egg, fe.x * (TILE_SIZE/2), fe.y * (TILE_SIZE/2), TILE_SIZE);
 
     for (let e of state.entities) {
         let fx = e.x, fy = e.y;
@@ -554,45 +433,31 @@ function draw(timestamp) {
         }
         const px = fx * (TILE_SIZE/2), py = fy * (TILE_SIZE/2);
         
-        if (e.type === 'framer') {
-            drawSprite(SPRITES[`framer_${fFrame}`], px, py, TILE_SIZE);
-        }
+        if (e.type === 'framer') drawSprite(SPRITES[`framer_${fFrame}`], px, py, TILE_SIZE);
         if (e.type === 'snakey') {
             let sSprite;
-            if (state.chestOpen) {
-                sSprite = SPRITES[`snakey_happy_${Math.floor(time / 250) % 2 + 1}`];
-            } else {
-                sSprite = (state.player.x < e.x) ? SPRITES['snakey_left'] : SPRITES['snakey_right'];
-            }
+            if (state.chestOpen) sSprite = SPRITES[`snakey_happy_${Math.floor(time / 250) % 2 + 1}`];
+            else sSprite = (state.player.x < e.x) ? SPRITES['snakey_left'] : SPRITES['snakey_right'];
             drawSprite(sSprite, px, py, TILE_SIZE);
         }
         if (e.type === 'medusa') drawSprite(e.awake ? SPRITES.medusa_awake : SPRITES.medusa_sleep, px, py, TILE_SIZE);
         if (e.type === 'egg') {
             drawSprite(SPRITES.egg, px, py, TILE_SIZE);
-            
-            // 白枠に青字の歩数カウンタ
             let text = Math.ceil(e.eggTimer).toString();
-            let textX = px + TILE_SIZE - 18;
-            let textY = py + TILE_SIZE - 4;
+            let textX = px + TILE_SIZE - 18, textY = py + TILE_SIZE - 4;
             ctx.font = 'bold 14px sans-serif';
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#ffffff';
-            ctx.strokeText(text, textX, textY);
-            ctx.fillStyle = '#0000ff';
-            ctx.fillText(text, textX, textY);
+            ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff'; ctx.strokeText(text, textX, textY);
+            ctx.fillStyle = '#0000ff'; ctx.fillText(text, textX, textY);
         }
     }
 
-    for (let p of state.projectiles) {
-        drawSprite(SPRITES.bullet, p.x * (TILE_SIZE/2), p.y * (TILE_SIZE/2), TILE_SIZE);
-    }
+    for (let p of state.projectiles) drawSprite(SPRITES.bullet, p.x * (TILE_SIZE/2), p.y * (TILE_SIZE/2), TILE_SIZE);
 
     let px = state.player.x, py = state.player.y;
     if (state.animation.active) {
         px = state.player.startX + (state.player.targetX - state.player.startX) * prog;
         py = state.player.startY + (state.player.targetY - state.player.startY) * prog;
     }
-    
     let pFrame = Math.floor(time / 250) % 2 + 1;
     drawSprite(SPRITES[`player_${state.player.dir}_${pFrame}`], px * (TILE_SIZE/2), py * (TILE_SIZE/2), TILE_SIZE);
 
@@ -610,9 +475,7 @@ function loop(timestamp) {
     requestAnimationFrame(loop);
 }
 
-initGame();
-requestAnimationFrame(loop);
-
+bootGame();
 </script>
 </body>
 </html>
