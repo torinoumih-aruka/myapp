@@ -3,35 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Game States</title>
+    <title>Eggerland Clone - Editor Added</title>
     <style>
         body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
         #game-container { width: 100vw; max-width: 600px; position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-        canvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; }
+        canvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; touch-action: none; }
         
-        /* タイトル画面レイアウト */
+        /* タイトル画面 */
         #title-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
         #title-screen h1 { color: #ffcc00; font-size: 3rem; margin-bottom: 2rem; text-shadow: 2px 2px 0px #ff0000; }
         .title-btn { padding: 15px 30px; font-size: 1.2rem; font-weight: bold; margin: 10px; border-radius: 8px; border: 2px solid #fff; background-color: #333; color: #fff; cursor: pointer; width: 200px; text-align: center; }
         .title-btn:active { background-color: #555; }
         
-        /* リリースノート ダイアログ */
+        /* リリースノート */
         dialog { background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 10px; padding: 20px; max-width: 80%; }
         dialog::backdrop { background: rgba(0,0,0,0.7); }
         
+        /* ゲームUI */
         #ui-area { width: 100%; height: 40vh; display: flex; justify-content: center; align-items: center; position: relative; }
         .status-bar { position: absolute; top: 5px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         #message { color: yellow; } #shots { color: #00ffaa; }
-        
         .dpad { position: relative; width: 150px; height: 150px; left: -40px; }
         .btn { position: absolute; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 20px; user-select: none; }
         .btn:active { background-color: rgba(255, 255, 255, 0.5); }
         #btn-up { top: 0; left: 50px; } #btn-down { bottom: 0; left: 50px; } #btn-left { top: 50px; left: 0; } #btn-right { top: 50px; right: 0; }
-        
         #btn-shot { position: absolute; right: 20px; bottom: 50px; width: 70px; height: 70px; border-radius: 35px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
         #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
         #btn-retry { position: absolute; left: 20px; bottom: 65px; width: 60px; height: 40px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
         #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
+        #btn-exit-test { position: absolute; left: 20px; bottom: 15px; width: 60px; height: 40px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
+        #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
+
+        /* エディタUI */
+        #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
+        #palette-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 15px; width: 90%; max-width: 400px; }
+        .palette-btn { width: 36px; height: 36px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #222; }
+        .edit-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .edit-controls button { padding: 10px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
+        .edit-controls button:active { background-color: #666; }
     </style>
 </head>
 <body>
@@ -42,15 +51,16 @@
     <div id="title-screen">
         <h1>たまごランド</h1>
         <div class="title-btn" id="btn-start-game">はじめから</div>
+        <div class="title-btn" id="btn-edit-mode">エディット</div>
         <div class="title-btn" id="btn-show-notes">リリースノート</div>
     </div>
     
     <dialog id="notes-dialog">
         <h2 style="margin-top:0;">リリースノート</h2>
         <ul style="padding-left:20px; line-height: 1.6;">
-            <li>画面フロー（タイトル、ゲームinit等）を追加しました。</li>
-            <li>「川に浮かんだ卵」の上を歩行可能に修正しました。</li>
-            <li>ステージ構成を1つのJSONファイルにまとめました。</li>
+            <li>ステージエディタ機能を追加しました。</li>
+            <li>「自キャラ」「宝箱」の重複防止処理を実装しました。</li>
+            <li>エディタから作成したマップのテストプレイ、JSON出力に対応しました。</li>
         </ul>
         <div style="text-align: right; margin-top: 20px;">
             <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
@@ -64,7 +74,17 @@
             <div class="btn" id="btn-left" data-dir="left">←</div><div class="btn" id="btn-right" data-dir="right">→</div>
         </div>
         <div id="btn-retry">RETRY</div>
+        <div id="btn-exit-test">エディタに<br>戻る</div>
         <div id="btn-shot">SHOT</div>
+    </div>
+
+    <div id="edit-ui">
+        <div id="palette-container"></div>
+        <div class="edit-controls">
+            <button id="btn-edit-test">テストプレイ</button>
+            <button id="btn-edit-export">JSON出力</button>
+            <button id="btn-edit-exit">タイトルへ</button>
+        </div>
     </div>
 </div>
 
@@ -78,48 +98,72 @@ const TILE_SIZE = 32;
 canvas.width = 13 * TILE_SIZE;
 canvas.height = 13 * TILE_SIZE;
 
-// グローバル変数
+// --- グローバル変数 ---
 let PALETTE = {};
 let SPRITES = {};
-let STAGES_DATA = [];      // JSONから読み込む全ステージデータ
-let currentStageIndex = 0; // 現在の配列インデックス
-let gameMode = '';         // 'title', 'init', 'game', 'ending'
+let STAGES_DATA = [];
+let currentStageIndex = 0;
+let gameMode = ''; // 'title', 'init', 'game', 'ending', 'edit', 'test_play'
 let initTimer = 0;
 
 let INITIAL_MAP = [];
 let state;
 const input = { up: false, down: false, left: false, right: false, shot: false };
 
-// --- 画面フロー制御 ---
+// --- エディタ関連データ ---
+let editMap = [];
+let selectedEditItemId = 1;
+
+// 今後のアイテム追加に強いパレット定義構造
+const EDIT_PALETTE = [
+    { id: 0, sprite: 'floor' },
+    { id: 1, sprite: 'rock' },
+    { id: 4, sprite: 'tree' },
+    { id: 5, sprite: 'river_1' },
+    { id: 2, sprite: 'heart_normal' },
+    { id: 7, sprite: 'heart_shot' },
+    { id: 3, sprite: 'chest_closed', unique: true },
+    { id: 'P', sprite: 'player_down_1', unique: true },
+    { id: 'F', sprite: 'framer_1' },
+    { id: 'S', sprite: 'snakey_left' },
+    { id: 'M', sprite: 'medusa_sleep' }
+];
+
+// --- 初期化・モード遷移 ---
 function setMode(mode) {
     gameMode = mode;
     document.getElementById('title-screen').style.display = (mode === 'title') ? 'flex' : 'none';
-    document.getElementById('ui-area').style.display = (mode === 'game') ? 'flex' : 'none';
+    document.getElementById('ui-area').style.display = (mode === 'game' || mode === 'test_play') ? 'flex' : 'none';
+    document.getElementById('edit-ui').style.display = (mode === 'edit') ? 'flex' : 'none';
+    document.getElementById('btn-exit-test').style.display = (mode === 'test_play') ? 'flex' : 'none';
     
     if (mode === 'title') {
         currentStageIndex = 0;
     } else if (mode === 'init') {
         initTimer = performance.now();
     } else if (mode === 'ending') {
-        // エンディング処理は実装せず即座にタイトルへ
         setMode('title');
     }
 }
 
-// UIイベントリスナ追加
-document.getElementById('btn-start-game').addEventListener('click', () => {
-    loadStage(0);
-});
-document.getElementById('btn-show-notes').addEventListener('click', () => {
-    document.getElementById('notes-dialog').showModal();
-});
-document.getElementById('btn-close-notes').addEventListener('click', () => {
-    document.getElementById('notes-dialog').close();
-});
+// UIイベントリスナ
+document.getElementById('btn-start-game').addEventListener('click', () => loadStage(0));
+document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
+document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
 document.getElementById('btn-retry').addEventListener('click', () => {
-    // リタイア：同じステージをやり直し
     if (gameMode === 'game') loadStage(currentStageIndex);
+    else if (gameMode === 'test_play') startTestPlay();
 });
+
+// エディタ用UIイベントリスナ
+document.getElementById('btn-edit-mode').addEventListener('click', () => {
+    initEditMap();
+    setMode('edit');
+});
+document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
+document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
+document.getElementById('btn-exit-test').addEventListener('click', () => setMode('edit'));
+document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
 
 async function bootGame() {
     try {
@@ -132,6 +176,7 @@ async function bootGame() {
         const stageData = await stageRes.json();
         STAGES_DATA = stageData.stages;
 
+        buildPaletteUI(); // 画像読み込み完了後にパレット生成
         setMode('title');
         requestAnimationFrame(loop);
     } catch (e) {
@@ -142,20 +187,126 @@ async function bootGame() {
 }
 
 function loadStage(index) {
-    if (index >= STAGES_DATA.length) {
-        setMode('ending');
-        return;
-    }
+    if (index >= STAGES_DATA.length) { setMode('ending'); return; }
     currentStageIndex = index;
     const stageInfo = STAGES_DATA[index];
-    
-    // 値のディープコピー
     INITIAL_MAP = JSON.parse(JSON.stringify(stageInfo.map));
-    
     initGame(stageInfo.stage, stageInfo.password);
     setMode('init');
 }
 
+// --- エディタ関連ロジック ---
+function initEditMap() {
+    editMap = [];
+    for (let y = 0; y < 13; y++) {
+        let row = [];
+        for (let x = 0; x < 13; x++) {
+            // 周囲を岩で囲むデフォルト設定
+            if (x === 0 || x === 12 || y === 0 || y === 12) row.push(1);
+            else row.push(0);
+        }
+        editMap.push(row);
+    }
+}
+
+function drawIconToCanvas(spriteData, ctxCanvas) {
+    if (!spriteData) return;
+    const dotSize = 32 / 8;
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const colorCode = spriteData[r][c];
+            if (PALETTE[colorCode]) {
+                ctxCanvas.fillStyle = PALETTE[colorCode];
+                ctxCanvas.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+            }
+        }
+    }
+}
+
+function buildPaletteUI() {
+    const container = document.getElementById('palette-container');
+    container.innerHTML = '';
+    EDIT_PALETTE.forEach(item => {
+        const btn = document.createElement('div');
+        btn.className = 'palette-btn';
+        if (item.id === selectedEditItemId) btn.style.borderColor = '#ffcc00';
+        
+        const cvs = document.createElement('canvas');
+        cvs.width = 32; cvs.height = 32;
+        const cCtx = cvs.getContext('2d');
+        if (item.id !== 0) drawIconToCanvas(SPRITES['floor'], cCtx); // 背景用床
+        drawIconToCanvas(SPRITES[item.sprite], cCtx);
+        btn.appendChild(cvs);
+        
+        btn.addEventListener('click', () => {
+            selectedEditItemId = item.id;
+            document.querySelectorAll('.palette-btn').forEach(b => b.style.borderColor = '#555');
+            btn.style.borderColor = '#ffcc00';
+        });
+        container.appendChild(btn);
+    });
+}
+
+let isEditing = false;
+canvas.addEventListener('pointerdown', (e) => {
+    if (gameMode !== 'edit') return;
+    isEditing = true;
+    putEditItem(e);
+});
+window.addEventListener('pointerup', () => isEditing = false);
+canvas.addEventListener('pointermove', (e) => {
+    if (gameMode !== 'edit' || !isEditing) return;
+    putEditItem(e);
+});
+
+function putEditItem(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    const tx = Math.floor(x / TILE_SIZE);
+    const ty = Math.floor(y / TILE_SIZE);
+    
+    if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return;
+    
+    const item = EDIT_PALETTE.find(p => p.id === selectedEditItemId);
+    
+    // ユニーク（自キャラ・宝箱）の重複防止
+    if (item.unique) {
+        for (let r = 0; r < 13; r++) {
+            for (let c = 0; c < 13; c++) {
+                if (editMap[r][c] === item.id) editMap[r][c] = 0;
+            }
+        }
+    }
+    editMap[ty][tx] = item.id;
+}
+
+function startTestPlay() {
+    INITIAL_MAP = JSON.parse(JSON.stringify(editMap));
+    initGame(0, "TEST");
+    setMode('test_play');
+}
+
+function exportEditMap() {
+    const outputData = { map: editMap };
+    const jsonStr = JSON.stringify(outputData);
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        window.location.href = `mailto:?subject=Eggerland%20Stage&body=${encodeURIComponent(jsonStr)}`;
+    } else {
+        navigator.clipboard.writeText(jsonStr).then(() => {
+            alert('JSONをクリップボードにコピーしました！\nstage.json に貼り付けてください。');
+        }).catch(err => {
+            alert('コピーに失敗しました:\n' + jsonStr);
+        });
+    }
+}
+
+// --- ゲームコアロジック ---
 function initGame(stageNum = 1, password = "") {
     let pStartX = 12, pStartY = 20; 
 
@@ -175,8 +326,7 @@ function initGame(stageNum = 1, password = "") {
             } else if (cell === 'F' || cell === 'S' || cell === 'M') {
                 state.entities.push({
                     type: cell === 'F' ? 'framer' : (cell === 'S' ? 'snakey' : 'medusa'),
-                    x: x * 2, y: y * 2,
-                    startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2,
+                    x: x * 2, y: y * 2, startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2,
                     isMoving: false, awake: false, eggTimer: 0
                 });
                 row.push(0); 
@@ -195,45 +345,31 @@ function initGame(stageNum = 1, password = "") {
     updateUI();
 }
 
-function updateUI() {
-    shotsSpan.innerText = state.shots;
-    if (state.cleared) msgDiv.innerText = "ステージクリア！";
-    else if (state.chestOpen) msgDiv.innerText = "宝箱が開いた！";
-    else msgDiv.innerText = "";
-}
-
-// --- 入力制御 ---
+// 共通入力処理
 ['up', 'down', 'left', 'right'].forEach(id => {
     const btn = document.getElementById(`btn-${id}`);
     const press = (e) => { e.preventDefault(); input[id] = true; };
     const release = (e) => { e.preventDefault(); input[id] = false; };
-    btn.addEventListener('touchstart', press, {passive: false}); 
-    btn.addEventListener('touchend', release, {passive: false});
-    btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release);
-    btn.addEventListener('mouseleave', release);
+    btn.addEventListener('touchstart', press, {passive: false}); btn.addEventListener('touchend', release, {passive: false});
+    btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
 });
 const btnShot = document.getElementById('btn-shot');
 const shotPress = (e) => { e.preventDefault(); input.shot = true; };
-btnShot.addEventListener('touchstart', shotPress, {passive: false}); 
-btnShot.addEventListener('mousedown', shotPress);
+btnShot.addEventListener('touchstart', shotPress, {passive: false}); btnShot.addEventListener('mousedown', shotPress);
 
 document.addEventListener('keydown', (e) => {
-    if (gameMode !== 'game') return;
-    if (e.key === 'ArrowUp') input.up = true;
-    if (e.key === 'ArrowDown') input.down = true;
-    if (e.key === 'ArrowLeft') input.left = true;
-    if (e.key === 'ArrowRight') input.right = true;
+    if (gameMode !== 'game' && gameMode !== 'test_play') return;
+    if (e.key === 'ArrowUp') input.up = true; if (e.key === 'ArrowDown') input.down = true;
+    if (e.key === 'ArrowLeft') input.left = true; if (e.key === 'ArrowRight') input.right = true;
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = true;
 });
 document.addEventListener('keyup', (e) => {
-    if (e.key === 'ArrowUp') input.up = false;
-    if (e.key === 'ArrowDown') input.down = false;
-    if (e.key === 'ArrowLeft') input.left = false;
-    if (e.key === 'ArrowRight') input.right = false;
+    if (e.key === 'ArrowUp') input.up = false; if (e.key === 'ArrowDown') input.down = false;
+    if (e.key === 'ArrowLeft') input.left = false; if (e.key === 'ArrowRight') input.right = false;
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = false;
 });
 
-// --- ロジック ---
+// 当たり判定等ロジック
 function getEntityAt(hx, hy, ignore = null) {
     for (let e of state.entities) {
         if (e === ignore) continue;
@@ -242,11 +378,14 @@ function getEntityAt(hx, hy, ignore = null) {
     return null;
 }
 
-// 修正：川の当たり判定。浮き卵があるマスは床として扱う。
+function getFloatingEggAt(hx, hy) {
+    for (let fe of state.floatingEggs) { if (Math.abs(hx - fe.x) < 2 && Math.abs(hy - fe.y) < 2) return fe; }
+    return null;
+}
+
 function checkMapCollision(hx, hy, isPlayer = false) {
     const minTx = Math.floor(hx / 2), maxTx = Math.floor((hx + 1.9) / 2);
     const minTy = Math.floor(hy / 2), maxTy = Math.floor((hy + 1.9) / 2);
-    
     let isAllRiver = true, hasRiver = false;
 
     for (let y = minTy; y <= maxTy; y++) {
@@ -254,37 +393,26 @@ function checkMapCollision(hx, hy, isPlayer = false) {
             if (y < 0 || y >= 13 || x < 0 || x >= 13) return { hit: true, tile: -1, hasRiver: false, allRiver: false };
             const tile = state.map[y][x];
             
-            if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) {
-                return { hit: true, tile: tile, hasRiver: false, allRiver: false };
-            }
+            if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) return { hit: true, tile: tile, hasRiver: false, allRiver: false };
+            
             if (tile === 5) {
-                // その川タイル（2x2座標換算）に浮き卵があるか？
                 let hasFE = state.floatingEggs.some(e => e.x === x * 2 && e.y === y * 2);
-                if (!hasFE) {
-                    hasRiver = true; // 浮き卵のない水流
-                } else {
-                    isAllRiver = false; // 浮き卵のマスは「水流ではない（床）」として扱う
-                }
-            } else {
-                isAllRiver = false;
-            }
+                if (!hasFE) hasRiver = true; else isAllRiver = false;
+            } else isAllRiver = false;
         }
     }
     
     if (isAllRiver && hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: true };
     else if (hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: false };
-    
     return { hit: false, hasRiver: false, allRiver: false };
 }
 
 function tryMove(dx, dy) {
     if (state.animation.active || state.cleared || state.needle) return;
-
     if (dy === -1) state.player.dir = 'up'; else if (dy === 1) state.player.dir = 'down';
     if (dx === -1) state.player.dir = 'left'; else if (dx === 1) state.player.dir = 'right';
 
     const pNextX = state.player.x + dx, pNextY = state.player.y + dy;
-
     if (checkMapCollision(pNextX, pNextY, true).hit) return;
 
     const hitE = getEntityAt(pNextX, pNextY);
@@ -303,18 +431,15 @@ function tryMove(dx, dy) {
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
                     fNextX = fNextX2; fNextY = fNextY2; hitE.willFloat = true;
                 } else return;
-            } else if (nextCol.allRiver) {
-                hitE.willFloat = true;
-            } else if (nextCol.hit) return;
+            } else if (nextCol.allRiver) hitE.willFloat = true;
+            else if (nextCol.hit) return;
         } else {
             if (checkMapCollision(fNextX, fNextY, false).hit) return;
         }
 
         if (getEntityAt(fNextX, fNextY, hitE)) return;
 
-        hitE.startX = hitE.x; hitE.startY = hitE.y;
-        hitE.targetX = fNextX; hitE.targetY = fNextY;
-        hitE.isMoving = true;
+        hitE.startX = hitE.x; hitE.startY = hitE.y; hitE.targetX = fNextX; hitE.targetY = fNextY; hitE.isMoving = true;
     }
 
     state.player.startX = state.player.x; state.player.startY = state.player.y;
@@ -378,12 +503,14 @@ function update(timestamp) {
         if (timestamp - initTimer > 2000) setMode('game');
         return;
     }
-    if (gameMode !== 'game') return;
+    if (gameMode !== 'game' && gameMode !== 'test_play') return;
 
     if (state.needle) {
         state.needle.progress += 0.1;
-        // やられたら現在のステージを最初からやり直し
-        if (state.needle.progress >= 1) loadStage(currentStageIndex);
+        if (state.needle.progress >= 1) {
+            if (gameMode === 'test_play') setMode('edit');
+            else loadStage(currentStageIndex);
+        }
         return;
     }
 
@@ -436,18 +563,12 @@ function update(timestamp) {
             }
             state.animation.active = false;
             
-            // 修正：自キャラの通過のみで hasObjOn フラグを管理する
             for (let i = state.floatingEggs.length - 1; i >= 0; i--) {
                 let fe = state.floatingEggs[i];
                 let hasObjOn = false;
 
                 if (state.player.x === fe.x && state.player.y === fe.y) hasObjOn = true;
                 
-                // 他エンティティの通過カウントを無効化（コメントアウト済）
-                // for (let e of state.entities) {
-                //     if (e.x === fe.x && e.y === fe.y) hasObjOn = true;
-                // }
-
                 if (hasObjOn && !fe.objOn) {
                     fe.objOn = true; fe.walks--;
                 } else if (!hasObjOn && fe.objOn) {
@@ -468,9 +589,9 @@ function update(timestamp) {
                     } else if (tile === 3 && state.chestOpen && !state.cleared) {
                         state.map[ty][tx] = 0; state.cleared = true; updateUI();
                         
-                        // クリア後、1秒後に次のステージへ
                         setTimeout(() => {
-                            loadStage(currentStageIndex + 1);
+                            if (gameMode === 'test_play') setMode('edit');
+                            else loadStage(currentStageIndex + 1);
                         }, 1000);
                     }
                 }
@@ -502,29 +623,46 @@ function drawSprite(spriteData, cx, cy, scale) {
     }
 }
 
-function draw(timestamp) {
+function drawEditMode() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // タイトル画面中はCanvasは黒のまま（上にHTML要素が乗っている）
+    for (let y = 0; y < 13; y++) {
+        for (let x = 0; x < 13; x++) {
+            const cell = editMap[y][x];
+            const px = x * TILE_SIZE, py = y * TILE_SIZE;
+            
+            drawSprite(SPRITES.floor, px, py, TILE_SIZE);
+            const item = EDIT_PALETTE.find(p => p.id === cell);
+            if (item && item.id !== 0) drawSprite(SPRITES[item.sprite], px, py, TILE_SIZE);
+            
+            // グリッド線
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+        }
+    }
+}
+
+function draw(timestamp) {
     if (gameMode === 'title') return;
+    
+    if (gameMode === 'edit') {
+        drawEditMode();
+        return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (gameMode === 'init') {
-        // Init画面：全面床を描画
         for (let y = 0; y < 13; y++) {
             for (let x = 0; x < 13; x++) {
                 drawSprite(SPRITES.floor, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
             }
         }
-        // STAGE文字を中央に描画
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 36px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
         ctx.fillText(`STAGE ${state.stageNum}`, canvas.width / 2, canvas.height / 2);
-        // shadowをリセット
         ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
         return;
     }
@@ -532,7 +670,6 @@ function draw(timestamp) {
     if (!state) return; 
 
     let prog = state.animation.active ? Math.min(1, state.animation.elapsed / state.animation.duration) : 0;
-    
     let time = timestamp || 0;
     let riverSeq = Math.floor(time / 300) % 4; 
     let riverFrame = riverSeq === 0 ? 1 : (riverSeq === 1 ? 2 : (riverSeq === 2 ? 3 : 2));

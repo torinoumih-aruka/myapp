@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>8x8 Sprite Editor</title>
+  <title>8x8 ドット絵エディター & アニメーションプレビュー</title>
   <style>
     :root {
       --bg-color: #121212;
@@ -44,6 +44,7 @@
     }
 
     h1 { margin: 0; font-size: 1.2rem; }
+    h3 { margin-top: 10px; margin-bottom: 5px; font-size: 0.9rem; color: #aaa; }
 
     button {
       background-color: var(--accent-color);
@@ -83,78 +84,47 @@
     /* Input Area */
     #manual-input-area { display: none; margin-bottom: 20px; }
     textarea {
-      width: 100%;
-      height: 100px;
-      background: #2a2a2a;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      padding: 10px;
-      font-family: monospace;
-      resize: vertical;
+      width: 100%; height: 100px; background: #2a2a2a; color: var(--text-color);
+      border: 1px solid var(--border-color); padding: 10px; font-family: monospace; resize: vertical;
     }
 
     /* Palette */
     .palette-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
     }
     .color-swatch-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
     }
     .color-swatch {
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
-      border: 2px solid transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: #000;
+      width: 32px; height: 32px; border-radius: 4px; border: 2px solid transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; color: #000;
       text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
     }
     .color-swatch.active { border-color: var(--accent-color); transform: scale(1.1); }
-    .color-key { font-size: 0.8rem; }
     
+    #color-picker {
+      width: 36px; height: 36px; padding: 0; border: 1px solid var(--border-color);
+      border-radius: 4px; background: none; cursor: pointer;
+    }
+    #color-picker:disabled { opacity: 0.3; cursor: not-allowed; }
+
     /* Editor */
     .editor-container {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0;
+      display: flex; justify-content: center; margin: 20px 0;
     }
     #editor-canvas {
-      width: 100%;
-      max-width: 400px;
-      aspect-ratio: 1;
-      image-rendering: pixelated;
-      cursor: crosshair;
-      touch-action: none; /* Prevent scroll on touch devices */
-      border: 2px solid var(--border-color);
+      width: 100%; max-width: 400px; aspect-ratio: 1; image-rendering: pixelated;
+      cursor: crosshair; touch-action: none; border: 2px solid var(--border-color);
     }
 
     /* Sprite List */
     .sprite-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 400px;
-      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;
     }
     .sprite-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #2a2a2a;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: 1px solid transparent;
+      display: flex; align-items: center; justify-content: space-between; background: #2a2a2a;
+      padding: 8px; border-radius: 4px; cursor: pointer; border: 1px solid transparent;
     }
     .sprite-item:hover { background: #333; }
     .sprite-item.active { border-color: var(--accent-color); }
@@ -167,19 +137,12 @@
     .anim-controls { display: flex; flex-direction: column; gap: 10px; }
     .anim-row { display: flex; align-items: center; gap: 10px; }
     select {
-      background: #2a2a2a;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      padding: 5px;
-      border-radius: 4px;
+      background: #2a2a2a; color: var(--text-color); border: 1px solid var(--border-color);
+      padding: 5px; border-radius: 4px;
     }
     #anim-canvas {
-      width: 128px;
-      height: 128px;
-      margin: 10px auto;
-      display: block;
-      image-rendering: pixelated;
-      border: 2px solid var(--border-color);
+      width: 128px; height: 128px; margin: 10px auto; display: block;
+      image-rendering: pixelated; border: 2px solid var(--border-color);
     }
   </style>
 </head>
@@ -205,10 +168,13 @@
       <div style="margin-bottom: 15px;">
         <h3>パレット</h3>
         <div id="palette-grid" class="palette-grid"></div>
-        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+        <div style="display: flex; gap: 15px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <label for="color-picker" style="font-size: 0.9rem;">選択色を編集:</label>
+            <input type="color" id="color-picker" disabled>
+          </div>
           <button id="btn-add-color">色を追加</button>
           <button id="btn-del-color" class="danger">色を削除</button>
-          <span style="font-size:0.8rem; color:#aaa;">※選択中の色を編集・描画します</span>
         </div>
       </div>
 
@@ -216,9 +182,7 @@
         <canvas id="editor-canvas" class="checkerboard" width="320" height="320"></canvas>
       </div>
       
-      <div style="text-align: center; font-size: 1.2rem; font-weight: bold;" id="current-sprite-name">
-        -
-      </div>
+      <div style="text-align: center; font-size: 1.2rem; font-weight: bold;" id="current-sprite-name">-</div>
     </div>
   </div>
 
@@ -235,15 +199,9 @@
     <div class="panel">
       <h2>アニメーションテスト</h2>
       <div class="anim-controls">
-        <div class="anim-row">
-          <label>F1:</label> <select id="anim-f1"></select>
-        </div>
-        <div class="anim-row">
-          <label>F2:</label> <select id="anim-f2"></select>
-        </div>
-        <div class="anim-row">
-          <label>F3:</label> <select id="anim-f3"><option value="">-- なし --</option></select>
-        </div>
+        <div class="anim-row"><label>F1:</label> <select id="anim-f1"></select></div>
+        <div class="anim-row"><label>F2:</label> <select id="anim-f2"></select></div>
+        <div class="anim-row"><label>F3:</label> <select id="anim-f3"><option value="">-- なし --</option></select></div>
         <div class="anim-row">
           <label>再生:</label>
           <select id="anim-pattern">
@@ -267,7 +225,7 @@
 // --- State ---
 let state = {
   palette: { ".": null },
-  sprites: {}, // { key: [8][8] 2D array }
+  sprites: {}, 
   currentKey: null,
   currentColor: "."
 };
@@ -278,6 +236,7 @@ let animTimer = null;
 const elEditorCanvas = document.getElementById('editor-canvas');
 const ctxEditor = elEditorCanvas.getContext('2d');
 const elPaletteGrid = document.getElementById('palette-grid');
+const elColorPicker = document.getElementById('color-picker');
 const elSpriteList = document.getElementById('sprite-list');
 const elCurrentSpriteName = document.getElementById('current-sprite-name');
 const elAnimCanvas = document.getElementById('anim-canvas');
@@ -291,16 +250,13 @@ async function init() {
     const data = await res.json();
     loadData(data);
   } catch (e) {
-    console.warn("assets.jsonの読み込みに失敗しました。手動入力を表示します。");
     document.getElementById('manual-input-area').style.display = 'block';
-    
-    // Fallback default data
     loadData({
       palette: { ".": null, "1": "#002288", "2": "#a05040" },
       sprites: {
-        "new_sprite": [
-          "........", "........", "........", "........",
-          "........", "........", "........", "........"
+        "player_up_1": [
+          "........", ".111111.", "1.1111.1", "11111111",
+          "11.11.11", "1.1111.1", ".1....1.", "..1111.."
         ]
       }
     });
@@ -321,13 +277,11 @@ document.getElementById('btn-load-json').addEventListener('click', () => {
 function loadData(json) {
   state.palette = json.palette || { ".": null };
   state.sprites = {};
-  
   if (json.sprites) {
     for (const [key, lines] of Object.entries(json.sprites)) {
       state.sprites[key] = lines.map(line => line.split(''));
     }
   }
-  
   state.currentColor = ".";
   state.currentKey = Object.keys(state.sprites)[0] || null;
   
@@ -343,16 +297,11 @@ function exportData() {
     outSprites[key] = grid.map(row => row.join(''));
   }
   
-  const outJson = JSON.stringify({
-    palette: state.palette,
-    sprites: outSprites
-  }, null, 2);
-
+  const outJson = JSON.stringify({ palette: state.palette, sprites: outSprites }, null, 2);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
   if (isMobile) {
-    const mailto = `mailto:?subject=Assets JSON&body=${encodeURIComponent(outJson)}`;
-    window.location.href = mailto;
+    window.location.href = `mailto:?subject=Assets JSON&body=${encodeURIComponent(outJson)}`;
   } else {
     navigator.clipboard.writeText(outJson).then(() => {
       alert("JSONをクリップボードにコピーしました！");
@@ -385,53 +334,43 @@ function renderPalette() {
       renderPalette();
     });
 
-    if (key !== '.') {
-      // Color Picker for editing
-      const picker = document.createElement('input');
-      picker.type = 'color';
-      picker.value = color;
-      picker.style.position = 'absolute';
-      picker.style.opacity = '0';
-      picker.style.width = '32px';
-      picker.style.height = '32px';
-      picker.style.cursor = 'pointer';
-      
-      picker.addEventListener('input', (e) => {
-        state.palette[key] = e.target.value;
-        swatch.style.backgroundColor = e.target.value;
-        drawEditor();
-        renderSpriteList(); // update thumbnails
-      });
-      
-      swatch.appendChild(picker);
-    }
-
     container.appendChild(swatch);
     elPaletteGrid.appendChild(container);
   }
+
+  // カラーピッカーの状態を更新
+  if (state.currentColor === '.') {
+    elColorPicker.disabled = true;
+    elColorPicker.value = '#000000';
+  } else {
+    elColorPicker.disabled = false;
+    elColorPicker.value = state.palette[state.currentColor];
+  }
 }
+
+// カラーピッカーの値が変更された時の処理
+elColorPicker.addEventListener('input', (e) => {
+  if (state.currentColor !== '.' && state.palette[state.currentColor]) {
+    state.palette[state.currentColor] = e.target.value;
+    renderPalette(); // スワッチの色を更新
+    drawEditor();    // エディタの色を更新
+    renderSpriteList(); // サムネイルの色を更新
+  }
+});
 
 document.getElementById('btn-add-color').addEventListener('click', () => {
   const key = prompt("色番号を入力してください (0-9, A-Z):");
   if (!key) return;
-  if (!/^[0-9A-Z]$/.test(key)) {
-    alert("キーは 0〜9 または A〜Z (大文字) を指定してください。");
-    return;
-  }
-  if (state.palette.hasOwnProperty(key)) {
-    alert("そのキーは既に存在します。");
-    return;
-  }
+  if (!/^[0-9A-Z]$/.test(key)) return alert("キーは 0〜9 または A〜Z (大文字) を指定してください。");
+  if (state.palette.hasOwnProperty(key)) return alert("そのキーは既に存在します。");
+  
   state.palette[key] = "#ffffff";
   state.currentColor = key;
   renderPalette();
 });
 
 document.getElementById('btn-del-color').addEventListener('click', () => {
-  if (state.currentColor === '.') {
-    alert("透明(.)は削除できません。");
-    return;
-  }
+  if (state.currentColor === '.') return alert("透明(.)は削除できません。");
   if (confirm(`色「${state.currentColor}」を削除しますか？`)) {
     delete state.palette[state.currentColor];
     state.currentColor = '.';
@@ -448,15 +387,12 @@ function renderSpriteList() {
     const item = document.createElement('div');
     item.className = `sprite-item ${key === state.currentKey ? 'active' : ''}`;
     
-    // Thumbnail canvas
     const thumb = document.createElement('canvas');
-    thumb.width = 8; thumb.height = 8;
-    thumb.className = 'checkerboard';
+    thumb.width = 8; thumb.height = 8; thumb.className = 'checkerboard';
     drawGridToCanvas(thumb.getContext('2d'), state.sprites[key], 1);
     
     const info = document.createElement('div');
-    info.className = 'sprite-info';
-    info.innerText = key;
+    info.className = 'sprite-info'; info.innerText = key;
     
     const actions = document.createElement('div');
     actions.className = 'sprite-actions';
@@ -467,45 +403,28 @@ function renderSpriteList() {
       e.stopPropagation();
       const newKey = prompt("新しい名前を入力してください:", key);
       if (newKey && newKey !== key) {
-        if(state.sprites[newKey]) {
-          alert("既に存在する名前です。");
-          return;
-        }
+        if(state.sprites[newKey]) return alert("既に存在する名前です。");
         state.sprites[newKey] = state.sprites[key];
         delete state.sprites[key];
         if (state.currentKey === key) state.currentKey = newKey;
-        renderSpriteList();
-        updateAnimSelects();
+        renderSpriteList(); updateAnimSelects();
       }
     };
     
     const btnDel = document.createElement('button');
-    btnDel.className = 'danger';
-    btnDel.innerText = '削';
+    btnDel.className = 'danger'; btnDel.innerText = '削';
     btnDel.onclick = (e) => {
       e.stopPropagation();
       if(confirm(`「${key}」を削除しますか？`)) {
         delete state.sprites[key];
-        if (state.currentKey === key) {
-          state.currentKey = Object.keys(state.sprites)[0] || null;
-          drawEditor();
-        }
-        renderSpriteList();
-        updateAnimSelects();
+        if (state.currentKey === key) { state.currentKey = Object.keys(state.sprites)[0] || null; drawEditor(); }
+        renderSpriteList(); updateAnimSelects();
       }
     };
 
-    item.onclick = () => {
-      state.currentKey = key;
-      renderSpriteList();
-      drawEditor();
-    };
-
-    actions.appendChild(btnRename);
-    actions.appendChild(btnDel);
-    item.appendChild(thumb);
-    item.appendChild(info);
-    item.appendChild(actions);
+    item.onclick = () => { state.currentKey = key; renderSpriteList(); drawEditor(); };
+    actions.appendChild(btnRename); actions.appendChild(btnDel);
+    item.appendChild(thumb); item.appendChild(info); item.appendChild(actions);
     elSpriteList.appendChild(item);
   }
 }
@@ -513,17 +432,11 @@ function renderSpriteList() {
 document.getElementById('btn-add-sprite').addEventListener('click', () => {
   const key = prompt("新規スプライト名を入力してください:");
   if (!key) return;
-  if (state.sprites[key]) {
-    alert("既に存在する名前です。");
-    return;
-  }
+  if (state.sprites[key]) return alert("既に存在する名前です。");
   
-  const emptyGrid = Array.from({length: 8}, () => Array(8).fill('.'));
-  state.sprites[key] = emptyGrid;
+  state.sprites[key] = Array.from({length: 8}, () => Array(8).fill('.'));
   state.currentKey = key;
-  renderSpriteList();
-  updateAnimSelects();
-  drawEditor();
+  renderSpriteList(); updateAnimSelects(); drawEditor();
 });
 
 // --- Editor Logic ---
@@ -544,13 +457,11 @@ function drawGridToCanvas(ctx, grid, cellSize) {
 function drawEditor() {
   elCurrentSpriteName.innerText = state.currentKey || "スプライトがありません";
   ctxEditor.clearRect(0, 0, elEditorCanvas.width, elEditorCanvas.height);
-  
   if (!state.currentKey || !state.sprites[state.currentKey]) return;
 
   const cellSize = elEditorCanvas.width / 8;
   drawGridToCanvas(ctxEditor, state.sprites[state.currentKey], cellSize);
 
-  // Draw Grid Lines
   ctxEditor.strokeStyle = 'rgba(255, 255, 255, 0.2)';
   ctxEditor.lineWidth = 1;
   ctxEditor.beginPath();
@@ -559,17 +470,13 @@ function drawEditor() {
     ctxEditor.moveTo(0, i * cellSize); ctxEditor.lineTo(elEditorCanvas.width, i * cellSize);
   }
   ctxEditor.stroke();
-  
-  // Update current thumbnail in list
-  renderSpriteList();
 }
 
 function getCoords(e) {
   const rect = elEditorCanvas.getBoundingClientRect();
   let clientX = e.clientX, clientY = e.clientY;
   if (e.touches && e.touches.length > 0) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
+    clientX = e.touches[0].clientX; clientY = e.touches[0].clientY;
   }
   const scaleX = elEditorCanvas.width / rect.width;
   const scaleY = elEditorCanvas.height / rect.height;
@@ -580,35 +487,20 @@ function getCoords(e) {
 
 function paintCell(x, y) {
   if (!state.currentKey || x < 0 || x > 7 || y < 0 || y > 7) return;
-  state.sprites[state.currentKey][y][x] = state.currentColor;
-  drawEditor();
+  if (state.sprites[state.currentKey][y][x] !== state.currentColor) {
+    state.sprites[state.currentKey][y][x] = state.currentColor;
+    drawEditor();
+  }
 }
 
 let isDrawing = false;
-
-function startDraw(e) {
-  e.preventDefault();
-  isDrawing = true;
-  const { x, y } = getCoords(e);
-  paintCell(x, y);
-}
-
-function moveDraw(e) {
-  e.preventDefault();
-  if (!isDrawing) return;
-  const { x, y } = getCoords(e);
-  paintCell(x, y);
-}
-
-function endDraw(e) {
-  e.preventDefault();
-  isDrawing = false;
-}
+function startDraw(e) { e.preventDefault(); isDrawing = true; const { x, y } = getCoords(e); paintCell(x, y); }
+function moveDraw(e) { e.preventDefault(); if (!isDrawing) return; const { x, y } = getCoords(e); paintCell(x, y); }
+function endDraw(e) { if (isDrawing) { isDrawing = false; renderSpriteList(); } }
 
 elEditorCanvas.addEventListener('mousedown', startDraw);
 elEditorCanvas.addEventListener('mousemove', moveDraw);
-window.addEventListener('mouseup', endDraw); // to catch mouseup outside
-
+window.addEventListener('mouseup', endDraw);
 elEditorCanvas.addEventListener('touchstart', startDraw, { passive: false });
 elEditorCanvas.addEventListener('touchmove', moveDraw, { passive: false });
 elEditorCanvas.addEventListener('touchend', endDraw, { passive: false });
@@ -617,66 +509,39 @@ elEditorCanvas.addEventListener('touchend', endDraw, { passive: false });
 function updateAnimSelects() {
   const keys = Object.keys(state.sprites);
   const selects = [document.getElementById('anim-f1'), document.getElementById('anim-f2'), document.getElementById('anim-f3')];
-  
   selects.forEach((sel, idx) => {
     const val = sel.value;
     sel.innerHTML = idx === 2 ? '<option value="">-- なし --</option>' : '';
-    keys.forEach(k => {
-      const opt = document.createElement('option');
-      opt.value = k;
-      opt.innerText = k;
-      sel.appendChild(opt);
-    });
+    keys.forEach(k => { const opt = document.createElement('option'); opt.value = k; opt.innerText = k; sel.appendChild(opt); });
     if (keys.includes(val)) sel.value = val;
   });
 }
 
 function playAnim() {
   if (animTimer) clearInterval(animTimer);
+  const f1 = document.getElementById('anim-f1').value; const f2 = document.getElementById('anim-f2').value;
+  const f3 = document.getElementById('anim-f3').value; const pattern = document.getElementById('anim-pattern').value;
   
-  const f1 = document.getElementById('anim-f1').value;
-  const f2 = document.getElementById('anim-f2').value;
-  const f3 = document.getElementById('anim-f3').value;
-  const pattern = document.getElementById('anim-pattern').value;
-  
-  if (!f1 || !f2) {
-    alert("F1とF2は必須です。");
-    return;
-  }
-
+  if (!f1 || !f2) return alert("F1とF2は必須です。");
   let frames = [];
   if (pattern === 'A') frames = [f1, f2];
-  else if (pattern === 'B') {
-    if(!f3) return alert("パターンBにはF3が必要です。");
-    frames = [f1, f2, f3, f2];
-  }
-  else if (pattern === 'C') {
-    if(!f3) return alert("パターンCにはF3が必要です。");
-    frames = [f1, f2, f3];
-  }
+  else if (pattern === 'B') { if(!f3) return alert("F3が必要です。"); frames = [f1, f2, f3, f2]; }
+  else if (pattern === 'C') { if(!f3) return alert("F3が必要です。"); frames = [f1, f2, f3]; }
 
-  let currentFrame = 0;
-  const cellSize = elAnimCanvas.width / 8;
-
+  let currentFrame = 0; const cellSize = elAnimCanvas.width / 8;
   animTimer = setInterval(() => {
     const key = frames[currentFrame];
-    drawGridToCanvas(ctxAnim, state.sprites[key], cellSize);
+    if (state.sprites[key]) drawGridToCanvas(ctxAnim, state.sprites[key], cellSize);
     currentFrame = (currentFrame + 1) % frames.length;
-  }, 250); // 4fps
+  }, 250);
 }
-
-function stopAnim() {
-  if (animTimer) clearInterval(animTimer);
-  ctxAnim.clearRect(0, 0, elAnimCanvas.width, elAnimCanvas.height);
-}
+function stopAnim() { if (animTimer) clearInterval(animTimer); ctxAnim.clearRect(0, 0, elAnimCanvas.width, elAnimCanvas.height); }
 
 document.getElementById('btn-play-anim').addEventListener('click', playAnim);
 document.getElementById('btn-stop-anim').addEventListener('click', stopAnim);
 document.getElementById('btn-export').addEventListener('click', exportData);
 
-// Startup
 init();
-
 </script>
 </body>
 </html>
