@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Editor Fixed</title>
+    <title>Eggerland Clone - Half-Step Float Fixed</title>
     <style>
         body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
         #game-container { width: 100vw; max-width: 600px; position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-        
-        /* 修正箇所: canvas タグ全体ではなく、ゲーム用のメインキャンバスのみに適用 */
         #gameCanvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; touch-action: none; }
         
-        /* タイトル画面 */
         #title-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
         #title-screen h1 { color: #ffcc00; font-size: 3rem; margin-bottom: 2rem; text-shadow: 2px 2px 0px #ff0000; }
         .title-btn { padding: 15px 30px; font-size: 1.2rem; font-weight: bold; margin: 10px; border-radius: 8px; border: 2px solid #fff; background-color: #333; color: #fff; cursor: pointer; width: 200px; text-align: center; }
         .title-btn:active { background-color: #555; }
         
-        /* リリースノート */
         dialog { background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 10px; padding: 20px; max-width: 80%; }
         dialog::backdrop { background: rgba(0,0,0,0.7); }
         
-        /* ゲームUI */
         #ui-area { width: 100%; height: 40vh; display: flex; justify-content: center; align-items: center; position: relative; }
         .status-bar { position: absolute; top: 5px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         #message { color: yellow; } #shots { color: #00ffaa; }
@@ -36,11 +31,9 @@
         #btn-exit-test { position: absolute; left: 20px; bottom: 15px; width: 60px; height: 40px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
         #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
 
-        /* エディタUI */
         #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
         #palette-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 15px; width: 90%; max-width: 400px; }
         .palette-btn { width: 36px; height: 36px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #222; }
-        /* エディタ内のパレット用キャンバスは小さく表示する */
         .palette-btn canvas { width: 32px; height: 32px; image-rendering: pixelated; }
         .edit-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
         .edit-controls button { padding: 10px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
@@ -62,8 +55,7 @@
     <dialog id="notes-dialog">
         <h2 style="margin-top:0;">リリースノート</h2>
         <ul style="padding-left:20px; line-height: 1.6;">
-            <li>UI表示（updateUI）のエラーを修正しました。</li>
-            <li>エディタ画面の描画崩れ（巨大化バグ）を修正しました。</li>
+            <li>半マスずれた状態で卵を川に落とし、その上を歩行できるよう当たり判定のロジックを修正しました。</li>
         </ul>
         <div style="text-align: right; margin-top: 20px;">
             <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
@@ -106,7 +98,7 @@ let PALETTE = {};
 let SPRITES = {};
 let STAGES_DATA = [];
 let currentStageIndex = 0;
-let gameMode = ''; // 'title', 'init', 'game', 'ending', 'edit', 'test_play'
+let gameMode = ''; 
 let initTimer = 0;
 
 let INITIAL_MAP = [];
@@ -157,7 +149,6 @@ document.getElementById('btn-retry').addEventListener('click', () => {
     else if (gameMode === 'test_play') startTestPlay();
 });
 
-// エディタ用UIイベントリスナ
 document.getElementById('btn-edit-mode').addEventListener('click', () => {
     initEditMap();
     setMode('edit');
@@ -197,7 +188,6 @@ function loadStage(index) {
     setMode('init');
 }
 
-// 修正箇所：欠落していた updateUI 関数を追加
 function updateUI() {
     if (!state) return;
     shotsSpan.innerText = state.shots;
@@ -244,7 +234,7 @@ function buildPaletteUI() {
         const cvs = document.createElement('canvas');
         cvs.width = 32; cvs.height = 32;
         const cCtx = cvs.getContext('2d');
-        if (item.id !== 0) drawIconToCanvas(SPRITES['floor'], cCtx); // 背景用床
+        if (item.id !== 0) drawIconToCanvas(SPRITES['floor'], cCtx);
         drawIconToCanvas(SPRITES[item.sprite], cCtx);
         btn.appendChild(cvs);
         
@@ -378,7 +368,6 @@ document.addEventListener('keyup', (e) => {
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = false;
 });
 
-// 当たり判定等ロジック
 function getEntityAt(hx, hy, ignore = null) {
     for (let e of state.entities) {
         if (e === ignore) continue;
@@ -387,32 +376,49 @@ function getEntityAt(hx, hy, ignore = null) {
     return null;
 }
 
-function getFloatingEggAt(hx, hy) {
-    for (let fe of state.floatingEggs) { if (Math.abs(hx - fe.x) < 2 && Math.abs(hy - fe.y) < 2) return fe; }
-    return null;
-}
-
+// 修正：0.5マス単位で精密に障害物をチェックする
 function checkMapCollision(hx, hy, isPlayer = false) {
-    const minTx = Math.floor(hx / 2), maxTx = Math.floor((hx + 1.9) / 2);
-    const minTy = Math.floor(hy / 2), maxTy = Math.floor((hy + 1.9) / 2);
-    let isAllRiver = true, hasRiver = false;
+    let isAllRiver = true, hasRiver = false, isHit = false;
 
-    for (let y = minTy; y <= maxTy; y++) {
-        for (let x = minTx; x <= maxTx; x++) {
-            if (y < 0 || y >= 13 || x < 0 || x >= 13) return { hit: true, tile: -1, hasRiver: false, allRiver: false };
-            const tile = state.map[y][x];
+    // オブジェクトが占有する2×2ユニット（0.5マス単位）をそれぞれチェック
+    for (let dy = 0; dy < 2; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+            let cx = hx + dx;
+            let cy = hy + dy;
+            let tx = Math.floor(cx / 2);
+            let ty = Math.floor(cy / 2);
+
+            if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return { hit: true, hasRiver: false, allRiver: false };
             
-            if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) return { hit: true, tile: tile, hasRiver: false, allRiver: false };
+            let tile = state.map[ty][tx];
             
-            if (tile === 5) {
-                let hasFE = state.floatingEggs.some(e => e.x === x * 2 && e.y === y * 2);
-                if (!hasFE) hasRiver = true; else isAllRiver = false;
-            } else isAllRiver = false;
+            // この特定の0.5マス（cx, cy）が浮き卵に覆われているかチェック
+            let coveredByFE = false;
+            for (let fe of state.floatingEggs) {
+                if (cx >= fe.x && cx <= fe.x + 1 && cy >= fe.y && cy <= fe.y + 1) {
+                    coveredByFE = true;
+                    break;
+                }
+            }
+
+            if (tile === 1 || tile === 4 || (tile === 3 && !isPlayer)) {
+                isHit = true;
+                isAllRiver = false;
+            } else if (tile === 5) {
+                if (coveredByFE) {
+                    isAllRiver = false; // 卵がある部分は床として扱う
+                } else {
+                    hasRiver = true;
+                }
+            } else {
+                isAllRiver = false;
+            }
         }
     }
     
     if (isAllRiver && hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: true };
-    else if (hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: false };
+    else if (hasRiver || isHit) return { hit: true, tile: 5, hasRiver: hasRiver, allRiver: false };
+    
     return { hit: false, hasRiver: false, allRiver: false };
 }
 
@@ -434,14 +440,20 @@ function tryMove(dx, dy) {
 
         if (hitE.type === 'egg') {
             let nextCol = checkMapCollision(fNextX, fNextY, false);
+            let willFloat = false;
+
             if (nextCol.hasRiver && !nextCol.allRiver) {
                 let fNextX2 = hitE.x + dx * 2, fNextY2 = hitE.y + dy * 2;
                 let nextCol2 = checkMapCollision(fNextX2, fNextY2, false);
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
-                    fNextX = fNextX2; fNextY = fNextY2; hitE.willFloat = true;
+                    fNextX = fNextX2; fNextY = fNextY2; willFloat = true;
                 } else return;
-            } else if (nextCol.allRiver) hitE.willFloat = true;
-            else if (nextCol.hit) return;
+            } else if (nextCol.allRiver) {
+                willFloat = true;
+            } else if (nextCol.hit) return;
+
+            // スナップ処理を削除し、半マスずれた座標のまま浮き卵にする
+            hitE.willFloat = willFloat;
         } else {
             if (checkMapCollision(fNextX, fNextY, false).hit) return;
         }
@@ -578,6 +590,7 @@ function update(timestamp) {
                 let fe = state.floatingEggs[i];
                 let hasObjOn = false;
 
+                // 半マスずれていても、座標が完全に一致すれば「乗った」と判定される
                 if (state.player.x === fe.x && state.player.y === fe.y) hasObjOn = true;
                 
                 if (hasObjOn && !fe.objOn) {
