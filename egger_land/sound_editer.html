@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cyber-MML Studio V3</title>
+<style>
+  :root {
+    --primary: #0ff;
+    --bg-dark: #050a15;
+    --glass-bg: rgba(10, 30, 50, 0.6);
+    --glass-border: rgba(0, 255, 255, 0.3);
+  }
+  * { box-sizing: border-box; user-select: none; }
+  body {
+    margin: 0; padding: 0;
+    background: radial-gradient(circle at center, #112233, var(--bg-dark));
+    color: var(--primary);
+    font-family: 'Segoe UI', sans-serif;
+    height: 100vh; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+  }
+  header { padding: 10px; text-align: center; font-weight: bold; text-shadow: 0 0 10px var(--primary); }
+  
+  .controls, .toolbar { display: flex; gap: 10px; padding: 8px; justify-content: center; flex-wrap: wrap; }
+  button {
+    background: rgba(0, 200, 255, 0.2); color: var(--primary);
+    border: 1px solid var(--primary); padding: 6px 12px; border-radius: 4px;
+    cursor: pointer; font-weight: bold; transition: all 0.2s;
+  }
+  button:hover, button.active { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); }
+  
+  .track-tabs { display: flex; gap: 5px; padding: 0 10px; }
+  .track-tab {
+    flex: 1; padding: 8px 0; text-align: center; background: rgba(0, 50, 100, 0.4);
+    border: 1px solid var(--glass-border); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer;
+  }
+  .track-tab.active { background: var(--glass-bg); border-color: var(--primary); color: #fff; }
+
+  .editor-container { flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 5px; overflow: hidden; }
+  
+  .synth-params { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.8rem; padding: 5px; border-bottom: 1px solid var(--glass-border); }
+  .synth-params label { display: flex; align-items: center; gap: 5px; }
+  .synth-params input[type="range"] { width: 80px; accent-color: var(--primary); }
+  select { background: #000; color: var(--primary); border: 1px solid var(--primary); border-radius: 4px; }
+
+  .scroll-wrapper { flex: 1; position: relative; overflow-x: auto; overflow-y: hidden; display: flex; flex-direction: column; border: 1px solid var(--glass-border); border-radius: 8px; }
+  
+  .piano-roll-container { flex: 3; overflow-y: scroll; position: relative; background: rgba(0, 0, 0, 0.6); }
+  
+  /* タップ操作を正確に取得するため touch-action: none を指定 */
+  canvas { display: block; touch-action: none; cursor: crosshair; }
+  
+  .volume-container { flex: 1; background: rgba(0, 10, 20, 0.8); border-top: 1px solid var(--glass-border); position: relative; overflow: hidden;}
+  
+  .mml-modal {
+    display: none; position: absolute; top: 10%; left: 10%; right: 10%; bottom: 10%;
+    z-index: 100; flex-direction: column; padding: 15px;
+  }
+  .mml-modal.show { display: flex; }
+  textarea { flex: 1; background: #000; color: #fff; border: 1px solid var(--primary); font-family: monospace; resize: none; margin-top: 10px; padding: 10px; }
+  .close-btn { align-self: flex-end; }
+</style>
+</head>
+<body>
+
+<header>Cyber-MML Studio V3</header>
+
+<div class="controls glass">
+  <button id="btnPlay">▶ PLAY</button>
+  <button id="btnStop">■ STOP</button>
+  <button id="btnShowMML">{"} MML OUT</button>
+</div>
+
+<div class="toolbar glass">
+  <button class="tool-btn active" data-len="1">4分音符</button>
+  <button class="tool-btn" data-len="0.5">8分音符</button>
+  <button class="tool-btn" data-len="0.25">16分音符</button>
+  <button class="tool-btn" id="btnErase" style="border-color: #f00; color: #f00;">消しゴム</button>
+</div>
+
+<div class="track-tabs">
+  <div class="track-tab active" data-track="0">Tr 1 (Square)</div>
+  <div class="track-tab" data-track="1">Tr 2 (Square)</div>
+  <div class="track-tab" data-track="2">Tr 3 (Triangle)</div>
+  <div class="track-tab" data-track="3">Tr 4 (Noise)</div>
+</div>
+
+<div class="editor-container glass">
+  <div class="synth-params">
+    <label>Wave: 
+      <select id="waveType">
+        <option value="square12">Square (12.5%)</option>
+        <option value="square25">Square (25%)</option>
+        <option value="square50" selected>Square (50%)</option>
+        <option value="triangle">Triangle</option>
+        <option value="noise">Noise</option>
+      </select>
+    </label>
+    <label>A <input type="range" id="envA" min="0" max="1" step="0.01" value="0.01"></label>
+    <label>D <input type="range" id="envD" min="0" max="1" step="0.01" value="0.1"></label>
+    <label>S <input type="range" id="envS" min="0" max="1" step="0.01" value="0.5"></label>
+    <label>R <input type="range" id="envR" min="0" max="1" step="0.01" value="0.1"></label>
+  </div>
+
+  <div class="scroll-wrapper" id="scrollSync">
+    <div class="piano-roll-container" id="rollWrapper">
+      <canvas id="pianoCanvas"></canvas>
+    </div>
+    <div class="volume-container">
+      <canvas id="volumeCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="mml-modal glass" id="mmlModal">
+  <button class="close-btn" id="btnCloseMML">✕ CLOSE</button>
+  <div>Generated MML (All Tracks)</div>
+  <textarea id="mmlOutput" readonly></textarea>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const BEAT_WIDTH = 64; 
+const KEY_HEIGHT = 16;
+const TOTAL_KEYS = 72; 
+
+let currentTrack = 0;
+let drawLength = 1; 
+let isEraser = false;
+let isPlaying = false;
+let activeNodes = [];
+let noiseBuffer = null;
+
+const tracksData = [
+  { wave: 'square50', env: {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, notes: [] },
+  { wave: 'square25', env: {a: 0.01, d: 0.2, s: 0.3, r: 0.2}, notes: [] },
+  { wave: 'triangle', env: {a: 0.01, d: 0.0, s: 1.0, r: 0.1}, notes: [] },
+  { wave: 'noise', env: {a: 0.01, d: 0.1, s: 0.0, r: 0.0}, notes: [] }
+];
+
+// 初期データ
+tracksData[0].notes.push({ beat: 0, len: 1, pitchIdx: 36, vol: 80 });
+tracksData[0].notes.push({ beat: 1, len: 1, pitchIdx: 38, vol: 80 });
+tracksData[0].notes.push({ beat: 2, len: 1, pitchIdx: 40, vol: 100 });
+
+const pianoCanvas = document.getElementById('pianoCanvas');
+const pCtx = pianoCanvas.getContext('2d');
+const volCanvas = document.getElementById('volumeCanvas');
+const vCtx = volCanvas.getContext('2d');
+const rollWrapper = document.getElementById('rollWrapper');
+
+function resizeCanvases() {
+  const maxBeats = 32; 
+  const w = maxBeats * BEAT_WIDTH;
+  pianoCanvas.width = w;
+  pianoCanvas.height = TOTAL_KEYS * KEY_HEIGHT;
+  volCanvas.width = w;
+  volCanvas.height = 100;
+  render();
+}
+window.addEventListener('resize', resizeCanvases);
+
+// --- 描画 ---
+function render() {
+  pCtx.clearRect(0, 0, pianoCanvas.width, pianoCanvas.height);
+  for (let i = 0; i < TOTAL_KEYS; i++) {
+    const isBlack = [1, 3, 6, 8, 10].includes(i % 12);
+    pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)';
+    pCtx.fillRect(0, i * KEY_HEIGHT, pianoCanvas.width, KEY_HEIGHT - 1);
+  }
+  
+  for(let x=0; x<pianoCanvas.width; x+=BEAT_WIDTH) {
+    pCtx.fillStyle = 'rgba(0, 255, 255, 0.2)';
+    pCtx.fillRect(x, 0, 1, pianoCanvas.height);
+  }
+
+  tracksData.forEach((track, idx) => {
+    track.notes.forEach(note => {
+      const x = note.beat * BEAT_WIDTH;
+      const y = (TOTAL_KEYS - 1 - note.pitchIdx) * KEY_HEIGHT;
+      const w = note.len * BEAT_WIDTH;
+      
+      if (idx === currentTrack) {
+        pCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        pCtx.shadowBlur = 10; pCtx.shadowColor = 'var(--primary)';
+      } else {
+        pCtx.fillStyle = 'rgba(0, 200, 255, 0.2)';
+        pCtx.shadowBlur = 0;
+      }
+      pCtx.fillRect(x, y, w - 1, KEY_HEIGHT - 1);
+    });
+  });
+  pCtx.shadowBlur = 0;
+
+  vCtx.clearRect(0, 0, volCanvas.width, volCanvas.height);
+  const activeNotes = tracksData[currentTrack].notes;
+  
+  vCtx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+  vCtx.beginPath();
+  vCtx.moveTo(0, 50); vCtx.lineTo(volCanvas.width, 50);
+  vCtx.stroke();
+
+  activeNotes.forEach(note => {
+    const x = note.beat * BEAT_WIDTH;
+    const h = (note.vol / 100) * volCanvas.height;
+    const y = volCanvas.height - h;
+    vCtx.fillStyle = 'var(--primary)';
+    vCtx.fillRect(x + 2, y, (note.len * BEAT_WIDTH) - 4, h);
+    vCtx.fillStyle = '#fff';
+    vCtx.fillRect(x + 2, y - 2, (note.len * BEAT_WIDTH) - 4, 4);
+  });
+}
+
+// --- 入力（タップ/クリック）の座標取得 ---
+function getCanvasPos(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+// --- ピアノロールの配置ロジック ---
+function handlePianoInput(e) {
+  if (isPlaying) return;
+  // Canvasをキャプチャしてドラッグ中のイベント漏れを防ぐ
+  pianoCanvas.setPointerCapture(e.pointerId);
+
+  const pos = getCanvasPos(e, pianoCanvas);
+  const beat = Math.floor(pos.x / (BEAT_WIDTH * drawLength)) * drawLength;
+  const pitchIdx = TOTAL_KEYS - 1 - Math.floor(pos.y / KEY_HEIGHT);
+  
+  if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return; // 範囲外ガード
+  
+  let notes = tracksData[currentTrack].notes;
+  
+  // まったく同じ位置（同じ拍、同じピッチ）にある音を探す
+  const existingIdx = notes.findIndex(n => Math.abs(n.beat - beat) < 0.01 && n.pitchIdx === pitchIdx);
+
+  if (isEraser) {
+    if (existingIdx >= 0) notes.splice(existingIdx, 1);
+  } else {
+    if (existingIdx >= 0) {
+      // すでにある音をタップした場合は消去（トグル操作）
+      notes.splice(existingIdx, 1);
+    } else {
+      // 新しい音を追加（和音も可能に）
+      notes.push({ beat: beat, len: drawLength, pitchIdx: pitchIdx, vol: 80 });
+    }
+  }
+  render();
+}
+
+// pointerdown を使うことで、マウスもスマホのタップも確実かつ統一的に検知
+pianoCanvas.addEventListener('pointerdown', handlePianoInput);
+
+// --- ボリュームの調整ロジック ---
+function handleVolumeInput(e) {
+  // pointer eventsでは、クリック中・ドラッグ中かの判定に e.buttons を用いる
+  if (isPlaying || e.buttons !== 1) return;
+  
+  const pos = getCanvasPos(e, volCanvas);
+  const beat = pos.x / BEAT_WIDTH;
+  
+  tracksData[currentTrack].notes.forEach(note => {
+    if (beat >= note.beat && beat <= note.beat + note.len) {
+      let vol = 100 - (pos.y / volCanvas.height * 100);
+      note.vol = Math.max(0, Math.min(100, Math.round(vol)));
+    }
+  });
+  render();
+}
+
+volCanvas.addEventListener('pointerdown', handleVolumeInput);
+volCanvas.addEventListener('pointermove', handleVolumeInput);
+
+// 横スクロールの同期
+rollWrapper.addEventListener('scroll', () => {
+  document.getElementById('scrollSync').querySelector('.volume-container').scrollLeft = rollWrapper.scrollLeft;
+});
+
+// --- UI操作 ---
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    // targetの代わりにcurrentTargetを使うことで確実にボタン要素から値を取得
+    const target = e.currentTarget;
+    target.classList.add('active');
+    isEraser = target.id === 'btnErase';
+    if (!isEraser) drawLength = parseFloat(target.dataset.len);
+  });
+});
+
+document.querySelectorAll('.track-tab').forEach((tab, idx) => {
+  tab.addEventListener('click', () => {
+    document.querySelector('.track-tab.active').classList.remove('active');
+    tab.classList.add('active');
+    currentTrack = idx;
+    
+    const tData = tracksData[idx];
+    document.getElementById('waveType').value = tData.wave;
+    document.getElementById('envA').value = tData.env.a;
+    document.getElementById('envD').value = tData.env.d;
+    document.getElementById('envS').value = tData.env.s;
+    document.getElementById('envR').value = tData.env.r;
+    render();
+  });
+});
+
+['waveType', 'envA', 'envD', 'envS', 'envR'].forEach(id => {
+  document.getElementById(id).addEventListener('change', (e) => {
+    if (id === 'waveType') tracksData[currentTrack].wave = e.target.value;
+    else tracksData[currentTrack].env[id.replace('env', '').toLowerCase()] = parseFloat(e.target.value);
+  });
+});
+
+// --- 再生エンジン ---
+function createFamicomWave(ctx, type) {
+  if (type.startsWith('square')) {
+    const dutyMap = { 'square12': 0.125, 'square25': 0.25, 'square50': 0.5 };
+    const duty = dutyMap[type] || 0.5;
+    const real = new Float32Array(32);
+    const imag = new Float32Array(32);
+    for (let i = 1; i < 32; i++) real[i] = (2 / (i * Math.PI)) * Math.sin(Math.PI * i * duty);
+    return ctx.createPeriodicWave(real, imag);
+  }
+  return null; 
+}
+
+function initNoise() {
+  if (noiseBuffer) return;
+  const size = audioCtx.sampleRate * 2;
+  noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+  const out = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
+}
+
+function playNotes() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  stopNotes();
+  initNoise();
+  isPlaying = true;
+
+  const tempo = 120;
+  const beatTime = 60 / tempo; 
+  const startTime = audioCtx.currentTime + 0.1;
+
+  tracksData.forEach(track => {
+    track.notes.forEach(note => {
+      const sTime = startTime + (note.beat * beatTime);
+      const dur = note.len * beatTime;
+      const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12); 
+      
+      const gainNode = audioCtx.createGain();
+      const env = track.env;
+      const maxVol = (note.vol / 100) * 0.3; 
+
+      gainNode.gain.setValueAtTime(0, sTime);
+      gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
+      gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
+      gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
+      gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
+      gainNode.connect(audioCtx.destination);
+
+      let source;
+      if (track.wave === 'noise') {
+        source = audioCtx.createBufferSource();
+        source.buffer = noiseBuffer; source.loop = true;
+      } else {
+        source = audioCtx.createOscillator();
+        if (track.wave === 'triangle') {
+          source.type = 'triangle';
+        } else {
+          source.setPeriodicWave(createFamicomWave(audioCtx, track.wave));
+        }
+        source.frequency.value = freq;
+      }
+      
+      source.connect(gainNode);
+      source.start(sTime);
+      source.stop(sTime + dur);
+      activeNodes.push({ source, gainNode });
+    });
+  });
+}
+
+function stopNotes() {
+  activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); n.gainNode.disconnect(); });
+  activeNodes = [];
+  isPlaying = false;
+}
+
+document.getElementById('btnPlay').addEventListener('click', playNotes);
+document.getElementById('btnStop').addEventListener('click', stopNotes);
+
+// --- MML出力 ---
+document.getElementById('btnShowMML').addEventListener('click', () => {
+  let finalMML = "";
+  const pitches = ['c','c+','d','d+','e','f','f+','g','g+','a','a+','b'];
+
+  tracksData.forEach((track, idx) => {
+    finalMML += `// Track ${idx + 1} (${track.wave}, A:${track.env.a} D:${track.env.d} S:${track.env.s} R:${track.env.r})\n`;
+    
+    // 和音はMMLの基本文法上表現できないため、ここでは単音ストリームとして出力
+    const sortedNotes = [...track.notes].sort((a,b) => a.beat - b.beat);
+    let currentBeat = 0;
+    
+    sortedNotes.forEach(note => {
+      if (note.beat > currentBeat) {
+        const restLen = note.beat - currentBeat;
+        finalMML += `r${4 / restLen} `;
+      }
+      
+      const octave = Math.floor(note.pitchIdx / 12) + 1;
+      const pName = pitches[note.pitchIdx % 12];
+      const length = 4 / note.len; 
+      const vol = Math.round((note.vol / 100) * 15); 
+      
+      finalMML += `v${vol} o${octave} ${pName}${length} `;
+      currentBeat = note.beat + note.len;
+    });
+    finalMML += "\n\n";
+  });
+
+  document.getElementById('mmlOutput').value = finalMML.trim();
+  document.getElementById('mmlModal').classList.add('show');
+});
+
+document.getElementById('btnCloseMML').addEventListener('click', () => {
+  document.getElementById('mmlModal').classList.remove('show');
+});
+
+// 初期化
+resizeCanvases();
+rollWrapper.scrollTop = (TOTAL_KEYS - 48) * KEY_HEIGHT - (rollWrapper.clientHeight / 2);
+</script>
+</body>
+</html>
