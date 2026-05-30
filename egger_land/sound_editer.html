@@ -37,14 +37,14 @@
     background: var(--bg-panel); border-bottom: 1px solid var(--border-color);
   }
   
-  button, select, input[type="text"], input[type="number"] {
+  button, select, input[type="text"], input[type="number"], textarea {
     background: #444; color: var(--text-main);
     border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; font-size: 0.75rem;
     cursor: pointer; transition: opacity 0.2s;
   }
   button:active { background: #666; }
   button:disabled { cursor: not-allowed; opacity: 0.5; }
-  input[type="text"], input[type="number"] { background: var(--bg-input); cursor: text; }
+  input[type="text"], input[type="number"], textarea { background: var(--bg-input); cursor: text; }
   
   .btn-blue { background: #2a5a8a; border-color: #3a7aba; }
   .btn-blue:active:not(:disabled) { background: #3a7aba; }
@@ -65,7 +65,7 @@
     flex: 1; min-height: 0;
     display: grid;
     grid-template-columns: 1fr 18px;
-    grid-template-rows: 1fr 24px 40px 18px; /* ボリュームメニュー用の24pxを追加 */
+    grid-template-rows: 1fr 24px 40px 18px;
     overflow: hidden; padding: 2px; gap: 2px;
   }
 
@@ -264,6 +264,28 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalImp">
+  <div class="modal-content" style="min-width: 320px; width: 90%;">
+    <div class="modal-title">JSONデータを貼り付けてください</div>
+    <textarea id="impTextarea" style="width: 100%; height: 150px; font-family: monospace; box-sizing: border-box; padding: 6px;" placeholder='{"title": "...", "mml_data": {...}}'></textarea>
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execImp" class="btn-blue">インポート</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalExp">
+  <div class="modal-content">
+    <div class="modal-title">出力する曲のタイトルを確認してください</div>
+    <input type="text" id="expTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value="">
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execExp" class="btn-blue">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const TICKS_PER_BEAT = 24;
 const KEY_HEIGHT = 16;
@@ -319,7 +341,7 @@ function updateUndoRedoUI() {
 function saveState() {
   const state = tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) }));
   undoStack.push(state);
-  if (undoStack.length > 10) undoStack.shift(); // 最大10件
+  if (undoStack.length > 10) undoStack.shift(); 
   redoStack = [];
   updateUndoRedoUI();
 }
@@ -409,8 +431,6 @@ document.querySelectorAll('.mute-check').forEach((chk) => {
   });
 });
 
-document.getElementById('btnImp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONインポートを実装します。"));
-document.getElementById('btnExp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONエクスポートを実装します。"));
 document.querySelectorAll('.btnCancelModal').forEach(btn => { btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); }); });
 
 // --- コピペ処理 ---
@@ -432,23 +452,36 @@ document.getElementById('execCopy').addEventListener('click', () => {
   [0, 1, 2, 3].forEach(i => {
     if (document.getElementById(`chkCopyTr${i}`).checked) {
       let trNotes = tracksData[i].notes;
-      // 貼り付け先の範囲にある既存ノートを削除（上書き）
       trNotes = trNotes.filter(n => !(n.tick >= destTick && n.tick < destTick + lengthTick));
-      // コピー元のノートを取得してシフト
       const srcNotes = tracksData[i].notes.filter(n => n.tick >= startTick && n.tick < startTick + lengthTick);
       srcNotes.forEach(n => { trNotes.push({ ...n, tick: n.tick + deltaTick }); });
       tracksData[i].notes = trNotes;
     }
   });
   
-  // アンドゥ情報のクリア
   undoStack = []; redoStack = []; updateUndoRedoUI();
-  
   document.getElementById('modalCopy').classList.remove('show');
   updateScrollBounds(); render();
 });
 
-// --- SAVE / LOAD ---
+// --- 出力用共通データ構築関数 ---
+function buildExportObject(titleString) {
+  const now = new Date();
+  const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  
+  const track_info = tracksData.map(t => ({ type: t.type, env: { ...t.env } }));
+  const mml_data = {
+    tracks: tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })),
+    tempo: currentTempo,
+    loopS: loopStartBeat,
+    loopE: loopEndBeat,
+    defaultVol: defaultVolume
+  };
+
+  return { title: titleString, update_date, mml_data, track_info };
+}
+
+// --- SAVE / LOAD (LocalStorage) ---
 const STORAGE_KEY = "mml_studio_music_data";
 
 document.getElementById('btnSave').addEventListener('click', () => {
@@ -459,13 +492,14 @@ document.getElementById('btnSave').addEventListener('click', () => {
 document.getElementById('execSave').addEventListener('click', () => {
   currentTitle = document.getElementById('saveTitleInput').value || "new music";
   document.getElementById('dispTitle').innerText = currentTitle;
+  
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  const now = new Date();
-  const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  const mml_data = { tracks: tracksData, tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat, defaultVol: defaultVolume };
+  const exportObj = buildExportObject(currentTitle);
+  
   const existingIdx = savedList.findIndex(d => d.title === currentTitle);
-  if (existingIdx >= 0) savedList[existingIdx] = { title: currentTitle, update_date, mml_data };
-  else savedList.push({ title: currentTitle, update_date, mml_data });
+  if (existingIdx >= 0) savedList[existingIdx] = exportObj;
+  else savedList.push(exportObj);
+  
   localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
   document.getElementById('modalSave').classList.remove('show');
   alert("保存しました。");
@@ -493,7 +527,17 @@ document.getElementById('execLoad').addEventListener('click', () => {
     const data = savedList[idx];
     currentTitle = data.title;
     document.getElementById('dispTitle').innerText = currentTitle;
-    tracksData = data.mml_data.tracks;
+    
+    tracksData = data.mml_data.tracks.map((t, i) => {
+      const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
+      return {
+        type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')),
+        env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1},
+        mute: tracksData[i] ? tracksData[i].mute : false,
+        notes: t.notes
+      };
+    });
+    
     currentTempo = data.mml_data.tempo;
     loopStartBeat = data.mml_data.loopS;
     loopEndBeat = data.mml_data.loopE;
@@ -504,6 +548,84 @@ document.getElementById('execLoad').addEventListener('click', () => {
     updateScrollBounds(); render();
   }
   document.getElementById('modalLoad').classList.remove('show');
+});
+
+// --- IMP (インポート) ---
+document.getElementById('btnImp').addEventListener('click', () => {
+  document.getElementById('impTextarea').value = "";
+  document.getElementById('modalImp').classList.add('show');
+});
+
+document.getElementById('execImp').addEventListener('click', () => {
+  const text = document.getElementById('impTextarea').value.trim();
+  try {
+    if(!text) throw new Error("データが空です");
+    const data = JSON.parse(text);
+    
+    if(!data.mml_data || !data.mml_data.tracks) {
+      throw new Error("不正なファイル構造です (mml_data が見つかりません)");
+    }
+    
+    currentTitle = data.title || "imported music";
+    document.getElementById('dispTitle').innerText = currentTitle;
+    
+    currentTempo = data.mml_data.tempo || 120;
+    loopStartBeat = data.mml_data.loopS || 1;
+    loopEndBeat = data.mml_data.loopE || 17;
+    if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
+    
+    tracksData = data.mml_data.tracks.map((t, i) => {
+      const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
+      return {
+        type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')),
+        env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1},
+        mute: false,
+        notes: t.notes || []
+      };
+    });
+    
+    tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = true; });
+    undoStack = []; redoStack = []; updateUndoRedoUI();
+    document.getElementById('modalImp').classList.remove('show');
+    updateScrollBounds(); render();
+    alert("インポート成功");
+  } catch (err) {
+    alert("インポート失敗\n\n" + err.stack);
+  }
+});
+
+// --- EXP (エクスポート) ---
+document.getElementById('btnExp').addEventListener('click', () => {
+  document.getElementById('expTitleInput').value = currentTitle;
+  document.getElementById('modalExp').classList.add('show');
+});
+
+document.getElementById('execExp').addEventListener('click', () => {
+  const targetTitle = document.getElementById('expTitleInput').value || currentTitle;
+  currentTitle = targetTitle;
+  document.getElementById('dispTitle').innerText = currentTitle;
+  
+  const exportObj = buildExportObject(currentTitle);
+  const jsonStr = JSON.stringify(exportObj);
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  
+  document.getElementById('modalExp').classList.remove('show');
+  
+  if (isMobile) {
+    const subject = encodeURIComponent(`[mml studio] Export - ${currentTitle}`);
+    const body = encodeURIComponent(jsonStr);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  } else {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(jsonStr).then(() => {
+        alert("クリップボードに出力しました");
+      }).catch(err => {
+        alert("クリップボードへのコピーに失敗しました。以下のデータを手動でコピーしてください:\n\n" + jsonStr);
+      });
+    } else {
+      alert("お使いのブラウザはクリップボード書き込みに対応していません:\n\n" + jsonStr);
+    }
+  }
 });
 
 // --- 歯車(設定) ---
@@ -571,7 +693,6 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
   const notes = tracksData[currentTrack].notes;
   const hitNote = notes.find(n => n.pitchIdx === pitchIdx && tick >= n.tick && tick < n.tick + n.len);
 
-  // 変更が確定する前に状態を保存
   saveState();
 
   if (isEraser) {
@@ -589,7 +710,7 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
     const snapT = Math.floor(tick / snapTicks) * snapTicks;
     const overlapping = notes.filter(n => Math.max(snapT, n.tick) < Math.min(snapT + snapTicks, n.tick + n.len));
     if (overlapping.length >= 3) {
-      undoStack.pop(); // キャンセル時はスタックから戻す
+      undoStack.pop(); 
       updateUndoRedoUI();
       return;
     }
@@ -682,7 +803,6 @@ function render() {
     pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
     pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
     
-    // Cのキー表示とオクターブの破線表示
     if (pitchIdx % 12 === 0) {
       pCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       pCtx.font = "10px sans-serif";
@@ -774,18 +894,7 @@ function createFamicomWave(ctx, type) {
   return null; 
 }
 
-function initAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (!noiseBuffer) {
-    const size = audioCtx.sampleRate * 2;
-    noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
-    const out = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
-  }
-}
-
-function playNote(note, track, tIdx, sTime) {
+function schedulePlaybackTrack(note, track, tIdx, sTime) {
   const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
   const dur = note.len * secPerTick;
   const maxVol = (note.vol / 100) * 0.3;
@@ -794,13 +903,13 @@ function playNote(note, track, tIdx, sTime) {
   
   if (tIdx === 3) {
     const p = note.pitchIdx;
-    if (p === 36) { // Kick
+    if (p === 36) { 
       const osc = audioCtx.createOscillator(); osc.type = 'sine';
       osc.frequency.setValueAtTime(150, sTime); osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.15);
       gainNode.gain.setValueAtTime(maxVol * 2, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.15);
       osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.15);
       activeNodes.push({ source: osc, gainNode: gainNode, endTime: sTime + 0.15 });
-    } else if (p === 38) { // Snare
+    } else if (p === 38) { 
       const tri = audioCtx.createOscillator(); tri.type = 'triangle';
       tri.frequency.setValueAtTime(150, sTime); tri.frequency.exponentialRampToValueAtTime(50, sTime + 0.1);
       const triGain = audioCtx.createGain();
@@ -816,19 +925,19 @@ function playNote(note, track, tIdx, sTime) {
       nSrc.connect(filter); filter.connect(nGain); nGain.connect(gainNode);
       nSrc.start(sTime); nSrc.stop(sTime + 0.2);
       activeNodes.push({ source: nSrc, gainNode: nGain, endTime: sTime + 0.2 });
-    } else if (p === 40) { // CHH
+    } else if (p === 40) { 
       const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
       const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
       gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
       hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.05);
       activeNodes.push({ source: hSrc, gainNode: gainNode, endTime: sTime + 0.05 });
-    } else if (p === 41) { // OHH
+    } else if (p === 41) { 
       const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
       const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
       gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.3);
       hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.3);
       activeNodes.push({ source: hSrc, gainNode: gainNode, endTime: sTime + 0.3 });
-    } else if (p === 43) { // Crash
+    } else if (p === 43) { 
       const cSrc = audioCtx.createBufferSource(); cSrc.buffer = noiseBuffer;
       const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 4000;
       gainNode.gain.setValueAtTime(maxVol * 0.8, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 1.0);
@@ -879,13 +988,13 @@ function processNextTick() {
   }
 }
 
-function scheduler() {
+function sequencerLoop() {
   if (!isPlaying) return;
   while (nextTickTime < audioCtx.currentTime + 0.1) {
     tracksData.forEach((track, tIdx) => {
       if (track.mute) return;
       track.notes.forEach(note => {
-        if (note.tick === currentPlayTick) playNote(note, track, tIdx, nextTickTime);
+        if (note.tick === currentPlayTick) schedulePlaybackTrack(note, track, tIdx, nextTickTime);
       });
     });
     processNextTick();
@@ -894,16 +1003,24 @@ function scheduler() {
   const currTime = audioCtx.currentTime;
   activeNodes = activeNodes.filter(n => n.endTime > currTime);
 
-  if (isPlaying) scheduleTimer = requestAnimationFrame(scheduler);
+  if (isPlaying) scheduleTimer = requestAnimationFrame(sequencerLoop);
 }
 
 function playSong() {
-  initAudio(); stopSong(); isPlaying = true;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!noiseBuffer) {
+    const size = audioCtx.sampleRate * 2;
+    noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+    const out = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
+  }
+  stopSong(); isPlaying = true;
   document.getElementById('btnPlay').style.background = '#4a9a4a';
   document.getElementById('btnPlay').style.color = '#fff';
   currentPlayTick = 0;
   nextTickTime = audioCtx.currentTime + 0.05;
-  scheduler();
+  sequencerLoop();
 }
 
 function stopSong() {
@@ -918,7 +1035,7 @@ function stopSong() {
 document.getElementById('btnPlay').addEventListener('click', playSong);
 document.getElementById('btnStop').addEventListener('click', stopSong);
 
-// 初期化
+// 初期位置調整
 setTimeout(() => {
   updateTrackBackground();
   const sY = document.getElementById('scrollYWrapper');
