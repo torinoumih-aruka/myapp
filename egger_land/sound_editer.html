@@ -107,6 +107,9 @@
 <div class="title-bar">mml studio - [<span id="dispTitle">new music</span>]</div>
 
 <div class="toolbar">
+  <label style="display:flex; align-items:center; gap:2px; font-size:0.75rem; cursor:pointer;">
+    <input type="checkbox" id="chkLoop" checked style="margin:0; cursor:pointer;"> Loop
+  </label>
   <button id="btnPlay" class="btn-blue">PLAY</button>
   <button id="btnStop" class="btn-blue">STOP</button>
   <button id="btnSave" class="btn-blue">SAVE</button>
@@ -245,15 +248,8 @@ const BASE_BEAT_WIDTH = 48;
 const TRACK_COLORS = ['#88ccff', '#88ff88', '#ff88cc', '#ffcc88'];
 const TRACK_BG_COLORS = ['#141f2a', '#142a14', '#2a1420', '#2a2014']; 
 
-// ノイズトラック(ドラム)で有効なピッチ(C5 ~ B5の範囲)とラベル
-const NOISE_BASE = 36; // Index 36 = C5
-const DRUM_MAP = {
-  36: "Kick (C)",
-  38: "Snare (D)",
-  40: "CHH (E)",
-  41: "OHH (F)",
-  43: "Crash (G)"
-};
+const NOISE_BASE = 36; // C5
+const DRUM_MAP = { 36: "Kick (C)", 38: "Snare (D)", 40: "CHH (E)", 41: "OHH (F)", 43: "Crash (G)" };
 
 let currentTitle = "new music";
 let currentTempo = 120;
@@ -261,9 +257,6 @@ let loopStartBeat = 1;
 let loopEndBeat = 17;
 
 let audioCtx = null;
-let isPlaying = false;
-let playTimeout = null;
-let activeNodes = [];
 let noiseBuffer = null;
 
 let currentTrack = 0;
@@ -280,10 +273,10 @@ let tracksData = [
   { type: 'noise', env: {a: 0.01, d: 0.1, s: 0.0, r: 0.0}, mute: false, notes: [] }
 ];
 
+// 初期データ
 tracksData[0].notes.push({ tick: 0, len: 24, pitchIdx: 36, vol: 80 });
 tracksData[0].notes.push({ tick: 24, len: 24, pitchIdx: 38, vol: 80 });
 tracksData[0].notes.push({ tick: 48, len: 24, pitchIdx: 40, vol: 100 });
-// サンプルドラム
 tracksData[3].notes.push({ tick: 0, len: 12, pitchIdx: 36, vol: 90 });
 tracksData[3].notes.push({ tick: 24, len: 12, pitchIdx: 38, vol: 90 });
 tracksData[3].notes.push({ tick: 48, len: 12, pitchIdx: 36, vol: 90 });
@@ -297,10 +290,12 @@ const vCtx = volCanvas.getContext('2d');
 function getPxPerTick() { return (BASE_BEAT_WIDTH * currentZoom) / TICKS_PER_BEAT; }
 
 function updateScrollBounds() {
-  const maxTicks = loopEndBeat * TICKS_PER_BEAT + (TICKS_PER_BEAT * 4);
+  // ループ範囲外にも配置できるよう、最大のTickを検索してスクロール領域を確保
+  let maxTicks = loopEndBeat * TICKS_PER_BEAT + (TICKS_PER_BEAT * 8);
+  tracksData.forEach(tr => tr.notes.forEach(n => { maxTicks = Math.max(maxTicks, n.tick + n.len + (TICKS_PER_BEAT*4)); }));
+  
   const contentW = maxTicks * getPxPerTick();
   const contentH = TOTAL_KEYS * KEY_HEIGHT;
-  
   const viewW = pianoCanvas.parentElement.clientWidth;
   const viewH = pianoCanvas.parentElement.clientHeight;
   
@@ -309,7 +304,6 @@ function updateScrollBounds() {
   
   const sX = document.getElementById('scrollXWrapper');
   const sY = document.getElementById('scrollYWrapper');
-  
   scrollOffsetX = sX.scrollLeft;
   scrollOffsetY = sY.scrollTop;
 }
@@ -323,11 +317,9 @@ const resizeObserver = new ResizeObserver(() => {
 });
 resizeObserver.observe(document.querySelector('.editor-layout'));
 
-// --- スクロール同期 ---
 document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { scrollOffsetX = e.target.scrollLeft; render(); });
 document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { scrollOffsetY = e.target.scrollTop; render(); });
 
-// --- UI イベント ---
 document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
 document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
 
@@ -347,8 +339,7 @@ document.querySelectorAll('.track-tab').forEach((tab) => {
     document.querySelector('.track-tab.active').classList.remove('active');
     e.target.classList.add('active');
     currentTrack = parseInt(e.target.dataset.track);
-    updateTrackBackground();
-    render();
+    updateTrackBackground(); render();
   });
 });
 document.querySelectorAll('.mute-check').forEach((chk) => {
@@ -474,10 +465,8 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
   const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
   if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return;
 
-  // ノイズトラックの入力制限
   if (currentTrack === 3) {
-    if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12) return;
-    if (!DRUM_MAP[pitchIdx]) return;
+    if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12 || !DRUM_MAP[pitchIdx]) return;
   }
 
   const notes = tracksData[currentTrack].notes;
@@ -502,6 +491,7 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
     const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: 80 };
     notes.push(newNote);
     dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
+    updateScrollBounds();
   }
   render();
 });
@@ -533,7 +523,7 @@ pianoCanvas.addEventListener('pointermove', (e) => {
   }
   render();
 });
-pianoCanvas.addEventListener('pointerup', () => { dragState = null; });
+pianoCanvas.addEventListener('pointerup', () => { if (dragState) { dragState = null; updateScrollBounds(); } });
 pianoCanvas.addEventListener('pointercancel', () => { dragState = null; });
 
 volCanvas.addEventListener('pointerdown', handleVolume);
@@ -567,10 +557,9 @@ function render() {
     const pitchIdx = TOTAL_KEYS - 1 - i;
     if (y < scrollOffsetY - KEY_HEIGHT || y > scrollOffsetY + h) continue;
     
-    // ノイズトラックの表示制御
     if (currentTrack === 3) {
       if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12) {
-        pCtx.fillStyle = '#050505'; // 無効オクターブは真っ黒
+        pCtx.fillStyle = '#050505'; 
         pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
         continue;
       }
@@ -580,7 +569,6 @@ function render() {
     pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
     pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
     
-    // ドラムラベル表示
     if (currentTrack === 3 && DRUM_MAP[pitchIdx]) {
       pCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       pCtx.font = "10px sans-serif";
@@ -641,7 +629,13 @@ function render() {
   vCtx.restore();
 }
 
-// --- オーディオエンジン ---
+// --- オーディオ シーケンサー ---
+let isPlaying = false;
+let activeNodes = [];
+let scheduleTimer = null;
+let currentPlayTick = 0;
+let nextTickTime = 0;
+
 function createFamicomWave(ctx, type) {
   if (type.startsWith('square')) {
     const duty = { 'square12': 0.125, 'square25': 0.25, 'square50': 0.5 }[type] || 0.5;
@@ -663,115 +657,139 @@ function initAudio() {
   }
 }
 
+function playNote(note, track, tIdx, sTime) {
+  const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
+  const dur = note.len * secPerTick;
+  const maxVol = (note.vol / 100) * 0.3;
+  const gainNode = audioCtx.createGain();
+  gainNode.connect(audioCtx.destination);
+  
+  if (tIdx === 3) {
+    const p = note.pitchIdx;
+    if (p === 36) { // Kick
+      const osc = audioCtx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, sTime); osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.15);
+      gainNode.gain.setValueAtTime(maxVol * 2, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.15);
+      osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.15);
+      activeNodes.push({ source: osc, gainNode: gainNode, endTime: sTime + 0.15 });
+    } else if (p === 38) { // Snare
+      const tri = audioCtx.createOscillator(); tri.type = 'triangle';
+      tri.frequency.setValueAtTime(150, sTime); tri.frequency.exponentialRampToValueAtTime(50, sTime + 0.1);
+      const triGain = audioCtx.createGain();
+      triGain.gain.setValueAtTime(maxVol, sTime); triGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.1);
+      tri.connect(triGain); triGain.connect(gainNode);
+      tri.start(sTime); tri.stop(sTime + 0.1);
+      activeNodes.push({ source: tri, gainNode: triGain, endTime: sTime + 0.1 });
+      
+      const nSrc = audioCtx.createBufferSource(); nSrc.buffer = noiseBuffer;
+      const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 1000;
+      const nGain = audioCtx.createGain();
+      nGain.gain.setValueAtTime(maxVol, sTime); nGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.2);
+      nSrc.connect(filter); filter.connect(nGain); nGain.connect(gainNode);
+      nSrc.start(sTime); nSrc.stop(sTime + 0.2);
+      activeNodes.push({ source: nSrc, gainNode: nGain, endTime: sTime + 0.2 });
+    } else if (p === 40) { // CHH
+      const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
+      const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
+      gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
+      hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.05);
+      activeNodes.push({ source: hSrc, gainNode: gainNode, endTime: sTime + 0.05 });
+    } else if (p === 41) { // OHH
+      const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
+      const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
+      gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.3);
+      hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.3);
+      activeNodes.push({ source: hSrc, gainNode: gainNode, endTime: sTime + 0.3 });
+    } else if (p === 43) { // Crash
+      const cSrc = audioCtx.createBufferSource(); cSrc.buffer = noiseBuffer;
+      const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 4000;
+      gainNode.gain.setValueAtTime(maxVol * 0.8, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 1.0);
+      cSrc.connect(filter).connect(gainNode); cSrc.start(sTime); cSrc.stop(sTime + 1.0);
+      activeNodes.push({ source: cSrc, gainNode: gainNode, endTime: sTime + 1.0 });
+    }
+  } else {
+    const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12);
+    const env = track.env;
+    gainNode.gain.setValueAtTime(0, sTime);
+    gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
+    gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
+    gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
+    gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
+    
+    const osc = audioCtx.createOscillator();
+    if (track.type === 'triangle') osc.type = 'triangle';
+    else osc.setPeriodicWave(createFamicomWave(audioCtx, track.type));
+    
+    osc.frequency.value = freq;
+    osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + dur);
+    activeNodes.push({ source: osc, gainNode: gainNode, endTime: sTime + dur + 1.0 });
+  }
+}
+
+function processNextTick() {
+  const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
+  nextTickTime += secPerTick;
+  currentPlayTick++;
+
+  const isLoop = document.getElementById('chkLoop').checked;
+  const loopStartTick = (loopStartBeat - 1) * TICKS_PER_BEAT;
+  const loopEndTick = (loopEndBeat - 1) * TICKS_PER_BEAT;
+
+  if (isLoop) {
+    if (currentPlayTick >= loopEndTick) {
+      currentPlayTick = loopStartTick;
+    }
+  } else {
+    // Check end of all tracks
+    let maxTick = 0;
+    tracksData.forEach(tr => {
+      if (!tr.mute) tr.notes.forEach(n => maxTick = Math.max(maxTick, n.tick + n.len));
+    });
+    
+    // 全ての音が鳴り終わったら自動停止 (余韻を考慮して2秒後に完全STOP)
+    if (currentPlayTick >= maxTick) {
+      isPlaying = false;
+      setTimeout(() => { if (!isPlaying) stopSong(); }, 2000); 
+    }
+  }
+}
+
+function scheduler() {
+  if (!isPlaying) return;
+  // 0.1秒先までの音符をスケジュール
+  while (nextTickTime < audioCtx.currentTime + 0.1) {
+    tracksData.forEach((track, tIdx) => {
+      if (track.mute) return;
+      track.notes.forEach(note => {
+        if (note.tick === currentPlayTick) playNote(note, track, tIdx, nextTickTime);
+      });
+    });
+    processNextTick();
+    if (!isPlaying) break;
+  }
+  
+  // 鳴り終わったノードのメモリ解放
+  const currTime = audioCtx.currentTime;
+  activeNodes = activeNodes.filter(n => n.endTime > currTime);
+
+  if (isPlaying) scheduleTimer = requestAnimationFrame(scheduler);
+}
+
 function playSong() {
   initAudio(); stopSong(); isPlaying = true;
   document.getElementById('btnPlay').style.background = '#4a9a4a';
   document.getElementById('btnPlay').style.color = '#fff';
 
-  const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
-  const loopStartTick = (loopStartBeat - 1) * TICKS_PER_BEAT;
-  const loopEndTick = (loopEndBeat - 1) * TICKS_PER_BEAT;
-  
-  const startTime = audioCtx.currentTime + 0.1;
-  let maxEndTime = startTime;
-
-  tracksData.forEach((track, tIdx) => {
-    if (track.mute) return; 
-    track.notes.forEach(note => {
-      if (note.tick < loopStartTick || note.tick >= loopEndTick) return;
-
-      const offsetTicks = note.tick - loopStartTick;
-      const sTime = startTime + (offsetTicks * secPerTick);
-      const dur = note.len * secPerTick;
-      maxEndTime = Math.max(maxEndTime, sTime + dur);
-      
-      const maxVol = (note.vol / 100) * 0.3;
-      const gainNode = audioCtx.createGain();
-      gainNode.connect(audioCtx.destination);
-      
-      if (tIdx === 3) {
-        const p = note.pitchIdx;
-        
-        if (p === 36) { // Kick
-          const osc = audioCtx.createOscillator(); osc.type = 'sine';
-          osc.frequency.setValueAtTime(150, sTime); 
-          osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.15);
-          gainNode.gain.setValueAtTime(maxVol * 2, sTime); 
-          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.15);
-          osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.15);
-          activeNodes.push({ source: osc, gainNode });
-          
-        } else if (p === 38) { // Snare
-          const tri = audioCtx.createOscillator(); tri.type = 'triangle';
-          tri.frequency.setValueAtTime(150, sTime); tri.frequency.exponentialRampToValueAtTime(50, sTime + 0.1);
-          const triGain = audioCtx.createGain();
-          triGain.gain.setValueAtTime(maxVol, sTime); triGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.1);
-          tri.connect(triGain); triGain.connect(gainNode);
-          tri.start(sTime); tri.stop(sTime + 0.1);
-          activeNodes.push({ source: tri, gainNode: triGain });
-          
-          const nSrc = audioCtx.createBufferSource(); nSrc.buffer = noiseBuffer;
-          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 1000;
-          const nGain = audioCtx.createGain();
-          nGain.gain.setValueAtTime(maxVol, sTime); nGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.2);
-          nSrc.connect(filter); filter.connect(nGain); nGain.connect(gainNode);
-          nSrc.start(sTime); nSrc.stop(sTime + 0.2);
-          activeNodes.push({ source: nSrc, gainNode: nGain });
-          
-        } else if (p === 40) { // CHH
-          const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
-          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
-          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); 
-          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
-          hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.05);
-          activeNodes.push({ source: hSrc, gainNode });
-          
-        } else if (p === 41) { // OHH
-          const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
-          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
-          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); 
-          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.3);
-          hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.3);
-          activeNodes.push({ source: hSrc, gainNode });
-          
-        } else if (p === 43) { // Crash
-          const cSrc = audioCtx.createBufferSource(); cSrc.buffer = noiseBuffer;
-          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 4000;
-          gainNode.gain.setValueAtTime(maxVol * 0.8, sTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 1.0);
-          cSrc.connect(filter).connect(gainNode); cSrc.start(sTime); cSrc.stop(sTime + 1.0);
-          activeNodes.push({ source: cSrc, gainNode });
-        }
-        
-      } else {
-        const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12);
-        const env = track.env;
-        gainNode.gain.setValueAtTime(0, sTime);
-        gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
-        gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
-        gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
-        gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
-        
-        const osc = audioCtx.createOscillator();
-        if (track.type === 'triangle') osc.type = 'triangle';
-        else osc.setPeriodicWave(createFamicomWave(audioCtx, track.type));
-        
-        osc.frequency.value = freq;
-        osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + dur);
-        activeNodes.push({ source: osc, gainNode });
-      }
-    });
-  });
-
-  const totalMs = (maxEndTime - audioCtx.currentTime) * 1000;
-  if (totalMs > 0) playTimeout = setTimeout(stopSong, totalMs + 100);
-  else stopSong();
+  currentPlayTick = 0;
+  nextTickTime = audioCtx.currentTime + 0.05;
+  scheduler();
 }
 
 function stopSong() {
-  if (playTimeout) { clearTimeout(playTimeout); playTimeout = null; }
+  isPlaying = false;
+  if (scheduleTimer) { cancelAnimationFrame(scheduleTimer); scheduleTimer = null; }
   activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); if(n.gainNode) n.gainNode.disconnect(); });
-  activeNodes = []; isPlaying = false;
+  activeNodes = [];
   document.getElementById('btnPlay').style.background = '';
   document.getElementById('btnPlay').style.color = '';
 }
@@ -783,13 +801,9 @@ document.getElementById('btnStop').addEventListener('click', stopSong);
 setTimeout(() => {
   updateTrackBackground();
   const sY = document.getElementById('scrollYWrapper');
-  
-  // 起動時にドラム音階(C5周辺)が中心になるようにスクロール位置をセット
   sY.scrollTop = (TOTAL_KEYS - 42) * KEY_HEIGHT - (pianoCanvas.parentElement.clientHeight / 2);
   scrollOffsetY = sY.scrollTop;
-  
-  updateScrollBounds(); 
-  render();
+  updateScrollBounds(); render();
 }, 100);
 </script>
 </body>
