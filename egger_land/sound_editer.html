@@ -73,7 +73,6 @@
   
   canvas { display: block; touch-action: none; cursor: crosshair; }
 
-  /* ネイティブスクロール領域を利用した代替スクロールバー */
   .scroll-y-wrapper { grid-column: 2; grid-row: 1; overflow-y: scroll; overflow-x: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
   .scroll-x-wrapper { grid-column: 1; grid-row: 3; overflow-x: scroll; overflow-y: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
   
@@ -241,10 +240,20 @@
 <script>
 const TICKS_PER_BEAT = 24;
 const KEY_HEIGHT = 16;
-const TOTAL_KEYS = 72; // C2 ~ B7
+const TOTAL_KEYS = 72; 
 const BASE_BEAT_WIDTH = 48;
 const TRACK_COLORS = ['#88ccff', '#88ff88', '#ff88cc', '#ffcc88'];
 const TRACK_BG_COLORS = ['#141f2a', '#142a14', '#2a1420', '#2a2014']; 
+
+// ノイズトラック(ドラム)で有効なピッチ(C5 ~ B5の範囲)とラベル
+const NOISE_BASE = 36; // Index 36 = C5
+const DRUM_MAP = {
+  36: "Kick (C)",
+  38: "Snare (D)",
+  40: "CHH (E)",
+  41: "OHH (F)",
+  43: "Crash (G)"
+};
 
 let currentTitle = "new music";
 let currentTempo = 120;
@@ -274,6 +283,11 @@ let tracksData = [
 tracksData[0].notes.push({ tick: 0, len: 24, pitchIdx: 36, vol: 80 });
 tracksData[0].notes.push({ tick: 24, len: 24, pitchIdx: 38, vol: 80 });
 tracksData[0].notes.push({ tick: 48, len: 24, pitchIdx: 40, vol: 100 });
+// サンプルドラム
+tracksData[3].notes.push({ tick: 0, len: 12, pitchIdx: 36, vol: 90 });
+tracksData[3].notes.push({ tick: 24, len: 12, pitchIdx: 38, vol: 90 });
+tracksData[3].notes.push({ tick: 48, len: 12, pitchIdx: 36, vol: 90 });
+tracksData[3].notes.push({ tick: 72, len: 12, pitchIdx: 43, vol: 90 });
 
 const pianoCanvas = document.getElementById('pianoCanvas');
 const pCtx = pianoCanvas.getContext('2d');
@@ -290,7 +304,6 @@ function updateScrollBounds() {
   const viewW = pianoCanvas.parentElement.clientWidth;
   const viewH = pianoCanvas.parentElement.clientHeight;
   
-  // ネイティブスクロール領域の内側のダミーdivのサイズを更新してスクロールバーを発生させる
   document.getElementById('scrollXInner').style.width = Math.max(contentW, viewW) + 'px';
   document.getElementById('scrollYInner').style.height = Math.max(contentH, viewH) + 'px';
   
@@ -310,15 +323,9 @@ const resizeObserver = new ResizeObserver(() => {
 });
 resizeObserver.observe(document.querySelector('.editor-layout'));
 
-// --- スクロールイベント (ネイティブの動きをCanvasに同期) ---
-document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { 
-  scrollOffsetX = e.target.scrollLeft; 
-  render(); 
-});
-document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { 
-  scrollOffsetY = e.target.scrollTop; 
-  render(); 
-});
+// --- スクロール同期 ---
+document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { scrollOffsetX = e.target.scrollLeft; render(); });
+document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { scrollOffsetY = e.target.scrollTop; render(); });
 
 // --- UI イベント ---
 document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
@@ -355,10 +362,7 @@ document.getElementById('btnImp').addEventListener('click', () => alert("ステ�
 document.getElementById('btnExp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONエクスポートを実装します。"));
 document.getElementById('btnCopyPaste').addEventListener('click', () => { document.getElementById('modalCopy').classList.add('show'); });
 document.getElementById('execCopy').addEventListener('click', () => { alert("ステークホルダ：将来的にコピペ機能を実装します。"); document.getElementById('modalCopy').classList.remove('show'); });
-
-document.querySelectorAll('.btnCancelModal').forEach(btn => {
-  btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); });
-});
+document.querySelectorAll('.btnCancelModal').forEach(btn => { btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); }); });
 
 // --- SAVE / LOAD ---
 const STORAGE_KEY = "mml_studio_music_data";
@@ -371,16 +375,13 @@ document.getElementById('btnSave').addEventListener('click', () => {
 document.getElementById('execSave').addEventListener('click', () => {
   currentTitle = document.getElementById('saveTitleInput').value || "new music";
   document.getElementById('dispTitle').innerText = currentTitle;
-  
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   const now = new Date();
   const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   const mml_data = { tracks: tracksData, tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat };
-  
   const existingIdx = savedList.findIndex(d => d.title === currentTitle);
   if (existingIdx >= 0) savedList[existingIdx] = { title: currentTitle, update_date, mml_data };
   else savedList.push({ title: currentTitle, update_date, mml_data });
-  
   localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
   document.getElementById('modalSave').classList.remove('show');
   alert("保存しました。");
@@ -412,10 +413,8 @@ document.getElementById('execLoad').addEventListener('click', () => {
     currentTempo = data.mml_data.tempo;
     loopStartBeat = data.mml_data.loopS;
     loopEndBeat = data.mml_data.loopE;
-    
     tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = !tr.mute; });
-    updateScrollBounds();
-    render();
+    updateScrollBounds(); render();
   }
   document.getElementById('modalLoad').classList.remove('show');
 });
@@ -426,7 +425,6 @@ function renderEnvTable() {
   tbody.innerHTML = "";
   const waves = ['square12', 'square25', 'square50', 'triangle'];
   const waveLabels = ['矩形12.5%', '矩形25%', '矩形50%', '三角'];
-  
   for(let i=0; i<3; i++) {
     const tr = tracksData[i];
     let row = `<tr><td>Tr${i+1}</td><td><select id="setW${i}">`;
@@ -439,7 +437,6 @@ function renderEnvTable() {
     tbody.innerHTML += row;
   }
 }
-
 document.getElementById('btnSettings').addEventListener('click', () => {
   document.getElementById('setTempo').value = currentTempo;
   document.getElementById('setLoopS').value = loopStartBeat;
@@ -447,12 +444,10 @@ document.getElementById('btnSettings').addEventListener('click', () => {
   renderEnvTable();
   document.getElementById('modalSettings').classList.add('show');
 });
-
 document.getElementById('execSettings').addEventListener('click', () => {
   currentTempo = parseInt(document.getElementById('setTempo').value);
   loopStartBeat = parseInt(document.getElementById('setLoopS').value);
   loopEndBeat = parseInt(document.getElementById('setLoopE').value);
-  
   for(let i=0; i<3; i++) {
     tracksData[i].type = document.getElementById(`setW${i}`).value;
     tracksData[i].env.a = parseFloat(document.getElementById(`setA${i}`).value);
@@ -478,6 +473,12 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
   const tick = Math.round(worldX / getPxPerTick());
   const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
   if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return;
+
+  // ノイズトラックの入力制限
+  if (currentTrack === 3) {
+    if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12) return;
+    if (!DRUM_MAP[pitchIdx]) return;
+  }
 
   const notes = tracksData[currentTrack].notes;
   const hitNote = notes.find(n => n.pitchIdx === pitchIdx && tick >= n.tick && tick < n.tick + n.len);
@@ -522,9 +523,13 @@ pianoCanvas.addEventListener('pointermove', (e) => {
     let newStart = Math.round((currentTick - dragState.offsetTick) / snapTicks) * snapTicks;
     const worldY = pos.y + scrollOffsetY;
     const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
-    if (newStart >= 0 && pitchIdx >= 0 && pitchIdx < TOTAL_KEYS) {
-      dragState.note.tick = newStart; dragState.note.pitchIdx = pitchIdx;
+    
+    if (currentTrack === 3) {
+      if (DRUM_MAP[pitchIdx]) dragState.note.pitchIdx = pitchIdx;
+    } else {
+      if (pitchIdx >= 0 && pitchIdx < TOTAL_KEYS) dragState.note.pitchIdx = pitchIdx;
     }
+    dragState.note.tick = newStart;
   }
   render();
 });
@@ -559,10 +564,28 @@ function render() {
   
   for (let i = 0; i < TOTAL_KEYS; i++) {
     const y = i * KEY_HEIGHT;
+    const pitchIdx = TOTAL_KEYS - 1 - i;
     if (y < scrollOffsetY - KEY_HEIGHT || y > scrollOffsetY + h) continue;
-    const isBlack = [1, 3, 6, 8, 10].includes(i % 12);
+    
+    // ノイズトラックの表示制御
+    if (currentTrack === 3) {
+      if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12) {
+        pCtx.fillStyle = '#050505'; // 無効オクターブは真っ黒
+        pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
+        continue;
+      }
+    }
+    
+    const isBlack = [1, 3, 6, 8, 10].includes(pitchIdx % 12);
     pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
     pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
+    
+    // ドラムラベル表示
+    if (currentTrack === 3 && DRUM_MAP[pitchIdx]) {
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      pCtx.font = "10px sans-serif";
+      pCtx.fillText(DRUM_MAP[pitchIdx], scrollOffsetX + 4, y + 12);
+    }
   }
 
   const startTick = Math.floor(scrollOffsetX / pxPerTick);
@@ -633,7 +656,7 @@ function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   if (!noiseBuffer) {
-    const size = audioCtx.sampleRate * 1;
+    const size = audioCtx.sampleRate * 2;
     noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
     const out = noiseBuffer.getChannelData(0);
     for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
@@ -668,25 +691,58 @@ function playSong() {
       
       if (tIdx === 3) {
         const p = note.pitchIdx;
-        if (p < 38) {
+        
+        if (p === 36) { // Kick
           const osc = audioCtx.createOscillator(); osc.type = 'sine';
-          osc.frequency.setValueAtTime(150, sTime); osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.1);
-          gainNode.gain.setValueAtTime(maxVol * 2, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.1);
-          osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.1);
+          osc.frequency.setValueAtTime(150, sTime); 
+          osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.15);
+          gainNode.gain.setValueAtTime(maxVol * 2, sTime); 
+          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.15);
+          osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.15);
           activeNodes.push({ source: osc, gainNode });
-        } else if (p < 42) {
+          
+        } else if (p === 38) { // Snare
+          const tri = audioCtx.createOscillator(); tri.type = 'triangle';
+          tri.frequency.setValueAtTime(150, sTime); tri.frequency.exponentialRampToValueAtTime(50, sTime + 0.1);
+          const triGain = audioCtx.createGain();
+          triGain.gain.setValueAtTime(maxVol, sTime); triGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.1);
+          tri.connect(triGain); triGain.connect(gainNode);
+          tri.start(sTime); tri.stop(sTime + 0.1);
+          activeNodes.push({ source: tri, gainNode: triGain });
+          
           const nSrc = audioCtx.createBufferSource(); nSrc.buffer = noiseBuffer;
           const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 1000;
-          gainNode.gain.setValueAtTime(maxVol, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.2);
-          nSrc.connect(filter).connect(gainNode); nSrc.start(sTime); nSrc.stop(sTime + 0.2);
-          activeNodes.push({ source: nSrc, gainNode });
-        } else {
+          const nGain = audioCtx.createGain();
+          nGain.gain.setValueAtTime(maxVol, sTime); nGain.gain.exponentialRampToValueAtTime(0.01, sTime + 0.2);
+          nSrc.connect(filter); filter.connect(nGain); nGain.connect(gainNode);
+          nSrc.start(sTime); nSrc.stop(sTime + 0.2);
+          activeNodes.push({ source: nSrc, gainNode: nGain });
+          
+        } else if (p === 40) { // CHH
           const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
           const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
-          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
+          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); 
+          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
           hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.05);
           activeNodes.push({ source: hSrc, gainNode });
+          
+        } else if (p === 41) { // OHH
+          const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
+          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
+          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); 
+          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.3);
+          hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.3);
+          activeNodes.push({ source: hSrc, gainNode });
+          
+        } else if (p === 43) { // Crash
+          const cSrc = audioCtx.createBufferSource(); cSrc.buffer = noiseBuffer;
+          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 4000;
+          gainNode.gain.setValueAtTime(maxVol * 0.8, sTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 1.0);
+          cSrc.connect(filter).connect(gainNode); cSrc.start(sTime); cSrc.stop(sTime + 1.0);
+          activeNodes.push({ source: cSrc, gainNode });
         }
+        
       } else {
         const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12);
         const env = track.env;
@@ -714,7 +770,7 @@ function playSong() {
 
 function stopSong() {
   if (playTimeout) { clearTimeout(playTimeout); playTimeout = null; }
-  activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); n.gainNode.disconnect(); });
+  activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); if(n.gainNode) n.gainNode.disconnect(); });
   activeNodes = []; isPlaying = false;
   document.getElementById('btnPlay').style.background = '';
   document.getElementById('btnPlay').style.color = '';
@@ -728,8 +784,8 @@ setTimeout(() => {
   updateTrackBackground();
   const sY = document.getElementById('scrollYWrapper');
   
-  // C4付近を初期位置にする
-  sY.scrollTop = (TOTAL_KEYS - 48) * KEY_HEIGHT - (pianoCanvas.parentElement.clientHeight / 2);
+  // 起動時にドラム音階(C5周辺)が中心になるようにスクロール位置をセット
+  sY.scrollTop = (TOTAL_KEYS - 42) * KEY_HEIGHT - (pianoCanvas.parentElement.clientHeight / 2);
   scrollOffsetY = sY.scrollTop;
   
   updateScrollBounds(); 
