@@ -40,13 +40,14 @@
   button, select, input[type="text"], input[type="number"] {
     background: #444; color: var(--text-main);
     border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; font-size: 0.75rem;
-    cursor: pointer;
+    cursor: pointer; transition: opacity 0.2s;
   }
   button:active { background: #666; }
+  button:disabled { cursor: not-allowed; opacity: 0.5; }
   input[type="text"], input[type="number"] { background: var(--bg-input); cursor: text; }
   
   .btn-blue { background: #2a5a8a; border-color: #3a7aba; }
-  .btn-blue:active { background: #3a7aba; }
+  .btn-blue:active:not(:disabled) { background: #3a7aba; }
   .btn-yellow { background: #8a7a2a; border-color: #baa23a; }
   .btn-yellow.active { background: #baa23a; color: #000; }
   
@@ -64,17 +65,24 @@
     flex: 1; min-height: 0;
     display: grid;
     grid-template-columns: 1fr 18px;
-    grid-template-rows: 1fr 40px 18px;
+    grid-template-rows: 1fr 24px 40px 18px; /* ボリュームメニュー用の24pxを追加 */
     overflow: hidden; padding: 2px; gap: 2px;
   }
 
   .piano-roll-container { grid-column: 1; grid-row: 1; background: #141f2a; position: relative; overflow: hidden; border: 1px solid var(--border-color); transition: background-color 0.2s;}
-  .volume-container { grid-column: 1; grid-row: 2; background: #141f2a; position: relative; overflow: hidden; border: 1px solid var(--border-color); transition: background-color 0.2s;}
+  
+  .vol-menu {
+    grid-column: 1; grid-row: 2;
+    display: flex; align-items: center; gap: 15px; padding: 0 8px;
+    background: #222; border: 1px solid var(--border-color); border-bottom: none; font-size: 0.75rem;
+  }
+  
+  .volume-container { grid-column: 1; grid-row: 3; background: #141f2a; position: relative; overflow: hidden; border: 1px solid var(--border-color); transition: background-color 0.2s;}
   
   canvas { display: block; touch-action: none; cursor: crosshair; }
 
   .scroll-y-wrapper { grid-column: 2; grid-row: 1; overflow-y: scroll; overflow-x: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
-  .scroll-x-wrapper { grid-column: 1; grid-row: 3; overflow-x: scroll; overflow-y: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
+  .scroll-x-wrapper { grid-column: 1; grid-row: 4; overflow-x: scroll; overflow-y: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
   
   .scroll-y-wrapper::-webkit-scrollbar, .scroll-x-wrapper::-webkit-scrollbar { width: 14px; height: 14px; }
   .scroll-y-wrapper::-webkit-scrollbar-track, .scroll-x-wrapper::-webkit-scrollbar-track { background: #333; border-radius: 7px; }
@@ -93,7 +101,7 @@
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
   
   .setting-row { display: flex; align-items: center; margin-bottom: 8px; gap: 6px; }
-  .setting-label { width: 70px; font-size: 0.8rem; }
+  .setting-label { width: 90px; font-size: 0.8rem; }
   
   .env-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
   .env-table th { padding: 2px; font-weight: normal; color: #aaa; }
@@ -131,7 +139,9 @@
     <option value="4">16分3連符</option>
   </select>
   <button id="btnErase" class="btn-yellow">消ゴムOFF</button>
-  <span style="font-size:0.75rem;">拡縮</span>
+  <button id="btnUd" class="btn-blue" disabled>Ud</button>
+  <button id="btnRd" class="btn-blue" disabled>Rd</button>
+  <span style="font-size:0.75rem; margin-left: 4px;">拡縮</span>
   <select id="valZoom">
     <option value="25">25%</option>
     <option value="50">50%</option>
@@ -164,6 +174,13 @@
 <div class="editor-layout">
   <div class="piano-roll-container" id="rollWrapper"><canvas id="pianoCanvas"></canvas></div>
   <div class="scroll-y-wrapper" id="scrollYWrapper"><div id="scrollYInner" style="width: 1px;"></div></div>
+  
+  <div class="vol-menu" id="volMenu">
+    <span style="font-weight: bold;">Volume</span>
+    <label style="cursor:pointer;"><input type="checkbox" id="chkVolLock"> ロック</label>
+    <label style="cursor:pointer;"><input type="checkbox" id="chkVolSnap"> 10%スナップ</label>
+  </div>
+  
   <div class="volume-container" id="volWrapper"><canvas id="volumeCanvas"></canvas></div>
   <div class="scroll-x-wrapper" id="scrollXWrapper"><div id="scrollXInner" style="height: 1px;"></div></div>
 </div>
@@ -196,10 +213,14 @@
       <div class="setting-label">テンポ</div>
       <input type="number" id="setTempo" value="120" min="20" max="300" style="width: 50px;">
     </div>
-    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
+    <div class="setting-row">
       <div class="setting-label">リピート</div>
       <span>開始拍 <input type="number" id="setLoopS" value="1" min="1" style="width: 45px;"></span>
       <span style="margin-left: 5px;">終了拍 <input type="number" id="setLoopE" value="17" min="2" style="width: 45px;"></span>
+    </div>
+    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
+      <div class="setting-label">デフォルト音量</div>
+      <input type="number" id="setDefaultVol" value="80" min="0" max="100" style="width: 50px;">
     </div>
     
     <div style="font-size: 0.8rem; margin-bottom: 4px;">音色 (Tr1 - Tr3)</div>
@@ -220,18 +241,21 @@
     <div class="modal-title">コピペ</div>
     <div class="setting-row">
       <div class="setting-label">コピー元</div>
-      開始拍 <input type="number" value="1" style="width:45px;"> 終了拍 <input type="number" value="5" style="width:45px;">
+      開始拍 <input type="number" id="copyStart" value="1" style="width:45px;"> 終了拍 <input type="number" id="copyEnd" value="5" style="width:45px;">
     </div>
     <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
       <div class="setting-label">コピー先</div>
-      開始拍 <input type="number" value="5" style="width:45px;">
+      開始拍 <input type="number" id="pasteStart" value="5" style="width:45px;">
     </div>
     <div style="font-size: 0.8rem; margin-bottom: 4px;">コピー対象トラック</div>
     <div style="display: flex; gap: 8px; font-size: 0.8rem;">
-      <label><input type="checkbox" checked> Tr1</label>
-      <label><input type="checkbox" checked> Tr2</label>
-      <label><input type="checkbox" checked> Tr3</label>
-      <label><input type="checkbox" checked> No</label>
+      <label><input type="checkbox" id="chkCopyTr0" checked> Tr1</label>
+      <label><input type="checkbox" id="chkCopyTr1" checked> Tr2</label>
+      <label><input type="checkbox" id="chkCopyTr2" checked> Tr3</label>
+      <label><input type="checkbox" id="chkCopyTr3" checked> No</label>
+    </div>
+    <div style="font-size: 0.75rem; color: #f55; margin-top: 15px; background: #311; padding: 6px; border-radius: 4px;">
+      ※この操作はアンドゥで戻せません。また、コピペを行うと、いままでのアンドゥ情報が消えます。
     </div>
     <div class="modal-actions">
       <button class="btnCancelModal">キャンセル</button>
@@ -255,6 +279,7 @@ let currentTitle = "new music";
 let currentTempo = 120;
 let loopStartBeat = 1;
 let loopEndBeat = 17;
+let defaultVolume = 80;
 
 let audioCtx = null;
 let noiseBuffer = null;
@@ -282,6 +307,42 @@ tracksData[3].notes.push({ tick: 24, len: 12, pitchIdx: 38, vol: 90 });
 tracksData[3].notes.push({ tick: 48, len: 12, pitchIdx: 36, vol: 90 });
 tracksData[3].notes.push({ tick: 72, len: 12, pitchIdx: 43, vol: 90 });
 
+// --- Undo / Redo システム ---
+let undoStack = [];
+let redoStack = [];
+
+function updateUndoRedoUI() {
+  document.getElementById('btnUd').disabled = undoStack.length === 0;
+  document.getElementById('btnRd').disabled = redoStack.length === 0;
+}
+
+function saveState() {
+  const state = tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) }));
+  undoStack.push(state);
+  if (undoStack.length > 10) undoStack.shift(); // 最大10件
+  redoStack = [];
+  updateUndoRedoUI();
+}
+
+function restoreState(state) {
+  state.forEach((st, idx) => { tracksData[idx].notes = JSON.parse(JSON.stringify(st.notes)); });
+  render();
+}
+
+document.getElementById('btnUd').addEventListener('click', () => {
+  if (undoStack.length === 0) return;
+  redoStack.push(tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })));
+  restoreState(undoStack.pop());
+  updateUndoRedoUI();
+});
+
+document.getElementById('btnRd').addEventListener('click', () => {
+  if (redoStack.length === 0) return;
+  undoStack.push(tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })));
+  restoreState(redoStack.pop());
+  updateUndoRedoUI();
+});
+
 const pianoCanvas = document.getElementById('pianoCanvas');
 const pCtx = pianoCanvas.getContext('2d');
 const volCanvas = document.getElementById('volumeCanvas');
@@ -290,7 +351,6 @@ const vCtx = volCanvas.getContext('2d');
 function getPxPerTick() { return (BASE_BEAT_WIDTH * currentZoom) / TICKS_PER_BEAT; }
 
 function updateScrollBounds() {
-  // ループ範囲外にも配置できるよう、最大のTickを検索してスクロール領域を確保
   let maxTicks = loopEndBeat * TICKS_PER_BEAT + (TICKS_PER_BEAT * 8);
   tracksData.forEach(tr => tr.notes.forEach(n => { maxTicks = Math.max(maxTicks, n.tick + n.len + (TICKS_PER_BEAT*4)); }));
   
@@ -319,7 +379,6 @@ resizeObserver.observe(document.querySelector('.editor-layout'));
 
 document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { scrollOffsetX = e.target.scrollLeft; render(); });
 document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { scrollOffsetY = e.target.scrollTop; render(); });
-
 document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
 document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
 
@@ -342,6 +401,7 @@ document.querySelectorAll('.track-tab').forEach((tab) => {
     updateTrackBackground(); render();
   });
 });
+
 document.querySelectorAll('.mute-check').forEach((chk) => {
   chk.addEventListener('change', (e) => {
     const tr = parseInt(e.target.dataset.track);
@@ -351,9 +411,42 @@ document.querySelectorAll('.mute-check').forEach((chk) => {
 
 document.getElementById('btnImp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONインポートを実装します。"));
 document.getElementById('btnExp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONエクスポートを実装します。"));
-document.getElementById('btnCopyPaste').addEventListener('click', () => { document.getElementById('modalCopy').classList.add('show'); });
-document.getElementById('execCopy').addEventListener('click', () => { alert("ステークホルダ：将来的にコピペ機能を実装します。"); document.getElementById('modalCopy').classList.remove('show'); });
 document.querySelectorAll('.btnCancelModal').forEach(btn => { btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); }); });
+
+// --- コピペ処理 ---
+document.getElementById('btnCopyPaste').addEventListener('click', () => { document.getElementById('modalCopy').classList.add('show'); });
+document.getElementById('execCopy').addEventListener('click', () => {
+  const cStart = parseInt(document.getElementById('copyStart').value);
+  const cEnd = parseInt(document.getElementById('copyEnd').value);
+  const pStart = parseInt(document.getElementById('pasteStart').value);
+  
+  if(isNaN(cStart) || isNaN(cEnd) || isNaN(pStart) || cStart >= cEnd) {
+    alert("開始拍と終了拍の設定が不正です。"); return;
+  }
+  
+  const startTick = (cStart - 1) * TICKS_PER_BEAT;
+  const lengthTick = (cEnd - cStart) * TICKS_PER_BEAT;
+  const destTick = (pStart - 1) * TICKS_PER_BEAT;
+  const deltaTick = destTick - startTick;
+  
+  [0, 1, 2, 3].forEach(i => {
+    if (document.getElementById(`chkCopyTr${i}`).checked) {
+      let trNotes = tracksData[i].notes;
+      // 貼り付け先の範囲にある既存ノートを削除（上書き）
+      trNotes = trNotes.filter(n => !(n.tick >= destTick && n.tick < destTick + lengthTick));
+      // コピー元のノートを取得してシフト
+      const srcNotes = tracksData[i].notes.filter(n => n.tick >= startTick && n.tick < startTick + lengthTick);
+      srcNotes.forEach(n => { trNotes.push({ ...n, tick: n.tick + deltaTick }); });
+      tracksData[i].notes = trNotes;
+    }
+  });
+  
+  // アンドゥ情報のクリア
+  undoStack = []; redoStack = []; updateUndoRedoUI();
+  
+  document.getElementById('modalCopy').classList.remove('show');
+  updateScrollBounds(); render();
+});
 
 // --- SAVE / LOAD ---
 const STORAGE_KEY = "mml_studio_music_data";
@@ -369,7 +462,7 @@ document.getElementById('execSave').addEventListener('click', () => {
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   const now = new Date();
   const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  const mml_data = { tracks: tracksData, tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat };
+  const mml_data = { tracks: tracksData, tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat, defaultVol: defaultVolume };
   const existingIdx = savedList.findIndex(d => d.title === currentTitle);
   if (existingIdx >= 0) savedList[existingIdx] = { title: currentTitle, update_date, mml_data };
   else savedList.push({ title: currentTitle, update_date, mml_data });
@@ -404,7 +497,10 @@ document.getElementById('execLoad').addEventListener('click', () => {
     currentTempo = data.mml_data.tempo;
     loopStartBeat = data.mml_data.loopS;
     loopEndBeat = data.mml_data.loopE;
+    if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
+    
     tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = !tr.mute; });
+    undoStack = []; redoStack = []; updateUndoRedoUI();
     updateScrollBounds(); render();
   }
   document.getElementById('modalLoad').classList.remove('show');
@@ -432,6 +528,7 @@ document.getElementById('btnSettings').addEventListener('click', () => {
   document.getElementById('setTempo').value = currentTempo;
   document.getElementById('setLoopS').value = loopStartBeat;
   document.getElementById('setLoopE').value = loopEndBeat;
+  document.getElementById('setDefaultVol').value = defaultVolume;
   renderEnvTable();
   document.getElementById('modalSettings').classList.add('show');
 });
@@ -439,6 +536,8 @@ document.getElementById('execSettings').addEventListener('click', () => {
   currentTempo = parseInt(document.getElementById('setTempo').value);
   loopStartBeat = parseInt(document.getElementById('setLoopS').value);
   loopEndBeat = parseInt(document.getElementById('setLoopE').value);
+  defaultVolume = parseInt(document.getElementById('setDefaultVol').value);
+  
   for(let i=0; i<3; i++) {
     tracksData[i].type = document.getElementById(`setW${i}`).value;
     tracksData[i].env.a = parseFloat(document.getElementById(`setA${i}`).value);
@@ -472,6 +571,9 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
   const notes = tracksData[currentTrack].notes;
   const hitNote = notes.find(n => n.pitchIdx === pitchIdx && tick >= n.tick && tick < n.tick + n.len);
 
+  // 変更が確定する前に状態を保存
+  saveState();
+
   if (isEraser) {
     if (hitNote) tracksData[currentTrack].notes = notes.filter(n => n !== hitNote);
     render(); return;
@@ -486,9 +588,13 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
   } else {
     const snapT = Math.floor(tick / snapTicks) * snapTicks;
     const overlapping = notes.filter(n => Math.max(snapT, n.tick) < Math.min(snapT + snapTicks, n.tick + n.len));
-    if (overlapping.length >= 3) return;
+    if (overlapping.length >= 3) {
+      undoStack.pop(); // キャンセル時はスタックから戻す
+      updateUndoRedoUI();
+      return;
+    }
 
-    const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: 80 };
+    const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: defaultVolume };
     notes.push(newNote);
     dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
     updateScrollBounds();
@@ -526,17 +632,24 @@ pianoCanvas.addEventListener('pointermove', (e) => {
 pianoCanvas.addEventListener('pointerup', () => { if (dragState) { dragState = null; updateScrollBounds(); } });
 pianoCanvas.addEventListener('pointercancel', () => { dragState = null; });
 
-volCanvas.addEventListener('pointerdown', handleVolume);
+volCanvas.addEventListener('pointerdown', (e) => {
+  if (isPlaying || document.getElementById('chkVolLock').checked) return;
+  saveState();
+  handleVolume(e);
+});
 volCanvas.addEventListener('pointermove', (e) => { if (e.buttons === 1) handleVolume(e); });
 function handleVolume(e) {
-  if (isPlaying) return;
+  if (isPlaying || document.getElementById('chkVolLock').checked) return;
   volCanvas.setPointerCapture(e.pointerId);
   const pos = getMousePos(e, volCanvas);
   const worldX = pos.x + scrollOffsetX;
   const tick = worldX / getPxPerTick();
+  const doSnap = document.getElementById('chkVolSnap').checked;
+  
   tracksData[currentTrack].notes.forEach(note => {
     if (tick >= note.tick && tick < note.tick + note.len) {
       let vol = 100 - (pos.y / volCanvas.height * 100);
+      if (doSnap) vol = Math.round(vol / 10) * 10;
       note.vol = Math.max(0, Math.min(100, Math.round(vol)));
     }
   });
@@ -569,10 +682,25 @@ function render() {
     pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
     pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
     
+    // Cのキー表示とオクターブの破線表示
+    if (pitchIdx % 12 === 0) {
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      pCtx.font = "10px sans-serif";
+      pCtx.fillText("C", scrollOffsetX + 2, y + 12);
+      
+      pCtx.beginPath();
+      pCtx.setLineDash([4, 4]);
+      pCtx.moveTo(scrollOffsetX, y);
+      pCtx.lineTo(scrollOffsetX + w, y);
+      pCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      pCtx.stroke();
+      pCtx.setLineDash([]);
+    }
+    
     if (currentTrack === 3 && DRUM_MAP[pitchIdx]) {
       pCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       pCtx.font = "10px sans-serif";
-      pCtx.fillText(DRUM_MAP[pitchIdx], scrollOffsetX + 4, y + 12);
+      pCtx.fillText(DRUM_MAP[pitchIdx], scrollOffsetX + 14, y + 12);
     }
   }
 
@@ -740,13 +868,10 @@ function processNextTick() {
       currentPlayTick = loopStartTick;
     }
   } else {
-    // Check end of all tracks
     let maxTick = 0;
     tracksData.forEach(tr => {
       if (!tr.mute) tr.notes.forEach(n => maxTick = Math.max(maxTick, n.tick + n.len));
     });
-    
-    // 全ての音が鳴り終わったら自動停止 (余韻を考慮して2秒後に完全STOP)
     if (currentPlayTick >= maxTick) {
       isPlaying = false;
       setTimeout(() => { if (!isPlaying) stopSong(); }, 2000); 
@@ -756,7 +881,6 @@ function processNextTick() {
 
 function scheduler() {
   if (!isPlaying) return;
-  // 0.1秒先までの音符をスケジュール
   while (nextTickTime < audioCtx.currentTime + 0.1) {
     tracksData.forEach((track, tIdx) => {
       if (track.mute) return;
@@ -767,8 +891,6 @@ function scheduler() {
     processNextTick();
     if (!isPlaying) break;
   }
-  
-  // 鳴り終わったノードのメモリ解放
   const currTime = audioCtx.currentTime;
   activeNodes = activeNodes.filter(n => n.endTime > currTime);
 
@@ -779,7 +901,6 @@ function playSong() {
   initAudio(); stopSong(); isPlaying = true;
   document.getElementById('btnPlay').style.background = '#4a9a4a';
   document.getElementById('btnPlay').style.color = '#fff';
-
   currentPlayTick = 0;
   nextTickTime = audioCtx.currentTime + 0.05;
   scheduler();
