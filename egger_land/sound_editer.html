@@ -2,277 +2,545 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cyber-MML Studio V3</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>mml studio</title>
 <style>
   :root {
-    --primary: #0ff;
-    --bg-dark: #050a15;
-    --glass-bg: rgba(10, 30, 50, 0.6);
-    --glass-border: rgba(0, 255, 255, 0.3);
+    --c-tr1: #88ccff;
+    --c-tr2: #88ff88;
+    --c-tr3: #ff88cc;
+    --c-tr4: #ffcc88;
+    
+    --bg-base: #1e1e1e;
+    --bg-panel: #2d2d2d;
+    --bg-input: #111;
+    --border-color: #555;
+    --text-main: #f0f0f0;
+    --text-dark: #222;
   }
-  * { box-sizing: border-box; user-select: none; }
-  body {
-    margin: 0; padding: 0;
-    background: radial-gradient(circle at center, #112233, var(--bg-dark));
-    color: var(--primary);
+  
+  body, html {
+    margin: 0; padding: 0; width: 100%; height: 100dvh;
+    background: var(--bg-base); color: var(--text-main);
     font-family: 'Segoe UI', sans-serif;
-    height: 100vh; display: flex; flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; user-select: none; -webkit-user-select: none;
+    display: flex; flex-direction: column;
   }
-  .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
-  }
-  header { padding: 10px; text-align: center; font-weight: bold; text-shadow: 0 0 10px var(--primary); }
   
-  .controls, .toolbar { display: flex; gap: 10px; padding: 8px; justify-content: center; flex-wrap: wrap; }
-  button {
-    background: rgba(0, 200, 255, 0.2); color: var(--primary);
-    border: 1px solid var(--primary); padding: 6px 12px; border-radius: 4px;
-    cursor: pointer; font-weight: bold; transition: all 0.2s;
+  .title-bar {
+    padding: 2px 6px; background: #000; border-bottom: 1px solid var(--border-color);
+    font-size: 0.8rem; font-weight: bold;
   }
-  button:hover, button.active { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); }
   
-  .track-tabs { display: flex; gap: 5px; padding: 0 10px; }
-  .track-tab {
-    flex: 1; padding: 8px 0; text-align: center; background: rgba(0, 50, 100, 0.4);
-    border: 1px solid var(--glass-border); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer;
+  .toolbar {
+    display: flex; gap: 4px; padding: 4px 6px; align-items: center; flex-wrap: wrap;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border-color);
   }
-  .track-tab.active { background: var(--glass-bg); border-color: var(--primary); color: #fff; }
+  
+  button, select, input[type="text"], input[type="number"] {
+    background: #444; color: var(--text-main);
+    border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; font-size: 0.75rem;
+    cursor: pointer;
+  }
+  button:active { background: #666; }
+  input[type="text"], input[type="number"] { background: var(--bg-input); cursor: text; }
+  
+  .btn-blue { background: #2a5a8a; border-color: #3a7aba; }
+  .btn-blue:active { background: #3a7aba; }
+  .btn-yellow { background: #8a7a2a; border-color: #baa23a; }
+  .btn-yellow.active { background: #baa23a; color: #000; }
+  
+  .track-tabs { display: flex; gap: 2px; padding: 4px 6px 0; background: var(--bg-panel); }
+  .tab-item { display: flex; align-items: center; border: 1px solid var(--border-color); border-bottom: none; border-radius: 4px 4px 0 0; background: #222; overflow: hidden; }
+  .track-tab { padding: 4px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+  
+  .tab-item[data-idx="0"] .track-tab.active { background: var(--c-tr1); color: var(--text-dark); }
+  .tab-item[data-idx="1"] .track-tab.active { background: var(--c-tr2); color: var(--text-dark); }
+  .tab-item[data-idx="2"] .track-tab.active { background: var(--c-tr3); color: var(--text-dark); }
+  .tab-item[data-idx="3"] .track-tab.active { background: var(--c-tr4); color: var(--text-dark); }
+  .mute-check { margin: 0 4px; cursor: pointer; accent-color: #ffaa00; }
 
-  .editor-container { flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 5px; overflow: hidden; }
-  
-  .synth-params { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.8rem; padding: 5px; border-bottom: 1px solid var(--glass-border); }
-  .synth-params label { display: flex; align-items: center; gap: 5px; }
-  .synth-params input[type="range"] { width: 80px; accent-color: var(--primary); }
-  select { background: #000; color: var(--primary); border: 1px solid var(--primary); border-radius: 4px; }
+  .editor-layout {
+    flex: 1; min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 18px;
+    grid-template-rows: 1fr 40px 18px;
+    overflow: hidden; padding: 2px; gap: 2px;
+  }
 
-  .scroll-wrapper { flex: 1; position: relative; overflow-x: auto; overflow-y: hidden; display: flex; flex-direction: column; border: 1px solid var(--glass-border); border-radius: 8px; }
+  .piano-roll-container { grid-column: 1; grid-row: 1; background: #141f2a; position: relative; overflow: hidden; border: 1px solid var(--border-color); transition: background-color 0.2s;}
+  .volume-container { grid-column: 1; grid-row: 2; background: #141f2a; position: relative; overflow: hidden; border: 1px solid var(--border-color); transition: background-color 0.2s;}
   
-  .piano-roll-container { flex: 3; overflow-y: scroll; position: relative; background: rgba(0, 0, 0, 0.6); }
-  
-  /* タップ操作を正確に取得するため touch-action: none を指定 */
   canvas { display: block; touch-action: none; cursor: crosshair; }
+
+  /* ネイティブスクロール領域を利用した代替スクロールバー */
+  .scroll-y-wrapper { grid-column: 2; grid-row: 1; overflow-y: scroll; overflow-x: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
+  .scroll-x-wrapper { grid-column: 1; grid-row: 3; overflow-x: scroll; overflow-y: hidden; scrollbar-color: #888 #333; scrollbar-width: thin; }
   
-  .volume-container { flex: 1; background: rgba(0, 10, 20, 0.8); border-top: 1px solid var(--glass-border); position: relative; overflow: hidden;}
+  .scroll-y-wrapper::-webkit-scrollbar, .scroll-x-wrapper::-webkit-scrollbar { width: 14px; height: 14px; }
+  .scroll-y-wrapper::-webkit-scrollbar-track, .scroll-x-wrapper::-webkit-scrollbar-track { background: #333; border-radius: 7px; }
+  .scroll-y-wrapper::-webkit-scrollbar-thumb, .scroll-x-wrapper::-webkit-scrollbar-thumb { background: #888; border-radius: 7px; }
   
-  .mml-modal {
-    display: none; position: absolute; top: 10%; left: 10%; right: 10%; bottom: 10%;
-    z-index: 100; flex-direction: column; padding: 15px;
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
   }
-  .mml-modal.show { display: flex; }
-  textarea { flex: 1; background: #000; color: #fff; border: 1px solid var(--primary); font-family: monospace; resize: none; margin-top: 10px; padding: 10px; }
-  .close-btn { align-self: flex-end; }
+  .modal-overlay.show { display: flex; }
+  .modal-content {
+    background: var(--bg-panel); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);
+    min-width: 300px; max-width: 95%; max-height: 95%; overflow-y: auto;
+  }
+  .modal-title { font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; border-bottom: 1px solid #444; padding-bottom: 4px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+  
+  .setting-row { display: flex; align-items: center; margin-bottom: 8px; gap: 6px; }
+  .setting-label { width: 70px; font-size: 0.8rem; }
+  
+  .env-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
+  .env-table th { padding: 2px; font-weight: normal; color: #aaa; }
+  .env-table td { padding: 2px; }
+  .env-table input[type="number"] { width: 40px; text-align: center; padding: 2px; }
+  .env-table select { width: 70px; padding: 2px; }
 </style>
 </head>
 <body>
 
-<header>Cyber-MML Studio V3</header>
+<div class="title-bar">mml studio - [<span id="dispTitle">new music</span>]</div>
 
-<div class="controls glass">
-  <button id="btnPlay">▶ PLAY</button>
-  <button id="btnStop">■ STOP</button>
-  <button id="btnShowMML">{"} MML OUT</button>
+<div class="toolbar">
+  <button id="btnPlay" class="btn-blue">PLAY</button>
+  <button id="btnStop" class="btn-blue">STOP</button>
+  <button id="btnSave" class="btn-blue">SAVE</button>
+  <button id="btnLoad" class="btn-blue">LOAD</button>
+  <button id="btnImp" class="btn-blue">IMP</button>
+  <button id="btnExp" class="btn-blue">EXP</button>
+  <button id="btnSettings">⚙</button>
 </div>
 
-<div class="toolbar glass">
-  <button class="tool-btn active" data-len="1">4分音符</button>
-  <button class="tool-btn" data-len="0.5">8分音符</button>
-  <button class="tool-btn" data-len="0.25">16分音符</button>
-  <button class="tool-btn" id="btnErase" style="border-color: #f00; color: #f00;">消しゴム</button>
+<div class="toolbar">
+  <select id="valNoteType">
+    <option value="96">全音符</option>
+    <option value="48">2分音符</option>
+    <option value="24" selected>4分音符</option>
+    <option value="16">4分3連符</option>
+    <option value="12">8分音符</option>
+    <option value="8">8分3連符</option>
+    <option value="6">16分音符</option>
+    <option value="4">16分3連符</option>
+  </select>
+  <button id="btnErase" class="btn-yellow">消ゴムOFF</button>
+  <span style="font-size:0.75rem;">拡縮</span>
+  <select id="valZoom">
+    <option value="25">25%</option>
+    <option value="50">50%</option>
+    <option value="75">75%</option>
+    <option value="100" selected>100%</option>
+    <option value="150">150%</option>
+  </select>
+  <button id="btnCopyPaste" class="btn-blue">コピペ</button>
 </div>
 
 <div class="track-tabs">
-  <div class="track-tab active" data-track="0">Tr 1 (Square)</div>
-  <div class="track-tab" data-track="1">Tr 2 (Square)</div>
-  <div class="track-tab" data-track="2">Tr 3 (Triangle)</div>
-  <div class="track-tab" data-track="3">Tr 4 (Noise)</div>
-</div>
-
-<div class="editor-container glass">
-  <div class="synth-params">
-    <label>Wave: 
-      <select id="waveType">
-        <option value="square12">Square (12.5%)</option>
-        <option value="square25">Square (25%)</option>
-        <option value="square50" selected>Square (50%)</option>
-        <option value="triangle">Triangle</option>
-        <option value="noise">Noise</option>
-      </select>
-    </label>
-    <label>A <input type="range" id="envA" min="0" max="1" step="0.01" value="0.01"></label>
-    <label>D <input type="range" id="envD" min="0" max="1" step="0.01" value="0.1"></label>
-    <label>S <input type="range" id="envS" min="0" max="1" step="0.01" value="0.5"></label>
-    <label>R <input type="range" id="envR" min="0" max="1" step="0.01" value="0.1"></label>
+  <div class="tab-item" data-idx="0">
+    <div class="track-tab active" data-track="0">Tr1</div>
+    <input type="checkbox" class="mute-check" data-track="0" checked>
   </div>
-
-  <div class="scroll-wrapper" id="scrollSync">
-    <div class="piano-roll-container" id="rollWrapper">
-      <canvas id="pianoCanvas"></canvas>
-    </div>
-    <div class="volume-container">
-      <canvas id="volumeCanvas"></canvas>
-    </div>
+  <div class="tab-item" data-idx="1">
+    <div class="track-tab" data-track="1">Tr2</div>
+    <input type="checkbox" class="mute-check" data-track="1" checked>
+  </div>
+  <div class="tab-item" data-idx="2">
+    <div class="track-tab" data-track="2">Tr3</div>
+    <input type="checkbox" class="mute-check" data-track="2" checked>
+  </div>
+  <div class="tab-item" data-idx="3">
+    <div class="track-tab" data-track="3">No</div>
+    <input type="checkbox" class="mute-check" data-track="3" checked>
   </div>
 </div>
 
-<div class="mml-modal glass" id="mmlModal">
-  <button class="close-btn" id="btnCloseMML">✕ CLOSE</button>
-  <div>Generated MML (All Tracks)</div>
-  <textarea id="mmlOutput" readonly></textarea>
+<div class="editor-layout">
+  <div class="piano-roll-container" id="rollWrapper"><canvas id="pianoCanvas"></canvas></div>
+  <div class="scroll-y-wrapper" id="scrollYWrapper"><div id="scrollYInner" style="width: 1px;"></div></div>
+  <div class="volume-container" id="volWrapper"><canvas id="volumeCanvas"></canvas></div>
+  <div class="scroll-x-wrapper" id="scrollXWrapper"><div id="scrollXInner" style="height: 1px;"></div></div>
+</div>
+
+<div class="modal-overlay" id="modalSave">
+  <div class="modal-content">
+    <div class="modal-title">タイトルを入力してください</div>
+    <input type="text" id="saveTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value="new music">
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execSave" class="btn-blue">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLoad">
+  <div class="modal-content">
+    <div class="modal-title">読み込むタイトルを選択してください</div>
+    <select id="loadSelect" style="width: 100%; padding: 6px;"></select>
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execLoad" class="btn-blue">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSettings">
+  <div class="modal-content" style="min-width: 320px;">
+    <div class="setting-row">
+      <div class="setting-label">テンポ</div>
+      <input type="number" id="setTempo" value="120" min="20" max="300" style="width: 50px;">
+    </div>
+    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
+      <div class="setting-label">リピート</div>
+      <span>開始拍 <input type="number" id="setLoopS" value="1" min="1" style="width: 45px;"></span>
+      <span style="margin-left: 5px;">終了拍 <input type="number" id="setLoopE" value="17" min="2" style="width: 45px;"></span>
+    </div>
+    
+    <div style="font-size: 0.8rem; margin-bottom: 4px;">音色 (Tr1 - Tr3)</div>
+    <table class="env-table">
+      <tr><th></th><th>波形</th><th>Attack</th><th>Decay</th><th>Sustain</th><th>Release</th></tr>
+      <tbody id="envTbody"></tbody>
+    </table>
+    
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execSettings" class="btn-blue">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCopy">
+  <div class="modal-content">
+    <div class="modal-title">コピペ</div>
+    <div class="setting-row">
+      <div class="setting-label">コピー元</div>
+      開始拍 <input type="number" value="1" style="width:45px;"> 終了拍 <input type="number" value="5" style="width:45px;">
+    </div>
+    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
+      <div class="setting-label">コピー先</div>
+      開始拍 <input type="number" value="5" style="width:45px;">
+    </div>
+    <div style="font-size: 0.8rem; margin-bottom: 4px;">コピー対象トラック</div>
+    <div style="display: flex; gap: 8px; font-size: 0.8rem;">
+      <label><input type="checkbox" checked> Tr1</label>
+      <label><input type="checkbox" checked> Tr2</label>
+      <label><input type="checkbox" checked> Tr3</label>
+      <label><input type="checkbox" checked> No</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btnCancelModal">キャンセル</button>
+      <button id="execCopy" class="btn-blue">実行</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-const BEAT_WIDTH = 64; 
+const TICKS_PER_BEAT = 24;
 const KEY_HEIGHT = 16;
-const TOTAL_KEYS = 72; 
+const TOTAL_KEYS = 72; // C2 ~ B7
+const BASE_BEAT_WIDTH = 48;
+const TRACK_COLORS = ['#88ccff', '#88ff88', '#ff88cc', '#ffcc88'];
+const TRACK_BG_COLORS = ['#141f2a', '#142a14', '#2a1420', '#2a2014']; 
 
-let currentTrack = 0;
-let drawLength = 1; 
-let isEraser = false;
+let currentTitle = "new music";
+let currentTempo = 120;
+let loopStartBeat = 1;
+let loopEndBeat = 17;
+
+let audioCtx = null;
 let isPlaying = false;
+let playTimeout = null;
 let activeNodes = [];
 let noiseBuffer = null;
 
-const tracksData = [
-  { wave: 'square50', env: {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, notes: [] },
-  { wave: 'square25', env: {a: 0.01, d: 0.2, s: 0.3, r: 0.2}, notes: [] },
-  { wave: 'triangle', env: {a: 0.01, d: 0.0, s: 1.0, r: 0.1}, notes: [] },
-  { wave: 'noise', env: {a: 0.01, d: 0.1, s: 0.0, r: 0.0}, notes: [] }
+let currentTrack = 0;
+let isEraser = false;
+let currentZoom = 1.0;
+let snapTicks = 24;
+let scrollOffsetX = 0;
+let scrollOffsetY = 0;
+
+let tracksData = [
+  { type: 'square50', env: {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: false, notes: [] },
+  { type: 'square25', env: {a: 0.01, d: 0.2, s: 0.3, r: 0.2}, mute: false, notes: [] },
+  { type: 'triangle', env: {a: 0.01, d: 0.0, s: 1.0, r: 0.1}, mute: false, notes: [] },
+  { type: 'noise', env: {a: 0.01, d: 0.1, s: 0.0, r: 0.0}, mute: false, notes: [] }
 ];
 
-// 初期データ
-tracksData[0].notes.push({ beat: 0, len: 1, pitchIdx: 36, vol: 80 });
-tracksData[0].notes.push({ beat: 1, len: 1, pitchIdx: 38, vol: 80 });
-tracksData[0].notes.push({ beat: 2, len: 1, pitchIdx: 40, vol: 100 });
+tracksData[0].notes.push({ tick: 0, len: 24, pitchIdx: 36, vol: 80 });
+tracksData[0].notes.push({ tick: 24, len: 24, pitchIdx: 38, vol: 80 });
+tracksData[0].notes.push({ tick: 48, len: 24, pitchIdx: 40, vol: 100 });
 
 const pianoCanvas = document.getElementById('pianoCanvas');
 const pCtx = pianoCanvas.getContext('2d');
 const volCanvas = document.getElementById('volumeCanvas');
 const vCtx = volCanvas.getContext('2d');
-const rollWrapper = document.getElementById('rollWrapper');
 
-function resizeCanvases() {
-  const maxBeats = 32; 
-  const w = maxBeats * BEAT_WIDTH;
-  pianoCanvas.width = w;
-  pianoCanvas.height = TOTAL_KEYS * KEY_HEIGHT;
-  volCanvas.width = w;
-  volCanvas.height = 100;
-  render();
-}
-window.addEventListener('resize', resizeCanvases);
+function getPxPerTick() { return (BASE_BEAT_WIDTH * currentZoom) / TICKS_PER_BEAT; }
 
-// --- 描画 ---
-function render() {
-  pCtx.clearRect(0, 0, pianoCanvas.width, pianoCanvas.height);
-  for (let i = 0; i < TOTAL_KEYS; i++) {
-    const isBlack = [1, 3, 6, 8, 10].includes(i % 12);
-    pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)';
-    pCtx.fillRect(0, i * KEY_HEIGHT, pianoCanvas.width, KEY_HEIGHT - 1);
-  }
+function updateScrollBounds() {
+  const maxTicks = loopEndBeat * TICKS_PER_BEAT + (TICKS_PER_BEAT * 4);
+  const contentW = maxTicks * getPxPerTick();
+  const contentH = TOTAL_KEYS * KEY_HEIGHT;
   
-  for(let x=0; x<pianoCanvas.width; x+=BEAT_WIDTH) {
-    pCtx.fillStyle = 'rgba(0, 255, 255, 0.2)';
-    pCtx.fillRect(x, 0, 1, pianoCanvas.height);
-  }
+  const viewW = pianoCanvas.parentElement.clientWidth;
+  const viewH = pianoCanvas.parentElement.clientHeight;
+  
+  // ネイティブスクロール領域の内側のダミーdivのサイズを更新してスクロールバーを発生させる
+  document.getElementById('scrollXInner').style.width = Math.max(contentW, viewW) + 'px';
+  document.getElementById('scrollYInner').style.height = Math.max(contentH, viewH) + 'px';
+  
+  const sX = document.getElementById('scrollXWrapper');
+  const sY = document.getElementById('scrollYWrapper');
+  
+  scrollOffsetX = sX.scrollLeft;
+  scrollOffsetY = sY.scrollTop;
+}
 
-  tracksData.forEach((track, idx) => {
-    track.notes.forEach(note => {
-      const x = note.beat * BEAT_WIDTH;
-      const y = (TOTAL_KEYS - 1 - note.pitchIdx) * KEY_HEIGHT;
-      const w = note.len * BEAT_WIDTH;
-      
-      if (idx === currentTrack) {
-        pCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        pCtx.shadowBlur = 10; pCtx.shadowColor = 'var(--primary)';
-      } else {
-        pCtx.fillStyle = 'rgba(0, 200, 255, 0.2)';
-        pCtx.shadowBlur = 0;
-      }
-      pCtx.fillRect(x, y, w - 1, KEY_HEIGHT - 1);
+const resizeObserver = new ResizeObserver(() => {
+  pianoCanvas.width = pianoCanvas.parentElement.clientWidth;
+  pianoCanvas.height = pianoCanvas.parentElement.clientHeight;
+  volCanvas.width = volCanvas.parentElement.clientWidth;
+  volCanvas.height = volCanvas.parentElement.clientHeight;
+  updateScrollBounds(); render();
+});
+resizeObserver.observe(document.querySelector('.editor-layout'));
+
+// --- スクロールイベント (ネイティブの動きをCanvasに同期) ---
+document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { 
+  scrollOffsetX = e.target.scrollLeft; 
+  render(); 
+});
+document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { 
+  scrollOffsetY = e.target.scrollTop; 
+  render(); 
+});
+
+// --- UI イベント ---
+document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
+document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
+
+document.getElementById('btnErase').addEventListener('click', (e) => {
+  isEraser = !isEraser;
+  e.target.innerText = isEraser ? '消ゴムON' : '消ゴムOFF';
+  e.target.classList.toggle('active', isEraser);
+});
+
+function updateTrackBackground() {
+  document.getElementById('rollWrapper').style.backgroundColor = TRACK_BG_COLORS[currentTrack];
+  document.getElementById('volWrapper').style.backgroundColor = TRACK_BG_COLORS[currentTrack];
+}
+
+document.querySelectorAll('.track-tab').forEach((tab) => {
+  tab.addEventListener('click', (e) => {
+    document.querySelector('.track-tab.active').classList.remove('active');
+    e.target.classList.add('active');
+    currentTrack = parseInt(e.target.dataset.track);
+    updateTrackBackground();
+    render();
+  });
+});
+document.querySelectorAll('.mute-check').forEach((chk) => {
+  chk.addEventListener('change', (e) => {
+    const tr = parseInt(e.target.dataset.track);
+    tracksData[tr].mute = !e.target.checked;
+  });
+});
+
+document.getElementById('btnImp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONインポートを実装します。"));
+document.getElementById('btnExp').addEventListener('click', () => alert("ステークホルダ：将来的にJSONエクスポートを実装します。"));
+document.getElementById('btnCopyPaste').addEventListener('click', () => { document.getElementById('modalCopy').classList.add('show'); });
+document.getElementById('execCopy').addEventListener('click', () => { alert("ステークホルダ：将来的にコピペ機能を実装します。"); document.getElementById('modalCopy').classList.remove('show'); });
+
+document.querySelectorAll('.btnCancelModal').forEach(btn => {
+  btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); });
+});
+
+// --- SAVE / LOAD ---
+const STORAGE_KEY = "mml_studio_music_data";
+
+document.getElementById('btnSave').addEventListener('click', () => {
+  document.getElementById('saveTitleInput').value = currentTitle;
+  document.getElementById('modalSave').classList.add('show');
+});
+
+document.getElementById('execSave').addEventListener('click', () => {
+  currentTitle = document.getElementById('saveTitleInput').value || "new music";
+  document.getElementById('dispTitle').innerText = currentTitle;
+  
+  let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  const now = new Date();
+  const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const mml_data = { tracks: tracksData, tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat };
+  
+  const existingIdx = savedList.findIndex(d => d.title === currentTitle);
+  if (existingIdx >= 0) savedList[existingIdx] = { title: currentTitle, update_date, mml_data };
+  else savedList.push({ title: currentTitle, update_date, mml_data });
+  
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
+  document.getElementById('modalSave').classList.remove('show');
+  alert("保存しました。");
+});
+
+document.getElementById('btnLoad').addEventListener('click', () => {
+  let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  const select = document.getElementById('loadSelect');
+  select.innerHTML = "";
+  if (savedList.length === 0) { select.innerHTML = "<option>データがありません</option>"; }
+  else {
+    savedList.forEach((item, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx; opt.innerText = `${item.title} (${item.update_date})`;
+      select.appendChild(opt);
     });
-  });
-  pCtx.shadowBlur = 0;
+  }
+  document.getElementById('modalLoad').classList.add('show');
+});
 
-  vCtx.clearRect(0, 0, volCanvas.width, volCanvas.height);
-  const activeNotes = tracksData[currentTrack].notes;
+document.getElementById('execLoad').addEventListener('click', () => {
+  let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  const idx = document.getElementById('loadSelect').value;
+  if(savedList[idx]) {
+    const data = savedList[idx];
+    currentTitle = data.title;
+    document.getElementById('dispTitle').innerText = currentTitle;
+    tracksData = data.mml_data.tracks;
+    currentTempo = data.mml_data.tempo;
+    loopStartBeat = data.mml_data.loopS;
+    loopEndBeat = data.mml_data.loopE;
+    
+    tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = !tr.mute; });
+    updateScrollBounds();
+    render();
+  }
+  document.getElementById('modalLoad').classList.remove('show');
+});
+
+// --- 歯車(設定) ---
+function renderEnvTable() {
+  const tbody = document.getElementById('envTbody');
+  tbody.innerHTML = "";
+  const waves = ['square12', 'square25', 'square50', 'triangle'];
+  const waveLabels = ['矩形12.5%', '矩形25%', '矩形50%', '三角'];
   
-  vCtx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
-  vCtx.beginPath();
-  vCtx.moveTo(0, 50); vCtx.lineTo(volCanvas.width, 50);
-  vCtx.stroke();
-
-  activeNotes.forEach(note => {
-    const x = note.beat * BEAT_WIDTH;
-    const h = (note.vol / 100) * volCanvas.height;
-    const y = volCanvas.height - h;
-    vCtx.fillStyle = 'var(--primary)';
-    vCtx.fillRect(x + 2, y, (note.len * BEAT_WIDTH) - 4, h);
-    vCtx.fillStyle = '#fff';
-    vCtx.fillRect(x + 2, y - 2, (note.len * BEAT_WIDTH) - 4, 4);
-  });
+  for(let i=0; i<3; i++) {
+    const tr = tracksData[i];
+    let row = `<tr><td>Tr${i+1}</td><td><select id="setW${i}">`;
+    waves.forEach((w, wi) => { row += `<option value="${w}" ${tr.type===w?'selected':''}>${waveLabels[wi]}</option>`; });
+    row += `</select></td>
+      <td><input type="number" id="setA${i}" step="0.01" value="${tr.env.a}"></td>
+      <td><input type="number" id="setD${i}" step="0.01" value="${tr.env.d}"></td>
+      <td><input type="number" id="setS${i}" step="0.01" value="${tr.env.s}"></td>
+      <td><input type="number" id="setR${i}" step="0.01" value="${tr.env.r}"></td></tr>`;
+    tbody.innerHTML += row;
+  }
 }
 
-// --- 入力（タップ/クリック）の座標取得 ---
-function getCanvasPos(e, canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY
-  };
-}
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('setTempo').value = currentTempo;
+  document.getElementById('setLoopS').value = loopStartBeat;
+  document.getElementById('setLoopE').value = loopEndBeat;
+  renderEnvTable();
+  document.getElementById('modalSettings').classList.add('show');
+});
 
-// --- ピアノロールの配置ロジック ---
-function handlePianoInput(e) {
+document.getElementById('execSettings').addEventListener('click', () => {
+  currentTempo = parseInt(document.getElementById('setTempo').value);
+  loopStartBeat = parseInt(document.getElementById('setLoopS').value);
+  loopEndBeat = parseInt(document.getElementById('setLoopE').value);
+  
+  for(let i=0; i<3; i++) {
+    tracksData[i].type = document.getElementById(`setW${i}`).value;
+    tracksData[i].env.a = parseFloat(document.getElementById(`setA${i}`).value);
+    tracksData[i].env.d = parseFloat(document.getElementById(`setD${i}`).value);
+    tracksData[i].env.s = parseFloat(document.getElementById(`setS${i}`).value);
+    tracksData[i].env.r = parseFloat(document.getElementById(`setR${i}`).value);
+  }
+  document.getElementById('modalSettings').classList.remove('show');
+  updateScrollBounds(); render();
+});
+
+// --- エディタ操作 ---
+let dragState = null; 
+function getMousePos(e, canvas) { const rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+
+pianoCanvas.addEventListener('pointerdown', (e) => {
   if (isPlaying) return;
-  // Canvasをキャプチャしてドラッグ中のイベント漏れを防ぐ
   pianoCanvas.setPointerCapture(e.pointerId);
+  const pos = getMousePos(e, pianoCanvas);
+  const worldX = pos.x + scrollOffsetX;
+  const worldY = pos.y + scrollOffsetY;
+  
+  const tick = Math.round(worldX / getPxPerTick());
+  const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
+  if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return;
 
-  const pos = getCanvasPos(e, pianoCanvas);
-  const beat = Math.floor(pos.x / (BEAT_WIDTH * drawLength)) * drawLength;
-  const pitchIdx = TOTAL_KEYS - 1 - Math.floor(pos.y / KEY_HEIGHT);
-  
-  if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return; // 範囲外ガード
-  
-  let notes = tracksData[currentTrack].notes;
-  
-  // まったく同じ位置（同じ拍、同じピッチ）にある音を探す
-  const existingIdx = notes.findIndex(n => Math.abs(n.beat - beat) < 0.01 && n.pitchIdx === pitchIdx);
+  const notes = tracksData[currentTrack].notes;
+  const hitNote = notes.find(n => n.pitchIdx === pitchIdx && tick >= n.tick && tick < n.tick + n.len);
 
   if (isEraser) {
-    if (existingIdx >= 0) notes.splice(existingIdx, 1);
+    if (hitNote) tracksData[currentTrack].notes = notes.filter(n => n !== hitNote);
+    render(); return;
+  }
+
+  if (hitNote) {
+    const pxStart = hitNote.tick * getPxPerTick();
+    const pxEnd = (hitNote.tick + hitNote.len) * getPxPerTick();
+    if (worldX - pxStart < 12) dragState = { mode: 'resize-L', note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
+    else if (pxEnd - worldX < 12) dragState = { mode: 'resize-R', note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
+    else dragState = { mode: 'move', note: hitNote, origTick: hitNote.tick, offsetTick: tick - hitNote.tick };
   } else {
-    if (existingIdx >= 0) {
-      // すでにある音をタップした場合は消去（トグル操作）
-      notes.splice(existingIdx, 1);
-    } else {
-      // 新しい音を追加（和音も可能に）
-      notes.push({ beat: beat, len: drawLength, pitchIdx: pitchIdx, vol: 80 });
+    const snapT = Math.floor(tick / snapTicks) * snapTicks;
+    const overlapping = notes.filter(n => Math.max(snapT, n.tick) < Math.min(snapT + snapTicks, n.tick + n.len));
+    if (overlapping.length >= 3) return;
+
+    const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: 80 };
+    notes.push(newNote);
+    dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
+  }
+  render();
+});
+
+pianoCanvas.addEventListener('pointermove', (e) => {
+  if (!dragState) return;
+  const pos = getMousePos(e, pianoCanvas);
+  const worldX = pos.x + scrollOffsetX;
+  let currentTick = worldX / getPxPerTick();
+  
+  if (dragState.mode === 'resize-R') {
+    let newEnd = Math.round(currentTick / snapTicks) * snapTicks;
+    dragState.note.len = Math.max(4, newEnd - dragState.note.tick);
+  } else if (dragState.mode === 'resize-L') {
+    let newStart = Math.round(currentTick / snapTicks) * snapTicks;
+    let endTick = dragState.origTick + dragState.origLen;
+    if (newStart < endTick - 4) { dragState.note.tick = newStart; dragState.note.len = endTick - newStart; }
+  } else if (dragState.mode === 'move') {
+    let newStart = Math.round((currentTick - dragState.offsetTick) / snapTicks) * snapTicks;
+    const worldY = pos.y + scrollOffsetY;
+    const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
+    if (newStart >= 0 && pitchIdx >= 0 && pitchIdx < TOTAL_KEYS) {
+      dragState.note.tick = newStart; dragState.note.pitchIdx = pitchIdx;
     }
   }
   render();
-}
+});
+pianoCanvas.addEventListener('pointerup', () => { dragState = null; });
+pianoCanvas.addEventListener('pointercancel', () => { dragState = null; });
 
-// pointerdown を使うことで、マウスもスマホのタップも確実かつ統一的に検知
-pianoCanvas.addEventListener('pointerdown', handlePianoInput);
-
-// --- ボリュームの調整ロジック ---
-function handleVolumeInput(e) {
-  // pointer eventsでは、クリック中・ドラッグ中かの判定に e.buttons を用いる
-  if (isPlaying || e.buttons !== 1) return;
-  
-  const pos = getCanvasPos(e, volCanvas);
-  const beat = pos.x / BEAT_WIDTH;
-  
+volCanvas.addEventListener('pointerdown', handleVolume);
+volCanvas.addEventListener('pointermove', (e) => { if (e.buttons === 1) handleVolume(e); });
+function handleVolume(e) {
+  if (isPlaying) return;
+  volCanvas.setPointerCapture(e.pointerId);
+  const pos = getMousePos(e, volCanvas);
+  const worldX = pos.x + scrollOffsetX;
+  const tick = worldX / getPxPerTick();
   tracksData[currentTrack].notes.forEach(note => {
-    if (beat >= note.beat && beat <= note.beat + note.len) {
+    if (tick >= note.tick && tick < note.tick + note.len) {
       let vol = 100 - (pos.y / volCanvas.height * 100);
       note.vol = Math.max(0, Math.min(100, Math.round(vol)));
     }
@@ -280,168 +548,193 @@ function handleVolumeInput(e) {
   render();
 }
 
-volCanvas.addEventListener('pointerdown', handleVolumeInput);
-volCanvas.addEventListener('pointermove', handleVolumeInput);
+// --- 描画処理 ---
+function render() {
+  const w = pianoCanvas.width, h = pianoCanvas.height;
+  const pxPerTick = getPxPerTick();
+  
+  pCtx.clearRect(0, 0, w, h);
+  pCtx.save();
+  pCtx.translate(-scrollOffsetX, -scrollOffsetY);
+  
+  for (let i = 0; i < TOTAL_KEYS; i++) {
+    const y = i * KEY_HEIGHT;
+    if (y < scrollOffsetY - KEY_HEIGHT || y > scrollOffsetY + h) continue;
+    const isBlack = [1, 3, 6, 8, 10].includes(i % 12);
+    pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
+    pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
+  }
 
-// 横スクロールの同期
-rollWrapper.addEventListener('scroll', () => {
-  document.getElementById('scrollSync').querySelector('.volume-container').scrollLeft = rollWrapper.scrollLeft;
-});
+  const startTick = Math.floor(scrollOffsetX / pxPerTick);
+  const endTick = Math.ceil((scrollOffsetX + w) / pxPerTick);
+  for (let t = startTick; t <= endTick; t++) {
+    if (t % (TICKS_PER_BEAT * 4) === 0) { 
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.3)'; pCtx.fillRect(t * pxPerTick, scrollOffsetY, 1, h);
+    } else if (t % TICKS_PER_BEAT === 0) { 
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.1)'; pCtx.fillRect(t * pxPerTick, scrollOffsetY, 1, h);
+    }
+  }
 
-// --- UI操作 ---
-document.querySelectorAll('.tool-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    // targetの代わりにcurrentTargetを使うことで確実にボタン要素から値を取得
-    const target = e.currentTarget;
-    target.classList.add('active');
-    isEraser = target.id === 'btnErase';
-    if (!isEraser) drawLength = parseFloat(target.dataset.len);
+  tracksData.forEach((track, idx) => {
+    const isCur = (idx === currentTrack);
+    track.notes.forEach(note => {
+      const x = note.tick * pxPerTick;
+      const y = (TOTAL_KEYS - 1 - note.pitchIdx) * KEY_HEIGHT;
+      const nw = note.len * pxPerTick;
+      if (x + nw < scrollOffsetX || x > scrollOffsetX + w || y + KEY_HEIGHT < scrollOffsetY || y > scrollOffsetY + h) return;
+
+      pCtx.fillStyle = isCur ? TRACK_COLORS[idx] : 'rgba(100,100,100,0.4)';
+      pCtx.fillRect(x, y + 1, nw - 1, KEY_HEIGHT - 2);
+      if (isCur) {
+        pCtx.fillStyle = '#fff';
+        pCtx.fillRect(x, y + 1, 3, KEY_HEIGHT - 2); pCtx.fillRect(x + nw - 4, y + 1, 3, KEY_HEIGHT - 2);
+      }
+    });
   });
-});
+  
+  const loopStartPx = (loopStartBeat - 1) * TICKS_PER_BEAT * pxPerTick;
+  const loopEndPx = (loopEndBeat - 1) * TICKS_PER_BEAT * pxPerTick;
+  pCtx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+  pCtx.fillRect(loopStartPx, scrollOffsetY, 2, h);
+  pCtx.fillRect(loopEndPx, scrollOffsetY, 2, h);
+  
+  pCtx.restore();
 
-document.querySelectorAll('.track-tab').forEach((tab, idx) => {
-  tab.addEventListener('click', () => {
-    document.querySelector('.track-tab.active').classList.remove('active');
-    tab.classList.add('active');
-    currentTrack = idx;
+  vCtx.clearRect(0, 0, volCanvas.width, volCanvas.height);
+  vCtx.save(); vCtx.translate(-scrollOffsetX, 0);
+  vCtx.strokeStyle = '#444'; vCtx.beginPath(); vCtx.moveTo(scrollOffsetX, volCanvas.height/2); vCtx.lineTo(scrollOffsetX+w, volCanvas.height/2); vCtx.stroke();
+
+  tracksData[currentTrack].notes.forEach(note => {
+    const x = note.tick * pxPerTick;
+    const nw = note.len * pxPerTick;
+    if (x + nw < scrollOffsetX || x > scrollOffsetX + w) return;
+    const vh = (note.vol / 100) * volCanvas.height;
+    const vy = volCanvas.height - vh;
     
-    const tData = tracksData[idx];
-    document.getElementById('waveType').value = tData.wave;
-    document.getElementById('envA').value = tData.env.a;
-    document.getElementById('envD').value = tData.env.d;
-    document.getElementById('envS').value = tData.env.s;
-    document.getElementById('envR').value = tData.env.r;
-    render();
+    vCtx.fillStyle = TRACK_COLORS[currentTrack];
+    vCtx.fillRect(x + 1, vy, Math.max(1, nw - 2), vh);
+    vCtx.fillStyle = '#fff'; vCtx.fillRect(x + 1, vy - 2, Math.max(1, nw - 2), 4);
   });
-});
+  vCtx.restore();
+}
 
-['waveType', 'envA', 'envD', 'envS', 'envR'].forEach(id => {
-  document.getElementById(id).addEventListener('change', (e) => {
-    if (id === 'waveType') tracksData[currentTrack].wave = e.target.value;
-    else tracksData[currentTrack].env[id.replace('env', '').toLowerCase()] = parseFloat(e.target.value);
-  });
-});
-
-// --- 再生エンジン ---
+// --- オーディオエンジン ---
 function createFamicomWave(ctx, type) {
   if (type.startsWith('square')) {
-    const dutyMap = { 'square12': 0.125, 'square25': 0.25, 'square50': 0.5 };
-    const duty = dutyMap[type] || 0.5;
-    const real = new Float32Array(32);
-    const imag = new Float32Array(32);
+    const duty = { 'square12': 0.125, 'square25': 0.25, 'square50': 0.5 }[type] || 0.5;
+    const real = new Float32Array(32), imag = new Float32Array(32);
     for (let i = 1; i < 32; i++) real[i] = (2 / (i * Math.PI)) * Math.sin(Math.PI * i * duty);
     return ctx.createPeriodicWave(real, imag);
   }
   return null; 
 }
 
-function initNoise() {
-  if (noiseBuffer) return;
-  const size = audioCtx.sampleRate * 2;
-  noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
-  const out = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
-}
-
-function playNotes() {
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  stopNotes();
-  initNoise();
-  isPlaying = true;
+  if (!noiseBuffer) {
+    const size = audioCtx.sampleRate * 1;
+    noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+    const out = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
+  }
+}
 
-  const tempo = 120;
-  const beatTime = 60 / tempo; 
+function playSong() {
+  initAudio(); stopSong(); isPlaying = true;
+  document.getElementById('btnPlay').style.background = '#4a9a4a';
+  document.getElementById('btnPlay').style.color = '#fff';
+
+  const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
+  const loopStartTick = (loopStartBeat - 1) * TICKS_PER_BEAT;
+  const loopEndTick = (loopEndBeat - 1) * TICKS_PER_BEAT;
+  
   const startTime = audioCtx.currentTime + 0.1;
+  let maxEndTime = startTime;
 
-  tracksData.forEach(track => {
+  tracksData.forEach((track, tIdx) => {
+    if (track.mute) return; 
     track.notes.forEach(note => {
-      const sTime = startTime + (note.beat * beatTime);
-      const dur = note.len * beatTime;
-      const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12); 
+      if (note.tick < loopStartTick || note.tick >= loopEndTick) return;
+
+      const offsetTicks = note.tick - loopStartTick;
+      const sTime = startTime + (offsetTicks * secPerTick);
+      const dur = note.len * secPerTick;
+      maxEndTime = Math.max(maxEndTime, sTime + dur);
       
+      const maxVol = (note.vol / 100) * 0.3;
       const gainNode = audioCtx.createGain();
-      const env = track.env;
-      const maxVol = (note.vol / 100) * 0.3; 
-
-      gainNode.gain.setValueAtTime(0, sTime);
-      gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
-      gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
-      gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
-      gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
       gainNode.connect(audioCtx.destination);
-
-      let source;
-      if (track.wave === 'noise') {
-        source = audioCtx.createBufferSource();
-        source.buffer = noiseBuffer; source.loop = true;
-      } else {
-        source = audioCtx.createOscillator();
-        if (track.wave === 'triangle') {
-          source.type = 'triangle';
+      
+      if (tIdx === 3) {
+        const p = note.pitchIdx;
+        if (p < 38) {
+          const osc = audioCtx.createOscillator(); osc.type = 'sine';
+          osc.frequency.setValueAtTime(150, sTime); osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.1);
+          gainNode.gain.setValueAtTime(maxVol * 2, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.1);
+          osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + 0.1);
+          activeNodes.push({ source: osc, gainNode });
+        } else if (p < 42) {
+          const nSrc = audioCtx.createBufferSource(); nSrc.buffer = noiseBuffer;
+          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 1000;
+          gainNode.gain.setValueAtTime(maxVol, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.2);
+          nSrc.connect(filter).connect(gainNode); nSrc.start(sTime); nSrc.stop(sTime + 0.2);
+          activeNodes.push({ source: nSrc, gainNode });
         } else {
-          source.setPeriodicWave(createFamicomWave(audioCtx, track.wave));
+          const hSrc = audioCtx.createBufferSource(); hSrc.buffer = noiseBuffer;
+          const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
+          gainNode.gain.setValueAtTime(maxVol * 0.5, sTime); gainNode.gain.exponentialRampToValueAtTime(0.01, sTime + 0.05);
+          hSrc.connect(filter).connect(gainNode); hSrc.start(sTime); hSrc.stop(sTime + 0.05);
+          activeNodes.push({ source: hSrc, gainNode });
         }
-        source.frequency.value = freq;
+      } else {
+        const freq = 440 * Math.pow(2, (note.pitchIdx - 45) / 12);
+        const env = track.env;
+        gainNode.gain.setValueAtTime(0, sTime);
+        gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
+        gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
+        gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
+        gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
+        
+        const osc = audioCtx.createOscillator();
+        if (track.type === 'triangle') osc.type = 'triangle';
+        else osc.setPeriodicWave(createFamicomWave(audioCtx, track.type));
+        
+        osc.frequency.value = freq;
+        osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + dur);
+        activeNodes.push({ source: osc, gainNode });
       }
-      
-      source.connect(gainNode);
-      source.start(sTime);
-      source.stop(sTime + dur);
-      activeNodes.push({ source, gainNode });
     });
   });
+
+  const totalMs = (maxEndTime - audioCtx.currentTime) * 1000;
+  if (totalMs > 0) playTimeout = setTimeout(stopSong, totalMs + 100);
+  else stopSong();
 }
 
-function stopNotes() {
+function stopSong() {
+  if (playTimeout) { clearTimeout(playTimeout); playTimeout = null; }
   activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); n.gainNode.disconnect(); });
-  activeNodes = [];
-  isPlaying = false;
+  activeNodes = []; isPlaying = false;
+  document.getElementById('btnPlay').style.background = '';
+  document.getElementById('btnPlay').style.color = '';
 }
 
-document.getElementById('btnPlay').addEventListener('click', playNotes);
-document.getElementById('btnStop').addEventListener('click', stopNotes);
-
-// --- MML出力 ---
-document.getElementById('btnShowMML').addEventListener('click', () => {
-  let finalMML = "";
-  const pitches = ['c','c+','d','d+','e','f','f+','g','g+','a','a+','b'];
-
-  tracksData.forEach((track, idx) => {
-    finalMML += `// Track ${idx + 1} (${track.wave}, A:${track.env.a} D:${track.env.d} S:${track.env.s} R:${track.env.r})\n`;
-    
-    // 和音はMMLの基本文法上表現できないため、ここでは単音ストリームとして出力
-    const sortedNotes = [...track.notes].sort((a,b) => a.beat - b.beat);
-    let currentBeat = 0;
-    
-    sortedNotes.forEach(note => {
-      if (note.beat > currentBeat) {
-        const restLen = note.beat - currentBeat;
-        finalMML += `r${4 / restLen} `;
-      }
-      
-      const octave = Math.floor(note.pitchIdx / 12) + 1;
-      const pName = pitches[note.pitchIdx % 12];
-      const length = 4 / note.len; 
-      const vol = Math.round((note.vol / 100) * 15); 
-      
-      finalMML += `v${vol} o${octave} ${pName}${length} `;
-      currentBeat = note.beat + note.len;
-    });
-    finalMML += "\n\n";
-  });
-
-  document.getElementById('mmlOutput').value = finalMML.trim();
-  document.getElementById('mmlModal').classList.add('show');
-});
-
-document.getElementById('btnCloseMML').addEventListener('click', () => {
-  document.getElementById('mmlModal').classList.remove('show');
-});
+document.getElementById('btnPlay').addEventListener('click', playSong);
+document.getElementById('btnStop').addEventListener('click', stopSong);
 
 // 初期化
-resizeCanvases();
-rollWrapper.scrollTop = (TOTAL_KEYS - 48) * KEY_HEIGHT - (rollWrapper.clientHeight / 2);
+setTimeout(() => {
+  updateTrackBackground();
+  const sY = document.getElementById('scrollYWrapper');
+  
+  // C4付近を初期位置にする
+  sY.scrollTop = (TOTAL_KEYS - 48) * KEY_HEIGHT - (pianoCanvas.parentElement.clientHeight / 2);
+  scrollOffsetY = sY.scrollTop;
+  
+  updateScrollBounds(); 
+  render();
+}, 100);
 </script>
 </body>
 </html>
