@@ -18,110 +18,85 @@
     * { box-sizing: border-box; }
 
     body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      margin: 0; padding: 0;
+      background-color: var(--bg-color); color: var(--text-color);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .checkerboard {
+    /* 透明背景用スタイル */
+    [data-bg="checker"] {
       background-color: #fff;
       background-image: 
         linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc),
         linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
-      background-size: 16px 16px;
-      background-position: 0 0, 8px 8px;
+      background-size: 16px 16px; background-position: 0 0, 8px 8px;
     }
+    [data-bg="red"] { background-color: #ff4d4d; background-image: none; }
+    [data-bg="blue"] { background-color: #4d4dff; background-image: none; }
+    [data-bg="yellow"] { background-color: #ffff4d; background-image: none; }
+    [data-bg="green"] { background-color: #4dff4d; background-image: none; }
+    [data-bg="pink"] { background-color: #ff80df; background-image: none; }
+    [data-bg="purple"] { background-color: #bf40ff; background-image: none; }
+    [data-bg="black"] { background-color: #000000; background-image: none; }
+    [data-bg="gray"] { background-color: #808080; background-image: none; }
 
     header {
-      background-color: #1a1a1a;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background-color: #1a1a1a; padding: 15px 20px;
+      display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid var(--border-color);
     }
 
     h1 { margin: 0; font-size: 1.2rem; }
+    h2 { margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;}
     h3 { margin-top: 10px; margin-bottom: 5px; font-size: 0.9rem; color: #aaa; }
 
     button {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
+      background-color: var(--accent-color); color: white; border: none;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
       transition: background 0.2s;
     }
-    button:hover { background-color: var(--accent-hover); }
+    button:hover:not(:disabled) { background-color: var(--accent-hover); }
     button.danger { background-color: var(--danger-color); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    input, select, textarea {
+      background: #2a2a2a; color: var(--text-color); border: 1px solid var(--border-color);
+      padding: 6px; border-radius: 4px; font-family: inherit;
+    }
 
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
+      max-width: 1200px; margin: 0 auto; padding: 20px;
+      display: grid; grid-template-columns: 1fr; gap: 20px;
     }
-
-    @media(min-width: 800px) {
-      .container { grid-template-columns: minmax(300px, 1fr) 300px; }
-    }
+    @media(min-width: 800px) { .container { grid-template-columns: minmax(300px, 1fr) 350px; } }
 
     .panel {
-      background-color: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 15px;
-    }
-    .panel h2 { margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-
-    /* Input Area */
-    #manual-input-area { display: none; margin-bottom: 20px; }
-    textarea {
-      width: 100%; height: 100px; background: #2a2a2a; color: var(--text-color);
-      border: 1px solid var(--border-color); padding: 10px; font-family: monospace; resize: vertical;
+      background-color: var(--panel-bg); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 15px; margin-bottom: 20px;
     }
 
     /* Palette */
-    .palette-grid {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
-    }
-    .color-swatch-container {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-    }
+    .palette-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .color-swatch-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .color-swatch {
       width: 32px; height: 32px; border-radius: 4px; border: 2px solid transparent;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-weight: bold; color: #000;
-      text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+      font-weight: bold; color: #000; text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff;
     }
     .color-swatch.active { border-color: var(--accent-color); transform: scale(1.1); }
-    
-    #color-picker {
-      width: 36px; height: 36px; padding: 0; border: 1px solid var(--border-color);
-      border-radius: 4px; background: none; cursor: pointer;
-    }
+    #color-picker { width: 36px; height: 36px; padding: 0; cursor: pointer; }
     #color-picker:disabled { opacity: 0.3; cursor: not-allowed; }
 
     /* Editor */
-    .editor-container {
-      display: flex; justify-content: center; margin: 20px 0;
-    }
+    .editor-container { display: flex; justify-content: center; margin: 20px 0; }
     #editor-canvas {
       width: 100%; max-width: 400px; aspect-ratio: 1; image-rendering: pixelated;
       cursor: crosshair; touch-action: none; border: 2px solid var(--border-color);
     }
+    .editor-tools { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
 
     /* Sprite List */
-    .sprite-list {
-      display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;
-    }
+    .sprite-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; }
     .sprite-item {
       display: flex; align-items: center; justify-content: space-between; background: #2a2a2a;
       padding: 8px; border-radius: 4px; cursor: pointer; border: 1px solid transparent;
@@ -130,19 +105,14 @@
     .sprite-item.active { border-color: var(--accent-color); }
     .sprite-item canvas { width: 32px; height: 32px; image-rendering: pixelated; border: 1px solid #000; }
     .sprite-info { flex: 1; margin-left: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-    .sprite-actions { display: flex; gap: 5px; }
-    .sprite-actions button { padding: 4px 8px; font-size: 0.8rem; }
+    .sprite-actions { display: flex; gap: 4px; }
+    .sprite-actions button { padding: 4px 6px; font-size: 0.8rem; }
 
     /* Animation */
     .anim-controls { display: flex; flex-direction: column; gap: 10px; }
-    .anim-row { display: flex; align-items: center; gap: 10px; }
-    select {
-      background: #2a2a2a; color: var(--text-color); border: 1px solid var(--border-color);
-      padding: 5px; border-radius: 4px;
-    }
+    .anim-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     #anim-canvas {
-      width: 128px; height: 128px; margin: 10px auto; display: block;
-      image-rendering: pixelated; border: 2px solid var(--border-color);
+      margin: 10px auto; display: block; image-rendering: pixelated; border: 2px solid var(--border-color);
     }
   </style>
 </head>
@@ -150,19 +120,51 @@
 
 <header>
   <h1>8x8 Sprite Editor</h1>
-  <button id="btn-export">保存 (エクスポート)</button>
 </header>
 
 <div class="container">
   <div class="left-col">
-    <div id="manual-input-area" class="panel">
-      <h2>JSON読み込み</h2>
-      <p style="font-size: 0.9rem;">assets.jsonが見つかりませんでした。手動で入力してください。</p>
-      <textarea id="json-input" placeholder='{"palette": {...}, "sprites": {...}}'></textarea>
-      <button id="btn-load-json" style="margin-top: 10px;">読み込む</button>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div class="panel" style="margin-bottom:0;">
+        <h2>データ管理</h2>
+        <div style="margin-bottom: 10px;">
+          <button id="btn-export" style="width:100%; margin-bottom:5px;">ファイル出力 (JSON)</button>
+        </div>
+        <div style="margin-bottom: 10px; padding-top:10px; border-top:1px solid var(--border-color);">
+          <button id="btn-save-local" style="width:100%; margin-bottom:5px;">ブラウザにSAVE (名前付)</button>
+          <div style="display:flex; gap:5px;">
+            <select id="save-data-select" style="flex:1;"><option value="">-- 選択 --</option></select>
+            <button id="btn-load-local">LOAD</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:0;">
+        <h2>設定</h2>
+        <div style="margin-bottom: 10px;">
+          <label style="display:block; margin-bottom:5px; font-size:0.9rem;">透明部分の背景色:</label>
+          <select id="bg-color-select" style="width:100%;">
+            <option value="checker">市松模様</option>
+            <option value="red">赤</option>
+            <option value="blue">青</option>
+            <option value="yellow">黄</option>
+            <option value="green">緑</option>
+            <option value="pink">ピンク</option>
+            <option value="purple">紫</option>
+            <option value="black">黒</option>
+            <option value="gray">灰色</option>
+          </select>
+        </div>
+        <div id="manual-input-area" style="display:none; margin-top:15px;">
+          <p style="font-size: 0.8rem; margin:0 0 5px 0;">直接JSON読込</p>
+          <textarea id="json-input" style="height:60px;" placeholder='{"palette": {...}, "sprites": {...}}'></textarea>
+          <button id="btn-load-json" style="width:100%; margin-top:5px;">読み込む</button>
+        </div>
+      </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" style="margin-top: 20px;">
       <h2>エディター</h2>
       
       <div style="margin-bottom: 15px;">
@@ -178,43 +180,66 @@
         </div>
       </div>
 
+      <div style="text-align: center; font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;" id="current-sprite-name">-</div>
+      
       <div class="editor-container">
-        <canvas id="editor-canvas" class="checkerboard" width="320" height="320"></canvas>
+        <canvas id="editor-canvas" data-bg="checker" width="320" height="320"></canvas>
       </div>
       
-      <div style="text-align: center; font-size: 1.2rem; font-weight: bold;" id="current-sprite-name">-</div>
+      <div class="editor-tools">
+        <button id="btn-copy">コピー</button>
+        <button id="btn-paste" disabled>ペースト</button>
+        <button id="btn-paste-v" disabled>上下反転ペースト</button>
+        <button id="btn-paste-h" disabled>左右反転ペースト</button>
+      </div>
     </div>
   </div>
 
-  <div class="right-col" style="display: flex; flex-direction: column; gap: 20px;">
+  <div class="right-col">
     
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h2 style="margin: 0; border: none;">スプライト</h2>
+        <h2 style="margin: 0; border: none; padding:0;">スプライト</h2>
         <button id="btn-add-sprite">+ 新規</button>
       </div>
       <div id="sprite-list" class="sprite-list"></div>
     </div>
 
     <div class="panel">
-      <h2>アニメーションテスト</h2>
+      <h2>プレビュー</h2>
       <div class="anim-controls">
-        <div class="anim-row"><label>F1:</label> <select id="anim-f1"></select></div>
-        <div class="anim-row"><label>F2:</label> <select id="anim-f2"></select></div>
-        <div class="anim-row"><label>F3:</label> <select id="anim-f3"><option value="">-- なし --</option></select></div>
         <div class="anim-row">
-          <label>再生:</label>
-          <select id="anim-pattern">
+          <select id="anim-f1" style="width:30%"></select> →
+          <select id="anim-f2" style="width:30%"></select> →
+          <select id="anim-f3" style="width:30%"><option value="">-- なし --</option></select>
+        </div>
+        <div class="anim-row">
+          <label style="font-size:0.9rem;">再生:</label>
+          <select id="anim-pattern" style="flex:1;">
             <option value="A">1 → 2 (2枚用)</option>
             <option value="B">1 → 2 → 3 → 2 (3枚往復)</option>
             <option value="C">1 → 2 → 3 (3枚ループ)</option>
           </select>
         </div>
-        <div style="text-align: center; margin-top: 10px;">
+        <div class="anim-row" style="font-size:0.9rem;">
+          サイズ: 
+          <select id="anim-size">
+            <option value="large">大</option>
+            <option value="medium" selected>中</option>
+            <option value="small">小</option>
+          </select>
+          速度:
+          <select id="anim-speed">
+            <option value="100">高速</option>
+            <option value="250" selected>普通</option>
+            <option value="500">ゆっくり</option>
+          </select>
+        </div>
+        <div style="text-align: center; margin-top: 5px;">
           <button id="btn-play-anim">再生</button>
           <button id="btn-stop-anim">停止</button>
         </div>
-        <canvas id="anim-canvas" class="checkerboard" width="64" height="64"></canvas>
+        <canvas id="anim-canvas" data-bg="checker" width="128" height="128"></canvas>
       </div>
     </div>
 
@@ -231,6 +256,8 @@ let state = {
 };
 
 let animTimer = null;
+let currentBgColor = 'checker';
+let copiedSprite = null; // コピーした2次元配列データ
 
 // --- DOM Elements ---
 const elEditorCanvas = document.getElementById('editor-canvas');
@@ -241,9 +268,11 @@ const elSpriteList = document.getElementById('sprite-list');
 const elCurrentSpriteName = document.getElementById('current-sprite-name');
 const elAnimCanvas = document.getElementById('anim-canvas');
 const ctxAnim = elAnimCanvas.getContext('2d');
+const selBgColor = document.getElementById('bg-color-select');
 
 // --- Initialization ---
 async function init() {
+  loadSaveList();
   try {
     const res = await fetch('./assets.json');
     if (!res.ok) throw new Error('File not found');
@@ -254,26 +283,13 @@ async function init() {
     loadData({
       palette: { ".": null, "1": "#002288", "2": "#a05040" },
       sprites: {
-        "player_up_1": [
-          "........", ".111111.", "1.1111.1", "11111111",
-          "11.11.11", "1.1111.1", ".1....1.", "..1111.."
-        ]
+        "player_1": ["........", ".111111.", "1.1111.1", "11111111", "11.11.11", "1.1111.1", ".1....1.", "..1111.."]
       }
     });
   }
 }
 
-document.getElementById('btn-load-json').addEventListener('click', () => {
-  try {
-    const data = JSON.parse(document.getElementById('json-input').value);
-    loadData(data);
-    document.getElementById('manual-input-area').style.display = 'none';
-  } catch (e) {
-    alert("無効なJSON形式です。");
-  }
-});
-
-// --- Data Management ---
+// --- Data Management (SAVE/LOAD) ---
 function loadData(json) {
   state.palette = json.palette || { ".": null };
   state.sprites = {};
@@ -291,30 +307,109 @@ function loadData(json) {
   drawEditor();
 }
 
-function exportData() {
+function loadSaveList() {
+  const data = JSON.parse(localStorage.getItem('asset_studio_data')) || {};
+  const sel = document.getElementById('save-data-select');
+  sel.innerHTML = '<option value="">-- 選択 --</option>';
+  Object.keys(data).forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k; opt.innerText = k; sel.appendChild(opt);
+  });
+}
+
+document.getElementById('btn-save-local').addEventListener('click', () => {
+  const name = prompt("保存する名前を入力してください:");
+  if(!name) return;
+  const data = JSON.parse(localStorage.getItem('asset_studio_data')) || {};
+  
+  // 出力用形式に変換
   const outSprites = {};
   for (const [key, grid] of Object.entries(state.sprites)) {
     outSprites[key] = grid.map(row => row.join(''));
   }
   
+  data[name] = { palette: state.palette, sprites: outSprites };
+  localStorage.setItem('asset_studio_data', JSON.stringify(data));
+  loadSaveList();
+  document.getElementById('save-data-select').value = name;
+  alert(`「${name}」として保存しました。`);
+});
+
+document.getElementById('btn-load-local').addEventListener('click', () => {
+  const name = document.getElementById('save-data-select').value;
+  if(!name) return alert("読み込むデータを選択してください。");
+  const data = JSON.parse(localStorage.getItem('asset_studio_data')) || {};
+  if(data[name]) loadData(data[name]);
+});
+
+document.getElementById('btn-load-json').addEventListener('click', () => {
+  try {
+    const data = JSON.parse(document.getElementById('json-input').value);
+    loadData(data);
+    document.getElementById('manual-input-area').style.display = 'none';
+  } catch (e) { alert("無効なJSON形式です。"); }
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const outSprites = {};
+  for (const [key, grid] of Object.entries(state.sprites)) { outSprites[key] = grid.map(row => row.join('')); }
   const outJson = JSON.stringify({ palette: state.palette, sprites: outSprites }, null, 2);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
   if (isMobile) {
     window.location.href = `mailto:?subject=Assets JSON&body=${encodeURIComponent(outJson)}`;
   } else {
-    navigator.clipboard.writeText(outJson).then(() => {
-      alert("JSONをクリップボードにコピーしました！");
-    }).catch(err => {
-      alert("コピーに失敗しました。\n" + err);
-    });
+    navigator.clipboard.writeText(outJson).then(() => alert("JSONをクリップボードにコピーしました！")).catch(e => alert(e));
   }
+});
+
+// --- Settings (Background Color) ---
+selBgColor.addEventListener('change', (e) => {
+  currentBgColor = e.target.value;
+  document.querySelectorAll('[data-bg]').forEach(el => el.setAttribute('data-bg', currentBgColor));
+});
+
+// --- Copy & Paste ---
+function updatePasteButtons() {
+  const hasCopied = copiedSprite !== null;
+  document.getElementById('btn-paste').disabled = !hasCopied;
+  document.getElementById('btn-paste-v').disabled = !hasCopied;
+  document.getElementById('btn-paste-h').disabled = !hasCopied;
 }
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  if(!state.currentKey) return;
+  // Deep copy 2D array
+  copiedSprite = state.sprites[state.currentKey].map(row => [...row]);
+  updatePasteButtons();
+});
+
+function applyPaste(mode) {
+  if(!state.currentKey || !copiedSprite) return;
+  let newGrid = copiedSprite.map(row => [...row]); // Deep copy from clipboard
+  
+  if (mode === 'v') {
+    newGrid.reverse();
+  } else if (mode === 'h') {
+    newGrid = newGrid.map(row => row.slice().reverse());
+  }
+  
+  state.sprites[state.currentKey] = newGrid;
+  drawEditor();
+  renderSpriteList();
+}
+document.getElementById('btn-paste').addEventListener('click', () => applyPaste('normal'));
+document.getElementById('btn-paste-v').addEventListener('click', () => applyPaste('v'));
+document.getElementById('btn-paste-h').addEventListener('click', () => applyPaste('h'));
+
 
 // --- Render Palette ---
 function renderPalette() {
   elPaletteGrid.innerHTML = '';
-  for (const [key, color] of Object.entries(state.palette)) {
+  // '.' を除外してソートし、先頭に '.' を追加
+  const keys = Object.keys(state.palette).filter(k => k !== '.').sort();
+  keys.unshift('.');
+
+  keys.forEach(key => {
     const container = document.createElement('div');
     container.className = 'color-swatch-container';
 
@@ -322,39 +417,35 @@ function renderPalette() {
     swatch.className = `color-swatch ${key === state.currentColor ? 'active' : ''}`;
     
     if (key === '.') {
-      swatch.classList.add('checkerboard');
+      swatch.setAttribute('data-bg', currentBgColor); // 透明色の設定適用
       swatch.innerText = '.';
     } else {
-      swatch.style.backgroundColor = color;
+      swatch.style.backgroundColor = state.palette[key];
       swatch.innerText = key;
     }
 
-    swatch.addEventListener('click', () => {
-      state.currentColor = key;
-      renderPalette();
+    swatch.addEventListener('click', (e) => {
+      if(e.target === swatch) {
+        state.currentColor = key;
+        renderPalette();
+      }
     });
 
     container.appendChild(swatch);
     elPaletteGrid.appendChild(container);
-  }
+  });
 
-  // カラーピッカーの状態を更新
   if (state.currentColor === '.') {
-    elColorPicker.disabled = true;
-    elColorPicker.value = '#000000';
+    elColorPicker.disabled = true; elColorPicker.value = '#000000';
   } else {
-    elColorPicker.disabled = false;
-    elColorPicker.value = state.palette[state.currentColor];
+    elColorPicker.disabled = false; elColorPicker.value = state.palette[state.currentColor];
   }
 }
 
-// カラーピッカーの値が変更された時の処理
 elColorPicker.addEventListener('input', (e) => {
   if (state.currentColor !== '.' && state.palette[state.currentColor]) {
     state.palette[state.currentColor] = e.target.value;
-    renderPalette(); // スワッチの色を更新
-    drawEditor();    // エディタの色を更新
-    renderSpriteList(); // サムネイルの色を更新
+    renderPalette(); drawEditor(); renderSpriteList();
   }
 });
 
@@ -374,13 +465,30 @@ document.getElementById('btn-del-color').addEventListener('click', () => {
   if (confirm(`色「${state.currentColor}」を削除しますか？`)) {
     delete state.palette[state.currentColor];
     state.currentColor = '.';
-    renderPalette();
-    drawEditor();
-    renderSpriteList();
+    renderPalette(); drawEditor(); renderSpriteList();
   }
 });
 
 // --- Render Sprite List ---
+function moveSprite(key, direction) {
+  const keys = Object.keys(state.sprites);
+  const idx = keys.indexOf(key);
+  if (direction === -1 && idx > 0) {
+    [keys[idx-1], keys[idx]] = [keys[idx], keys[idx-1]];
+  } else if (direction === 1 && idx < keys.length - 1) {
+    [keys[idx], keys[idx+1]] = [keys[idx+1], keys[idx]];
+  } else {
+    return; // 移動不可
+  }
+  
+  // 新しい順序でオブジェクト再構築
+  const newSprites = {};
+  keys.forEach(k => { newSprites[k] = state.sprites[k]; });
+  state.sprites = newSprites;
+  renderSpriteList();
+  updateAnimSelects();
+}
+
 function renderSpriteList() {
   elSpriteList.innerHTML = '';
   for (const key of Object.keys(state.sprites)) {
@@ -388,7 +496,8 @@ function renderSpriteList() {
     item.className = `sprite-item ${key === state.currentKey ? 'active' : ''}`;
     
     const thumb = document.createElement('canvas');
-    thumb.width = 8; thumb.height = 8; thumb.className = 'checkerboard';
+    thumb.width = 8; thumb.height = 8; 
+    thumb.setAttribute('data-bg', currentBgColor);
     drawGridToCanvas(thumb.getContext('2d'), state.sprites[key], 1);
     
     const info = document.createElement('div');
@@ -397,8 +506,13 @@ function renderSpriteList() {
     const actions = document.createElement('div');
     actions.className = 'sprite-actions';
     
-    const btnRename = document.createElement('button');
-    btnRename.innerText = '名';
+    const btnUp = document.createElement('button'); btnUp.innerText = '▲';
+    btnUp.onclick = (e) => { e.stopPropagation(); moveSprite(key, -1); };
+    
+    const btnDown = document.createElement('button'); btnDown.innerText = '▼';
+    btnDown.onclick = (e) => { e.stopPropagation(); moveSprite(key, 1); };
+    
+    const btnRename = document.createElement('button'); btnRename.innerText = '名';
     btnRename.onclick = (e) => {
       e.stopPropagation();
       const newKey = prompt("新しい名前を入力してください:", key);
@@ -407,12 +521,12 @@ function renderSpriteList() {
         state.sprites[newKey] = state.sprites[key];
         delete state.sprites[key];
         if (state.currentKey === key) state.currentKey = newKey;
+        // キー名を変更したら一番後ろにいってしまうのを防ぐならここも再構築が必要だが今回は末尾追加扱い
         renderSpriteList(); updateAnimSelects();
       }
     };
     
-    const btnDel = document.createElement('button');
-    btnDel.className = 'danger'; btnDel.innerText = '削';
+    const btnDel = document.createElement('button'); btnDel.className = 'danger'; btnDel.innerText = '削';
     btnDel.onclick = (e) => {
       e.stopPropagation();
       if(confirm(`「${key}」を削除しますか？`)) {
@@ -423,6 +537,7 @@ function renderSpriteList() {
     };
 
     item.onclick = () => { state.currentKey = key; renderSpriteList(); drawEditor(); };
+    actions.appendChild(btnUp); actions.appendChild(btnDown);
     actions.appendChild(btnRename); actions.appendChild(btnDel);
     item.appendChild(thumb); item.appendChild(info); item.appendChild(actions);
     elSpriteList.appendChild(item);
@@ -433,7 +548,6 @@ document.getElementById('btn-add-sprite').addEventListener('click', () => {
   const key = prompt("新規スプライト名を入力してください:");
   if (!key) return;
   if (state.sprites[key]) return alert("既に存在する名前です。");
-  
   state.sprites[key] = Array.from({length: 8}, () => Array(8).fill('.'));
   state.currentKey = key;
   renderSpriteList(); updateAnimSelects(); drawEditor();
@@ -462,9 +576,7 @@ function drawEditor() {
   const cellSize = elEditorCanvas.width / 8;
   drawGridToCanvas(ctxEditor, state.sprites[state.currentKey], cellSize);
 
-  ctxEditor.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-  ctxEditor.lineWidth = 1;
-  ctxEditor.beginPath();
+  ctxEditor.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctxEditor.lineWidth = 1; ctxEditor.beginPath();
   for (let i = 0; i <= 8; i++) {
     ctxEditor.moveTo(i * cellSize, 0); ctxEditor.lineTo(i * cellSize, elEditorCanvas.height);
     ctxEditor.moveTo(0, i * cellSize); ctxEditor.lineTo(elEditorCanvas.width, i * cellSize);
@@ -475,11 +587,8 @@ function drawEditor() {
 function getCoords(e) {
   const rect = elEditorCanvas.getBoundingClientRect();
   let clientX = e.clientX, clientY = e.clientY;
-  if (e.touches && e.touches.length > 0) {
-    clientX = e.touches[0].clientX; clientY = e.touches[0].clientY;
-  }
-  const scaleX = elEditorCanvas.width / rect.width;
-  const scaleY = elEditorCanvas.height / rect.height;
+  if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+  const scaleX = elEditorCanvas.width / rect.width; const scaleY = elEditorCanvas.height / rect.height;
   const x = Math.floor(((clientX - rect.left) * scaleX) / (elEditorCanvas.width / 8));
   const y = Math.floor(((clientY - rect.top) * scaleY) / (elEditorCanvas.height / 8));
   return { x, y };
@@ -498,12 +607,9 @@ function startDraw(e) { e.preventDefault(); isDrawing = true; const { x, y } = g
 function moveDraw(e) { e.preventDefault(); if (!isDrawing) return; const { x, y } = getCoords(e); paintCell(x, y); }
 function endDraw(e) { if (isDrawing) { isDrawing = false; renderSpriteList(); } }
 
-elEditorCanvas.addEventListener('mousedown', startDraw);
-elEditorCanvas.addEventListener('mousemove', moveDraw);
-window.addEventListener('mouseup', endDraw);
-elEditorCanvas.addEventListener('touchstart', startDraw, { passive: false });
-elEditorCanvas.addEventListener('touchmove', moveDraw, { passive: false });
-elEditorCanvas.addEventListener('touchend', endDraw, { passive: false });
+elEditorCanvas.addEventListener('mousedown', startDraw); elEditorCanvas.addEventListener('mousemove', moveDraw); window.addEventListener('mouseup', endDraw);
+elEditorCanvas.addEventListener('touchstart', startDraw, { passive: false }); elEditorCanvas.addEventListener('touchmove', moveDraw, { passive: false }); elEditorCanvas.addEventListener('touchend', endDraw, { passive: false });
+
 
 // --- Animation ---
 function updateAnimSelects() {
@@ -517,11 +623,22 @@ function updateAnimSelects() {
   });
 }
 
+function updateAnimSize() {
+  const sizeMap = { 'small': 64, 'medium': 128, 'large': 192 };
+  const val = sizeMap[document.getElementById('anim-size').value];
+  elAnimCanvas.width = val; elAnimCanvas.height = val;
+  if (animTimer) { stopAnim(); playAnim(); }
+}
+document.getElementById('anim-size').addEventListener('change', updateAnimSize);
+document.getElementById('anim-speed').addEventListener('change', () => { if(animTimer) { stopAnim(); playAnim(); } });
+
 function playAnim() {
   if (animTimer) clearInterval(animTimer);
+  
   const f1 = document.getElementById('anim-f1').value; const f2 = document.getElementById('anim-f2').value;
   const f3 = document.getElementById('anim-f3').value; const pattern = document.getElementById('anim-pattern').value;
-  
+  const speed = parseInt(document.getElementById('anim-speed').value, 10);
+
   if (!f1 || !f2) return alert("F1とF2は必須です。");
   let frames = [];
   if (pattern === 'A') frames = [f1, f2];
@@ -533,13 +650,13 @@ function playAnim() {
     const key = frames[currentFrame];
     if (state.sprites[key]) drawGridToCanvas(ctxAnim, state.sprites[key], cellSize);
     currentFrame = (currentFrame + 1) % frames.length;
-  }, 250);
+  }, speed);
 }
-function stopAnim() { if (animTimer) clearInterval(animTimer); ctxAnim.clearRect(0, 0, elAnimCanvas.width, elAnimCanvas.height); }
+
+function stopAnim() { if (animTimer) { clearInterval(animTimer); animTimer = null; } ctxAnim.clearRect(0, 0, elAnimCanvas.width, elAnimCanvas.height); }
 
 document.getElementById('btn-play-anim').addEventListener('click', playAnim);
 document.getElementById('btn-stop-anim').addEventListener('click', stopAnim);
-document.getElementById('btn-export').addEventListener('click', exportData);
 
 init();
 </script>

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Half-Step Float Fixed</title>
+    <title>Eggerland Clone - Arrow Floors</title>
+    <script src="tori_music.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
         #game-container { width: 100vw; max-width: 600px; position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
@@ -55,7 +56,8 @@
     <dialog id="notes-dialog">
         <h2 style="margin-top:0;">リリースノート</h2>
         <ul style="padding-left:20px; line-height: 1.6;">
-            <li>半マスずれた状態で卵を川に落とし、その上を歩行できるよう当たり判定のロジックを修正しました。</li>
+            <li>矢印床（上下左右）を追加しました。</li>
+            <li>BGM組み込み用のコメントフックを用意しました。</li>
         </ul>
         <div style="text-align: right; margin-top: 20px;">
             <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
@@ -84,6 +86,9 @@
 </div>
 
 <script>
+
+const bgmField = loadMusic(1); 
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const msgDiv = document.getElementById('message');
@@ -109,11 +114,16 @@ const input = { up: false, down: false, left: false, right: false, shot: false }
 let editMap = [];
 let selectedEditItemId = 1;
 
+// エディタパレットに矢印床を追加
 const EDIT_PALETTE = [
     { id: 0, sprite: 'floor' },
     { id: 1, sprite: 'rock' },
     { id: 4, sprite: 'tree' },
     { id: 5, sprite: 'river_1' },
+    { id: 'U', sprite: 'arrow_top' },
+    { id: 'D', sprite: 'arrow_bottom' },
+    { id: 'L', sprite: 'arrow_left' },
+    { id: 'R', sprite: 'arrow_right' },
     { id: 2, sprite: 'heart_normal' },
     { id: 7, sprite: 'heart_shot' },
     { id: 3, sprite: 'chest_closed', unique: true },
@@ -144,7 +154,10 @@ function setMode(mode) {
 document.getElementById('btn-start-game').addEventListener('click', () => loadStage(0));
 document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
 document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
+
 document.getElementById('btn-retry').addEventListener('click', () => {
+    // ★BGM停止箇所★: リトライ時は一度停止して初期化に遷移
+    bgmField.stop();
     if (gameMode === 'game') loadStage(currentStageIndex);
     else if (gameMode === 'test_play') startTestPlay();
 });
@@ -153,9 +166,15 @@ document.getElementById('btn-edit-mode').addEventListener('click', () => {
     initEditMap();
     setMode('edit');
 });
-document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
+document.getElementById('btn-edit-exit').addEventListener('click', () => {
+    setMode('title');
+});
 document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
-document.getElementById('btn-exit-test').addEventListener('click', () => setMode('edit'));
+document.getElementById('btn-exit-test').addEventListener('click', () => {
+    // ★BGM停止箇所★: テストプレイからエディタに戻るとき
+    bgmField.stop();
+    setMode('edit');
+});
 document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
 
 async function bootGame() {
@@ -287,6 +306,7 @@ function startTestPlay() {
     INITIAL_MAP = JSON.parse(JSON.stringify(editMap));
     initGame(0, "TEST");
     setMode('test_play');
+    // テストプレイ時は init フェーズをスキップさせるため即時開始とみなすか、initから2秒後に鳴らします
 }
 
 function exportEditMap() {
@@ -376,15 +396,14 @@ function getEntityAt(hx, hy, ignore = null) {
     return null;
 }
 
-// 修正：0.5マス単位で精密に障害物をチェックする
-function checkMapCollision(hx, hy, isPlayer = false) {
+// 修正：移動先のベクトル（dx, dy）を追加で受け取り、矢印床の進入判定に使用する
+function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
     let isAllRiver = true, hasRiver = false, isHit = false;
 
-    // オブジェクトが占有する2×2ユニット（0.5マス単位）をそれぞれチェック
-    for (let dy = 0; dy < 2; dy++) {
-        for (let dx = 0; dx < 2; dx++) {
-            let cx = hx + dx;
-            let cy = hy + dy;
+    for (let y = 0; y < 2; y++) {
+        for (let x = 0; x < 2; x++) {
+            let cx = hx + x;
+            let cy = hy + y;
             let tx = Math.floor(cx / 2);
             let ty = Math.floor(cy / 2);
 
@@ -392,7 +411,6 @@ function checkMapCollision(hx, hy, isPlayer = false) {
             
             let tile = state.map[ty][tx];
             
-            // この特定の0.5マス（cx, cy）が浮き卵に覆われているかチェック
             let coveredByFE = false;
             for (let fe of state.floatingEggs) {
                 if (cx >= fe.x && cx <= fe.x + 1 && cy >= fe.y && cy <= fe.y + 1) {
@@ -406,10 +424,17 @@ function checkMapCollision(hx, hy, isPlayer = false) {
                 isAllRiver = false;
             } else if (tile === 5) {
                 if (coveredByFE) {
-                    isAllRiver = false; // 卵がある部分は床として扱う
+                    isAllRiver = false;
                 } else {
                     hasRiver = true;
                 }
+            } else if (isPlayer && (tile === 'U' || tile === 'D' || tile === 'L' || tile === 'R')) {
+                // 自キャラのみ：矢印と「逆方向への移動」の場合は進入をブロック
+                if (tile === 'U' && dy === 1) isHit = true;
+                if (tile === 'D' && dy === -1) isHit = true;
+                if (tile === 'L' && dx === 1) isHit = true;
+                if (tile === 'R' && dx === -1) isHit = true;
+                isAllRiver = false;
             } else {
                 isAllRiver = false;
             }
@@ -428,7 +453,8 @@ function tryMove(dx, dy) {
     if (dx === -1) state.player.dir = 'left'; else if (dx === 1) state.player.dir = 'right';
 
     const pNextX = state.player.x + dx, pNextY = state.player.y + dy;
-    if (checkMapCollision(pNextX, pNextY, true).hit) return;
+    // プレイヤーの移動チェック (dx, dy を渡す)
+    if (checkMapCollision(pNextX, pNextY, true, dx, dy).hit) return;
 
     const hitE = getEntityAt(pNextX, pNextY);
     if (hitE) {
@@ -439,12 +465,13 @@ function tryMove(dx, dy) {
         let fNextX = hitE.x + dx, fNextY = hitE.y + dy;
 
         if (hitE.type === 'egg') {
-            let nextCol = checkMapCollision(fNextX, fNextY, false);
+            // 卵やブロックは isPlayer=false のため矢印床に影響されない
+            let nextCol = checkMapCollision(fNextX, fNextY, false, dx, dy);
             let willFloat = false;
 
             if (nextCol.hasRiver && !nextCol.allRiver) {
                 let fNextX2 = hitE.x + dx * 2, fNextY2 = hitE.y + dy * 2;
-                let nextCol2 = checkMapCollision(fNextX2, fNextY2, false);
+                let nextCol2 = checkMapCollision(fNextX2, fNextY2, false, dx, dy);
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
                     fNextX = fNextX2; fNextY = fNextY2; willFloat = true;
                 } else return;
@@ -452,10 +479,9 @@ function tryMove(dx, dy) {
                 willFloat = true;
             } else if (nextCol.hit) return;
 
-            // スナップ処理を削除し、半マスずれた座標のまま浮き卵にする
             hitE.willFloat = willFloat;
         } else {
-            if (checkMapCollision(fNextX, fNextY, false).hit) return;
+            if (checkMapCollision(fNextX, fNextY, false, dx, dy).hit) return;
         }
 
         if (getEntityAt(fNextX, fNextY, hitE)) return;
@@ -493,6 +519,7 @@ function checkLOS(m, p, axis) {
         for(let tx = Math.floor(minX/2); tx <= Math.floor(maxX/2); tx++) {
             let tile = state.map[ty][tx];
             if ([1,2,7,3].includes(tile)) return false;
+            // 'U', 'D', 'L', 'R' は視線を遮らないため条件に含めない
         }
     }
     for(let e of state.entities) {
@@ -515,6 +542,9 @@ function checkMedusa() {
         
         e.awake = wakeUp;
         if (attack) {
+            // ★BGM停止箇所★: メデューサの攻撃でやられた瞬間（必要ならここで止める）
+            bgmField.stop();
+
             state.needle = { x: e.x, y: e.y, tx: p.x, ty: p.y, axis: overlapX === 0 ? 'y' : 'x', progress: 0 };
             break;
         }
@@ -523,7 +553,11 @@ function checkMedusa() {
 
 function update(timestamp) {
     if (gameMode === 'init') {
-        if (timestamp - initTimer > 2000) setMode('game');
+        if (timestamp - initTimer > 2000) {
+            setMode(gameMode === 'test_play' ? 'test_play' : 'game');
+            // ★BGM再生箇所★: Init画面（ステージ名表示）が終わり、操作可能になった瞬間
+            bgmField.play();
+        }
         return;
     }
     if (gameMode !== 'game' && gameMode !== 'test_play') return;
@@ -590,7 +624,6 @@ function update(timestamp) {
                 let fe = state.floatingEggs[i];
                 let hasObjOn = false;
 
-                // 半マスずれていても、座標が完全に一致すれば「乗った」と判定される
                 if (state.player.x === fe.x && state.player.y === fe.y) hasObjOn = true;
                 
                 if (hasObjOn && !fe.objOn) {
@@ -613,6 +646,9 @@ function update(timestamp) {
                     } else if (tile === 3 && state.chestOpen && !state.cleared) {
                         state.map[ty][tx] = 0; state.cleared = true; updateUI();
                         
+                        // ★BGM停止箇所★: 宝箱を取得しステージクリアしたとき（必要ならここで止めるかファンファーレ等）
+                        bgmField.stop();
+
                         setTimeout(() => {
                             if (gameMode === 'test_play') setMode('edit');
                             else loadStage(currentStageIndex + 1);
@@ -685,7 +721,7 @@ function draw(timestamp) {
         ctx.font = 'bold 36px sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
-        ctx.fillText(`STAGE ${state.stageNum}`, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(gameMode === 'test_play' ? "TEST PLAY" : `STAGE ${state.stageNum}`, canvas.width / 2, canvas.height / 2);
         ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
         return;
     }
@@ -704,9 +740,14 @@ function draw(timestamp) {
             const px = x * TILE_SIZE, py = y * TILE_SIZE;
             
             drawSprite(SPRITES.floor, px, py, TILE_SIZE);
+            
             if (tile === 1) drawSprite(SPRITES.rock, px, py, TILE_SIZE);
             if (tile === 4) drawSprite(SPRITES.tree, px, py, TILE_SIZE);
             if (tile === 5) drawSprite(SPRITES[`river_${riverFrame}`], px, py, TILE_SIZE);
+            if (tile === 'U') drawSprite(SPRITES.arrow_top, px, py, TILE_SIZE);
+            if (tile === 'D') drawSprite(SPRITES.arrow_bottom, px, py, TILE_SIZE);
+            if (tile === 'L') drawSprite(SPRITES.arrow_left, px, py, TILE_SIZE);
+            if (tile === 'R') drawSprite(SPRITES.arrow_right, px, py, TILE_SIZE);
             if (tile === 2) drawSprite(SPRITES.heart_normal, px, py, TILE_SIZE);
             if (tile === 7) drawSprite(SPRITES.heart_shot, px, py, TILE_SIZE);
             if (tile === 3) drawSprite(state.chestOpen ? SPRITES.chest_open : SPRITES.chest_closed, px, py, TILE_SIZE);

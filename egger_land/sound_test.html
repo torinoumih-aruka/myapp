@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ゲームアプリ実装例</title>
+<script src="tori_music.js"></script>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+
+  <h2>Tori Music 再生テスト</h2>
+  
+  <div style="margin-bottom: 20px;">
+    <button id="btnPlayA">music_01再生</button>
+    <button id="btnStop">BGM 停止</button>
+    <button id="btnFadeOut">フェードアウト停止</button>
+  </div>
+
+  <div style="background: #eee; padding: 10px; border-radius: 5px;">
+    <h3>再生パラメータの変更テスト</h3>
+    <button id="btnMini">50%の音量で再生</button>
+    <button id="btnFast">テンポ150%で再生</button>
+    <button id="btnSlow">テンポ50%で再生</button>
+    <button id="btnHighPitch">ピッチを+5半音して再生</button>
+    <button id="btnLowPitch">ピッチを-5半音して再生</button>
+    <button id="btnNoDrum">ドラムなしで再生</button>
+    <button id="btnDrumOnly">ドラムのみ再生</button>
+    <button id="btnTr1Only">トラック１のみ再生</button>
+    <button id="btnTr2Only">トラック２のみ再生</button>
+    <button id="btnTr3Only">トラック３のみ再生</button>
+</div>
+
+<script>
+  // 事前にBGMデータを読み込み予約（非同期で勝手にロードされます）
+  // ※ファイルが見つからない場合はコンソールにエラーが出ます
+  const bgmField = loadMusic(1); // "1" でも "01" でも内部で補完されます
+  //const bgmBattle = loadMusic("02"); 
+
+  // --- 基本の再生・停止 ---
+  document.getElementById('btnPlayA').addEventListener('click', () => {
+    // デフォルトパラメータで再生
+    // music_02が再生中だった場合、自動的に警告ログが出て02が停止します。
+    bgmField.play(); 
+  });
+
+/*
+  document.getElementById('btnPlayB').addEventListener('click', () => {
+    bgmBattle.play();
+  });
+*/
+  document.getElementById('btnStop').addEventListener('click', () => {
+    // どちらが鳴っていてもそれぞれのオブジェクトに対してstopを呼べば停止します
+    bgmField.stop();
+    //bgmBattle.stop();
+  });
+
+  // --- 拡張機能：フェードアウト ---
+  document.getElementById('btnFadeOut').addEventListener('click', () => {
+    // 3秒かけてフェードアウト
+    bgmField.fadeOutStop(1.0);
+    //bgmBattle.fadeOutStop(3.0);
+  });
+
+  // --- パラメータ指定の再生 ---
+  document.getElementById('btnFast').addEventListener('click', () => {
+    // play(Vol, Pitch, Tempo, tr1, tr2, tr3, tr4)
+    // 音量100, ピッチ変更なし(0), テンポ150% で再生
+    bgmField.play(100, 0, 150);
+  });
+
+  // --- パラメータ指定の再生 ---
+  document.getElementById('btnSlow').addEventListener('click', () => {
+    bgmField.play(100, 0, 50);
+  });
+
+  // --- パラメータ指定の再生 ---
+  document.getElementById('btnMini').addEventListener('click', () => {
+    bgmField.play(50);
+  });
+
+  document.getElementById('btnHighPitch').addEventListener('click', () => {
+    // 音量100, ピッチ+5, テンポ通常(100) で再生
+    bgmField.play(100, 5, 100);
+  });
+
+  document.getElementById('btnLowPitch').addEventListener('click', () => {
+    // 音量100, ピッチ+5, テンポ通常(100) で再生
+    bgmField.play(100, -5, 100);
+  });
+
+  document.getElementById('btnNoDrum').addEventListener('click', () => {
+    // 音量100, ピッチ0, テンポ100, Tr1:True, Tr2:True, Tr3:True, No(Tr4):False
+    bgmField.play(100, 0, 100, true, true, true, false);
+  });
+
+  document.getElementById('btnDrumOnly').addEventListener('click', () => {
+    // 音量100, ピッチ0, テンポ100, Tr1:True, Tr2:True, Tr3:True, No(Tr4):False
+    bgmField.play(100, 0, 100, false, false, false, true);
+  });
+
+  document.getElementById('btnTr1Only').addEventListener('click', () => {
+    // 音量100, ピッチ0, テンポ100, Tr1:True, Tr2:True, Tr3:True, No(Tr4):False
+    bgmField.play(100, 0, 100, true, false, false, false);
+  });
+
+  document.getElementById('btnTr2Only').addEventListener('click', () => {
+    // 音量100, ピッチ0, テンポ100, Tr1:True, Tr2:True, Tr3:True, No(Tr4):False
+    bgmField.play(100, 0, 100, false, true, false, false);
+  });
+
+  document.getElementById('btnTr3Only').addEventListener('click', () => {
+    // 音量100, ピッチ0, テンポ100, Tr1:True, Tr2:True, Tr3:True, No(Tr4):False
+    bgmField.play(100, 0, 100, false, false, true, false);
+  });
+
+</script>
+</body>
+</html>
