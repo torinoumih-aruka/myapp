@@ -5,7 +5,7 @@
     "3": "#ff0055",
     "4": "#8B4513",
     "5": "#FFD700",
-    "6": "#696969",
+    "6": "#474747",
     "7": "#A9A9A9",
     "8": "#808080",
     "9": "#ffffff",
@@ -18,48 +18,24 @@
     "F": "#33ccff",
     "G": "#aa0000",
     "H": "#aaaaaa",
-    "I": "#ffffff"
+    "I": "#000000",
+    "J": "#ffdbd8",
+    "K": "#fffbb9",
+    "L": "#a67b01",
+    "M": "#ac11c0",
+    "N": "#ff57f9",
+    "O": "#550c0c"
   },
   "sprites": {
-    "wall": [
-      "6DDDDDD6",
-      "DD22D2DD",
-      "D2222DDD",
-      "D222D2DD",
-      "DD2D2DDD",
-      "D2D2D2DD",
-      "DD2D2DDD",
-      "6DDDDDD6"
-    ],
-    "floor": [
-      "222222D2",
-      "222222D2",
-      "222222D2",
-      "DDDDDDDD",
-      "22D22222",
-      "22D22222",
-      "22D22222",
-      "DDDDDDDD"
-    ],
-    "rock": [
-      "22666622",
-      "26876622",
-      "26766662",
-      "68686666",
-      "67888666",
-      "67886866",
-      "66768666",
-      "D666666D"
-    ],
     "tree": [
-      "22CCCB22",
-      "2CCCBCB2",
+      "OOCCCBOO",
+      "OCCCBCBO",
       "CCCBCBCB",
       "BCBCBCBB",
       "BBBBBBBB",
-      "2BB4DBB2",
-      "2244DD22",
-      "2DDDDDD2"
+      "OBB4DBBO",
+      "OO44DDOO",
+      "ODDDDDDO"
     ],
     "river_1": [
       "EEFEEEEE",
@@ -72,164 +48,164 @@
       "EEFEEEEE"
     ],
     "river_2": [
-      "EEFEEEEE",
-      "EEFEEEEE",
-      "E9FF99EE",
-      "FFEEEEFF",
-      "EEFEEEFE",
-      "EE9EEE9E",
-      "EEF99FEE",
-      "EEFEEEEE"
+      "EEEFEEEE",
+      "EEEFEEEE",
+      "EE9F9EEE",
+      "EEFEEFEE",
+      "FFFEEEFF",
+      "EEE9EE9E",
+      "EEEF9FEE",
+      "EEEFEEEE"
     ],
     "river_3": [
-      "EEFEEEEE",
-      "EEFEEEEE",
-      "E9FF99EE",
-      "FFEEEEFF",
-      "EEFEEEFE",
-      "EE9EEE9E",
-      "EEF99FEE",
-      "EEFEEEEE"
+      "EEEEFEEE",
+      "EEEFEEEE",
+      "EEEFEEEE",
+      "EEEFFEEE",
+      "EEFFE9FE",
+      "FFE99FEF",
+      "EEEEFEEE",
+      "EEEEFEEE"
     ],
     "heart_normal": [
-      "22222222",
-      "22322322",
-      "23333332",
-      "23333332",
-      "22333322",
-      "22233222",
-      "22222222",
-      "22222222"
+      "O999999O",
+      "99399399",
+      "93333339",
+      "93333339",
+      "99333399",
+      "99933999",
+      "G999999G",
+      "OGGGGGGO"
     ],
     "heart_shot": [
-      "22222222",
-      "22322322",
-      "23999332",
-      "23393332",
-      "22333322",
-      "22233222",
-      "22222222",
-      "22222222"
+      "O999999O",
+      "99599599",
+      "95555559",
+      "95555559",
+      "99555599",
+      "99955999",
+      "G999999G",
+      "OGGGGGGO"
     ],
     "chest_closed": [
-      "22222222",
-      "24444442",
-      "46666664",
-      "46466464",
-      "46666664",
-      "46644664",
-      "24444442",
-      "22222222"
+      "OLLLLLLO",
+      "J444444J",
+      "JL4444LJ",
+      "JLLLLLLJ",
+      "JKKOOKKJ",
+      "J44OO44J",
+      "J444444J",
+      "OJJJJJJO"
     ],
     "chest_open": [
-      "22222222",
-      "24444442",
-      "46666664",
-      "46466464",
-      "46666664",
-      "44444444",
-      "25555552",
-      "22222222"
+      "OLL55LLO",
+      "J699556J",
+      "J695556J",
+      "J555555J",
+      "JKKOOKKJ",
+      "J44OO44J",
+      "J444444J",
+      "OJJJJJJO"
     ],
     "framer_1": [
       "99999999",
       "9AAAAAA9",
-      "9ABBBBA9",
-      "9ABAAA99",
-      "9ABAAA99",
-      "9ABBBBA9",
       "9AAAAAA9",
+      "9AAAAAA9",
+      "99999999",
+      "9BBBBBB9",
+      "9BBBBBB9",
       "99999999"
     ],
     "framer_2": [
       "99999999",
-      "999AAAA9",
-      "99ABBBB9",
-      "99BAAA99",
-      "9ABAAA99",
-      "9ABBBBA9",
-      "9AAAAAA9",
+      "9999AA99",
+      "999AA9A9",
+      "99AA9AA9",
+      "99999999",
+      "9BBBBBB9",
+      "9BBBBBB9",
       "99999999"
     ],
     "snakey_left": [
-      "........",
-      "...CC...",
-      "..C9C9..",
-      ".CC9C9C.",
-      ".C.CCC.C",
-      ".CCCCCC.",
-      ".CCCCCC.",
-      "........"
+      ".AAB....",
+      "AAAAB.B.",
+      "AIAIA.B.",
+      "AIAIA.AB",
+      "AAAAAAAB",
+      "B99AAABB",
+      "B9999BB.",
+      ".BBBBB.."
     ],
     "snakey_right": [
-      "........",
-      "...CC...",
-      "..9C9C..",
-      ".C9C9CC.",
-      "C.CCC.C.",
-      ".CCCCCC.",
-      ".CCCCCC.",
-      "........"
+      "....BAA.",
+      ".B.BAAAA",
+      ".B.AIAIA",
+      "BA.AIAIA",
+      "BAAAAAAA",
+      "BBAAA99B",
+      ".BB9999B",
+      "..BBBBB."
     ],
     "snakey_happy_1": [
-      "........",
-      "...CC...",
-      "..C9C9..",
-      ".CC9C9C.",
-      ".C.CCC.C",
-      ".CCCCCC.",
-      ".CCCCCC.",
-      "........"
+      "..AAB...",
+      ".AAAAB..",
+      ".AIAIA..",
+      ".AIAIA.B",
+      ".AAAAAAB",
+      ".A999ABB",
+      ".B9999B.",
+      "..BBBB.."
     ],
     "snakey_happy_2": [
-      "........",
-      "...CC...",
-      "..C9C9..",
-      ".CC9C9C.",
-      ".C.CCC.C",
-      ".CC..CC.",
-      ".CCCCCC.",
-      "........"
+      "...BAA..",
+      "..BAAAA.",
+      "..AIAIA.",
+      "B.AIAIA.",
+      "BAAAAAA.",
+      "BBA999A.",
+      ".B9999B.",
+      "..BBBB.."
     ],
     "medusa_sleep": [
-      "........",
-      ".888888.",
-      "88688688",
-      "88888888",
-      "86888868",
-      "88666688",
-      ".888888.",
-      "........"
+      "..7788..",
+      ".788888.",
+      "78888888",
+      "78888888",
+      "66888866",
+      "66666666",
+      ".666666.",
+      ".688886."
     ],
     "medusa_awake": [
-      "........",
-      ".888888.",
-      "88G88G88",
-      "88888888",
-      "86888868",
-      "88666688",
-      ".888888.",
-      "........"
+      "..7788..",
+      ".766668.",
+      "76999968",
+      "699GG996",
+      "679GG976",
+      "66799766",
+      ".666666.",
+      ".688886."
     ],
     "egg": [
       "........",
-      "..9999..",
-      ".999999.",
-      "99999999",
-      "9999999H",
-      "999999HH",
-      ".9999HH.",
-      "..HHHH.."
+      "..JJJJ..",
+      ".JJJJJJ.",
+      "JJJJJJJJ",
+      "JJJJJJJ3",
+      "JJJJJJ33",
+      ".JJJJ33.",
+      "..3333.."
     ],
     "egg_sink": [
       "........",
-      "..H99H..",
-      ".H9999H.",
-      "H999999H",
-      "9999999H",
-      "999999HH",
-      ".9999HH.",
-      "..HHHH.."
+      ".9....9.",
+      "9.JJJJ.9",
+      ".JJJJJJ.",
+      ".JJJJJJ.",
+      ".JJJJJJ.",
+      "9.JJJJ.9",
+      ".9....9."
     ],
     "needle_h": [
       "........",
@@ -342,44 +318,294 @@
       ".311133."
     ],
     "arrow_top": [
-      "29999992",
+      "O999999O",
       "9BB99BB9",
       "9B9999B9",
       "99999999",
       "9BB99BB9",
       "9BB99BB9",
       "B999999B",
-      "2BBBBBB2"
+      "OBBBBBBO"
     ],
     "arrow_bottom": [
-      "29999992",
+      "O999999O",
       "9BB99BB9",
       "9BB99BB9",
       "99999999",
       "9B9999B9",
       "9BB99BB9",
       "B999999B",
-      "2BBBBBB2"
+      "OBBBBBBO"
     ],
     "arrow_left": [
-      "29999992",
+      "O999999O",
       "9BB9BBB9",
       "9B99BBB9",
       "99999999",
       "9B99BBB9",
       "9BB9BBB9",
       "B999999B",
-      "2BBBBBB2"
+      "OBBBBBBO"
     ],
     "arrow_right": [
-      "29999992",
+      "O999999O",
       "9BBB9BB9",
       "9BBB99B9",
       "99999999",
       "9BBB99B9",
       "9BBB9BB9",
       "B999999B",
-      "2BBBBBB2"
+      "OBBBBBBO"
+    ],
+    "grasses": [
+      "CBCBCCBC",
+      "BCCCBCBC",
+      "BCBCBBCB",
+      "CCBBCCBB",
+      "CBCCBCBC",
+      "BBCBBBCC",
+      "BCCCCBCB",
+      "CBCBCCCB"
+    ],
+    "flower_1": [
+      "CBCBCCBC",
+      "BCCC55BC",
+      "BCB5995B",
+      "C555995B",
+      "599555BC",
+      "5995BBCC",
+      "B55CCBCB",
+      "CBCBCCCB"
+    ],
+    "flower_2": [
+      "CBCBCCBC",
+      "BCCCB55C",
+      "BCBC5995",
+      "CC555995",
+      "C599555C",
+      "B5995BCC",
+      "BC55CBCB",
+      "CBCBCCCB"
+    ],
+    "wall_0": [
+      "6DDDDDD6",
+      "DD22D2DD",
+      "D2222DDD",
+      "D222D2DD",
+      "DD2D2DDD",
+      "D2D2D2DD",
+      "DD2D2DDD",
+      "6DDDDDD6"
+    ],
+    "wall_1": [
+      "OO6686OO",
+      "O68788OO",
+      "O676886O",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "O666666O"
+    ],
+    "wall_2": [
+      "KKKKKKKK",
+      "KKKKKKKK",
+      "LLLLLLLL",
+      "222D222D",
+      "DDDDDDDD",
+      "2D222D22",
+      "DDDDDDDD",
+      "222D222D"
+    ],
+    "wall_3": [
+      "LKKKKKKL",
+      "LKKKKLKL",
+      "LKLKKKKL",
+      "LKKKKKKL",
+      "LKKKKKKL",
+      "LKKKKLKL",
+      "LKLKKKKL",
+      "LKKKKKKL"
+    ],
+    "wall_4": [
+      "LLLLLLLL",
+      "KKKKKKKK",
+      "KKLKKKLK",
+      "KKKKKKKK",
+      "KLKKKLKK",
+      "KKKKKKKK",
+      "LLLLLLLL",
+      "DDDDDDDD"
+    ],
+    "wall_5": [
+      "DLLLLLLD",
+      "LLKKKKLL",
+      "LKKKKLKL",
+      "LKKKKKLL",
+      "LKLKLLKL",
+      "LLKLKLLL",
+      "DLLLLLLD",
+      "LDDDDDDL"
+    ],
+    "wall_6": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "wall_7": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "wall_8": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "wall_9": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "floor_0": [
+      "DDDDDDDO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "OOOOOOOO"
+    ],
+    "floor_1": [
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796"
+    ],
+    "floor_2": [
+      "77777777",
+      "97979797",
+      "97979797",
+      "97979797",
+      "97979797",
+      "97979797",
+      "67676767",
+      "66666666"
+    ],
+    "floor_3": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_4": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_5": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_6": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_7": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_8": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "floor_9": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "don_medosa_1": [
+      ".M....M.",
+      "MNNNNNNM",
+      "MGGNNGGM",
+      "MGGNNGGM",
+      ".MMMMMM.",
+      ".MNNNNM.",
+      ".MNNNNM.",
+      "..M..M.."
+    ],
+    "don_medosa_2": [
+      "........",
+      ".M....M.",
+      "MNNNNNNM",
+      "MGGNNGGM",
+      "MGGNNGGM",
+      ".MMMMMM.",
+      ".MNNNNM.",
+      ".M....M."
     ]
   }
 }
