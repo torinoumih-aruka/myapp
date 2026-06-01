@@ -412,6 +412,10 @@ function getEntityAt(hx, hy, ignore = null) {
 function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
     let isAllRiver = true, hasRiver = false, isHit = false;
 
+    // プレイヤーの移動前の座標を逆算（0.5マス単位）
+    let currentX = hx - dx;
+    let currentY = hy - dy;
+
     for (let y = 0; y < 2; y++) {
         for (let x = 0; x < 2; x++) {
             let cx = hx + x; let cy = hy + y;
@@ -429,10 +433,22 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
             } else if (tile === 5) {
                 if (coveredByFE) isAllRiver = false; else hasRiver = true;
             } else if (isPlayer && (tile === 'U' || tile === 'D' || tile === 'L' || tile === 'R')) {
-                if (tile === 'U' && dy === 1) isHit = true;
-                if (tile === 'D' && dy === -1) isHit = true;
-                if (tile === 'L' && dx === 1) isHit = true;
-                if (tile === 'R' && dx === -1) isHit = true;
+                // その矢印床が占める領域（0.5マス単位）
+                let tileMinX = tx * 2;
+                let tileMaxX = tx * 2 + 1;
+                let tileMinY = ty * 2;
+                let tileMaxY = ty * 2 + 1;
+
+                // 移動前に、すでにその矢印床に1ユニット（半マス）でも重なっていたか？
+                let wasOnTile = (currentX <= tileMaxX && currentX + 1 >= tileMinX && currentY <= tileMaxY && currentY + 1 >= tileMinY);
+
+                // 外側からの新規進入の時のみ、逆走禁止の壁判定を行う
+                if (!wasOnTile) {
+                    if (tile === 'U' && dy === 1) isHit = true;
+                    if (tile === 'D' && dy === -1) isHit = true;
+                    if (tile === 'L' && dx === 1) isHit = true;
+                    if (tile === 'R' && dx === -1) isHit = true;
+                }
                 isAllRiver = false;
             } else {
                 isAllRiver = false;

@@ -138,7 +138,7 @@
     <option value="6">16分音符</option>
     <option value="4">16分3連符</option>
   </select>
-  <button id="btnErase" class="btn-yellow">消ゴムOFF</button>
+  <button id="btnMode" class="btn-yellow">配置モード(1)</button>
   <button id="btnUd" class="btn-blue" disabled>Ud</button>
   <button id="btnRd" class="btn-blue" disabled>Rd</button>
   <span style="font-size:0.75rem; margin-left: 4px;">拡縮</span>
@@ -185,106 +185,12 @@
   <div class="scroll-x-wrapper" id="scrollXWrapper"><div id="scrollXInner" style="height: 1px;"></div></div>
 </div>
 
-<div class="modal-overlay" id="modalSave">
-  <div class="modal-content">
-    <div class="modal-title">タイトルを入力してください</div>
-    <input type="text" id="saveTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value="new music">
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execSave" class="btn-blue">OK</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalLoad">
-  <div class="modal-content">
-    <div class="modal-title">読み込むタイトルを選択してください</div>
-    <select id="loadSelect" style="width: 100%; padding: 6px;"></select>
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execLoad" class="btn-blue">OK</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalSettings">
-  <div class="modal-content" style="min-width: 320px;">
-    <div class="setting-row">
-      <div class="setting-label">テンポ</div>
-      <input type="number" id="setTempo" value="120" min="20" max="300" style="width: 50px;">
-    </div>
-    <div class="setting-row">
-      <div class="setting-label">リピート</div>
-      <span>開始拍 <input type="number" id="setLoopS" value="1" min="1" style="width: 45px;"></span>
-      <span style="margin-left: 5px;">終了拍 <input type="number" id="setLoopE" value="17" min="2" style="width: 45px;"></span>
-    </div>
-    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
-      <div class="setting-label">デフォルト音量</div>
-      <input type="number" id="setDefaultVol" value="80" min="0" max="100" style="width: 50px;">
-    </div>
-    
-    <div style="font-size: 0.8rem; margin-bottom: 4px;">音色 (Tr1 - Tr3)</div>
-    <table class="env-table">
-      <tr><th></th><th>波形</th><th>Attack</th><th>Decay</th><th>Sustain</th><th>Release</th></tr>
-      <tbody id="envTbody"></tbody>
-    </table>
-    
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execSettings" class="btn-blue">保存</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalCopy">
-  <div class="modal-content">
-    <div class="modal-title">コピペ</div>
-    <div class="setting-row">
-      <div class="setting-label">コピー元</div>
-      開始拍 <input type="number" id="copyStart" value="1" style="width:45px;"> 終了拍 <input type="number" id="copyEnd" value="5" style="width:45px;">
-    </div>
-    <div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;">
-      <div class="setting-label">コピー先</div>
-      開始拍 <input type="number" id="pasteStart" value="5" style="width:45px;">
-    </div>
-    <div style="font-size: 0.8rem; margin-bottom: 4px;">コピー対象トラック</div>
-    <div style="display: flex; gap: 8px; font-size: 0.8rem;">
-      <label><input type="checkbox" id="chkCopyTr0" checked> Tr1</label>
-      <label><input type="checkbox" id="chkCopyTr1" checked> Tr2</label>
-      <label><input type="checkbox" id="chkCopyTr2" checked> Tr3</label>
-      <label><input type="checkbox" id="chkCopyTr3" checked> No</label>
-    </div>
-    <div style="font-size: 0.75rem; color: #f55; margin-top: 15px; background: #311; padding: 6px; border-radius: 4px;">
-      ※この操作はアンドゥで戻せません。また、コピペを行うと、いままでのアンドゥ情報が消えます。
-    </div>
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execCopy" class="btn-blue">実行</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalImp">
-  <div class="modal-content" style="min-width: 320px; width: 90%;">
-    <div class="modal-title">JSONデータを貼り付けてください</div>
-    <textarea id="impTextarea" style="width: 100%; height: 150px; font-family: monospace; box-sizing: border-box; padding: 6px;" placeholder='{"title": "...", "mml_data": {...}}'></textarea>
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execImp" class="btn-blue">インポート</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalExp">
-  <div class="modal-content">
-    <div class="modal-title">出力する曲のタイトルを確認してください</div>
-    <input type="text" id="expTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value="">
-    <div class="modal-actions">
-      <button class="btnCancelModal">キャンセル</button>
-      <button id="execExp" class="btn-blue">OK</button>
-    </div>
-  </div>
-</div>
+<div class="modal-overlay" id="modalSave"><div class="modal-content"><div class="modal-title">タイトルを入力してください</div><input type="text" id="saveTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value="new music"><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execSave" class="btn-blue">OK</button></div></div></div>
+<div class="modal-overlay" id="modalLoad"><div class="modal-content"><div class="modal-title">読み込むタイトルを選択してください</div><select id="loadSelect" style="width: 100%; padding: 6px;"></select><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execLoad" class="btn-blue">OK</button></div></div></div>
+<div class="modal-overlay" id="modalSettings"><div class="modal-content" style="min-width: 320px;"><div class="setting-row"><div class="setting-label">テンポ</div><input type="number" id="setTempo" value="120" min="20" max="300" style="width: 50px;"></div><div class="setting-row"><div class="setting-label">リピート</div><span>開始拍 <input type="number" id="setLoopS" value="1" min="1" style="width: 45px;"></span><span style="margin-left: 5px;">終了拍 <input type="number" id="setLoopE" value="17" min="2" style="width: 45px;"></span></div><div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;"><div class="setting-label">デフォルト音量</div><input type="number" id="setDefaultVol" value="80" min="0" max="100" style="width: 50px;"></div><div style="font-size: 0.8rem; margin-bottom: 4px;">音色 (Tr1 - Tr3)</div><table class="env-table"><tr><th></th><th>波形</th><th>Attack</th><th>Decay</th><th>Sustain</th><th>Release</th></tr><tbody id="envTbody"></tbody></table><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execSettings" class="btn-blue">保存</button></div></div></div>
+<div class="modal-overlay" id="modalCopy"><div class="modal-content"><div class="modal-title">コピペ</div><div class="setting-row"><div class="setting-label">コピー元</div>開始拍 <input type="number" id="copyStart" value="1" style="width:45px;"> 終了拍 <input type="number" id="copyEnd" value="5" style="width:45px;"></div><div class="setting-row" style="border-bottom: 1px solid #444; padding-bottom: 8px;"><div class="setting-label">コピー先</div>開始拍 <input type="number" id="pasteStart" value="5" style="width:45px;"></div><div style="font-size: 0.8rem; margin-bottom: 4px;">コピー対象トラック</div><div style="display: flex; gap: 8px; font-size: 0.8rem;"><label><input type="checkbox" id="chkCopyTr0" checked> Tr1</label><label><input type="checkbox" id="chkCopyTr1" checked> Tr2</label><label><input type="checkbox" id="chkCopyTr2" checked> Tr3</label><label><input type="checkbox" id="chkCopyTr3" checked> No</label></div><div style="font-size: 0.75rem; color: #f55; margin-top: 15px; background: #311; padding: 6px; border-radius: 4px;">※この操作はアンドゥで戻せません。また、コピペを行うと、いままでのアンドゥ情報が消えます。</div><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execCopy" class="btn-blue">実行</button></div></div></div>
+<div class="modal-overlay" id="modalImp"><div class="modal-content" style="min-width: 320px; width: 90%;"><div class="modal-title">JSONデータを貼り付けてください</div><textarea id="impTextarea" style="width: 100%; height: 150px; font-family: monospace; box-sizing: border-box; padding: 6px;" placeholder='{"title": "...", "mml_data": {...}}'></textarea><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execImp" class="btn-blue">インポート</button></div></div></div>
+<div class="modal-overlay" id="modalExp"><div class="modal-content"><div class="modal-title">出力する曲のタイトルを確認してください</div><input type="text" id="expTitleInput" style="width: 100%; box-sizing: border-box; padding: 6px;" value=""><div class="modal-actions"><button class="btnCancelModal">キャンセル</button><button id="execExp" class="btn-blue">OK</button></div></div></div>
 
 <script>
 const TICKS_PER_BEAT = 24;
@@ -293,9 +199,10 @@ const TOTAL_KEYS = 72;
 const BASE_BEAT_WIDTH = 48;
 const TRACK_COLORS = ['#88ccff', '#88ff88', '#ff88cc', '#ffcc88'];
 const TRACK_BG_COLORS = ['#141f2a', '#142a14', '#2a1420', '#2a2014']; 
+const LEFT_PAD = 40; 
 
-const NOISE_BASE = 36; // C5
-const DRUM_MAP = { 36: "Kick (C)", 38: "Snare (D)", 40: "CHH (E)", 41: "OHH (F)", 43: "Crash (G)" };
+const NOISE_BASE = 36; 
+const DRUM_MAP = { 36: "Kick", 38: "Snar", 40: "CHH", 41: "OHH", 43: "Cras" };
 
 let currentTitle = "new music";
 let currentTempo = 120;
@@ -307,11 +214,35 @@ let audioCtx = null;
 let noiseBuffer = null;
 
 let currentTrack = 0;
-let isEraser = false;
 let currentZoom = 1.0;
 let snapTicks = 24;
 let scrollOffsetX = 0;
 let scrollOffsetY = 0;
+
+// --- モード管理 ---
+const MODE_PLACE = 1;
+const MODE_MOVE  = 2;
+const MODE_ERASE = 3;
+let currentMode = MODE_PLACE;
+
+const btnMode = document.getElementById('btnMode');
+function updateModeUI() {
+  if (currentMode === MODE_PLACE) {
+    btnMode.innerText = '配置モード(1)';
+    btnMode.classList.remove('active');
+  } else if (currentMode === MODE_MOVE) {
+    btnMode.innerText = '移動モード(2)';
+    btnMode.classList.add('active');
+  } else if (currentMode === MODE_ERASE) {
+    btnMode.innerText = '消ゴムモード(3)';
+    btnMode.classList.add('active');
+  }
+}
+btnMode.addEventListener('click', () => {
+  currentMode++;
+  if (currentMode > 3) currentMode = 1;
+  updateModeUI();
+});
 
 let tracksData = [
   { type: 'square50', env: {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: false, notes: [] },
@@ -320,7 +251,6 @@ let tracksData = [
   { type: 'noise', env: {a: 0.01, d: 0.1, s: 0.0, r: 0.0}, mute: false, notes: [] }
 ];
 
-// 初期データ
 tracksData[0].notes.push({ tick: 0, len: 24, pitchIdx: 36, vol: 80 });
 tracksData[0].notes.push({ tick: 24, len: 24, pitchIdx: 38, vol: 80 });
 tracksData[0].notes.push({ tick: 48, len: 24, pitchIdx: 40, vol: 100 });
@@ -329,15 +259,31 @@ tracksData[3].notes.push({ tick: 24, len: 12, pitchIdx: 38, vol: 90 });
 tracksData[3].notes.push({ tick: 48, len: 12, pitchIdx: 36, vol: 90 });
 tracksData[3].notes.push({ tick: 72, len: 12, pitchIdx: 43, vol: 90 });
 
-// --- Undo / Redo システム ---
+document.addEventListener('keydown', (e) => {
+  const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+  const isInput = activeTag === 'input' || activeTag === 'textarea' || (document.activeElement && document.activeElement.isContentEditable);
+  if (isInput) return;
+
+  if (e.key === 'z' || e.key === 'Z') {
+    document.getElementById('btnUd').click();
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    if (isPlaying) stopSong(); else playSong();
+  } else if (e.key === '1') {
+    currentMode = MODE_PLACE; updateModeUI();
+  } else if (e.key === '2') {
+    currentMode = MODE_MOVE; updateModeUI();
+  } else if (e.key === '3') {
+    currentMode = MODE_ERASE; updateModeUI();
+  }
+});
+
 let undoStack = [];
 let redoStack = [];
-
 function updateUndoRedoUI() {
   document.getElementById('btnUd').disabled = undoStack.length === 0;
   document.getElementById('btnRd').disabled = redoStack.length === 0;
 }
-
 function saveState() {
   const state = tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) }));
   undoStack.push(state);
@@ -345,19 +291,16 @@ function saveState() {
   redoStack = [];
   updateUndoRedoUI();
 }
-
 function restoreState(state) {
   state.forEach((st, idx) => { tracksData[idx].notes = JSON.parse(JSON.stringify(st.notes)); });
   render();
 }
-
 document.getElementById('btnUd').addEventListener('click', () => {
   if (undoStack.length === 0) return;
   redoStack.push(tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })));
   restoreState(undoStack.pop());
   updateUndoRedoUI();
 });
-
 document.getElementById('btnRd').addEventListener('click', () => {
   if (redoStack.length === 0) return;
   undoStack.push(tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })));
@@ -376,7 +319,7 @@ function updateScrollBounds() {
   let maxTicks = loopEndBeat * TICKS_PER_BEAT + (TICKS_PER_BEAT * 8);
   tracksData.forEach(tr => tr.notes.forEach(n => { maxTicks = Math.max(maxTicks, n.tick + n.len + (TICKS_PER_BEAT*4)); }));
   
-  const contentW = maxTicks * getPxPerTick();
+  const contentW = maxTicks * getPxPerTick() + LEFT_PAD;
   const contentH = TOTAL_KEYS * KEY_HEIGHT;
   const viewW = pianoCanvas.parentElement.clientWidth;
   const viewH = pianoCanvas.parentElement.clientHeight;
@@ -404,12 +347,6 @@ document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { sc
 document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
 document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
 
-document.getElementById('btnErase').addEventListener('click', (e) => {
-  isEraser = !isEraser;
-  e.target.innerText = isEraser ? '消ゴムON' : '消ゴムOFF';
-  e.target.classList.toggle('active', isEraser);
-});
-
 function updateTrackBackground() {
   document.getElementById('rollWrapper').style.backgroundColor = TRACK_BG_COLORS[currentTrack];
   document.getElementById('volWrapper').style.backgroundColor = TRACK_BG_COLORS[currentTrack];
@@ -423,252 +360,120 @@ document.querySelectorAll('.track-tab').forEach((tab) => {
     updateTrackBackground(); render();
   });
 });
-
 document.querySelectorAll('.mute-check').forEach((chk) => {
   chk.addEventListener('change', (e) => {
     const tr = parseInt(e.target.dataset.track);
     tracksData[tr].mute = !e.target.checked;
   });
 });
-
 document.querySelectorAll('.btnCancelModal').forEach(btn => { btn.addEventListener('click', (e) => { e.target.closest('.modal-overlay').classList.remove('show'); }); });
 
-// --- コピペ処理 ---
 document.getElementById('btnCopyPaste').addEventListener('click', () => { document.getElementById('modalCopy').classList.add('show'); });
 document.getElementById('execCopy').addEventListener('click', () => {
-  const cStart = parseInt(document.getElementById('copyStart').value);
-  const cEnd = parseInt(document.getElementById('copyEnd').value);
-  const pStart = parseInt(document.getElementById('pasteStart').value);
-  
-  if(isNaN(cStart) || isNaN(cEnd) || isNaN(pStart) || cStart >= cEnd) {
-    alert("開始拍と終了拍の設定が不正です。"); return;
-  }
-  
-  const startTick = (cStart - 1) * TICKS_PER_BEAT;
-  const lengthTick = (cEnd - cStart) * TICKS_PER_BEAT;
-  const destTick = (pStart - 1) * TICKS_PER_BEAT;
-  const deltaTick = destTick - startTick;
-  
+  const cStart = parseInt(document.getElementById('copyStart').value); const cEnd = parseInt(document.getElementById('copyEnd').value); const pStart = parseInt(document.getElementById('pasteStart').value);
+  if(isNaN(cStart) || isNaN(cEnd) || isNaN(pStart) || cStart >= cEnd) { alert("開始拍と終了拍の設定が不正です。"); return; }
+  const startTick = (cStart - 1) * TICKS_PER_BEAT; const lengthTick = (cEnd - cStart) * TICKS_PER_BEAT; const destTick = (pStart - 1) * TICKS_PER_BEAT; const deltaTick = destTick - startTick;
   [0, 1, 2, 3].forEach(i => {
     if (document.getElementById(`chkCopyTr${i}`).checked) {
-      let trNotes = tracksData[i].notes;
-      trNotes = trNotes.filter(n => !(n.tick >= destTick && n.tick < destTick + lengthTick));
+      let trNotes = tracksData[i].notes.filter(n => !(n.tick >= destTick && n.tick < destTick + lengthTick));
       const srcNotes = tracksData[i].notes.filter(n => n.tick >= startTick && n.tick < startTick + lengthTick);
       srcNotes.forEach(n => { trNotes.push({ ...n, tick: n.tick + deltaTick }); });
       tracksData[i].notes = trNotes;
     }
   });
-  
-  undoStack = []; redoStack = []; updateUndoRedoUI();
-  document.getElementById('modalCopy').classList.remove('show');
-  updateScrollBounds(); render();
+  undoStack = []; redoStack = []; updateUndoRedoUI(); document.getElementById('modalCopy').classList.remove('show'); updateScrollBounds(); render();
 });
 
-// --- 出力用共通データ構築関数 ---
 function buildExportObject(titleString) {
   const now = new Date();
   const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  
   const track_info = tracksData.map(t => ({ type: t.type, env: { ...t.env } }));
-  const mml_data = {
-    tracks: tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })),
-    tempo: currentTempo,
-    loopS: loopStartBeat,
-    loopE: loopEndBeat,
-    defaultVol: defaultVolume
-  };
-
+  const mml_data = { tracks: tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })), tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat, defaultVol: defaultVolume };
   return { title: titleString, update_date, mml_data, track_info };
 }
-
-// --- SAVE / LOAD (LocalStorage) ---
 const STORAGE_KEY = "mml_studio_music_data";
-
-document.getElementById('btnSave').addEventListener('click', () => {
-  document.getElementById('saveTitleInput').value = currentTitle;
-  document.getElementById('modalSave').classList.add('show');
-});
-
+document.getElementById('btnSave').addEventListener('click', () => { document.getElementById('saveTitleInput').value = currentTitle; document.getElementById('modalSave').classList.add('show'); });
 document.getElementById('execSave').addEventListener('click', () => {
-  currentTitle = document.getElementById('saveTitleInput').value || "new music";
-  document.getElementById('dispTitle').innerText = currentTitle;
-  
+  currentTitle = document.getElementById('saveTitleInput').value || "new music"; document.getElementById('dispTitle').innerText = currentTitle;
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   const exportObj = buildExportObject(currentTitle);
-  
   const existingIdx = savedList.findIndex(d => d.title === currentTitle);
-  if (existingIdx >= 0) savedList[existingIdx] = exportObj;
-  else savedList.push(exportObj);
-  
+  if (existingIdx >= 0) savedList[existingIdx] = exportObj; else savedList.push(exportObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(savedList));
-  document.getElementById('modalSave').classList.remove('show');
-  alert("保存しました。");
+  document.getElementById('modalSave').classList.remove('show'); alert("保存しました。");
 });
-
 document.getElementById('btnLoad').addEventListener('click', () => {
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  const select = document.getElementById('loadSelect');
-  select.innerHTML = "";
+  const select = document.getElementById('loadSelect'); select.innerHTML = "";
   if (savedList.length === 0) { select.innerHTML = "<option>データがありません</option>"; }
-  else {
-    savedList.forEach((item, idx) => {
-      const opt = document.createElement('option');
-      opt.value = idx; opt.innerText = `${item.title} (${item.update_date})`;
-      select.appendChild(opt);
-    });
-  }
+  else { savedList.forEach((item, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.innerText = `${item.title} (${item.update_date})`; select.appendChild(opt); }); }
   document.getElementById('modalLoad').classList.add('show');
 });
-
 document.getElementById('execLoad').addEventListener('click', () => {
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   const idx = document.getElementById('loadSelect').value;
   if(savedList[idx]) {
-    const data = savedList[idx];
-    currentTitle = data.title;
-    document.getElementById('dispTitle').innerText = currentTitle;
-    
+    const data = savedList[idx]; currentTitle = data.title; document.getElementById('dispTitle').innerText = currentTitle;
     tracksData = data.mml_data.tracks.map((t, i) => {
       const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
-      return {
-        type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')),
-        env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1},
-        mute: tracksData[i] ? tracksData[i].mute : false,
-        notes: t.notes
-      };
+      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: tracksData[i] ? tracksData[i].mute : false, notes: t.notes };
     });
-    
-    currentTempo = data.mml_data.tempo;
-    loopStartBeat = data.mml_data.loopS;
-    loopEndBeat = data.mml_data.loopE;
+    currentTempo = data.mml_data.tempo; loopStartBeat = data.mml_data.loopS; loopEndBeat = data.mml_data.loopE;
     if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
-    
     tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = !tr.mute; });
-    undoStack = []; redoStack = []; updateUndoRedoUI();
-    updateScrollBounds(); render();
+    undoStack = []; redoStack = []; updateUndoRedoUI(); updateScrollBounds(); render();
   }
   document.getElementById('modalLoad').classList.remove('show');
 });
 
-// --- IMP (インポート) ---
-document.getElementById('btnImp').addEventListener('click', () => {
-  document.getElementById('impTextarea').value = "";
-  document.getElementById('modalImp').classList.add('show');
-});
-
+document.getElementById('btnImp').addEventListener('click', () => { document.getElementById('impTextarea').value = ""; document.getElementById('modalImp').classList.add('show'); });
 document.getElementById('execImp').addEventListener('click', () => {
-  const text = document.getElementById('impTextarea').value.trim();
   try {
-    if(!text) throw new Error("データが空です");
-    const data = JSON.parse(text);
-    
-    if(!data.mml_data || !data.mml_data.tracks) {
-      throw new Error("不正なファイル構造です (mml_data が見つかりません)");
-    }
-    
-    currentTitle = data.title || "imported music";
-    document.getElementById('dispTitle').innerText = currentTitle;
-    
-    currentTempo = data.mml_data.tempo || 120;
-    loopStartBeat = data.mml_data.loopS || 1;
-    loopEndBeat = data.mml_data.loopE || 17;
+    const text = document.getElementById('impTextarea').value.trim(); if(!text) throw new Error("データが空です");
+    const data = JSON.parse(text); if(!data.mml_data || !data.mml_data.tracks) throw new Error("不正なファイル構造です");
+    currentTitle = data.title || "imported music"; document.getElementById('dispTitle').innerText = currentTitle;
+    currentTempo = data.mml_data.tempo || 120; loopStartBeat = data.mml_data.loopS || 1; loopEndBeat = data.mml_data.loopE || 17;
     if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
-    
     tracksData = data.mml_data.tracks.map((t, i) => {
       const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
-      return {
-        type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')),
-        env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1},
-        mute: false,
-        notes: t.notes || []
-      };
+      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: false, notes: t.notes || [] };
     });
-    
     tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = true; });
-    undoStack = []; redoStack = []; updateUndoRedoUI();
-    document.getElementById('modalImp').classList.remove('show');
-    updateScrollBounds(); render();
-    alert("インポート成功");
-  } catch (err) {
-    alert("インポート失敗\n\n" + err.stack);
-  }
+    undoStack = []; redoStack = []; updateUndoRedoUI(); document.getElementById('modalImp').classList.remove('show'); updateScrollBounds(); render(); alert("インポート成功");
+  } catch (err) { alert("インポート失敗\n\n" + err.stack); }
 });
 
-// --- EXP (エクスポート) ---
-document.getElementById('btnExp').addEventListener('click', () => {
-  document.getElementById('expTitleInput').value = currentTitle;
-  document.getElementById('modalExp').classList.add('show');
-});
-
+document.getElementById('btnExp').addEventListener('click', () => { document.getElementById('expTitleInput').value = currentTitle; document.getElementById('modalExp').classList.add('show'); });
 document.getElementById('execExp').addEventListener('click', () => {
-  const targetTitle = document.getElementById('expTitleInput').value || currentTitle;
-  currentTitle = targetTitle;
-  document.getElementById('dispTitle').innerText = currentTitle;
-  
-  const exportObj = buildExportObject(currentTitle);
-  const jsonStr = JSON.stringify(exportObj);
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  
-  document.getElementById('modalExp').classList.remove('show');
-  
-  if (isMobile) {
-    const subject = encodeURIComponent(`[mml studio] Export - ${currentTitle}`);
-    const body = encodeURIComponent(jsonStr);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  } else {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(jsonStr).then(() => {
-        alert("クリップボードに出力しました");
-      }).catch(err => {
-        alert("クリップボードへのコピーに失敗しました。以下のデータを手動でコピーしてください:\n\n" + jsonStr);
-      });
-    } else {
-      alert("お使いのブラウザはクリップボード書き込みに対応していません:\n\n" + jsonStr);
-    }
+  currentTitle = document.getElementById('expTitleInput').value || currentTitle; document.getElementById('dispTitle').innerText = currentTitle;
+  const jsonStr = JSON.stringify(buildExportObject(currentTitle)); const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent); document.getElementById('modalExp').classList.remove('show');
+  if (isMobile) { window.location.href = `mailto:?subject=${encodeURIComponent(`[mml studio] Export - ${currentTitle}`)}&body=${encodeURIComponent(jsonStr)}`; } 
+  else {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(jsonStr).then(() => { alert("クリップボードに出力しました"); }).catch(err => { alert("コピー失敗:\n\n" + jsonStr); }); } 
+    else { alert("ブラウザ非対応:\n\n" + jsonStr); }
   }
 });
 
-// --- 歯車(設定) ---
 function renderEnvTable() {
-  const tbody = document.getElementById('envTbody');
-  tbody.innerHTML = "";
-  const waves = ['square12', 'square25', 'square50', 'triangle'];
-  const waveLabels = ['矩形12.5%', '矩形25%', '矩形50%', '三角'];
+  const tbody = document.getElementById('envTbody'); tbody.innerHTML = "";
+  const waves = ['square12', 'square25', 'square50', 'triangle']; const waveLabels = ['矩形12.5%', '矩形25%', '矩形50%', '三角'];
   for(let i=0; i<3; i++) {
-    const tr = tracksData[i];
-    let row = `<tr><td>Tr${i+1}</td><td><select id="setW${i}">`;
+    const tr = tracksData[i]; let row = `<tr><td>Tr${i+1}</td><td><select id="setW${i}">`;
     waves.forEach((w, wi) => { row += `<option value="${w}" ${tr.type===w?'selected':''}>${waveLabels[wi]}</option>`; });
-    row += `</select></td>
-      <td><input type="number" id="setA${i}" step="0.01" value="${tr.env.a}"></td>
-      <td><input type="number" id="setD${i}" step="0.01" value="${tr.env.d}"></td>
-      <td><input type="number" id="setS${i}" step="0.01" value="${tr.env.s}"></td>
-      <td><input type="number" id="setR${i}" step="0.01" value="${tr.env.r}"></td></tr>`;
+    row += `</select></td><td><input type="number" id="setA${i}" step="0.01" value="${tr.env.a}"></td><td><input type="number" id="setD${i}" step="0.01" value="${tr.env.d}"></td><td><input type="number" id="setS${i}" step="0.01" value="${tr.env.s}"></td><td><input type="number" id="setR${i}" step="0.01" value="${tr.env.r}"></td></tr>`;
     tbody.innerHTML += row;
   }
 }
 document.getElementById('btnSettings').addEventListener('click', () => {
-  document.getElementById('setTempo').value = currentTempo;
-  document.getElementById('setLoopS').value = loopStartBeat;
-  document.getElementById('setLoopE').value = loopEndBeat;
-  document.getElementById('setDefaultVol').value = defaultVolume;
-  renderEnvTable();
-  document.getElementById('modalSettings').classList.add('show');
+  document.getElementById('setTempo').value = currentTempo; document.getElementById('setLoopS').value = loopStartBeat; document.getElementById('setLoopE').value = loopEndBeat; document.getElementById('setDefaultVol').value = defaultVolume;
+  renderEnvTable(); document.getElementById('modalSettings').classList.add('show');
 });
 document.getElementById('execSettings').addEventListener('click', () => {
-  currentTempo = parseInt(document.getElementById('setTempo').value);
-  loopStartBeat = parseInt(document.getElementById('setLoopS').value);
-  loopEndBeat = parseInt(document.getElementById('setLoopE').value);
-  defaultVolume = parseInt(document.getElementById('setDefaultVol').value);
-  
+  currentTempo = parseInt(document.getElementById('setTempo').value); loopStartBeat = parseInt(document.getElementById('setLoopS').value); loopEndBeat = parseInt(document.getElementById('setLoopE').value); defaultVolume = parseInt(document.getElementById('setDefaultVol').value);
   for(let i=0; i<3; i++) {
-    tracksData[i].type = document.getElementById(`setW${i}`).value;
-    tracksData[i].env.a = parseFloat(document.getElementById(`setA${i}`).value);
-    tracksData[i].env.d = parseFloat(document.getElementById(`setD${i}`).value);
-    tracksData[i].env.s = parseFloat(document.getElementById(`setS${i}`).value);
-    tracksData[i].env.r = parseFloat(document.getElementById(`setR${i}`).value);
+    tracksData[i].type = document.getElementById(`setW${i}`).value; tracksData[i].env.a = parseFloat(document.getElementById(`setA${i}`).value); tracksData[i].env.d = parseFloat(document.getElementById(`setD${i}`).value); tracksData[i].env.s = parseFloat(document.getElementById(`setS${i}`).value); tracksData[i].env.r = parseFloat(document.getElementById(`setR${i}`).value);
   }
-  document.getElementById('modalSettings').classList.remove('show');
-  updateScrollBounds(); render();
+  document.getElementById('modalSettings').classList.remove('show'); updateScrollBounds(); render();
 });
 
 // --- エディタ操作 ---
@@ -676,16 +481,27 @@ let dragState = null;
 function getMousePos(e, canvas) { const rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
 
 pianoCanvas.addEventListener('pointerdown', (e) => {
-  if (isPlaying) return;
   pianoCanvas.setPointerCapture(e.pointerId);
   const pos = getMousePos(e, pianoCanvas);
-  const worldX = pos.x + scrollOffsetX;
-  const worldY = pos.y + scrollOffsetY;
   
+  if (pos.x <= LEFT_PAD) {
+    const pitchIdx = TOTAL_KEYS - 1 - Math.floor((pos.y + scrollOffsetY) / KEY_HEIGHT);
+    playPreviewNote(pitchIdx);
+    return;
+  }
+
+  const worldX = pos.x + scrollOffsetX - LEFT_PAD;
+  if (worldX < 0) return;
+  const worldY = pos.y + scrollOffsetY;
   const tick = Math.round(worldX / getPxPerTick());
+
+  if (isPlaying) {
+    seekSong(tick);
+    return;
+  }
+
   const pitchIdx = TOTAL_KEYS - 1 - Math.floor(worldY / KEY_HEIGHT);
   if (pitchIdx < 0 || pitchIdx >= TOTAL_KEYS) return;
-
   if (currentTrack === 3) {
     if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12 || !DRUM_MAP[pitchIdx]) return;
   }
@@ -695,30 +511,52 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
 
   saveState();
 
-  if (isEraser) {
-    if (hitNote) tracksData[currentTrack].notes = notes.filter(n => n !== hitNote);
-    render(); return;
+  if (currentMode === MODE_ERASE) {
+    if (hitNote) {
+      tracksData[currentTrack].notes = notes.filter(n => n !== hitNote);
+      render();
+    } else {
+      undoStack.pop(); updateUndoRedoUI();
+    }
+    return;
   }
 
   if (hitNote) {
     const pxStart = hitNote.tick * getPxPerTick();
     const pxEnd = (hitNote.tick + hitNote.len) * getPxPerTick();
-    if (worldX - pxStart < 12) dragState = { mode: 'resize-L', note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
-    else if (pxEnd - worldX < 12) dragState = { mode: 'resize-R', note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
-    else dragState = { mode: 'move', note: hitNote, origTick: hitNote.tick, offsetTick: tick - hitNote.tick };
-  } else {
-    const snapT = Math.floor(tick / snapTicks) * snapTicks;
-    const overlapping = notes.filter(n => Math.max(snapT, n.tick) < Math.min(snapT + snapTicks, n.tick + n.len));
-    if (overlapping.length >= 3) {
-      undoStack.pop(); 
-      updateUndoRedoUI();
-      return;
-    }
+    
+    let isEdgeClick = false;
+    let resizeMode = '';
+    
+    // ノーツの両端（12px以内）をクリックしたか判定
+    if (worldX - pxStart < 12) { isEdgeClick = true; resizeMode = 'resize-L'; }
+    else if (pxEnd - worldX < 12) { isEdgeClick = true; resizeMode = 'resize-R'; }
 
-    const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: defaultVolume };
-    notes.push(newNote);
-    dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
-    updateScrollBounds();
+    if (currentMode === MODE_MOVE) {
+      // 移動モード：端をクリックしてもリサイズせず、常に移動とする
+      dragState = { mode: 'move', note: hitNote, origTick: hitNote.tick, offsetTick: tick - hitNote.tick };
+    } else if (currentMode === MODE_PLACE) {
+      // 配置モード：端をクリックしたときのみリサイズ。中央クリックでは移動させない
+      if (isEdgeClick) {
+        dragState = { mode: resizeMode, note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
+      }
+    }
+  } else {
+    if (currentMode === MODE_PLACE) {
+      const snapT = Math.floor(tick / snapTicks) * snapTicks;
+      const overlapping = notes.filter(n => Math.max(snapT, n.tick) < Math.min(snapT + snapTicks, n.tick + n.len));
+      if (overlapping.length >= 3) {
+        undoStack.pop(); updateUndoRedoUI();
+        return;
+      }
+      const newNote = { tick: snapT, len: snapTicks, pitchIdx: pitchIdx, vol: defaultVolume };
+      notes.push(newNote);
+      dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
+      updateScrollBounds();
+    } else {
+      // 移動モードで何もない場所をクリックした場合は何もしない
+      undoStack.pop(); updateUndoRedoUI();
+    }
   }
   render();
 });
@@ -726,7 +564,7 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
 pianoCanvas.addEventListener('pointermove', (e) => {
   if (!dragState) return;
   const pos = getMousePos(e, pianoCanvas);
-  const worldX = pos.x + scrollOffsetX;
+  const worldX = pos.x + scrollOffsetX - LEFT_PAD;
   let currentTick = worldX / getPxPerTick();
   
   if (dragState.mode === 'resize-R') {
@@ -755,15 +593,15 @@ pianoCanvas.addEventListener('pointercancel', () => { dragState = null; });
 
 volCanvas.addEventListener('pointerdown', (e) => {
   if (isPlaying || document.getElementById('chkVolLock').checked) return;
-  saveState();
-  handleVolume(e);
+  saveState(); handleVolume(e);
 });
 volCanvas.addEventListener('pointermove', (e) => { if (e.buttons === 1) handleVolume(e); });
 function handleVolume(e) {
   if (isPlaying || document.getElementById('chkVolLock').checked) return;
   volCanvas.setPointerCapture(e.pointerId);
   const pos = getMousePos(e, volCanvas);
-  const worldX = pos.x + scrollOffsetX;
+  const worldX = pos.x + scrollOffsetX - LEFT_PAD;
+  if (worldX < 0) return;
   const tick = worldX / getPxPerTick();
   const doSnap = document.getElementById('chkVolSnap').checked;
   
@@ -793,51 +631,35 @@ function render() {
     
     if (currentTrack === 3) {
       if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12) {
-        pCtx.fillStyle = '#050505'; 
-        pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
+        pCtx.fillStyle = '#050505'; pCtx.fillRect(scrollOffsetX + LEFT_PAD, y, w, KEY_HEIGHT - 1);
         continue;
       }
     }
     
     const isBlack = [1, 3, 6, 8, 10].includes(pitchIdx % 12);
     pCtx.fillStyle = isBlack ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)';
-    pCtx.fillRect(scrollOffsetX, y, w, KEY_HEIGHT - 1);
+    pCtx.fillRect(scrollOffsetX + LEFT_PAD, y, w, KEY_HEIGHT - 1);
     
     if (pitchIdx % 12 === 0) {
-      pCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      pCtx.font = "10px sans-serif";
-      pCtx.fillText("C", scrollOffsetX + 2, y + 12);
-      
-      pCtx.beginPath();
-      pCtx.setLineDash([4, 4]);
-      pCtx.moveTo(scrollOffsetX, y);
-      pCtx.lineTo(scrollOffsetX + w, y);
-      pCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      pCtx.stroke();
-      pCtx.setLineDash([]);
-    }
-    
-    if (currentTrack === 3 && DRUM_MAP[pitchIdx]) {
-      pCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      pCtx.font = "10px sans-serif";
-      pCtx.fillText(DRUM_MAP[pitchIdx], scrollOffsetX + 14, y + 12);
+      pCtx.beginPath(); pCtx.setLineDash([4, 4]); pCtx.moveTo(scrollOffsetX + LEFT_PAD, y); pCtx.lineTo(scrollOffsetX + w, y);
+      pCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; pCtx.stroke(); pCtx.setLineDash([]);
     }
   }
 
-  const startTick = Math.floor(scrollOffsetX / pxPerTick);
-  const endTick = Math.ceil((scrollOffsetX + w) / pxPerTick);
+  const startTick = Math.max(0, Math.floor((scrollOffsetX - LEFT_PAD) / pxPerTick));
+  const endTick = Math.ceil((scrollOffsetX + w - LEFT_PAD) / pxPerTick);
   for (let t = startTick; t <= endTick; t++) {
     if (t % (TICKS_PER_BEAT * 4) === 0) { 
-      pCtx.fillStyle = 'rgba(255, 255, 255, 0.3)'; pCtx.fillRect(t * pxPerTick, scrollOffsetY, 1, h);
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.3)'; pCtx.fillRect(t * pxPerTick + LEFT_PAD, scrollOffsetY, 1, h);
     } else if (t % TICKS_PER_BEAT === 0) { 
-      pCtx.fillStyle = 'rgba(255, 255, 255, 0.1)'; pCtx.fillRect(t * pxPerTick, scrollOffsetY, 1, h);
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.1)'; pCtx.fillRect(t * pxPerTick + LEFT_PAD, scrollOffsetY, 1, h);
     }
   }
 
   tracksData.forEach((track, idx) => {
     const isCur = (idx === currentTrack);
     track.notes.forEach(note => {
-      const x = note.tick * pxPerTick;
+      const x = note.tick * pxPerTick + LEFT_PAD;
       const y = (TOTAL_KEYS - 1 - note.pitchIdx) * KEY_HEIGHT;
       const nw = note.len * pxPerTick;
       if (x + nw < scrollOffsetX || x > scrollOffsetX + w || y + KEY_HEIGHT < scrollOffsetY || y > scrollOffsetY + h) return;
@@ -851,20 +673,53 @@ function render() {
     });
   });
   
-  const loopStartPx = (loopStartBeat - 1) * TICKS_PER_BEAT * pxPerTick;
-  const loopEndPx = (loopEndBeat - 1) * TICKS_PER_BEAT * pxPerTick;
+  const loopStartPx = (loopStartBeat - 1) * TICKS_PER_BEAT * pxPerTick + LEFT_PAD;
+  const loopEndPx = (loopEndBeat - 1) * TICKS_PER_BEAT * pxPerTick + LEFT_PAD;
   pCtx.fillStyle = 'rgba(255, 0, 0, 0.5)';
   pCtx.fillRect(loopStartPx, scrollOffsetY, 2, h);
   pCtx.fillRect(loopEndPx, scrollOffsetY, 2, h);
   
+  if (isPlaying) {
+    const playX = currentPlayTick * pxPerTick + LEFT_PAD;
+    pCtx.fillStyle = '#ff3333';
+    pCtx.fillRect(playX, scrollOffsetY, 2, h);
+  }
+
+  pCtx.fillStyle = '#1a1a1a';
+  pCtx.fillRect(scrollOffsetX, scrollOffsetY, LEFT_PAD, h);
+  for (let i = 0; i < TOTAL_KEYS; i++) {
+    const y = i * KEY_HEIGHT;
+    if (y < scrollOffsetY - KEY_HEIGHT || y > scrollOffsetY + h) continue;
+    const pitchIdx = TOTAL_KEYS - 1 - i;
+    
+    if (currentTrack === 3) {
+       if (pitchIdx >= NOISE_BASE && pitchIdx < NOISE_BASE + 12 && DRUM_MAP[pitchIdx]) {
+           pCtx.fillStyle = '#444'; pCtx.fillRect(scrollOffsetX, y, LEFT_PAD, KEY_HEIGHT-1);
+           pCtx.fillStyle = '#fff'; pCtx.font = "10px sans-serif";
+           pCtx.fillText(DRUM_MAP[pitchIdx].substring(0,4), scrollOffsetX + 4, y + 12);
+       }
+       continue;
+    }
+
+    const isBlack = [1, 3, 6, 8, 10].includes(pitchIdx % 12);
+    if (isBlack) {
+        pCtx.fillStyle = '#2d2d2d'; pCtx.fillRect(scrollOffsetX, y, 24, KEY_HEIGHT - 1);
+    } else {
+        pCtx.fillStyle = '#eee'; pCtx.fillRect(scrollOffsetX, y, LEFT_PAD, KEY_HEIGHT - 1);
+        pCtx.fillStyle = '#000'; pCtx.font = "10px sans-serif";
+        if (pitchIdx % 12 === 0) pCtx.fillText("C" + Math.floor(pitchIdx/12), scrollOffsetX + 20, y + 12);
+    }
+    pCtx.fillStyle = '#000'; pCtx.fillRect(scrollOffsetX, y + KEY_HEIGHT - 1, LEFT_PAD, 1);
+  }
+
   pCtx.restore();
 
   vCtx.clearRect(0, 0, volCanvas.width, volCanvas.height);
   vCtx.save(); vCtx.translate(-scrollOffsetX, 0);
-  vCtx.strokeStyle = '#444'; vCtx.beginPath(); vCtx.moveTo(scrollOffsetX, volCanvas.height/2); vCtx.lineTo(scrollOffsetX+w, volCanvas.height/2); vCtx.stroke();
+  vCtx.strokeStyle = '#444'; vCtx.beginPath(); vCtx.moveTo(scrollOffsetX + LEFT_PAD, volCanvas.height/2); vCtx.lineTo(scrollOffsetX+w, volCanvas.height/2); vCtx.stroke();
 
   tracksData[currentTrack].notes.forEach(note => {
-    const x = note.tick * pxPerTick;
+    const x = note.tick * pxPerTick + LEFT_PAD;
     const nw = note.len * pxPerTick;
     if (x + nw < scrollOffsetX || x > scrollOffsetX + w) return;
     const vh = (note.vol / 100) * volCanvas.height;
@@ -877,7 +732,6 @@ function render() {
   vCtx.restore();
 }
 
-// --- オーディオ シーケンサー ---
 let isPlaying = false;
 let activeNodes = [];
 let scheduleTimer = null;
@@ -892,6 +746,17 @@ function createFamicomWave(ctx, type) {
     return ctx.createPeriodicWave(real, imag);
   }
   return null; 
+}
+
+function initAudioIfNeeded() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!noiseBuffer) {
+    const size = audioCtx.sampleRate * 2;
+    noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+    const out = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
+  }
 }
 
 function schedulePlaybackTrack(note, track, tIdx, sTime) {
@@ -963,6 +828,23 @@ function schedulePlaybackTrack(note, track, tIdx, sTime) {
   }
 }
 
+function playPreviewNote(pitchIdx) {
+  if (currentTrack === 3) {
+     if (pitchIdx < NOISE_BASE || pitchIdx >= NOISE_BASE + 12 || !DRUM_MAP[pitchIdx]) return;
+  }
+  initAudioIfNeeded();
+  const track = tracksData[currentTrack];
+  const dummyNote = { pitchIdx: pitchIdx, len: snapTicks, vol: defaultVolume };
+  schedulePlaybackTrack(dummyNote, track, currentTrack, audioCtx.currentTime);
+}
+
+function seekSong(tick) {
+  activeNodes.forEach(n => { try { n.source.stop(); } catch(e){} n.source.disconnect(); if(n.gainNode) n.gainNode.disconnect(); });
+  activeNodes = [];
+  currentPlayTick = Math.max(0, tick);
+  nextTickTime = audioCtx.currentTime + 0.05;
+}
+
 function processNextTick() {
   const secPerTick = (60 / currentTempo) / TICKS_PER_BEAT;
   nextTickTime += secPerTick;
@@ -1003,18 +885,12 @@ function sequencerLoop() {
   const currTime = audioCtx.currentTime;
   activeNodes = activeNodes.filter(n => n.endTime > currTime);
 
+  render(); 
   if (isPlaying) scheduleTimer = requestAnimationFrame(sequencerLoop);
 }
 
 function playSong() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (!noiseBuffer) {
-    const size = audioCtx.sampleRate * 2;
-    noiseBuffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
-    const out = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < size; i++) out[i] = Math.random() * 2 - 1;
-  }
+  initAudioIfNeeded();
   stopSong(); isPlaying = true;
   document.getElementById('btnPlay').style.background = '#4a9a4a';
   document.getElementById('btnPlay').style.color = '#fff';
@@ -1030,12 +906,12 @@ function stopSong() {
   activeNodes = [];
   document.getElementById('btnPlay').style.background = '';
   document.getElementById('btnPlay').style.color = '';
+  render();
 }
 
 document.getElementById('btnPlay').addEventListener('click', playSong);
 document.getElementById('btnStop').addEventListener('click', stopSong);
 
-// 初期位置調整
 setTimeout(() => {
   updateTrackBackground();
   const sY = document.getElementById('scrollYWrapper');
