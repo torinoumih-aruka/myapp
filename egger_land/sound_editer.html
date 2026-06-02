@@ -141,14 +141,6 @@
   <button id="btnMode" class="btn-yellow">配置モード(1)</button>
   <button id="btnUd" class="btn-blue" disabled>Ud</button>
   <button id="btnRd" class="btn-blue" disabled>Rd</button>
-  <span style="font-size:0.75rem; margin-left: 4px;">拡縮</span>
-  <select id="valZoom">
-    <option value="25">25%</option>
-    <option value="50">50%</option>
-    <option value="75">75%</option>
-    <option value="100" selected>100%</option>
-    <option value="150">150%</option>
-  </select>
   <button id="btnCopyPaste" class="btn-blue">コピペ</button>
 </div>
 
@@ -168,6 +160,25 @@
   <div class="tab-item" data-idx="3">
     <div class="track-tab" data-track="3">No</div>
     <input type="checkbox" class="mute-check" data-track="3" checked>
+  </div>
+
+  <div style="margin-left: auto; display: flex; align-items: center; gap: 4px; padding-right: 8px;">
+    <span style="font-size:0.75rem;">横</span>
+    <select id="valZoomX" style="height: 22px; padding: 0 4px; margin-right: 6px;">
+      <option value="10">10%</option>
+      <option value="25">25%</option>
+      <option value="50">50%</option>
+      <option value="75">75%</option>
+      <option value="100" selected>100%</option>
+      <option value="150">150%</option>
+      <option value="200">200%</option>
+    </select>
+    <span style="font-size:0.75rem;">縦</span>
+    <select id="valZoomY" style="height: 22px; padding: 0 4px;">
+      <option value="50">50%</option>
+      <option value="100" selected>100%</option>
+      <option value="200">200%</option>
+    </select>
   </div>
 </div>
 
@@ -194,7 +205,7 @@
 
 <script>
 const TICKS_PER_BEAT = 24;
-const KEY_HEIGHT = 16;
+let KEY_HEIGHT = 16;  // 縦幅を可変にするため let に変更
 const TOTAL_KEYS = 72; 
 const BASE_BEAT_WIDTH = 48;
 const TRACK_COLORS = ['#88ccff', '#88ff88', '#ff88cc', '#ffcc88'];
@@ -344,8 +355,19 @@ resizeObserver.observe(document.querySelector('.editor-layout'));
 
 document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { scrollOffsetX = e.target.scrollLeft; render(); });
 document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { scrollOffsetY = e.target.scrollTop; render(); });
-document.getElementById('valZoom').addEventListener('change', (e) => { currentZoom = parseInt(e.target.value) / 100; updateScrollBounds(); render(); });
 document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
+
+// 横・縦のズームイベント設定
+document.getElementById('valZoomX').addEventListener('change', (e) => { 
+  currentZoom = parseInt(e.target.value) / 100; 
+  updateScrollBounds(); 
+  render(); 
+});
+document.getElementById('valZoomY').addEventListener('change', (e) => { 
+  KEY_HEIGHT = 16 * (parseInt(e.target.value) / 100); 
+  updateScrollBounds(); 
+  render(); 
+});
 
 function updateTrackBackground() {
   document.getElementById('rollWrapper').style.backgroundColor = TRACK_BG_COLORS[currentTrack];
@@ -528,15 +550,12 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
     let isEdgeClick = false;
     let resizeMode = '';
     
-    // ノーツの両端（12px以内）をクリックしたか判定
     if (worldX - pxStart < 12) { isEdgeClick = true; resizeMode = 'resize-L'; }
     else if (pxEnd - worldX < 12) { isEdgeClick = true; resizeMode = 'resize-R'; }
 
     if (currentMode === MODE_MOVE) {
-      // 移動モード：端をクリックしてもリサイズせず、常に移動とする
       dragState = { mode: 'move', note: hitNote, origTick: hitNote.tick, offsetTick: tick - hitNote.tick };
     } else if (currentMode === MODE_PLACE) {
-      // 配置モード：端をクリックしたときのみリサイズ。中央クリックでは移動させない
       if (isEdgeClick) {
         dragState = { mode: resizeMode, note: hitNote, origTick: hitNote.tick, origLen: hitNote.len };
       }
@@ -554,7 +573,6 @@ pianoCanvas.addEventListener('pointerdown', (e) => {
       dragState = { mode: 'move', note: newNote, origTick: snapT, offsetTick: 0 };
       updateScrollBounds();
     } else {
-      // 移動モードで何もない場所をクリックした場合は何もしない
       undoStack.pop(); updateUndoRedoUI();
     }
   }
@@ -687,6 +705,11 @@ function render() {
 
   pCtx.fillStyle = '#1a1a1a';
   pCtx.fillRect(scrollOffsetX, scrollOffsetY, LEFT_PAD, h);
+  
+  // 縦の縮尺に合わせてフォントサイズと位置を動的調整
+  pCtx.font = (KEY_HEIGHT < 12 ? 8 : (KEY_HEIGHT > 20 ? 12 : 10)) + "px sans-serif";
+  const textYOffset = KEY_HEIGHT - Math.floor(KEY_HEIGHT / 4);
+
   for (let i = 0; i < TOTAL_KEYS; i++) {
     const y = i * KEY_HEIGHT;
     if (y < scrollOffsetY - KEY_HEIGHT || y > scrollOffsetY + h) continue;
@@ -695,8 +718,8 @@ function render() {
     if (currentTrack === 3) {
        if (pitchIdx >= NOISE_BASE && pitchIdx < NOISE_BASE + 12 && DRUM_MAP[pitchIdx]) {
            pCtx.fillStyle = '#444'; pCtx.fillRect(scrollOffsetX, y, LEFT_PAD, KEY_HEIGHT-1);
-           pCtx.fillStyle = '#fff'; pCtx.font = "10px sans-serif";
-           pCtx.fillText(DRUM_MAP[pitchIdx].substring(0,4), scrollOffsetX + 4, y + 12);
+           pCtx.fillStyle = '#fff';
+           pCtx.fillText(DRUM_MAP[pitchIdx].substring(0,4), scrollOffsetX + 4, y + textYOffset);
        }
        continue;
     }
@@ -706,8 +729,8 @@ function render() {
         pCtx.fillStyle = '#2d2d2d'; pCtx.fillRect(scrollOffsetX, y, 24, KEY_HEIGHT - 1);
     } else {
         pCtx.fillStyle = '#eee'; pCtx.fillRect(scrollOffsetX, y, LEFT_PAD, KEY_HEIGHT - 1);
-        pCtx.fillStyle = '#000'; pCtx.font = "10px sans-serif";
-        if (pitchIdx % 12 === 0) pCtx.fillText("C" + Math.floor(pitchIdx/12), scrollOffsetX + 20, y + 12);
+        pCtx.fillStyle = '#000';
+        if (pitchIdx % 12 === 0) pCtx.fillText("C" + Math.floor(pitchIdx/12), scrollOffsetX + 20, y + textYOffset);
     }
     pCtx.fillStyle = '#000'; pCtx.fillRect(scrollOffsetX, y + KEY_HEIGHT - 1, LEFT_PAD, 1);
   }
