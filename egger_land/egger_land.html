@@ -185,7 +185,8 @@ document.getElementById('btn-start-game').addEventListener('click', () => loadSt
 document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
 document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
 
-document.getElementById('btn-retry').addEventListener('click', () => {
+document.getElementById('btn-retry').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
     // ★BGM停止箇所★:     
     music.stop();
     if (gameMode === 'game') loadStage(currentStageIndex);
@@ -200,11 +201,13 @@ document.getElementById('btn-edit-exit').addEventListener('click', () => {
     setMode('title');
 });
 document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
-document.getElementById('btn-exit-test').addEventListener('click', () => {
+document.getElementById('btn-exit-test').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
     // ★BGM停止箇所★: 
-    tori_music.stop();
+    music.stop();
     setMode('edit');
 });
+
 document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
 
 // --- LocalStorage & Import 関連機能 ---
