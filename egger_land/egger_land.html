@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Bug Fixes</title>
+    <title>Eggerland Clone - Editor Extended</title>
     <script src="tori_music.js"></script>
-    <style>
+<style>
         body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
         #game-container { width: 100vw; max-width: 600px; position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
         #gameCanvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; touch-action: none; }
@@ -33,12 +33,16 @@
         #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
 
         #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
-        #palette-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 10px; width: 90%; max-width: 400px; max-height: 180px; overflow-y: auto; padding: 5px; border: 1px solid #333; border-radius: 5px; }
+        #palette-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 10px; width: 90%; max-width: 400px; max-height: 120px; overflow-y: auto; padding: 5px; border: 1px solid #333; border-radius: 5px; }
         .palette-btn { width: 36px; height: 36px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #222; }
         .palette-btn canvas { width: 32px; height: 32px; image-rendering: pixelated; }
-        .edit-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        .edit-controls button { padding: 10px 15px; font-size: 1rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
+        .edit-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .edit-controls button { padding: 6px 12px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
         .edit-controls button:active { background-color: #666; }
+        
+        /* エディタ新規UI用 */
+        #import-json-text { width: 220px; height: 30px; font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff; box-sizing: border-box; resize: none; padding: 4px; }
+        .edit-input { width: 110px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -56,8 +60,9 @@
     <dialog id="notes-dialog">
         <h2 style="margin-top:0;">リリースノート</h2>
         <ul style="padding-left:20px; line-height: 1.6;">
-            <li>自キャラの移動バグ（左右移動不能、上下のガタつき）を修正しました。</li>
-            <li>「花」のタイルが真っ黒になるバグを修正し、正常にアニメーションするようにしました。</li>
+            <li>宝箱に乗った状態でのエッガーショット発射挙動を修正しました（自キャラ正面から発射、重なりの壁判定を無視）。</li>
+            <li>エディタに「JSONのインポート機能」を追加しました。</li>
+            <li>エディタに「LocalStorageへの名前を付けて保存/読み込み機能」を追加しました。</li>
         </ul>
         <div style="text-align: right; margin-top: 20px;">
             <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
@@ -81,6 +86,18 @@
             <button id="btn-edit-test">テストプレイ</button>
             <button id="btn-edit-export">JSON出力</button>
             <button id="btn-edit-exit">タイトルへ</button>
+        </div>
+        <div class="edit-controls" style="margin-top: 10px;">
+            <textarea id="import-json-text" placeholder='{"map": [[...]]} や [[...]] をペースト'></textarea>
+            <button id="btn-import-json">読込</button>
+        </div>
+        <div class="edit-controls" style="margin-top: 10px;">
+            <input type="text" id="save-stage-name" class="edit-input" placeholder="ステージ名">
+            <button id="btn-save-local">保存</button>
+            <select id="load-stage-select" class="edit-input">
+                <option value="">--選択--</option>
+            </select>
+            <button id="btn-load-local">読込</button>
         </div>
     </div>
 </div>
@@ -110,10 +127,10 @@ let INITIAL_MAP = [];
 let state;
 const input = { up: false, down: false, left: false, right: false, shot: false };
 
+// --- エディタ関連データ ---
 let editMap = [];
 let selectedEditItemId = 1;
 
-// エディタパレット拡張
 const EDIT_PALETTE = [
     { id: 0, sprite: 'floor_0' },
     { id: 'F1', sprite: 'floor_1' }, { id: 'F2', sprite: 'floor_2' }, { id: 'F3', sprite: 'floor_3' },
@@ -138,8 +155,8 @@ const EDIT_PALETTE = [
     { id: 'F', sprite: 'framer_1' },
     { id: 'S', sprite: 'snakey_left' },
     { id: 'M', sprite: 'medusa_sleep' },
-    { id: 'DV', sprite: 'don_medosa_1' }, // 縦移動
-    { id: 'DH', sprite: 'don_medosa_1' }  // 横移動
+    { id: 'DV', sprite: 'don_medosa_1' }, 
+    { id: 'DH', sprite: 'don_medosa_1' }  
 ];
 
 // --- 初期化・モード遷移 ---
@@ -156,6 +173,10 @@ function setMode(mode) {
         music.stop();
     } else if (mode === 'init') {
         initTimer = performance.now();
+    } else if (mode === 'edit') {
+        updateLoadSelect(); // LS保存リストの更新
+    } else if (mode === 'ending') {
+        setMode('title');
     }
 }
 
@@ -165,21 +186,80 @@ document.getElementById('btn-show-notes').addEventListener('click', () => docume
 document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
 
 document.getElementById('btn-retry').addEventListener('click', () => {
+    // ★BGM停止箇所★:     
     music.stop();
     if (gameMode === 'game') loadStage(currentStageIndex);
     else if (gameMode === 'test_play') startTestPlay();
 });
 
 document.getElementById('btn-edit-mode').addEventListener('click', () => {
-    initEditMap(); setMode('edit');
+    initEditMap();
+    setMode('edit');
 });
-document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
+document.getElementById('btn-edit-exit').addEventListener('click', () => {
+    setMode('title');
+});
 document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
 document.getElementById('btn-exit-test').addEventListener('click', () => {
-    music.stop();
+    // ★BGM停止箇所★: 
+    tori_music.stop();
     setMode('edit');
 });
 document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
+
+// --- LocalStorage & Import 関連機能 ---
+function getLocalStages() {
+    let data = localStorage.getItem('egger_stages');
+    return data ? JSON.parse(data) : {};
+}
+
+function updateLoadSelect() {
+    let stages = getLocalStages();
+    let select = document.getElementById('load-stage-select');
+    select.innerHTML = '<option value="">--選択--</option>';
+    for (let name in stages) {
+        let opt = document.createElement('option');
+        opt.value = name;
+        opt.innerText = name;
+        select.appendChild(opt);
+    }
+}
+
+document.getElementById('btn-import-json').addEventListener('click', () => {
+    try {
+        let jsonStr = document.getElementById('import-json-text').value;
+        let data = JSON.parse(jsonStr);
+        let newMap = data.map || data; 
+        if (Array.isArray(newMap) && newMap.length === 13) {
+            editMap = JSON.parse(JSON.stringify(newMap));
+            alert("JSONからマップを読み込みました！");
+        } else {
+            alert("フォーマットが正しくありません。(13x13の配列が必要です)");
+        }
+    } catch(e) {
+        alert("JSONのパースに失敗しました。書式を確認してください。");
+    }
+});
+
+document.getElementById('btn-save-local').addEventListener('click', () => {
+    let name = document.getElementById('save-stage-name').value.trim();
+    if (!name) { alert("保存するステージ名を入力してください。"); return; }
+    let stages = getLocalStages();
+    stages[name] = editMap;
+    localStorage.setItem('egger_stages', JSON.stringify(stages));
+    updateLoadSelect();
+    alert(`「${name}」を保存しました！`);
+});
+
+document.getElementById('btn-load-local').addEventListener('click', () => {
+    let name = document.getElementById('load-stage-select').value;
+    if (!name) { alert("読み込むステージを選択してください。"); return; }
+    let stages = getLocalStages();
+    if (stages[name]) {
+        editMap = JSON.parse(JSON.stringify(stages[name]));
+        alert(`「${name}」を読み込みました！`);
+    }
+});
 
 async function bootGame() {
     try {
@@ -221,7 +301,6 @@ function updateUI() {
 
 // --- エディタ関連ロジック ---
 function initEditMap() {
-// ご指定いただいた初期マップデータ
     const defaultMap = [
         ["W5","W2","W2","W2","W2","W2","W2","W2","W2","W2","W2","W2","W5"],
         ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
@@ -237,8 +316,6 @@ function initEditMap() {
         ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
         ["W5","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W5"]
     ];
-    
-    // 参照渡しを防ぐため、ディープコピーしてエディタ用マップにセット
     editMap = JSON.parse(JSON.stringify(defaultMap));
 }
 
@@ -319,6 +396,9 @@ function startTestPlay() {
     INITIAL_MAP = JSON.parse(JSON.stringify(editMap));
     initGame(0, "TEST");
     setMode('test_play');
+
+    // ★ここでテストプレイ用のBGMを再生します★
+    music.play();
 }
 
 function exportEditMap() {
@@ -359,7 +439,7 @@ function initGame(stageNum = 1, password = "") {
                 };
                 if (entType === 'don_medosa') {
                     ent.dmAxis = (cell === 'DV') ? 'y' : 'x';
-                    ent.dmDir = 1; // 初期方向 (下/右)
+                    ent.dmDir = 1; 
                 }
                 state.entities.push(ent);
                 row.push(0); 
@@ -412,7 +492,6 @@ function getEntityAt(hx, hy, ignore = null) {
 function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
     let isAllRiver = true, hasRiver = false, isHit = false;
 
-    // プレイヤーの移動前の座標を逆算（0.5マス単位）
     let currentX = hx - dx;
     let currentY = hy - dy;
 
@@ -433,16 +512,13 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
             } else if (tile === 5) {
                 if (coveredByFE) isAllRiver = false; else hasRiver = true;
             } else if (isPlayer && (tile === 'U' || tile === 'D' || tile === 'L' || tile === 'R')) {
-                // その矢印床が占める領域（0.5マス単位）
                 let tileMinX = tx * 2;
                 let tileMaxX = tx * 2 + 1;
                 let tileMinY = ty * 2;
                 let tileMaxY = ty * 2 + 1;
 
-                // 移動前に、すでにその矢印床に1ユニット（半マス）でも重なっていたか？
                 let wasOnTile = (currentX <= tileMaxX && currentX + 1 >= tileMinX && currentY <= tileMaxY && currentY + 1 >= tileMinY);
 
-                // 外側からの新規進入の時のみ、逆走禁止の壁判定を行う
                 if (!wasOnTile) {
                     if (tile === 'U' && dy === 1) isHit = true;
                     if (tile === 'D' && dy === -1) isHit = true;
@@ -461,7 +537,6 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
     return { hit: false, hasRiver: false, allRiver: false };
 }
 
-// ドンメドーサ用の当たり判定
 function checkDMCollision(hx, hy, dm) {
     for (let y = 0; y < 2; y++) {
         for (let x = 0; x < 2; x++) {
@@ -470,7 +545,6 @@ function checkDMCollision(hx, hy, dm) {
             if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return true;
             
             let tile = state.map[ty][tx];
-            // 床判定を厳密に（頭文字Fの床、数字の0、矢印など）
             let isPassableFloor = (tile === 0 || (typeof tile === 'string' && tile.match(/^F[1-9]$/)) || ['U','D','L','R'].includes(tile));
             if (!isPassableFloor) return true;
         }
@@ -528,7 +602,16 @@ function tryMove(dx, dy) {
 function tryShoot() {
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
         state.shots--; updateUI();
-        state.projectiles.push({ x: state.player.x, y: state.player.y, dir: state.player.dir, active: true });
+        
+        // 発射位置を向いている方向の正面（1ユニット分）にする
+        let sx = state.player.x;
+        let sy = state.player.y;
+        if (state.player.dir === 'up') sy -= 1;
+        if (state.player.dir === 'down') sy += 1;
+        if (state.player.dir === 'left') sx -= 1;
+        if (state.player.dir === 'right') sx += 1;
+
+        state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
         input.shot = false; 
     }
 }
@@ -569,11 +652,11 @@ function checkMedusa() {
         if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
         if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
         
-        // ドンメドーサ直接接触判定
         if (e.type === 'don_medosa' && overlapX < 2 && overlapY < 2) attack = true;
         
         e.awake = wakeUp;
         if (attack) {
+            // ★BGM停止箇所★: 
             music.stop();
             state.needle = { x: e.x, y: e.y, tx: p.x, ty: p.y, axis: overlapX === 0 ? 'y' : 'x', progress: 0 };
             break;
@@ -585,6 +668,7 @@ function update(timestamp) {
     if (gameMode === 'init') {
         if (timestamp - initTimer > 2000) {
             setMode(gameMode === 'test_play' ? 'test_play' : 'game');
+            // ★BGM再生箇所★: 
             music.play();
         }
         return;
@@ -607,7 +691,10 @@ function update(timestamp) {
         if (p.dir === 'up') p.y -= 1; else if (p.dir === 'down') p.y += 1;
         else if (p.dir === 'left') p.x -= 1; else if (p.dir === 'right') p.x += 1;
 
-        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
+        // 弾がプレイヤーと重なっている間は、壁・宝箱との衝突判定を無効化する
+        let inPlayer = Math.abs(p.x - state.player.x) < 2 && Math.abs(p.y - state.player.y) < 2;
+
+        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || (!inPlayer && checkMapCollision(p.x, p.y, false).hit)) {
             state.projectiles.splice(i, 1); continue;
         }
         
@@ -629,7 +716,6 @@ function update(timestamp) {
         let anyMoved = false;
         let playerDidMove = false;
 
-        // 1. Player Intent
         if (input.shot) {
             tryShoot();
         } else {
@@ -645,7 +731,6 @@ function update(timestamp) {
             }
         }
 
-        // 2. Don Medusa Intent
         let dmDidMove = false;
         for (let e of state.entities) {
             if (e.type === 'don_medosa') {
@@ -653,11 +738,11 @@ function update(timestamp) {
                 let eDy = e.dmAxis === 'y' ? e.dmDir : 0;
 
                 if (checkDMCollision(e.x + eDx, e.y + eDy, e)) {
-                    e.dmDir *= -1; // 反転
+                    e.dmDir *= -1; 
                     eDx = e.dmAxis === 'x' ? e.dmDir : 0;
                     eDy = e.dmAxis === 'y' ? e.dmDir : 0;
                     if (checkDMCollision(e.x + eDx, e.y + eDy, e)) {
-                        eDx = 0; eDy = 0; // 挟まれている
+                        eDx = 0; eDy = 0; 
                     }
                 }
 
@@ -673,7 +758,6 @@ function update(timestamp) {
 
         if (anyMoved) {
             if (!playerDidMove && dmDidMove) {
-                // プレイヤーが動かなかったがDMが動いた場合のダミー設定
                 state.player.startX = state.player.x;
                 state.player.targetX = state.player.x;
                 state.player.startY = state.player.y;
@@ -735,6 +819,7 @@ function update(timestamp) {
                     } else if (tile === 3 && state.chestOpen && !state.cleared) {
                         state.map[ty][tx] = 0; state.cleared = true; updateUI();
                         
+                        // ★BGM停止箇所★: 
                         music.stop();
 
                         setTimeout(() => {
@@ -812,7 +897,6 @@ function draw(timestamp) {
             const tile = state.map[y][x];
             const px = x * TILE_SIZE, py = y * TILE_SIZE;
             
-            // 修正箇所：床の厳密な正規表現判定
             let floorSprite = SPRITES.floor_0;
             if (tile === 0 || (typeof tile === 'string' && tile.match(/^F[1-9]$/))) {
                 floorSprite = SPRITES[tile === 0 ? 'floor_0' : `floor_${tile[1]}`];

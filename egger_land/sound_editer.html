@@ -73,7 +73,7 @@
   
   .vol-menu {
     grid-column: 1; grid-row: 2;
-    display: flex; align-items: center; gap: 15px; padding: 0 8px;
+    display: flex; align-items: center; gap: 8px; padding: 0 4px;
     background: #222; border: 1px solid var(--border-color); border-bottom: none; font-size: 0.75rem;
   }
   
@@ -186,10 +186,13 @@
   <div class="piano-roll-container" id="rollWrapper"><canvas id="pianoCanvas"></canvas></div>
   <div class="scroll-y-wrapper" id="scrollYWrapper"><div id="scrollYInner" style="width: 1px;"></div></div>
   
-  <div class="vol-menu" id="volMenu">
+<div class="vol-menu" id="volMenu">
     <span style="font-weight: bold;">Volume</span>
-    <label style="cursor:pointer;"><input type="checkbox" id="chkVolLock"> ロック</label>
-    <label style="cursor:pointer;"><input type="checkbox" id="chkVolSnap"> 10%スナップ</label>
+    <label style="cursor:pointer; margin-right: 10px;"><input type="checkbox" id="chkVolLock"> ロック</label>
+    <span>スナップ：</span>
+    <label style="cursor:pointer;">10%<input type="checkbox" id="chkVolSnap10"></label>
+    <label style="cursor:pointer;">20%<input type="checkbox" id="chkVolSnap20"></label>
+    <label style="cursor:pointer;">25%<input type="checkbox" id="chkVolSnap25"></label>
   </div>
   
   <div class="volume-container" id="volWrapper"><canvas id="volumeCanvas"></canvas></div>
@@ -356,6 +359,24 @@ resizeObserver.observe(document.querySelector('.editor-layout'));
 document.getElementById('scrollXWrapper').addEventListener('scroll', (e) => { scrollOffsetX = e.target.scrollLeft; render(); });
 document.getElementById('scrollYWrapper').addEventListener('scroll', (e) => { scrollOffsetY = e.target.scrollTop; render(); });
 document.getElementById('valNoteType').addEventListener('change', (e) => { snapTicks = parseInt(e.target.value); });
+
+// ボリュームのスナップチェックボックスの排他制御
+const snapCheckboxes = [
+  document.getElementById('chkVolSnap10'),
+  document.getElementById('chkVolSnap20'),
+  document.getElementById('chkVolSnap25')
+];
+snapCheckboxes.forEach(target => {
+  if(target) {
+    target.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        snapCheckboxes.forEach(other => {
+          if (other !== e.target) other.checked = false;
+        });
+      }
+    });
+  }
+});
 
 // 横・縦のズームイベント設定
 document.getElementById('valZoomX').addEventListener('change', (e) => { 
@@ -621,12 +642,17 @@ function handleVolume(e) {
   const worldX = pos.x + scrollOffsetX - LEFT_PAD;
   if (worldX < 0) return;
   const tick = worldX / getPxPerTick();
-  const doSnap = document.getElementById('chkVolSnap').checked;
+  
+  const snap10 = document.getElementById('chkVolSnap10').checked;
+  const snap20 = document.getElementById('chkVolSnap20').checked;
+  const snap25 = document.getElementById('chkVolSnap25').checked;
   
   tracksData[currentTrack].notes.forEach(note => {
     if (tick >= note.tick && tick < note.tick + note.len) {
       let vol = 100 - (pos.y / volCanvas.height * 100);
-      if (doSnap) vol = Math.round(vol / 10) * 10;
+      if (snap10) vol = Math.round(vol / 10) * 10;
+      else if (snap20) vol = Math.round(vol / 20) * 20;
+      else if (snap25) vol = Math.round(vol / 25) * 25;
       note.vol = Math.max(0, Math.min(100, Math.round(vol)));
     }
   });
