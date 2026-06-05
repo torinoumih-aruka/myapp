@@ -8,7 +8,7 @@ const ToriAudio = (function() {
     let noiseBuffer = null;
     let activeMusic = null; // 現在再生中のMusicオブジェクトを保持（排他制御用）
 
-    // Web Audio APIの初期化（ユーザーアクション時に発火）
+    // Web Audio APIの初期化
     function initAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,6 +46,12 @@ const ToriAudio = (function() {
             this.playRequested = false;
             this.playParams = [];
 
+            // プロパティアクセスのためのキー変数（下位互換対応）
+            this.kT = 'tick';
+            this.kL = 'len';
+            this.kP = 'pitchIdx';
+            this.kV = 'vol';
+
             // オーディオノード管理
             this.masterGain = null;
             this.activeNodes = [];
@@ -69,6 +75,23 @@ const ToriAudio = (function() {
                     const res = await fetch(path);
                     if (res.ok) {
                         this.data = await res.json();
+                        
+                        // --- キー名の省略形式(t,l,p,v)か従来形式かを1件目のデータで判定 ---
+                        let firstNote = null;
+                        for (let track of this.data.mml_data.tracks) {
+                            if (track.notes && track.notes.length > 0) {
+                                firstNote = track.notes[0];
+                                break;
+                            }
+                        }
+                        if (firstNote && firstNote.t !== undefined) {
+                            // 新フォーマット（省略形）
+                            this.kT = 't'; this.kL = 'l'; this.kP = 'p'; this.kV = 'v';
+                        } else {
+                            // 旧フォーマット
+                            this.kT = 'tick'; this.kL = 'len'; this.kP = 'pitchIdx'; this.kV = 'vol';
+                        }
+
                         this.isLoaded = true;
                         // ロード完了前にplay()が呼ばれていた場合は、ロード完了後に自動再生
                         if (this.playRequested) {
@@ -94,7 +117,6 @@ const ToriAudio = (function() {
          * @param {boolean} playTr4 トラック4を再生するか (デフォルトTrue)
          */
         play(masterVolume = 100, pitch = 0, tempoRate = 100, playTr1 = true, playTr2 = true, playTr3 = true, playTr4 = true) {
-            // ロードが完了していない場合は予約して待機
             if (!this.isLoaded) {
                 this.playRequested = true;
                 this.playParams = arguments;
@@ -110,11 +132,10 @@ const ToriAudio = (function() {
             }
 
             activeMusic = this;
-            this.stop(); // 自身の前回の再生情報をリセット
+            this.stop(); 
             this.isPlaying = true;
             this.playRequested = false;
 
-            // パラメータを保存
             this.params = {
                 vol: Math.max(0, Math.min(100, masterVolume)) / 100,
                 pitch: Math.max(-30, Math.min(30, pitch)),
@@ -122,7 +143,6 @@ const ToriAudio = (function() {
                 tracks: [playTr1, playTr2, playTr3, playTr4]
             };
 
-            // マスターゲインの作成
             this.masterGain = audioCtx.createGain();
             this.masterGain.gain.value = this.params.vol;
             this.masterGain.connect(audioCtx.destination);
@@ -151,13 +171,9 @@ const ToriAudio = (function() {
             }
         }
 
-        /**
-         * 拡張機能：指定した秒数かけてフェードアウトしてから停止する
-         * @param {number} durationSec フェードアウトにかける秒数 (デフォルト2秒)
-         */
         fadeOutStop(durationSec = 2.0) {
             if (!this.isPlaying || !this.masterGain) return;
-            this.isPlaying = false; // スケジューラの新規予約を停止
+            this.isPlaying = false; 
             if (this.scheduleTimer) {
                 cancelAnimationFrame(this.scheduleTimer);
                 this.scheduleTimer = null;
@@ -174,15 +190,20 @@ const ToriAudio = (function() {
             const baseTempo = this.data.mml_data.tempo || 120;
             const actualTempo = baseTempo * this.params.tempo;
             const secPerTick = (60 / actualTempo) / TICKS_PER_BEAT;
-            const dur = note.len * secPerTick;
-            const maxVol = (note.vol / 100) * 0.3;
+            
+            // 音の長さ
+            const dur = note[this.kL] * secPerTick;
+            
+            // ボリュームのフォールバック処理
+            const noteVol = note[this.kV] !== undefined ? note[this.kV] : (this.data.mml_data.defaultVol !== undefined ? this.data.mml_data.defaultVol : 80);
+            const maxVol = (noteVol / 100) * 0.3;
             
             const gainNode = audioCtx.createGain();
             gainNode.connect(this.masterGain);
 
             if (tIdx === 3) {
-                // ノイズ(ドラム)トラックはピッチシフトの影響を受けない
-                const p = note.pitchIdx;
+                // ノイズ(ドラム)トラック
+                const p = note[this.kP];
                 if (p === 36) { // Kick
                     const osc = audioCtx.createOscillator(); osc.type = 'sine';
                     osc.frequency.setValueAtTime(150, sTime); osc.frequency.exponentialRampToValueAtTime(0.01, sTime + 0.15);
@@ -225,19 +246,28 @@ const ToriAudio = (function() {
                     this.activeNodes.push({ source: cSrc, gainNode: gainNode, endTime: sTime + 1.0 });
                 }
             } else {
-                // メロディトラック (ピッチシフトを適用)
-                const targetPitch = note.pitchIdx + this.params.pitch;
+                // メロディトラック
+                const targetPitch = note[this.kP] + this.params.pitch;
                 const freq = 440 * Math.pow(2, (targetPitch - 45) / 12);
                 
-                // Track Infoが存在する場合はそれを使用、なければデフォルト
                 const trackInfo = this.data.track_info ? this.data.track_info[tIdx] : null;
                 const waveType = trackInfo ? trackInfo.type : (tIdx === 2 ? 'triangle' : 'square50');
                 const env = trackInfo ? trackInfo.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1};
 
+                // 【修正箇所】
+                // Release開始時間がsTime（発音開始時点）より過去になり、マイナス数値のクラッシュを引き起こすのを防ぐ
+                let releaseStartTime = sTime + dur - env.r;
+                if (releaseStartTime < sTime) {
+                    releaseStartTime = sTime; 
+                }
+
+                // 【修正箇所】独自の時間補正をすべて取り除き、エディタ側の挙動・パラメータ順序と完全一致させる
                 gainNode.gain.setValueAtTime(0, sTime);
                 gainNode.gain.linearRampToValueAtTime(maxVol, sTime + env.a);
                 gainNode.gain.linearRampToValueAtTime(maxVol * env.s, sTime + env.a + env.d);
-                gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
+                //gainNode.gain.setValueAtTime(maxVol * env.s, sTime + dur - env.r);
+                gainNode.gain.setValueAtTime(maxVol * env.s, releaseStartTime);
+                
                 gainNode.gain.linearRampToValueAtTime(0, sTime + dur);
                 
                 const osc = audioCtx.createOscillator();
@@ -245,11 +275,14 @@ const ToriAudio = (function() {
                 else osc.setPeriodicWave(createFamicomWave(audioCtx, waveType));
                 
                 osc.frequency.value = freq;
-                osc.connect(gainNode); osc.start(sTime); osc.stop(sTime + dur);
+                osc.connect(gainNode); 
+                osc.start(sTime); 
+                osc.stop(sTime + dur);
+                
+                // ノードの解放監視時間もエディタ側の計算式（+1.0秒）に完全追従
                 this.activeNodes.push({ source: osc, gainNode: gainNode, endTime: sTime + dur + 1.0 });
             }
         }
-
         _sequencerLoop() {
             if (!this.isPlaying) return;
 
@@ -258,23 +291,19 @@ const ToriAudio = (function() {
             const secPerTick = (60 / actualTempo) / TICKS_PER_BEAT;
 
             while (this.nextTickTime < audioCtx.currentTime + 0.1) {
-                // 各トラックのノートをスケジュール
                 this.data.mml_data.tracks.forEach((track, tIdx) => {
-                    // ユーザーの引数指定でミュートされていなければ処理
                     if (this.params.tracks[tIdx]) {
                         track.notes.forEach(note => {
-                            if (note.tick === this.currentPlayTick) {
+                            if (note[this.kT] === this.currentPlayTick) {
                                 this._schedulePlaybackTrack(note, track, tIdx, this.nextTickTime);
                             }
                         });
                     }
                 });
 
-                // 時間を1Tick進める
                 this.nextTickTime += secPerTick;
                 this.currentPlayTick++;
 
-                // ループ処理
                 const loopStartTick = ((this.data.mml_data.loopS || 1) - 1) * TICKS_PER_BEAT;
                 const loopEndTick = ((this.data.mml_data.loopE || 17) - 1) * TICKS_PER_BEAT;
 
@@ -283,7 +312,6 @@ const ToriAudio = (function() {
                 }
             }
 
-            // メモリ解放処理
             const currTime = audioCtx.currentTime;
             this.activeNodes = this.activeNodes.filter(n => n.endTime > currTime);
 
@@ -293,15 +321,12 @@ const ToriAudio = (function() {
         }
     }
 
-    // パブリックAPIを公開
     return {
         loadMusic: function(number) {
-            // 文字列化してゼロ埋め (例: 1 -> "01", "3" -> "03")
             const numStr = String(number).padStart(2, '0');
             return new Music(numStr);
         }
     };
 })();
 
-// グローバル関数として登録
 const loadMusic = ToriAudio.loadMusic;

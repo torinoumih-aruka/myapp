@@ -431,9 +431,21 @@ function buildExportObject(titleString) {
   const now = new Date();
   const update_date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   const track_info = tracksData.map(t => ({ type: t.type, env: { ...t.env } }));
-  const mml_data = { tracks: tracksData.map(t => ({ notes: JSON.parse(JSON.stringify(t.notes)) })), tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat, defaultVol: defaultVolume };
+  
+  const mml_data = { 
+    tracks: tracksData.map(t => ({ 
+      notes: t.notes.map(n => {
+        const outNote = { t: n.tick, l: n.len, p: n.pitchIdx };
+        // デフォルト音量と異なる場合のみ v を出力する
+        if (n.vol !== defaultVolume) outNote.v = n.vol;
+        return outNote;
+      }) 
+    })), 
+    tempo: currentTempo, loopS: loopStartBeat, loopE: loopEndBeat, defaultVol: defaultVolume 
+  };
   return { title: titleString, update_date, mml_data, track_info };
 }
+
 const STORAGE_KEY = "mml_studio_music_data";
 document.getElementById('btnSave').addEventListener('click', () => { document.getElementById('saveTitleInput').value = currentTitle; document.getElementById('modalSave').classList.add('show'); });
 document.getElementById('execSave').addEventListener('click', () => {
@@ -452,14 +464,35 @@ document.getElementById('btnLoad').addEventListener('click', () => {
   else { savedList.forEach((item, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.innerText = `${item.title} (${item.update_date})`; select.appendChild(opt); }); }
   document.getElementById('modalLoad').classList.add('show');
 });
+
 document.getElementById('execLoad').addEventListener('click', () => {
   let savedList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   const idx = document.getElementById('loadSelect').value;
   if(savedList[idx]) {
     const data = savedList[idx]; currentTitle = data.title; document.getElementById('dispTitle').innerText = currentTitle;
+    
+    // 【重要】ノーツの復元に使うため、先に defaultVolume を読み込む
+    if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
+    else defaultVolume = 80; // 古いデータで存在しない場合のフォールバック
+
+    let isShortKey = false;
+    for (const tr of data.mml_data.tracks) {
+      if (tr.notes && tr.notes.length > 0) {
+        if ('t' in tr.notes[0]) isShortKey = true;
+        break;
+      }
+    }
+
     tracksData = data.mml_data.tracks.map((t, i) => {
       const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
-      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: tracksData[i] ? tracksData[i].mute : false, notes: t.notes };
+      let parsedNotes = [];
+      if (t.notes) {
+        // v (または vol) が省略されている場合は defaultVolume を割り当てる
+        parsedNotes = isShortKey 
+          ? t.notes.map(n => ({ tick: n.t, len: n.l, pitchIdx: n.p, vol: n.v !== undefined ? n.v : defaultVolume })) 
+          : t.notes.map(n => ({ tick: n.tick, len: n.len, pitchIdx: n.pitchIdx, vol: n.vol !== undefined ? n.vol : defaultVolume }));
+      }
+      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: tracksData[i] ? tracksData[i].mute : false, notes: parsedNotes };
     });
     currentTempo = data.mml_data.tempo; loopStartBeat = data.mml_data.loopS; loopEndBeat = data.mml_data.loopE;
     if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
@@ -470,17 +503,38 @@ document.getElementById('execLoad').addEventListener('click', () => {
 });
 
 document.getElementById('btnImp').addEventListener('click', () => { document.getElementById('impTextarea').value = ""; document.getElementById('modalImp').classList.add('show'); });
+
 document.getElementById('execImp').addEventListener('click', () => {
   try {
     const text = document.getElementById('impTextarea').value.trim(); if(!text) throw new Error("データが空です");
     const data = JSON.parse(text); if(!data.mml_data || !data.mml_data.tracks) throw new Error("不正なファイル構造です");
     currentTitle = data.title || "imported music"; document.getElementById('dispTitle').innerText = currentTitle;
     currentTempo = data.mml_data.tempo || 120; loopStartBeat = data.mml_data.loopS || 1; loopEndBeat = data.mml_data.loopE || 17;
+    
+    // 【重要】先に defaultVolume を読み込む
     if(data.mml_data.defaultVol !== undefined) defaultVolume = data.mml_data.defaultVol;
+    else defaultVolume = 80;
+    
+    let isShortKey = false;
+    for (const tr of data.mml_data.tracks) {
+      if (tr.notes && tr.notes.length > 0) {
+        if ('t' in tr.notes[0]) isShortKey = true;
+        break;
+      }
+    }
+
     tracksData = data.mml_data.tracks.map((t, i) => {
       const info = (data.track_info && data.track_info[i]) ? data.track_info[i] : null;
-      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: false, notes: t.notes || [] };
+      let parsedNotes = [];
+      if (t.notes) {
+        // v が省略されている場合は補完
+        parsedNotes = isShortKey 
+          ? t.notes.map(n => ({ tick: n.t, len: n.l, pitchIdx: n.p, vol: n.v !== undefined ? n.v : defaultVolume })) 
+          : t.notes.map(n => ({ tick: n.tick, len: n.len, pitchIdx: n.pitchIdx, vol: n.vol !== undefined ? n.vol : defaultVolume }));
+      }
+      return { type: info ? info.type : (i === 3 ? 'noise' : (i === 2 ? 'triangle' : 'square50')), env: info ? info.env : {a: 0.01, d: 0.1, s: 0.5, r: 0.1}, mute: false, notes: parsedNotes };
     });
+
     tracksData.forEach((tr, i) => { document.querySelector(`.mute-check[data-track="${i}"]`).checked = true; });
     undoStack = []; redoStack = []; updateUndoRedoUI(); document.getElementById('modalImp').classList.remove('show'); updateScrollBounds(); render(); alert("インポート成功");
   } catch (err) { alert("インポート失敗\n\n" + err.stack); }
