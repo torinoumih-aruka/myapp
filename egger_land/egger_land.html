@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Editor Extended</title>
+    <title>Eggerland Clone - Items & Gol Added</title>
+    <script src="tori_se.js"></script>
     <script src="tori_music.js"></script>
-<style>
+    <style>
         body { margin: 0; padding: 0; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; touch-action: none; font-family: sans-serif; }
         #game-container { width: 100vw; max-width: 600px; position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
         #gameCanvas { background-color: #000; width: 100vw; height: 100vw; max-width: 600px; max-height: 600px; image-rendering: pixelated; touch-action: none; }
@@ -18,31 +19,62 @@
         dialog { background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 10px; padding: 20px; max-width: 80%; }
         dialog::backdrop { background: rgba(0,0,0,0.7); }
         
-        #ui-area { width: 100%; height: 40vh; display: flex; justify-content: center; align-items: center; position: relative; }
-        .status-bar { position: absolute; top: 5px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
-        #message { color: yellow; } #shots { color: #00ffaa; }
-        .dpad { position: relative; width: 150px; height: 150px; left: -40px; }
-        .btn { position: absolute; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 20px; user-select: none; }
-        .btn:active { background-color: rgba(255, 255, 255, 0.5); }
-        #btn-up { top: 0; left: 50px; } #btn-down { bottom: 0; left: 50px; } #btn-left { top: 50px; left: 0; } #btn-right { top: 50px; right: 0; }
-        #btn-shot { position: absolute; right: 20px; bottom: 50px; width: 70px; height: 70px; border-radius: 35px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
-        #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
-        #btn-retry { position: absolute; left: 20px; bottom: 65px; width: 60px; height: 40px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
-        #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
-        #btn-exit-test { position: absolute; left: 20px; bottom: 15px; width: 60px; height: 40px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
-        #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
+        /* アイテム表示欄 */
+        #item-area { display: flex; gap: 10px; margin-top: 10px; height: 40px; justify-content: center; width: 100%; }
+        .item-slot { width: 40px; height: 40px; border: 2px solid #555; border-radius: 5px; background-color: #222; position: relative; display: flex; justify-content: center; align-items: center; }
+        .item-slot.hidden { opacity: 0.5; }
+        .item-slot.hidden::after { content: ""; position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); }
+        .item-slot.ready { border-color: #ffcc00; box-shadow: 0 0 10px #ffcc00; opacity: 1; }
+        .item-slot.used { visibility: hidden; }
+        .item-slot canvas { width: 32px; height: 32px; image-rendering: pixelated; }
 
+        #ui-area { width: 100%; height: 35vh; display: flex; justify-content: center; align-items: center; position: relative; }
+        .status-bar { position: absolute; top: -30px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+        #message { color: yellow; } #shots { color: #00ffaa; }
+
+        /* --- バーチャルパッドのレイアウト変更 --- */
+        .dpad { position: absolute; left: 20px; bottom: 30px; width: 120px; height: 120px; }
+        .btn { position: absolute; width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; user-select: none; }
+        .btn:active { background-color: rgba(255, 255, 255, 0.5); }
+
+        #btn-up { top: 0; left: 40px; } 
+        #btn-down { bottom: 0; left: 40px; } 
+        #btn-left { top: 40px; left: 0; } 
+        #btn-right { top: 40px; right: 0; }
+        
+        #btn-use-item { position: absolute; right: 20px; bottom: 100px; width: 50px; height: 50px; border-radius: 25px; background-color: rgba(50, 50, 255, 0.4); border: 2px solid rgba(100, 100, 255, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; font-size: 12px; }
+        #btn-use-item:active { background-color: rgba(50, 50, 255, 0.8); }
+        #btn-shot { position: absolute; right: 20px; bottom: 30px; width: 60px; height: 60px; border-radius: 30px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
+        #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
+
+        #btn-exit-test { position: absolute; left: 50%; bottom: 30px; transform: translateX(-65px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
+        #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
+        #btn-retry { position: absolute; left: 50%; bottom: 30px; transform: translateX(5px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
+        #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
+
+        /* エディタUI */
         #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
-        #palette-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 10px; width: 90%; max-width: 400px; max-height: 120px; overflow-y: auto; padding: 5px; border: 1px solid #333; border-radius: 5px; }
-        .palette-btn { width: 36px; height: 36px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #222; }
-        .palette-btn canvas { width: 32px; height: 32px; image-rendering: pixelated; }
-        .edit-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        
+        .edit-tabs { display: flex; width: 90%; max-width: 400px; background: #333; border-radius: 5px 5px 0 0; overflow: hidden; }
+        .edit-tab { flex: 1; text-align: center; padding: 8px 0; font-size: 12px; cursor: pointer; border-right: 1px solid #222; }
+        .edit-tab.active { background: #555; font-weight: bold; }
+        
+        .tab-content { display: none; width: 90%; max-width: 400px; background: #222; padding: 10px; box-sizing: border-box; border-radius: 0 0 5px 5px; height: 180px; overflow-y: auto; }
+        .tab-content.active { display: flex; flex-direction: column; align-items: center; }
+
+        .palette-category-title { font-size: 12px; font-weight: bold; margin: 5px 0; width: 100%; text-align: left; border-bottom: 1px solid #444; padding-bottom: 3px; }
+        .palette-group { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; width: 100%; margin-bottom: 5px; }
+        .palette-btn { width: 30px; height: 30px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #111; }
+        .palette-btn canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+
+        .edit-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 5px; width: 100%; }
         .edit-controls button { padding: 6px 12px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
         .edit-controls button:active { background-color: #666; }
         
-        /* エディタ新規UI用 */
-        #import-json-text { width: 220px; height: 30px; font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff; box-sizing: border-box; resize: none; padding: 4px; }
-        .edit-input { width: 110px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff; box-sizing: border-box; }
+        #import-json-text { width: 100%; height: 100px; min-height: 40px; flex-shrink: 0;font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; resize: none; padding: 4px; margin-bottom: 5px; }
+        .edit-input { width: 200px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }
+        .item-setting-row { display: flex; gap: 5px; align-items: center; font-size: 12px;}
+        /* --- ここまで --- */
     </style>
 </head>
 <body>
@@ -50,66 +82,84 @@
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     
+    <div id="item-area">
+        <div class="item-slot used" id="item-slot-0"></div>
+        <div class="item-slot used" id="item-slot-1"></div>
+        <div class="item-slot used" id="item-slot-2"></div>
+    </div>
+
     <div id="title-screen">
         <h1>たまごランド</h1>
         <div class="title-btn" id="btn-start-game">はじめから</div>
         <div class="title-btn" id="btn-edit-mode">エディット</div>
-        <div class="title-btn" id="btn-show-notes">リリースノート</div>
     </div>
     
-    <dialog id="notes-dialog">
-        <h2 style="margin-top:0;">リリースノート</h2>
-        <ul style="padding-left:20px; line-height: 1.6;">
-            <li>宝箱に乗った状態でのエッガーショット発射挙動を修正しました（自キャラ正面から発射、重なりの壁判定を無視）。</li>
-            <li>エディタに「JSONのインポート機能」を追加しました。</li>
-            <li>エディタに「LocalStorageへの名前を付けて保存/読み込み機能」を追加しました。</li>
-        </ul>
-        <div style="text-align: right; margin-top: 20px;">
-            <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
-        </div>
-    </dialog>
-
     <div id="ui-area">
         <div class="status-bar"><div id="message">Loading...</div><div id="shots-disp">Shots: <span id="shots">0</span></div></div>
         <div class="dpad">
-            <div class="btn" id="btn-up" data-dir="up">↑</div><div class="btn" id="btn-down" data-dir="down">↓</div>
-            <div class="btn" id="btn-left" data-dir="left">←</div><div class="btn" id="btn-right" data-dir="right">→</div>
+            <div class="btn" id="btn-up" data-dir="up"></div>
+            <div class="btn" id="btn-down" data-dir="down"></div>
+            <div class="btn" id="btn-left" data-dir="left"></div>
+            <div class="btn" id="btn-right" data-dir="right"></div>
         </div>
+
+        <div id="btn-use-item">ITEM</div>
         <div id="btn-retry">RETRY</div>
         <div id="btn-exit-test">エディタに<br>戻る</div>
         <div id="btn-shot">SHOT</div>
     </div>
 
-    <div id="edit-ui">
-        <div id="palette-container"></div>
-        <div class="edit-controls">
-            <button id="btn-edit-test">テストプレイ</button>
-            <button id="btn-edit-export">JSON出力</button>
-            <button id="btn-edit-exit">タイトルへ</button>
+<div id="edit-ui">
+        <div class="edit-tabs">
+            <div class="edit-tab active" data-target="tab-palette">パレット</div>
+            <div class="edit-tab" data-target="tab-items">アイテム</div>
+            <div class="edit-tab" data-target="tab-save-load">保存／読込</div>
+            <div class="edit-tab" data-target="tab-general">総合</div>
         </div>
-        <div class="edit-controls" style="margin-top: 10px;">
-            <textarea id="import-json-text" placeholder='{"map": [[...]]} や [[...]] をペースト'></textarea>
-            <button id="btn-import-json">読込</button>
+        
+        <div id="tab-palette" class="tab-content active">
+            <div id="palette-container" style="width:100%;"></div>
         </div>
-        <div class="edit-controls" style="margin-top: 10px;">
-            <input type="text" id="save-stage-name" class="edit-input" placeholder="ステージ名">
-            <button id="btn-save-local">保存</button>
-            <select id="load-stage-select" class="edit-input">
-                <option value="">--選択--</option>
-            </select>
-            <button id="btn-load-local">読込</button>
+        
+        <div id="tab-items" class="tab-content">
+            <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">アイテム設定</div>
+            <div id="edit-items-container"></div>
+        </div>
+        
+        <div id="tab-save-load" class="tab-content">
+            <textarea id="import-json-text" rows="4" style="height: 80px !important;" placeholder='{"map":...}'></textarea>
+            <div class="edit-controls">
+                <button id="btn-import-json">JSON読込</button>
+            </div>
+            <hr style="width:100%; border-color:#444; margin:10px 0;">
+            <div class="edit-controls">
+                <input type="text" id="save-stage-name" class="edit-input" placeholder="ステージ名">
+                <button id="btn-save-local">保存</button>
+            </div>
+            <div class="edit-controls">
+                <select id="load-stage-select" class="edit-input"><option value="">--選択--</option></select>
+                <button id="btn-load-local">読込</button>
+            </div>
+        </div>
+
+        <div id="tab-general" class="tab-content">
+            <div class="edit-controls" style="flex-direction:column; align-items:center; gap: 15px;">
+                <button id="btn-edit-test" style="width:80%;">テストプレイ</button>
+                <button id="btn-edit-export" style="width:80%;">JSON出力</button>
+                <button id="btn-edit-exit" style="width:80%;">タイトルへ</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-
-const music = loadMusic(5);
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const msgDiv = document.getElementById('message');
 const shotsSpan = document.getElementById('shots');
+
+const music = loadMusic(4);
+let se = null;
 
 const TILE_SIZE = 32;
 canvas.width = 13 * TILE_SIZE;
@@ -124,42 +174,44 @@ let gameMode = '';
 let initTimer = 0;
 
 let INITIAL_MAP = [];
+let INITIAL_ITEMS = []; // ステージ初期アイテム
 let state;
-const input = { up: false, down: false, left: false, right: false, shot: false };
+const input = { up: false, down: false, left: false, right: false, shot: false, item: false };
 
-// --- エディタ関連データ ---
 let editMap = [];
+let editItems = [];
 let selectedEditItemId = 1;
 
+// エディタパレット拡張
 const EDIT_PALETTE = [
-    { id: 0, sprite: 'floor_0' },
-    { id: 'F1', sprite: 'floor_1' }, { id: 'F2', sprite: 'floor_2' }, { id: 'F3', sprite: 'floor_3' },
-    { id: 'F4', sprite: 'floor_4' }, { id: 'F5', sprite: 'floor_5' }, { id: 'F6', sprite: 'floor_6' },
-    { id: 'F7', sprite: 'floor_7' }, { id: 'F8', sprite: 'floor_8' }, { id: 'F9', sprite: 'floor_9' },
-    { id: 1, sprite: 'wall_1' },
-    { id: 'W0', sprite: 'wall_0' }, { id: 'W2', sprite: 'wall_2' }, { id: 'W3', sprite: 'wall_3' },
-    { id: 'W4', sprite: 'wall_4' }, { id: 'W5', sprite: 'wall_5' }, { id: 'W6', sprite: 'wall_6' },
-    { id: 'W7', sprite: 'wall_7' }, { id: 'W8', sprite: 'wall_8' }, { id: 'W9', sprite: 'wall_9' },
-    { id: 'GR', sprite: 'grasses' },
-    { id: 'FL', sprite: 'flower_1' },
-    { id: 4, sprite: 'tree' },
-    { id: 5, sprite: 'river_1' },
-    { id: 'U', sprite: 'arrow_top' },
-    { id: 'D', sprite: 'arrow_bottom' },
-    { id: 'L', sprite: 'arrow_left' },
-    { id: 'R', sprite: 'arrow_right' },
-    { id: 2, sprite: 'heart_normal' },
-    { id: 7, sprite: 'heart_shot' },
-    { id: 3, sprite: 'chest_closed', unique: true },
-    { id: 'P', sprite: 'player_down_1', unique: true },
-    { id: 'F', sprite: 'framer_1' },
-    { id: 'S', sprite: 'snakey_left' },
-    { id: 'M', sprite: 'medusa_sleep' },
-    { id: 'DV', sprite: 'don_medosa_1' }, 
-    { id: 'DH', sprite: 'don_medosa_1' }  
+    // 地形
+    { id: 0, sprite: 'floor_0', category: 'terrain' },
+    { id: 'F1', sprite: 'floor_1', category: 'terrain' }, { id: 'F2', sprite: 'floor_2', category: 'terrain' }, { id: 'F3', sprite: 'floor_3', category: 'terrain' },
+    { id: 'F4', sprite: 'floor_4', category: 'terrain' }, { id: 'F5', sprite: 'floor_5', category: 'terrain' }, { id: 'F6', sprite: 'floor_6', category: 'terrain' },
+    { id: 'F7', sprite: 'floor_7', category: 'terrain' }, { id: 'F8', sprite: 'floor_8', category: 'terrain' }, { id: 'F9', sprite: 'floor_9', category: 'terrain' },
+    { id: 1, sprite: 'wall_1', category: 'terrain' },
+    { id: 'W0', sprite: 'wall_0', category: 'terrain' }, { id: 'W2', sprite: 'wall_2', category: 'terrain' }, { id: 'W3', sprite: 'wall_3', category: 'terrain' },
+    { id: 'W4', sprite: 'wall_4', category: 'terrain' }, { id: 'W5', sprite: 'wall_5', category: 'terrain' }, { id: 'W6', sprite: 'wall_6', category: 'terrain' },
+    { id: 'W7', sprite: 'wall_7', category: 'terrain' }, { id: 'W8', sprite: 'wall_8', category: 'terrain' }, { id: 'W9', sprite: 'wall_9', category: 'terrain' },
+    { id: 'GR', sprite: 'grasses', category: 'terrain' }, { id: 5, sprite: 'river_1', category: 'terrain' },
+    { id: 'U', sprite: 'arrow_top', category: 'terrain' }, { id: 'D', sprite: 'arrow_bottom', category: 'terrain' },
+    { id: 'L', sprite: 'arrow_left', category: 'terrain' }, { id: 'R', sprite: 'arrow_right', category: 'terrain' },
+    
+    // オブジェクト
+    { id: 4, sprite: 'tree', category: 'object' },
+    { id: 'FL', sprite: 'flower_1', category: 'object' },
+    { id: 2, sprite: 'heart_normal', category: 'object' }, { id: 7, sprite: 'heart_shot', category: 'object' },
+    { id: 3, sprite: 'chest_closed', unique: true, category: 'object' },
+    { id: 'P', sprite: 'player_down_1', unique: true, category: 'object' },
+    { id: 'F', sprite: 'framer_1', category: 'object' }, 
+    
+    // 敵
+    { id: 'S', sprite: 'snakey_left', category: 'enemy' },
+    { id: 'M', sprite: 'medusa_sleep', category: 'enemy' }, { id: 'DV', sprite: 'don_medosa_1', category: 'enemy' }, { id: 'DH', sprite: 'don_medosa_1', category: 'enemy' },
+    { id: 'GU', sprite: 'gol_up_sleep', category: 'enemy' }, { id: 'GD', sprite: 'gol_down_sleep', category: 'enemy' },
+    { id: 'GL', sprite: 'gol_left_sleep', category: 'enemy' }, { id: 'GR', sprite: 'gol_right_sleep', category: 'enemy' }
 ];
 
-// --- 初期化・モード遷移 ---
 function setMode(mode) {
     gameMode = mode;
     document.getElementById('title-screen').style.display = (mode === 'title') ? 'flex' : 'none';
@@ -169,65 +221,121 @@ function setMode(mode) {
     
     if (mode === 'title') {
         currentStageIndex = 0;
-        // ★BGM停止箇所★: タイトル画面に戻った時
+        // ★BGM停止箇所★: 
         music.stop();
     } else if (mode === 'init') {
         initTimer = performance.now();
     } else if (mode === 'edit') {
-        updateLoadSelect(); // LS保存リストの更新
+        updateLoadSelect();
     } else if (mode === 'ending') {
         setMode('title');
     }
 }
 
+// エディタアイテムUIの生成とデータバインド
+function buildEditItemsUI() {
+    const container = document.getElementById('edit-items-container');
+    container.innerHTML = '';
+    for(let i=0; i<3; i++) {
+        let div = document.createElement('div');
+        div.className = 'item-setting-row';
+        div.innerHTML = `
+            ${i+1}. 
+            <select id="edit-item-type-${i}" class="edit-input" style="width:100px;">
+                <option value="">なし</option>
+                <option value="arrow_top">矢印床変更</option>
+                <option value="floor_1">橋</option>
+                <option value="hammer">ハンマー</option>
+            </select>
+            ♡<input type="number" id="edit-item-hearts-${i}" class="edit-input" value="0" min="0" style="width:40px;">
+        `;
+        container.appendChild(div);
+    }
+}
+
+function getEditItems() {
+    let items = [];
+    for(let i=0; i<3; i++) {
+        let type = document.getElementById(`edit-item-type-${i}`).value;
+        let h = parseInt(document.getElementById(`edit-item-hearts-${i}`).value) || 0;
+        if (type) items.push({ type: type, needHearts: h });
+    }
+    return items;
+}
+
+function setEditItems(itemsArr) {
+    for(let i=0; i<3; i++) {
+        let item = (itemsArr && itemsArr[i]) ? itemsArr[i] : {type: '', needHearts: 0};
+        document.getElementById(`edit-item-type-${i}`).value = item.type;
+        document.getElementById(`edit-item-hearts-${i}`).value = item.needHearts;
+    }
+}
+
 // UIイベントリスナ
 document.getElementById('btn-start-game').addEventListener('click', () => loadStage(0));
-document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
-document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
-
 document.getElementById('btn-retry').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    // ★BGM停止箇所★:     
+    // ★BGM停止箇所★:
     music.stop();
     if (gameMode === 'game') loadStage(currentStageIndex);
     else if (gameMode === 'test_play') startTestPlay();
 });
 
+// --- タブ切り替えイベント ---
+document.querySelectorAll('.edit-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.getAttribute('data-target')).classList.add('active');
+    });
+});
+
 document.getElementById('btn-edit-mode').addEventListener('click', () => {
-    initEditMap();
-    setMode('edit');
+    initEditMap(); setEditItems([]); setMode('edit');
 });
-document.getElementById('btn-edit-exit').addEventListener('click', () => {
-    setMode('title');
-});
+document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
 document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
 document.getElementById('btn-exit-test').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    // ★BGM停止箇所★: 
+    // ★BGM停止箇所★:
     music.stop();
     setMode('edit');
 });
-
 document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
 
-// --- LocalStorage & Import 関連機能 ---
+// LocalStorage
 function getLocalStages() {
     let data = localStorage.getItem('egger_stages');
     return data ? JSON.parse(data) : {};
 }
-
 function updateLoadSelect() {
     let stages = getLocalStages();
     let select = document.getElementById('load-stage-select');
     select.innerHTML = '<option value="">--選択--</option>';
     for (let name in stages) {
-        let opt = document.createElement('option');
-        opt.value = name;
-        opt.innerText = name;
+        let opt = document.createElement('option'); opt.value = name; opt.innerText = name;
         select.appendChild(opt);
     }
 }
-
+document.getElementById('btn-save-local').addEventListener('click', () => {
+    let name = document.getElementById('save-stage-name').value.trim();
+    if (!name) { alert("ステージ名を入力してください。"); return; }
+    let stages = getLocalStages();
+    stages[name] = { map: editMap, items: getEditItems() };
+    localStorage.setItem('egger_stages', JSON.stringify(stages));
+    updateLoadSelect(); alert(`「${name}」を保存しました！`);
+});
+document.getElementById('btn-load-local').addEventListener('click', () => {
+    let name = document.getElementById('load-stage-select').value;
+    if (!name) return;
+    let stages = getLocalStages();
+    if (stages[name]) {
+        editMap = JSON.parse(JSON.stringify(stages[name].map));
+        setEditItems(stages[name].items);
+        alert(`「${name}」を読み込みました！`);
+    }
+});
 document.getElementById('btn-import-json').addEventListener('click', () => {
     try {
         let jsonStr = document.getElementById('import-json-text').value;
@@ -235,33 +343,10 @@ document.getElementById('btn-import-json').addEventListener('click', () => {
         let newMap = data.map || data; 
         if (Array.isArray(newMap) && newMap.length === 13) {
             editMap = JSON.parse(JSON.stringify(newMap));
+            setEditItems(data.items || []);
             alert("JSONからマップを読み込みました！");
-        } else {
-            alert("フォーマットが正しくありません。(13x13の配列が必要です)");
-        }
-    } catch(e) {
-        alert("JSONのパースに失敗しました。書式を確認してください。");
-    }
-});
-
-document.getElementById('btn-save-local').addEventListener('click', () => {
-    let name = document.getElementById('save-stage-name').value.trim();
-    if (!name) { alert("保存するステージ名を入力してください。"); return; }
-    let stages = getLocalStages();
-    stages[name] = editMap;
-    localStorage.setItem('egger_stages', JSON.stringify(stages));
-    updateLoadSelect();
-    alert(`「${name}」を保存しました！`);
-});
-
-document.getElementById('btn-load-local').addEventListener('click', () => {
-    let name = document.getElementById('load-stage-select').value;
-    if (!name) { alert("読み込むステージを選択してください。"); return; }
-    let stages = getLocalStages();
-    if (stages[name]) {
-        editMap = JSON.parse(JSON.stringify(stages[name]));
-        alert(`「${name}」を読み込みました！`);
-    }
+        } else alert("フォーマットが正しくありません。");
+    } catch(e) { alert("JSONのパースに失敗しました。"); }
 });
 
 async function bootGame() {
@@ -276,13 +361,13 @@ async function bootGame() {
         STAGES_DATA = stageData.stages;
 
         buildPaletteUI();
+        buildEditItemsUI();
         setMode('title');
         requestAnimationFrame(loop);
-    } catch (e) {
-        console.error(e);
-        msgDiv.innerText = "Error: ファイル読み込み失敗";
-        msgDiv.style.color = "red";
-    }
+
+        se = await loadSE();
+        
+    } catch (e) { console.error(e); }
 }
 
 function loadStage(index) {
@@ -290,6 +375,7 @@ function loadStage(index) {
     currentStageIndex = index;
     const stageInfo = STAGES_DATA[index];
     INITIAL_MAP = JSON.parse(JSON.stringify(stageInfo.map));
+    INITIAL_ITEMS = stageInfo.items ? JSON.parse(JSON.stringify(stageInfo.items)) : [];
     initGame(stageInfo.stage, stageInfo.password);
     setMode('init');
 }
@@ -300,6 +386,23 @@ function updateUI() {
     if (state.cleared) msgDiv.innerText = "ステージクリア！";
     else if (state.chestOpen) msgDiv.innerText = "宝箱が開いた！";
     else msgDiv.innerText = "";
+
+    // アイテムUI更新
+    for(let i=0; i<3; i++) {
+        let slot = document.getElementById(`item-slot-${i}`);
+        slot.innerHTML = '';
+        slot.className = 'item-slot'; // リセット
+        
+        let itm = state.items[i];
+        if (itm) {
+            let cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32;
+            drawIconToCanvas(SPRITES[itm.type], cvs.getContext('2d'));
+            slot.appendChild(cvs);
+            slot.classList.add(itm.status);
+        } else {
+            slot.classList.add('used'); // 空枠は非表示
+        }
+    }
 }
 
 // --- エディタ関連ロジック ---
@@ -339,57 +442,62 @@ function drawIconToCanvas(spriteData, ctxCanvas) {
 function buildPaletteUI() {
     const container = document.getElementById('palette-container');
     container.innerHTML = '';
-    EDIT_PALETTE.forEach(item => {
-        const btn = document.createElement('div');
-        btn.className = 'palette-btn';
-        if (item.id === selectedEditItemId) btn.style.borderColor = '#ffcc00';
+
+    const categories = [
+        { key: 'terrain', name: '地形' },
+        { key: 'object', name: 'オブジェクト' },
+        { key: 'enemy', name: '敵' }
+    ];
+
+    categories.forEach(cat => {
+        let title = document.createElement('div');
+        title.className = 'palette-category-title';
+        title.innerText = cat.name;
+        container.appendChild(title);
+
+        let group = document.createElement('div');
+        group.className = 'palette-group';
         
-        const cvs = document.createElement('canvas');
-        cvs.width = 32; cvs.height = 32;
-        const cCtx = cvs.getContext('2d');
-        if (item.id !== 0) drawIconToCanvas(SPRITES['floor_0'], cCtx);
-        drawIconToCanvas(SPRITES[item.sprite], cCtx);
-        btn.appendChild(cvs);
-        
-        btn.addEventListener('click', () => {
-            selectedEditItemId = item.id;
-            document.querySelectorAll('.palette-btn').forEach(b => b.style.borderColor = '#555');
-            btn.style.borderColor = '#ffcc00';
+        let items = EDIT_PALETTE.filter(p => p.category === cat.key);
+        items.forEach(item => {
+            const btn = document.createElement('div');
+            btn.className = 'palette-btn';
+            if (item.id === selectedEditItemId) btn.style.borderColor = '#ffcc00';
+            
+            const cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32;
+            const cCtx = cvs.getContext('2d');
+            if (item.id !== 0) drawIconToCanvas(SPRITES['floor_0'], cCtx);
+            drawIconToCanvas(SPRITES[item.sprite], cCtx);
+            btn.appendChild(cvs);
+            
+            btn.addEventListener('click', () => {
+                selectedEditItemId = item.id;
+                document.querySelectorAll('.palette-btn').forEach(b => b.style.borderColor = '#555');
+                btn.style.borderColor = '#ffcc00';
+            });
+            group.appendChild(btn);
         });
-        container.appendChild(btn);
+        container.appendChild(group);
     });
 }
 
 let isEditing = false;
-canvas.addEventListener('pointerdown', (e) => {
-    if (gameMode !== 'edit') return;
-    isEditing = true;
-    putEditItem(e);
-});
+canvas.addEventListener('pointerdown', (e) => { if (gameMode !== 'edit') return; isEditing = true; putEditItem(e); });
 window.addEventListener('pointerup', () => isEditing = false);
-canvas.addEventListener('pointermove', (e) => {
-    if (gameMode !== 'edit' || !isEditing) return;
-    putEditItem(e);
-});
+canvas.addEventListener('pointermove', (e) => { if (gameMode !== 'edit' || !isEditing) return; putEditItem(e); });
 
 function putEditItem(e) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-    
-    const tx = Math.floor(x / TILE_SIZE);
-    const ty = Math.floor(y / TILE_SIZE);
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const tx = Math.floor(x / TILE_SIZE), ty = Math.floor(y / TILE_SIZE);
     
     if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return;
-    
     const item = EDIT_PALETTE.find(p => p.id === selectedEditItemId);
+    
     if (item.unique) {
         for (let r = 0; r < 13; r++) {
-            for (let c = 0; c < 13; c++) {
-                if (editMap[r][c] === item.id) editMap[r][c] = 0;
-            }
+            for (let c = 0; c < 13; c++) if (editMap[r][c] === item.id) editMap[r][c] = 0;
         }
     }
     editMap[ty][tx] = item.id;
@@ -397,23 +505,21 @@ function putEditItem(e) {
 
 function startTestPlay() {
     INITIAL_MAP = JSON.parse(JSON.stringify(editMap));
+    INITIAL_ITEMS = getEditItems();
     initGame(0, "TEST");
     setMode('test_play');
-
-    // ★ここでテストプレイ用のBGMを再生します★
+    // ★BGM再生箇所★: 
     music.play();
 }
 
 function exportEditMap() {
-    const outputData = { map: editMap };
+    const outputData = { map: editMap, items: getEditItems() };
     const jsonStr = JSON.stringify(outputData);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
         window.location.href = `mailto:?subject=Eggerland%20Stage&body=${encodeURIComponent(jsonStr)}`;
     } else {
-        navigator.clipboard.writeText(jsonStr).then(() => {
-            alert('JSONをクリップボードにコピーしました！');
-        }).catch(err => alert('コピーに失敗しました:\n' + jsonStr));
+        navigator.clipboard.writeText(jsonStr).then(() => alert('JSONをクリップボードにコピーしました！')).catch(err => alert('コピー失敗:\n' + jsonStr));
     }
 }
 
@@ -424,9 +530,16 @@ function initGame(stageNum = 1, password = "") {
     state = {
         map: [], entities: [], floatingEggs: [], projectiles: [], needle: null,
         totalHearts: 0, collectedHearts: 0, shots: 0, chestOpen: false, cleared: false,
+        wasChestOpen: false, // ゴル覚醒トリガー用
         animation: { active: false, duration: 120, startTime: 0, elapsed: 0 },
-        stageNum: stageNum, password: password
+        stageNum: stageNum, password: password,
+        items: [] // アイテム管理配列
     };
+
+    // アイテムのセットアップ
+    INITIAL_ITEMS.forEach(itm => {
+        state.items.push({ type: itm.type, needHearts: parseInt(itm.needHearts)||0, status: 'hidden' });
+    });
 
     for (let y = 0; y < 13; y++) {
         let row = [];
@@ -434,15 +547,19 @@ function initGame(stageNum = 1, password = "") {
             let cell = INITIAL_MAP[y][x];
             if (cell === 'P') { 
                 pStartX = x * 2; pStartY = y * 2; row.push(0);
-            } else if (cell === 'F' || cell === 'S' || cell === 'M' || cell === 'DV' || cell === 'DH') {
-                let entType = cell === 'F' ? 'framer' : (cell === 'S' ? 'snakey' : (cell === 'M' ? 'medusa' : 'don_medosa'));
+            } else if (['F','S','M','DV','DH','GU','GD','GL','GR'].includes(cell)) {
+                let entType = cell === 'F' ? 'framer' : 
+                              cell === 'S' ? 'snakey' : 
+                              cell === 'M' ? 'medusa' : 
+                              (cell === 'DV' || cell === 'DH') ? 'don_medosa' : 'gol';
                 let ent = {
-                    type: entType, x: x * 2, y: y * 2, startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2,
+                    type: entType, originalType: entType, x: x * 2, y: y * 2, startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2,
                     isMoving: false, awake: false, eggTimer: 0
                 };
                 if (entType === 'don_medosa') {
-                    ent.dmAxis = (cell === 'DV') ? 'y' : 'x';
-                    ent.dmDir = 1; 
+                    ent.dmAxis = (cell === 'DV') ? 'y' : 'x'; ent.dmDir = 1; 
+                } else if (entType === 'gol') {
+                    ent.golDir = cell === 'GU' ? 'up' : cell === 'GD' ? 'down' : cell === 'GL' ? 'left' : 'right';
                 }
                 state.entities.push(ent);
                 row.push(0); 
@@ -454,9 +571,7 @@ function initGame(stageNum = 1, password = "") {
         state.map.push(row);
     }
     
-    state.player = {
-        x: pStartX, y: pStartY, startX: pStartX, startY: pStartY, targetX: pStartX, targetY: pStartY, dir: 'down'
-    };
+    state.player = { x: pStartX, y: pStartY, startX: pStartX, startY: pStartY, targetX: pStartX, targetY: pStartY, dir: 'down' };
     updateUI();
 }
 
@@ -472,16 +587,22 @@ const btnShot = document.getElementById('btn-shot');
 const shotPress = (e) => { e.preventDefault(); input.shot = true; };
 btnShot.addEventListener('touchstart', shotPress, {passive: false}); btnShot.addEventListener('mousedown', shotPress);
 
+const btnItem = document.getElementById('btn-use-item');
+const itemPress = (e) => { e.preventDefault(); input.item = true; };
+btnItem.addEventListener('touchstart', itemPress, {passive: false}); btnItem.addEventListener('mousedown', itemPress);
+
 document.addEventListener('keydown', (e) => {
     if (gameMode !== 'game' && gameMode !== 'test_play') return;
     if (e.key === 'ArrowUp') input.up = true; if (e.key === 'ArrowDown') input.down = true;
     if (e.key === 'ArrowLeft') input.left = true; if (e.key === 'ArrowRight') input.right = true;
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = true;
+    if (e.key === 'x' || e.key === 'X') input.item = true;
 });
 document.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowUp') input.up = false; if (e.key === 'ArrowDown') input.down = false;
     if (e.key === 'ArrowLeft') input.left = false; if (e.key === 'ArrowRight') input.right = false;
     if (e.key === 'z' || e.key === 'Z' || e.key === ' ') input.shot = false;
+    if (e.key === 'x' || e.key === 'X') input.item = false;
 });
 
 function getEntityAt(hx, hy, ignore = null) {
@@ -494,20 +615,17 @@ function getEntityAt(hx, hy, ignore = null) {
 
 function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
     let isAllRiver = true, hasRiver = false, isHit = false;
-
-    let currentX = hx - dx;
-    let currentY = hy - dy;
+    let currentX = hx - dx, currentY = hy - dy;
 
     for (let y = 0; y < 2; y++) {
         for (let x = 0; x < 2; x++) {
-            let cx = hx + x; let cy = hy + y;
-            let tx = Math.floor(cx / 2); let ty = Math.floor(cy / 2);
+            let cx = hx + x, cy = hy + y;
+            let tx = Math.floor(cx / 2), ty = Math.floor(cy / 2);
 
             if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return { hit: true, hasRiver: false, allRiver: false };
             let tile = state.map[ty][tx];
             
             let coveredByFE = state.floatingEggs.some(fe => cx >= fe.x && cx <= fe.x + 1 && cy >= fe.y && cy <= fe.y + 1);
-
             let isWall = (tile === 1 || (typeof tile === 'string' && tile.startsWith('W')) || tile === 4 || (tile === 3 && !isPlayer));
             
             if (isWall) {
@@ -515,13 +633,8 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
             } else if (tile === 5) {
                 if (coveredByFE) isAllRiver = false; else hasRiver = true;
             } else if (isPlayer && (tile === 'U' || tile === 'D' || tile === 'L' || tile === 'R')) {
-                let tileMinX = tx * 2;
-                let tileMaxX = tx * 2 + 1;
-                let tileMinY = ty * 2;
-                let tileMaxY = ty * 2 + 1;
-
+                let tileMinX = tx * 2, tileMaxX = tx * 2 + 1, tileMinY = ty * 2, tileMaxY = ty * 2 + 1;
                 let wasOnTile = (currentX <= tileMaxX && currentX + 1 >= tileMinX && currentY <= tileMaxY && currentY + 1 >= tileMinY);
-
                 if (!wasOnTile) {
                     if (tile === 'U' && dy === 1) isHit = true;
                     if (tile === 'D' && dy === -1) isHit = true;
@@ -543,8 +656,8 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
 function checkDMCollision(hx, hy, dm) {
     for (let y = 0; y < 2; y++) {
         for (let x = 0; x < 2; x++) {
-            let cx = hx + x; let cy = hy + y;
-            let tx = Math.floor(cx / 2); let ty = Math.floor(cy / 2);
+            let cx = hx + x, cy = hy + y;
+            let tx = Math.floor(cx / 2), ty = Math.floor(cy / 2);
             if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return true;
             
             let tile = state.map[ty][tx];
@@ -565,7 +678,7 @@ function tryMove(dx, dy) {
 
     const hitE = getEntityAt(pNextX, pNextY);
     if (hitE) {
-        if (hitE.type === 'snakey' || hitE.type === 'medusa' || hitE.type === 'don_medosa') return false;
+        if (hitE.type === 'snakey' || hitE.type === 'medusa' || hitE.type === 'don_medosa' || hitE.type === 'gol') return false;
         if (dx !== 0 && hitE.y !== state.player.y) return false;
         if (dy !== 0 && hitE.x !== state.player.x) return false;
 
@@ -606,17 +719,62 @@ function tryShoot() {
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
         state.shots--; updateUI();
         
-        // 発射位置を向いている方向の正面（1ユニット分）にする
-        let sx = state.player.x;
-        let sy = state.player.y;
-        if (state.player.dir === 'up') sy -= 1;
-        if (state.player.dir === 'down') sy += 1;
-        if (state.player.dir === 'left') sx -= 1;
-        if (state.player.dir === 'right') sx += 1;
+        let sx = state.player.x; let sy = state.player.y;
+        // 自身のマスをスキップして発射（宝箱重なり対策）
+        if (state.player.dir === 'up') sy -= 2;
+        if (state.player.dir === 'down') sy += 2;
+        if (state.player.dir === 'left') sx -= 2;
+        if (state.player.dir === 'right') sx += 2;
 
         state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
+        // ★BGM/SE: エッガーショット発射音★
+        se.playSE("shot");
         input.shot = false; 
     }
+}
+
+// アイテム使用処理
+function tryUseItem() {
+    if (state.player.x % 2 !== 0 || state.player.y % 2 !== 0) return;
+    
+    let itemIndex = state.items.findIndex(i => i.status === 'ready');
+    if (itemIndex === -1) return;
+    let itemObj = state.items[itemIndex];
+
+    let dx = 0, dy = 0;
+    if (state.player.dir === 'up') dy = -1;
+    if (state.player.dir === 'down') dy = 1;
+    if (state.player.dir === 'left') dx = -1;
+    if (state.player.dir === 'right') dx = 1;
+
+    let tx = Math.floor(state.player.x / 2) + dx;
+    let ty = Math.floor(state.player.y / 2) + dy;
+    
+    if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return;
+    let tile = state.map[ty][tx];
+    let success = false;
+
+    if (itemObj.type === 'arrow_top') {
+        const arrowMap = { 'U':'R', 'R':'D', 'D':'L', 'L':'U' };
+        if (arrowMap[tile]) { state.map[ty][tx] = arrowMap[tile]; success = true; }
+    } else if (itemObj.type === 'floor_1') {
+        if (tile === 5) {
+            state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'F1' : 'F2';
+            success = true;
+        }
+    } else if (itemObj.type === 'hammer') {
+        if (tile === 1 || tile === 'W0' || tile === 'W6' || tile === 'W7' || tile === 'W8' || tile === 'W9') {
+            state.map[ty][tx] = 0; success = true;
+        }
+    }
+
+    if (success) {
+        itemObj.status = 'used';
+        updateUI();
+        // ★BGM/SE: アイテム使用音★
+        se.playSE("use_item");
+    }
+    input.item = false;
 }
 
 function checkLOS(m, p, axis) {
@@ -644,23 +802,35 @@ function checkLOS(m, p, axis) {
     return true;
 }
 
-function checkMedusa() {
+function checkEnemies() {
     if (state.needle || state.animation.active || state.cleared) return;
     let p = state.player;
     for (let e of state.entities) {
-        if (e.type !== 'medusa' && e.type !== 'don_medosa') continue;
+        if (!['medusa', 'don_medosa', 'gol'].includes(e.type)) continue;
         let wakeUp = false, attack = false;
         let overlapX = Math.abs(p.x - e.x), overlapY = Math.abs(p.y - e.y);
 
-        if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
-        if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
-        
-        if (e.type === 'don_medosa' && overlapX < 2 && overlapY < 2) attack = true;
+        if (e.type === 'medusa') {
+            if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
+            if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
+        } else if (e.type === 'don_medosa') {
+            if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
+            if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
+            if (overlapX < 2 && overlapY < 2) attack = true; // 接触
+        } else if (e.type === 'gol' && state.chestOpen) {
+            // ゴル（覚醒時のみ）特定方向の視線
+            if (e.golDir === 'up' && overlapX === 0 && p.y < e.y && checkLOS(e, p, 'y')) attack = true;
+            if (e.golDir === 'down' && overlapX === 0 && p.y > e.y && checkLOS(e, p, 'y')) attack = true;
+            if (e.golDir === 'left' && overlapY === 0 && p.x < e.x && checkLOS(e, p, 'x')) attack = true;
+            if (e.golDir === 'right' && overlapY === 0 && p.x > e.x && checkLOS(e, p, 'x')) attack = true;
+        }
         
         e.awake = wakeUp;
         if (attack) {
             // ★BGM停止箇所★: 
             music.stop();
+            // ★SE:ヒット
+            se.playSE("hit");
             state.needle = { x: e.x, y: e.y, tx: p.x, ty: p.y, axis: overlapX === 0 ? 'y' : 'x', progress: 0 };
             break;
         }
@@ -689,15 +859,21 @@ function update(timestamp) {
 
     if (state.cleared) return;
 
+    // ゴルの卵化解除（ハート全取得時）
+    if (state.chestOpen && !state.wasChestOpen) {
+        state.entities.forEach(e => {
+            if (e.originalType === 'gol' && e.type === 'egg') e.type = 'gol'; // 卵解除して覚醒
+        });
+        state.wasChestOpen = true;
+    }
+
+    // 弾の更新
     for (let i = state.projectiles.length - 1; i >= 0; i--) {
         let p = state.projectiles[i];
         if (p.dir === 'up') p.y -= 1; else if (p.dir === 'down') p.y += 1;
         else if (p.dir === 'left') p.x -= 1; else if (p.dir === 'right') p.x += 1;
 
-        // 弾がプレイヤーと重なっている間は、壁・宝箱との衝突判定を無効化する
-        let inPlayer = Math.abs(p.x - state.player.x) < 2 && Math.abs(p.y - state.player.y) < 2;
-
-        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || (!inPlayer && checkMapCollision(p.x, p.y, false).hit)) {
+        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
             state.projectiles.splice(i, 1); continue;
         }
         
@@ -708,8 +884,12 @@ function update(timestamp) {
             if ((p.dir === 'left' || p.dir === 'right') && p.y === hitE.y) isAligned = true;
 
             if (isAligned) {
-                if (hitE.type === 'snakey') { hitE.type = 'egg'; hitE.eggTimer = 16; }
-                else if (hitE.type === 'egg') state.entities = state.entities.filter(e => e !== hitE);
+                // スネーキー、または睡眠中のゴルのみ卵化
+                if (hitE.type === 'snakey' || (hitE.type === 'gol' && !state.chestOpen)) { 
+                    hitE.type = 'egg'; hitE.eggTimer = 16; 
+                } else if (hitE.type === 'egg') {
+                    state.entities = state.entities.filter(e => e !== hitE);
+                }
             }
             state.projectiles.splice(i, 1);
         }
@@ -721,6 +901,8 @@ function update(timestamp) {
 
         if (input.shot) {
             tryShoot();
+        } else if (input.item) {
+            tryUseItem();
         } else {
             let dx = 0, dy = 0;
             if (input.up) dy -= 1; else if (input.down) dy += 1;
@@ -744,9 +926,7 @@ function update(timestamp) {
                     e.dmDir *= -1; 
                     eDx = e.dmAxis === 'x' ? e.dmDir : 0;
                     eDy = e.dmAxis === 'y' ? e.dmDir : 0;
-                    if (checkDMCollision(e.x + eDx, e.y + eDy, e)) {
-                        eDx = 0; eDy = 0; 
-                    }
+                    if (checkDMCollision(e.x + eDx, e.y + eDy, e)) { eDx = 0; eDy = 0; }
                 }
 
                 if (eDx !== 0 || eDy !== 0) {
@@ -761,10 +941,8 @@ function update(timestamp) {
 
         if (anyMoved) {
             if (!playerDidMove && dmDidMove) {
-                state.player.startX = state.player.x;
-                state.player.targetX = state.player.x;
-                state.player.startY = state.player.y;
-                state.player.targetY = state.player.y;
+                state.player.startX = state.player.x; state.player.targetX = state.player.x;
+                state.player.startY = state.player.y; state.player.targetY = state.player.y;
             }
             state.animation.active = true;
             state.animation.elapsed = 0;
@@ -786,7 +964,7 @@ function update(timestamp) {
                     e.x = e.targetX; e.y = e.targetY; e.isMoving = false;
                     if (e.type === 'egg') {
                         e.eggTimer -= 1; 
-                        if (e.eggTimer <= 0) e.type = 'snakey';
+                        if (e.eggTimer <= 0) e.type = e.originalType; // ゴルまたはスネーキーに戻る
                         if (e.willFloat) {
                             state.floatingEggs.push({ x: e.x, y: e.y, walks: 2, objOn: false });
                             state.entities.splice(i, 1);
@@ -799,7 +977,6 @@ function update(timestamp) {
             for (let i = state.floatingEggs.length - 1; i >= 0; i--) {
                 let fe = state.floatingEggs[i];
                 let hasObjOn = false;
-
                 if (state.player.x === fe.x && state.player.y === fe.y) hasObjOn = true;
                 
                 if (hasObjOn && !fe.objOn) {
@@ -817,13 +994,34 @@ function update(timestamp) {
                     if (tile === 2 || tile === 7) {
                         state.map[ty][tx] = 0; state.collectedHearts++;
                         if (tile === 7) state.shots++;
+
+                        // ★効果音ハート取得★
+                        se.playSE("pickup_1");
+
+                        // アイテム取得判定
+                        state.items.forEach(itm => {
+                            if (itm.status === 'hidden' && state.collectedHearts >= itm.needHearts) {
+                                itm.status = 'ready';
+                                // ★BGM/SE: アイテム取得音★
+                                se.playSE("get_item");
+                            }
+                        });
+
                         updateUI();
-                        if (state.collectedHearts >= state.totalHearts) { state.chestOpen = true; updateUI(); }
+
+                        // 2. 【宝箱が開いた時】 (すべてのハートを取り終えた瞬間)
+                        if (state.collectedHearts >= state.totalHearts) {
+                            state.chestOpen = true; 
+                            updateUI(); 
+                            se.playSE("open_box");
+                        }
+
+                        // 3. 【宝箱を取得した時】 (開いている宝箱に乗った＝ステージクリア)
                     } else if (tile === 3 && state.chestOpen && !state.cleared) {
                         state.map[ty][tx] = 0; state.cleared = true; updateUI();
-                        
                         // ★BGM停止箇所★: 
                         music.stop();
+                        se.playSE("get_box");
 
                         setTimeout(() => {
                             if (gameMode === 'test_play') setMode('edit');
@@ -832,7 +1030,7 @@ function update(timestamp) {
                     }
                 }
             }
-            checkMedusa();
+            checkEnemies();
         }
     }
 }
@@ -857,14 +1055,10 @@ function drawEditMode() {
         for (let x = 0; x < 13; x++) {
             const cell = editMap[y][x];
             const px = x * TILE_SIZE, py = y * TILE_SIZE;
-            
             drawSprite(SPRITES.floor_0, px, py, TILE_SIZE);
             const item = EDIT_PALETTE.find(p => p.id === cell);
             if (item && item.id !== 0) drawSprite(SPRITES[item.sprite], px, py, TILE_SIZE);
-            
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
         }
     }
 }
@@ -878,9 +1072,7 @@ function draw(timestamp) {
         for (let y = 0; y < 13; y++) {
             for (let x = 0; x < 13; x++) drawSprite(SPRITES.floor_0, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE);
         }
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 36px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
         ctx.fillText(gameMode === 'test_play' ? "TEST PLAY" : `STAGE ${state.stageNum}`, canvas.width / 2, canvas.height / 2);
         ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
@@ -939,19 +1131,17 @@ function draw(timestamp) {
         
         if (e.type === 'framer') drawSprite(SPRITES[`framer_${fFrame}`], px, py, TILE_SIZE);
         if (e.type === 'snakey') {
-            let sSprite;
-            if (state.chestOpen) sSprite = SPRITES[`snakey_happy_${Math.floor(time / 250) % 2 + 1}`];
-            else sSprite = (state.player.x < e.x) ? SPRITES['snakey_left'] : SPRITES['snakey_right'];
+            let sSprite = state.chestOpen ? SPRITES[`snakey_happy_${Math.floor(time / 250) % 2 + 1}`] : ((state.player.x < e.x) ? SPRITES['snakey_left'] : SPRITES['snakey_right']);
             drawSprite(sSprite, px, py, TILE_SIZE);
         }
         if (e.type === 'medusa') drawSprite(e.awake ? SPRITES.medusa_awake : SPRITES.medusa_sleep, px, py, TILE_SIZE);
         if (e.type === 'don_medosa') drawSprite(SPRITES[`don_medosa_${fFrame}`], px, py, TILE_SIZE);
+        if (e.type === 'gol') drawSprite(SPRITES[`gol_${e.golDir}_${state.chestOpen ? 'awake' : 'sleep'}`], px, py, TILE_SIZE);
         if (e.type === 'egg') {
             drawSprite(SPRITES.egg, px, py, TILE_SIZE);
             let text = Math.ceil(e.eggTimer).toString();
             let textX = px + TILE_SIZE - 18, textY = py + TILE_SIZE - 4;
-            ctx.font = 'bold 14px sans-serif';
-            ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff'; ctx.strokeText(text, textX, textY);
+            ctx.font = 'bold 14px sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff'; ctx.strokeText(text, textX, textY);
             ctx.fillStyle = '#0000ff'; ctx.fillText(text, textX, textY);
         }
     }
@@ -974,12 +1164,7 @@ function draw(timestamp) {
     }
 }
 
-function loop(timestamp) {
-    update(timestamp);
-    draw(timestamp);
-    requestAnimationFrame(loop);
-}
-
+function loop(timestamp) { update(timestamp); draw(timestamp); requestAnimationFrame(loop); }
 bootGame();
 </script>
 </body>

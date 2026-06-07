@@ -1,0 +1,38 @@
+[
+  {
+    "id": "pickup_1",
+    "name": "取得１",
+    "data": [1.5,0,493.8833,null,0.05,0.2,2,0.5,null,null,300,0.07,null,null,null,null,0.04,0.5,0.05]
+  },
+  {
+    "id": "shot",
+    "name": "エッガーショット音",
+    "data": [2,0,453,null,0.04,0.09,null,0.2,8,17,null,null,0.09,null,null,null,0.01,0.96,0.06,0.16]
+  },
+  {
+    "id": "open_box",
+    "name": "宝箱が開く音",
+    "data": [0.8,0,492,0.04,0.26,0.16,null,3.1,null,null,499,0.09,0.03,null,null,null,null,0.91,0.1,0.06,161]
+  },  
+  {
+    "id": "get_box",
+    "name": "宝箱を取得する音",
+    "data": [1.1,0,274,0.01,0.15,0.08,1,0.5,-19,-50,null,null,null,null,null,0.4,0.2,0.78,0.09,null,399]
+  }, 
+  {
+    "id": "get_item",
+    "name": "アイテム取得音",
+    "data": [null,0,645,null,0.09,0.17,null,1.6,0,54,283,0.04,0.04,null,null,0.1,null,0.58,0.05]
+  }, 
+  {
+    "id": "use_item",
+    "name": "アイテム使用音",
+    "data": [0.5,0,562,0.02,0.05,0.21,5,1.2,null,null,427,0.1,null,null,null,null,null,0.69,0.01,null,648]
+  },  
+  {
+    "id": "hit",
+    "name": "攻撃を受けた音",
+    "data": [1.4,0,159,0.02,0.02,0,4,2.1,null,null,null,null,null,0.9,null,0.1,0.01,0.52,0.1]
+  }
+]
+
