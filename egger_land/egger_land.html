@@ -33,23 +33,22 @@
         #message { color: yellow; } #shots { color: #00ffaa; }
 
         /* --- バーチャルパッドのレイアウト変更 --- */
-        .dpad { position: absolute; left: 20px; bottom: 30px; width: 120px; height: 120px; }
+        .dpad { position: absolute; left: 20px; bottom: 70px; width: 120px; height: 120px; }
         .btn { position: absolute; width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; user-select: none; }
         .btn:active { background-color: rgba(255, 255, 255, 0.5); }
-
         #btn-up { top: 0; left: 40px; } 
         #btn-down { bottom: 0; left: 40px; } 
         #btn-left { top: 40px; left: 0; } 
         #btn-right { top: 40px; right: 0; }
         
-        #btn-use-item { position: absolute; right: 20px; bottom: 100px; width: 50px; height: 50px; border-radius: 25px; background-color: rgba(50, 50, 255, 0.4); border: 2px solid rgba(100, 100, 255, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; font-size: 12px; }
+        #btn-use-item { position: absolute; right: 20px; bottom: 140px; width: 50px; height: 50px; border-radius: 25px; background-color: rgba(50, 50, 255, 0.4); border: 2px solid rgba(100, 100, 255, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; font-size: 12px; }
         #btn-use-item:active { background-color: rgba(50, 50, 255, 0.8); }
-        #btn-shot { position: absolute; right: 20px; bottom: 30px; width: 60px; height: 60px; border-radius: 30px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
+        #btn-shot { position: absolute; right: 20px; bottom: 70px; width: 60px; height: 60px; border-radius: 30px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
         #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
-
-        #btn-exit-test { position: absolute; left: 50%; bottom: 30px; transform: translateX(-65px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
+        
+        #btn-exit-test { position: absolute; left: 50%; bottom: 70px; transform: translateX(-65px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
         #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
-        #btn-retry { position: absolute; left: 50%; bottom: 30px; transform: translateX(5px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
+        #btn-retry { position: absolute; left: 50%; bottom: 70px; transform: translateX(5px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
         #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
 
         /* エディタUI */
@@ -720,11 +719,11 @@ function tryShoot() {
         state.shots--; updateUI();
         
         let sx = state.player.x; let sy = state.player.y;
-        // 自身のマスをスキップして発射（宝箱重なり対策）
-        if (state.player.dir === 'up') sy -= 2;
-        if (state.player.dir === 'down') sy += 2;
-        if (state.player.dir === 'left') sx -= 2;
-        if (state.player.dir === 'right') sx += 2;
+        // 自身のマスをスキップして発射（宝箱重なり対策：半マス前から開始）
+        if (state.player.dir === 'up') sy -= 1;
+        if (state.player.dir === 'down') sy += 1;
+        if (state.player.dir === 'left') sx -= 1;
+        if (state.player.dir === 'right') sx += 1;
 
         state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
         // ★BGM/SE: エッガーショット発射音★
@@ -873,9 +872,30 @@ function update(timestamp) {
         if (p.dir === 'up') p.y -= 1; else if (p.dir === 'down') p.y += 1;
         else if (p.dir === 'left') p.x -= 1; else if (p.dir === 'right') p.x += 1;
 
-        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
+        // 弾がプレイヤーと重なっている間は、壁・宝箱との衝突判定を無効化する
+        let inPlayer = Math.abs(p.x - state.player.x) < 2 && Math.abs(p.y - state.player.y) < 2;
+
+        // 弾の判定範囲（2x2ユニット）がハートに接触しているかチェック
+        let hitHeart = false;
+        for (let y = 0; y < 2; y++) {
+            for (let x = 0; x < 2; x++) {
+                let tx = Math.floor((p.x + x) / 2);
+                let ty = Math.floor((p.y + y) / 2);
+                if (tx >= 0 && tx < 13 && ty >= 0 && ty < 13) {
+                    let tile = state.map[ty][tx];
+                    if (tile === 2 || tile === 7) hitHeart = true;
+                }
+            }
+        }
+
+//        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
+
+        // 条件に「hitHeart」を追加し、ハートに当たった場合も消滅させる
+        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || (!inPlayer && checkMapCollision(p.x, p.y, false).hit) || hitHeart) {
             state.projectiles.splice(i, 1); continue;
         }
+
+        
         
         let hitE = getEntityAt(p.x, p.y);
         if (hitE) {
