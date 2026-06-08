@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - Items & Gol Added</title>
+    <title>Eggerland Clone - World Map & Save System</title>
     <script src="tori_se.js"></script>
     <script src="tori_music.js"></script>
     <style>
@@ -16,10 +16,24 @@
         .title-btn { padding: 15px 30px; font-size: 1.2rem; font-weight: bold; margin: 10px; border-radius: 8px; border: 2px solid #fff; background-color: #333; color: #fff; cursor: pointer; width: 200px; text-align: center; }
         .title-btn:active { background-color: #555; }
         
+        /* ステージ選択画面 UI */
+        #stage-select-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; display: none; flex-direction: column; align-items: center; z-index: 10; overflow-y: auto; padding: 20px 0; box-sizing: border-box; }
+        #stage-select-screen h2 { color: #ffcc00; margin-bottom: 20px; }
+        #worlds-container { display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 400px; padding-bottom: 30px; }
+        .world-row { display: flex; align-items: center; justify-content: center; }
+        .world-label { width: 80px; font-weight: bold; color: #fff; text-align: right; margin-right: 10px; font-size: 14px; }
+        .stage-nodes { display: flex; gap: 8px; position: relative; }
+        /* 矩形の線を描画 */
+        .stage-nodes::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 4px; background-color: #555; z-index: 0; transform: translateY(-50%); }
+        .stage-node { width: 35px; height: 35px; background-color: #222; border: 3px solid #aaa; border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; z-index: 1; }
+        .stage-node:active { transform: scale(0.95); }
+        .stage-node.cleared { background-color: #004400; border-color: #00ff00; }
+        .stage-node.cleared::after { content: '✓'; color: #00ff00; font-size: 20px; font-weight: bold; }
+        #btn-back-title { margin-top: auto; padding: 10px 20px; background: #444; color: #fff; border: 2px solid #fff; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 20px;}
+
         dialog { background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 10px; padding: 20px; max-width: 80%; }
         dialog::backdrop { background: rgba(0,0,0,0.7); }
         
-        /* アイテム表示欄 */
         #item-area { display: flex; gap: 10px; margin-top: 10px; height: 40px; justify-content: center; width: 100%; }
         .item-slot { width: 40px; height: 40px; border: 2px solid #555; border-radius: 5px; background-color: #222; position: relative; display: flex; justify-content: center; align-items: center; }
         .item-slot.hidden { opacity: 0.5; }
@@ -31,27 +45,24 @@
         #ui-area { width: 100%; height: 35vh; display: flex; justify-content: center; align-items: center; position: relative; }
         .status-bar { position: absolute; top: -30px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         #message { color: yellow; } #shots { color: #00ffaa; }
-
-        /* --- バーチャルパッドのレイアウト変更 --- */
+        
+        /* バーチャルパッド */
         .dpad { position: absolute; left: 20px; bottom: 70px; width: 120px; height: 120px; }
         .btn { position: absolute; width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; user-select: none; }
         .btn:active { background-color: rgba(255, 255, 255, 0.5); }
-        #btn-up { top: 0; left: 40px; } 
-        #btn-down { bottom: 0; left: 40px; } 
-        #btn-left { top: 40px; left: 0; } 
-        #btn-right { top: 40px; right: 0; }
+        #btn-up { top: 0; left: 40px; } #btn-down { bottom: 0; left: 40px; } #btn-left { top: 40px; left: 0; } #btn-right { top: 40px; right: 0; }
         
         #btn-use-item { position: absolute; right: 20px; bottom: 140px; width: 50px; height: 50px; border-radius: 25px; background-color: rgba(50, 50, 255, 0.4); border: 2px solid rgba(100, 100, 255, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; font-size: 12px; }
         #btn-use-item:active { background-color: rgba(50, 50, 255, 0.8); }
         #btn-shot { position: absolute; right: 20px; bottom: 70px; width: 60px; height: 60px; border-radius: 30px; background-color: rgba(255, 50, 50, 0.4); border: 2px solid rgba(255, 100, 100, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; }
         #btn-shot:active { background-color: rgba(255, 50, 50, 0.8); }
         
-        #btn-exit-test { position: absolute; left: 50%; bottom: 70px; transform: translateX(-65px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
-        #btn-exit-test:active { background-color: rgba(200, 50, 50, 0.8); }
+        #btn-sub-menu { position: absolute; left: 50%; bottom: 70px; transform: translateX(-65px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(150, 50, 50, 0.6); border: 2px solid rgba(255, 100, 100, 0.6); display: none; justify-content: center; align-items: center; font-weight: bold; font-size: 10px; user-select: none; text-align: center;}
+        #btn-sub-menu:active { background-color: rgba(200, 50, 50, 0.8); }
         #btn-retry { position: absolute; left: 50%; bottom: 70px; transform: translateX(5px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
         #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
 
-        /* エディタUI */
+        /* エディタUI（タブ構成） */
         #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
         
         .edit-tabs { display: flex; width: 90%; max-width: 400px; background: #333; border-radius: 5px 5px 0 0; overflow: hidden; }
@@ -70,10 +81,9 @@
         .edit-controls button { padding: 6px 12px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
         .edit-controls button:active { background-color: #666; }
         
-        #import-json-text { width: 100%; height: 100px; min-height: 40px; flex-shrink: 0;font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; resize: none; padding: 4px; margin-bottom: 5px; }
-        .edit-input { width: 200px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }
+        #import-json-text { width: 100%; height: 80px; min-height: 80px; flex-shrink: 0; font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; resize: none; padding: 4px; margin-bottom: 5px; }
+        .edit-input { width: 100px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }
         .item-setting-row { display: flex; gap: 5px; align-items: center; font-size: 12px;}
-        /* --- ここまで --- */
     </style>
 </head>
 <body>
@@ -89,10 +99,30 @@
 
     <div id="title-screen">
         <h1>たまごランド</h1>
-        <div class="title-btn" id="btn-start-game">はじめから</div>
+        <div class="title-btn" id="btn-start-game">スタート</div>
         <div class="title-btn" id="btn-edit-mode">エディット</div>
+        <div class="title-btn" id="btn-show-notes">リリースノート</div>
     </div>
     
+    <div id="stage-select-screen">
+        <h2>ステージ選択</h2>
+        <div id="worlds-container">
+            </div>
+        <div id="btn-back-title">タイトルへ戻る</div>
+    </div>
+    
+    <dialog id="notes-dialog">
+        <h2 style="margin-top:0;">リリースノート</h2>
+        <ul style="padding-left:20px; line-height: 1.6;">
+            <li>ワールド／ステージ選択画面を実装しました。</li>
+            <li>進行状況のセーブ機能（ワールド開放・クリアマーク）を実装しました。</li>
+            <li>エディタUIをタブ化し、パレットのカテゴリ分けを行いました。</li>
+        </ul>
+        <div style="text-align: right; margin-top: 20px;">
+            <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
+        </div>
+    </dialog>
+
     <div id="ui-area">
         <div class="status-bar"><div id="message">Loading...</div><div id="shots-disp">Shots: <span id="shots">0</span></div></div>
         <div class="dpad">
@@ -101,14 +131,12 @@
             <div class="btn" id="btn-left" data-dir="left"></div>
             <div class="btn" id="btn-right" data-dir="right"></div>
         </div>
-
         <div id="btn-use-item">ITEM</div>
-        <div id="btn-retry">RETRY</div>
-        <div id="btn-exit-test">エディタに<br>戻る</div>
+        <div id="btn-sub-menu"></div> <div id="btn-retry">RETRY</div>
         <div id="btn-shot">SHOT</div>
     </div>
 
-<div id="edit-ui">
+    <div id="edit-ui">
         <div class="edit-tabs">
             <div class="edit-tab active" data-target="tab-palette">パレット</div>
             <div class="edit-tab" data-target="tab-items">アイテム</div>
@@ -126,7 +154,7 @@
         </div>
         
         <div id="tab-save-load" class="tab-content">
-            <textarea id="import-json-text" rows="4" style="height: 80px !important;" placeholder='{"map":...}'></textarea>
+            <textarea id="import-json-text" placeholder='{"map":...}'></textarea>
             <div class="edit-controls">
                 <button id="btn-import-json">JSON読込</button>
             </div>
@@ -142,6 +170,11 @@
         </div>
 
         <div id="tab-general" class="tab-content">
+            <div class="edit-controls" style="margin-bottom:10px;">
+                W <input type="number" id="edit-world" class="edit-input" style="width:40px;" value="0" min="0" max="9">
+                S <input type="number" id="edit-stage" class="edit-input" style="width:40px;" value="1" min="1" max="6">
+                <input type="text" id="edit-music" class="edit-input" style="width:80px;" placeholder="music_id">
+            </div>
             <div class="edit-controls" style="flex-direction:column; align-items:center; gap: 15px;">
                 <button id="btn-edit-test" style="width:80%;">テストプレイ</button>
                 <button id="btn-edit-export" style="width:80%;">JSON出力</button>
@@ -157,7 +190,7 @@ const ctx = canvas.getContext('2d');
 const msgDiv = document.getElementById('message');
 const shotsSpan = document.getElementById('shots');
 
-const music = loadMusic(4);
+const music = loadMusic(5);
 let se = null;
 
 const TILE_SIZE = 32;
@@ -168,22 +201,23 @@ canvas.height = 13 * TILE_SIZE;
 let PALETTE = {};
 let SPRITES = {};
 let STAGES_DATA = [];
-let currentStageIndex = 0;
+let currentWorld = 0;
+let currentStage = 1;
 let gameMode = ''; 
 let initTimer = 0;
 
 let INITIAL_MAP = [];
-let INITIAL_ITEMS = []; // ステージ初期アイテム
+let INITIAL_ITEMS = []; 
 let state;
 const input = { up: false, down: false, left: false, right: false, shot: false, item: false };
 
+// --- セーブデータ管理 ---
+let SAVE_DATA = { cleared: {}, unlockedWorld: 0 };
+
 let editMap = [];
-let editItems = [];
 let selectedEditItemId = 1;
 
-// エディタパレット拡張
 const EDIT_PALETTE = [
-    // 地形
     { id: 0, sprite: 'floor_0', category: 'terrain' },
     { id: 'F1', sprite: 'floor_1', category: 'terrain' }, { id: 'F2', sprite: 'floor_2', category: 'terrain' }, { id: 'F3', sprite: 'floor_3', category: 'terrain' },
     { id: 'F4', sprite: 'floor_4', category: 'terrain' }, { id: 'F5', sprite: 'floor_5', category: 'terrain' }, { id: 'F6', sprite: 'floor_6', category: 'terrain' },
@@ -192,11 +226,10 @@ const EDIT_PALETTE = [
     { id: 'W0', sprite: 'wall_0', category: 'terrain' }, { id: 'W2', sprite: 'wall_2', category: 'terrain' }, { id: 'W3', sprite: 'wall_3', category: 'terrain' },
     { id: 'W4', sprite: 'wall_4', category: 'terrain' }, { id: 'W5', sprite: 'wall_5', category: 'terrain' }, { id: 'W6', sprite: 'wall_6', category: 'terrain' },
     { id: 'W7', sprite: 'wall_7', category: 'terrain' }, { id: 'W8', sprite: 'wall_8', category: 'terrain' }, { id: 'W9', sprite: 'wall_9', category: 'terrain' },
-    { id: 'GR', sprite: 'grasses', category: 'terrain' }, { id: 5, sprite: 'river_1', category: 'terrain' },
+    { id: 'GS', sprite: 'grasses', category: 'terrain' }, { id: 5, sprite: 'river_1', category: 'terrain' },
     { id: 'U', sprite: 'arrow_top', category: 'terrain' }, { id: 'D', sprite: 'arrow_bottom', category: 'terrain' },
     { id: 'L', sprite: 'arrow_left', category: 'terrain' }, { id: 'R', sprite: 'arrow_right', category: 'terrain' },
     
-    // オブジェクト
     { id: 4, sprite: 'tree', category: 'object' },
     { id: 'FL', sprite: 'flower_1', category: 'object' },
     { id: 2, sprite: 'heart_normal', category: 'object' }, { id: 7, sprite: 'heart_shot', category: 'object' },
@@ -204,34 +237,147 @@ const EDIT_PALETTE = [
     { id: 'P', sprite: 'player_down_1', unique: true, category: 'object' },
     { id: 'F', sprite: 'framer_1', category: 'object' }, 
     
-    // 敵
     { id: 'S', sprite: 'snakey_left', category: 'enemy' },
     { id: 'M', sprite: 'medusa_sleep', category: 'enemy' }, { id: 'DV', sprite: 'don_medosa_1', category: 'enemy' }, { id: 'DH', sprite: 'don_medosa_1', category: 'enemy' },
     { id: 'GU', sprite: 'gol_up_sleep', category: 'enemy' }, { id: 'GD', sprite: 'gol_down_sleep', category: 'enemy' },
     { id: 'GL', sprite: 'gol_left_sleep', category: 'enemy' }, { id: 'GR', sprite: 'gol_right_sleep', category: 'enemy' }
 ];
 
+// --- セーブロード処理 ---
+function loadGameData() {
+    let data = localStorage.getItem('egger_save');
+    if (data) SAVE_DATA = JSON.parse(data);
+    else SAVE_DATA = { cleared: {}, unlockedWorld: 0 };
+}
+function saveGameData() {
+    localStorage.setItem('egger_save', JSON.stringify(SAVE_DATA));
+}
+
+// --- モード遷移 ---
 function setMode(mode) {
     gameMode = mode;
     document.getElementById('title-screen').style.display = (mode === 'title') ? 'flex' : 'none';
+    document.getElementById('stage-select-screen').style.display = (mode === 'stage_select') ? 'flex' : 'none';
     document.getElementById('ui-area').style.display = (mode === 'game' || mode === 'test_play') ? 'flex' : 'none';
     document.getElementById('edit-ui').style.display = (mode === 'edit') ? 'flex' : 'none';
-    document.getElementById('btn-exit-test').style.display = (mode === 'test_play') ? 'flex' : 'none';
+    
+    const btnSubMenu = document.getElementById('btn-sub-menu');
+    if (mode === 'test_play' || mode === 'game') {
+        btnSubMenu.style.display = 'flex';
+        btnSubMenu.innerHTML = mode === 'test_play' ? 'エディタに<br>戻る' : 'ステージ<br>選択';
+    } else {
+        btnSubMenu.style.display = 'none';
+    }
     
     if (mode === 'title') {
-        currentStageIndex = 0;
+        // ★BGM停止箇所★: 
+        music.stop();
+    } else if (mode === 'stage_select') {
+        buildStageSelectUI();
         // ★BGM停止箇所★: 
         music.stop();
     } else if (mode === 'init') {
         initTimer = performance.now();
     } else if (mode === 'edit') {
         updateLoadSelect();
-    } else if (mode === 'ending') {
-        setMode('title');
     }
 }
 
-// エディタアイテムUIの生成とデータバインド
+// --- ステージ選択画面の構築 ---
+function buildStageSelectUI() {
+    const container = document.getElementById('worlds-container');
+    container.innerHTML = '';
+    
+    for (let w = 0; w <= SAVE_DATA.unlockedWorld; w++) {
+        if (w > 9) break; // ワールドは最大9まで
+        
+        let row = document.createElement('div');
+        row.className = 'world-row';
+        
+        let label = document.createElement('div');
+        label.className = 'world-label';
+        label.innerText = `ワールド${w}`;
+        row.appendChild(label);
+
+        let nodes = document.createElement('div');
+        nodes.className = 'stage-nodes';
+        
+        for (let s = 1; s <= 6; s++) {
+            let node = document.createElement('div');
+            node.className = 'stage-node';
+            let stageKey = `${w}-${s}`;
+            
+            if (SAVE_DATA.cleared[stageKey]) node.classList.add('cleared');
+            
+            node.addEventListener('click', () => {
+                let targetStage = STAGES_DATA.find(st => st.world === w && st.stage === s);
+                if (targetStage) {
+                    currentWorld = w;
+                    currentStage = s;
+                    loadStageData(targetStage);
+                } else {
+                    alert("ステージデータがありません");
+                }
+            });
+            nodes.appendChild(node);
+        }
+        row.appendChild(nodes);
+        container.appendChild(row);
+    }
+}
+
+function loadStageData(stageInfo) {
+    INITIAL_MAP = JSON.parse(JSON.stringify(stageInfo.map));
+    INITIAL_ITEMS = stageInfo.items ? JSON.parse(JSON.stringify(stageInfo.items)) : [];
+    initGame(stageInfo.stage, stageInfo.password);
+    setMode('init');
+}
+
+// UIイベントリスナ
+document.getElementById('btn-start-game').addEventListener('click', () => {
+    loadGameData();
+    setMode('stage_select');
+});
+document.getElementById('btn-back-title').addEventListener('click', () => { setMode('title'); });
+document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
+document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
+
+document.getElementById('btn-retry').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    // ★BGM停止箇所★: 
+    music.stop();
+    if (gameMode === 'game') {
+        let targetStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage);
+        if (targetStage) loadStageData(targetStage);
+    } else if (gameMode === 'test_play') {
+        startTestPlay();
+    }
+});
+
+document.getElementById('btn-sub-menu').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    // ★BGM停止箇所★: 
+    music.stop();
+    if (gameMode === 'test_play') setMode('edit');
+    else setMode('stage_select');
+});
+
+document.getElementById('btn-edit-mode').addEventListener('click', () => { initEditMap(); setEditItems([]); setMode('edit'); });
+document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
+document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
+document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
+
+// タブ切り替え処理
+document.querySelectorAll('.edit-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.getAttribute('data-target')).classList.add('active');
+    });
+});
+
+// エディタアイテム設定UI
 function buildEditItemsUI() {
     const container = document.getElementById('edit-items-container');
     container.innerHTML = '';
@@ -270,46 +416,12 @@ function setEditItems(itemsArr) {
     }
 }
 
-// UIイベントリスナ
-document.getElementById('btn-start-game').addEventListener('click', () => loadStage(0));
-document.getElementById('btn-retry').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    // ★BGM停止箇所★:
-    music.stop();
-    if (gameMode === 'game') loadStage(currentStageIndex);
-    else if (gameMode === 'test_play') startTestPlay();
-});
-
-// --- タブ切り替えイベント ---
-document.querySelectorAll('.edit-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.getAttribute('data-target')).classList.add('active');
-    });
-});
-
-document.getElementById('btn-edit-mode').addEventListener('click', () => {
-    initEditMap(); setEditItems([]); setMode('edit');
-});
-document.getElementById('btn-edit-exit').addEventListener('click', () => setMode('title'));
-document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
-document.getElementById('btn-exit-test').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    // ★BGM停止箇所★:
-    music.stop();
-    setMode('edit');
-});
-document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
-
-// LocalStorage
-function getLocalStages() {
-    let data = localStorage.getItem('egger_stages');
-    return data ? JSON.parse(data) : {};
+// エディタ：ローカルセーブ・インポート処理
+function getLocalEditorStages() {
+    let data = localStorage.getItem('egger_stages'); return data ? JSON.parse(data) : {};
 }
 function updateLoadSelect() {
-    let stages = getLocalStages();
+    let stages = getLocalEditorStages();
     let select = document.getElementById('load-stage-select');
     select.innerHTML = '<option value="">--選択--</option>';
     for (let name in stages) {
@@ -320,7 +432,7 @@ function updateLoadSelect() {
 document.getElementById('btn-save-local').addEventListener('click', () => {
     let name = document.getElementById('save-stage-name').value.trim();
     if (!name) { alert("ステージ名を入力してください。"); return; }
-    let stages = getLocalStages();
+    let stages = getLocalEditorStages();
     stages[name] = { map: editMap, items: getEditItems() };
     localStorage.setItem('egger_stages', JSON.stringify(stages));
     updateLoadSelect(); alert(`「${name}」を保存しました！`);
@@ -328,11 +440,10 @@ document.getElementById('btn-save-local').addEventListener('click', () => {
 document.getElementById('btn-load-local').addEventListener('click', () => {
     let name = document.getElementById('load-stage-select').value;
     if (!name) return;
-    let stages = getLocalStages();
+    let stages = getLocalEditorStages();
     if (stages[name]) {
         editMap = JSON.parse(JSON.stringify(stages[name].map));
-        setEditItems(stages[name].items);
-        alert(`「${name}」を読み込みました！`);
+        setEditItems(stages[name].items); alert(`「${name}」を読み込みました！`);
     }
 });
 document.getElementById('btn-import-json').addEventListener('click', () => {
@@ -342,8 +453,7 @@ document.getElementById('btn-import-json').addEventListener('click', () => {
         let newMap = data.map || data; 
         if (Array.isArray(newMap) && newMap.length === 13) {
             editMap = JSON.parse(JSON.stringify(newMap));
-            setEditItems(data.items || []);
-            alert("JSONからマップを読み込みました！");
+            setEditItems(data.items || []); alert("JSONからマップを読み込みました！");
         } else alert("フォーマットが正しくありません。");
     } catch(e) { alert("JSONのパースに失敗しました。"); }
 });
@@ -359,24 +469,12 @@ async function bootGame() {
         const stageData = await stageRes.json();
         STAGES_DATA = stageData.stages;
 
-        buildPaletteUI();
-        buildEditItemsUI();
-        setMode('title');
+        buildPaletteUI(); buildEditItemsUI(); setMode('title');
         requestAnimationFrame(loop);
 
         se = await loadSE();
-        
-    } catch (e) { console.error(e); }
-}
 
-function loadStage(index) {
-    if (index >= STAGES_DATA.length) { setMode('ending'); return; }
-    currentStageIndex = index;
-    const stageInfo = STAGES_DATA[index];
-    INITIAL_MAP = JSON.parse(JSON.stringify(stageInfo.map));
-    INITIAL_ITEMS = stageInfo.items ? JSON.parse(JSON.stringify(stageInfo.items)) : [];
-    initGame(stageInfo.stage, stageInfo.password);
-    setMode('init');
+    } catch (e) { console.error(e); }
 }
 
 function updateUI() {
@@ -386,40 +484,27 @@ function updateUI() {
     else if (state.chestOpen) msgDiv.innerText = "宝箱が開いた！";
     else msgDiv.innerText = "";
 
-    // アイテムUI更新
     for(let i=0; i<3; i++) {
         let slot = document.getElementById(`item-slot-${i}`);
-        slot.innerHTML = '';
-        slot.className = 'item-slot'; // リセット
-        
+        slot.innerHTML = ''; slot.className = 'item-slot'; 
         let itm = state.items[i];
         if (itm) {
             let cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32;
             drawIconToCanvas(SPRITES[itm.type], cvs.getContext('2d'));
-            slot.appendChild(cvs);
-            slot.classList.add(itm.status);
-        } else {
-            slot.classList.add('used'); // 空枠は非表示
-        }
+            slot.appendChild(cvs); slot.classList.add(itm.status);
+        } else { slot.classList.add('used'); }
     }
 }
 
-// --- エディタ関連ロジック ---
 function initEditMap() {
     const defaultMap = [
         ["W5","W2","W2","W2","W2","W2","W2","W2","W2","W2","W2","W2","W5"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
-        ["W5","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W5"]
+        ["W3",0,0,0,0,0,0,0,0,0,0,3,"W3"], ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
+        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"], ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
+        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"], ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
+        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"], ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
+        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"], ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"],
+        ["W3",0,0,0,0,0,0,0,0,0,0,0,"W3"], ["W5","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W4","W5"]
     ];
     editMap = JSON.parse(JSON.stringify(defaultMap));
 }
@@ -441,34 +526,17 @@ function drawIconToCanvas(spriteData, ctxCanvas) {
 function buildPaletteUI() {
     const container = document.getElementById('palette-container');
     container.innerHTML = '';
-
-    const categories = [
-        { key: 'terrain', name: '地形' },
-        { key: 'object', name: 'オブジェクト' },
-        { key: 'enemy', name: '敵' }
-    ];
-
+    const categories = [ { key: 'terrain', name: '地形' }, { key: 'object', name: 'オブジェクト' }, { key: 'enemy', name: '敵' } ];
     categories.forEach(cat => {
-        let title = document.createElement('div');
-        title.className = 'palette-category-title';
-        title.innerText = cat.name;
-        container.appendChild(title);
-
-        let group = document.createElement('div');
-        group.className = 'palette-group';
-        
+        let title = document.createElement('div'); title.className = 'palette-category-title'; title.innerText = cat.name; container.appendChild(title);
+        let group = document.createElement('div'); group.className = 'palette-group';
         let items = EDIT_PALETTE.filter(p => p.category === cat.key);
         items.forEach(item => {
-            const btn = document.createElement('div');
-            btn.className = 'palette-btn';
+            const btn = document.createElement('div'); btn.className = 'palette-btn';
             if (item.id === selectedEditItemId) btn.style.borderColor = '#ffcc00';
-            
-            const cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32;
-            const cCtx = cvs.getContext('2d');
-            if (item.id !== 0) drawIconToCanvas(SPRITES['floor_0'], cCtx);
-            drawIconToCanvas(SPRITES[item.sprite], cCtx);
+            const cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32; const cCtx = cvs.getContext('2d');
+            if (item.id !== 0) drawIconToCanvas(SPRITES['floor_0'], cCtx); drawIconToCanvas(SPRITES[item.sprite], cCtx);
             btn.appendChild(cvs);
-            
             btn.addEventListener('click', () => {
                 selectedEditItemId = item.id;
                 document.querySelectorAll('.palette-btn').forEach(b => b.style.borderColor = '#555');
@@ -493,26 +561,27 @@ function putEditItem(e) {
     
     if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return;
     const item = EDIT_PALETTE.find(p => p.id === selectedEditItemId);
-    
     if (item.unique) {
-        for (let r = 0; r < 13; r++) {
-            for (let c = 0; c < 13; c++) if (editMap[r][c] === item.id) editMap[r][c] = 0;
-        }
+        for (let r = 0; r < 13; r++) { for (let c = 0; c < 13; c++) if (editMap[r][c] === item.id) editMap[r][c] = 0; }
     }
     editMap[ty][tx] = item.id;
 }
 
 function startTestPlay() {
-    INITIAL_MAP = JSON.parse(JSON.stringify(editMap));
-    INITIAL_ITEMS = getEditItems();
-    initGame(0, "TEST");
-    setMode('test_play');
+    INITIAL_MAP = JSON.parse(JSON.stringify(editMap)); INITIAL_ITEMS = getEditItems();
+    initGame(0, "TEST"); setMode('test_play');
     // ★BGM再生箇所★: 
     music.play();
 }
 
 function exportEditMap() {
-    const outputData = { map: editMap, items: getEditItems() };
+    const outputData = { 
+        world: parseInt(document.getElementById('edit-world').value) || 0,
+        stage: parseInt(document.getElementById('edit-stage').value) || 1,
+        music_id: document.getElementById('edit-music').value || "",
+        items: getEditItems(),
+        map: editMap 
+    };
     const jsonStr = JSON.stringify(outputData);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
@@ -525,20 +594,14 @@ function exportEditMap() {
 // --- ゲームコアロジック ---
 function initGame(stageNum = 1, password = "") {
     let pStartX = 12, pStartY = 20; 
-
     state = {
         map: [], entities: [], floatingEggs: [], projectiles: [], needle: null,
-        totalHearts: 0, collectedHearts: 0, shots: 0, chestOpen: false, cleared: false,
-        wasChestOpen: false, // ゴル覚醒トリガー用
+        totalHearts: 0, collectedHearts: 0, shots: 0, chestOpen: false, cleared: false, wasChestOpen: false,
         animation: { active: false, duration: 120, startTime: 0, elapsed: 0 },
-        stageNum: stageNum, password: password,
-        items: [] // アイテム管理配列
+        stageNum: stageNum, password: password, items: []
     };
 
-    // アイテムのセットアップ
-    INITIAL_ITEMS.forEach(itm => {
-        state.items.push({ type: itm.type, needHearts: parseInt(itm.needHearts)||0, status: 'hidden' });
-    });
+    INITIAL_ITEMS.forEach(itm => { state.items.push({ type: itm.type, needHearts: parseInt(itm.needHearts)||0, status: 'hidden' }); });
 
     for (let y = 0; y < 13; y++) {
         let row = [];
@@ -547,21 +610,11 @@ function initGame(stageNum = 1, password = "") {
             if (cell === 'P') { 
                 pStartX = x * 2; pStartY = y * 2; row.push(0);
             } else if (['F','S','M','DV','DH','GU','GD','GL','GR'].includes(cell)) {
-                let entType = cell === 'F' ? 'framer' : 
-                              cell === 'S' ? 'snakey' : 
-                              cell === 'M' ? 'medusa' : 
-                              (cell === 'DV' || cell === 'DH') ? 'don_medosa' : 'gol';
-                let ent = {
-                    type: entType, originalType: entType, x: x * 2, y: y * 2, startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2,
-                    isMoving: false, awake: false, eggTimer: 0
-                };
-                if (entType === 'don_medosa') {
-                    ent.dmAxis = (cell === 'DV') ? 'y' : 'x'; ent.dmDir = 1; 
-                } else if (entType === 'gol') {
-                    ent.golDir = cell === 'GU' ? 'up' : cell === 'GD' ? 'down' : cell === 'GL' ? 'left' : 'right';
-                }
-                state.entities.push(ent);
-                row.push(0); 
+                let entType = cell === 'F' ? 'framer' : cell === 'S' ? 'snakey' : cell === 'M' ? 'medusa' : (cell === 'DV' || cell === 'DH') ? 'don_medosa' : 'gol';
+                let ent = { type: entType, originalType: entType, x: x * 2, y: y * 2, startX: x * 2, startY: y * 2, targetX: x * 2, targetY: y * 2, isMoving: false, awake: false, eggTimer: 0 };
+                if (entType === 'don_medosa') { ent.dmAxis = (cell === 'DV') ? 'y' : 'x'; ent.dmDir = 1; } 
+                else if (entType === 'gol') { ent.golDir = cell === 'GU' ? 'up' : cell === 'GD' ? 'down' : cell === 'GL' ? 'left' : 'right'; }
+                state.entities.push(ent); row.push(0); 
             } else {
                 if (cell === 2 || cell === 7) state.totalHearts++;
                 row.push(cell);
@@ -569,12 +622,10 @@ function initGame(stageNum = 1, password = "") {
         }
         state.map.push(row);
     }
-    
     state.player = { x: pStartX, y: pStartY, startX: pStartX, startY: pStartY, targetX: pStartX, targetY: pStartY, dir: 'down' };
     updateUI();
 }
 
-// 入力処理
 ['up', 'down', 'left', 'right'].forEach(id => {
     const btn = document.getElementById(`btn-${id}`);
     const press = (e) => { e.preventDefault(); input[id] = true; };
@@ -625,7 +676,7 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
             let tile = state.map[ty][tx];
             
             let coveredByFE = state.floatingEggs.some(fe => cx >= fe.x && cx <= fe.x + 1 && cy >= fe.y && cy <= fe.y + 1);
-            let isWall = (tile === 1 || (typeof tile === 'string' && tile.startsWith('W')) || tile === 4 || (tile === 3 && !isPlayer));
+            let isWall = (tile === 1 || (typeof tile === 'string' && tile.startsWith('W')) || tile === 4 || (!isPlayer && (tile === 3 || tile === 2 || tile === 7)));
             
             if (isWall) {
                 isHit = true; isAllRiver = false;
@@ -641,12 +692,9 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
                     if (tile === 'R' && dx === -1) isHit = true;
                 }
                 isAllRiver = false;
-            } else {
-                isAllRiver = false;
-            }
+            } else { isAllRiver = false; }
         }
     }
-    
     if (isAllRiver && hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: true };
     else if (hasRiver || isHit) return { hit: true, tile: 5, hasRiver: hasRiver, allRiver: false };
     return { hit: false, hasRiver: false, allRiver: false };
@@ -658,7 +706,6 @@ function checkDMCollision(hx, hy, dm) {
             let cx = hx + x, cy = hy + y;
             let tx = Math.floor(cx / 2), ty = Math.floor(cy / 2);
             if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return true;
-            
             let tile = state.map[ty][tx];
             let isPassableFloor = (tile === 0 || (typeof tile === 'string' && tile.match(/^F[1-9]$/)) || ['U','D','L','R'].includes(tile));
             if (!isPassableFloor) return true;
@@ -671,7 +718,6 @@ function checkDMCollision(hx, hy, dm) {
 function tryMove(dx, dy) {
     if (dy === -1) state.player.dir = 'up'; else if (dy === 1) state.player.dir = 'down';
     if (dx === -1) state.player.dir = 'left'; else if (dx === 1) state.player.dir = 'right';
-
     const pNextX = state.player.x + dx, pNextY = state.player.y + dy;
     if (checkMapCollision(pNextX, pNextY, true, dx, dy).hit) return false;
 
@@ -680,35 +726,29 @@ function tryMove(dx, dy) {
         if (hitE.type === 'snakey' || hitE.type === 'medusa' || hitE.type === 'don_medosa' || hitE.type === 'gol') return false;
         if (dx !== 0 && hitE.y !== state.player.y) return false;
         if (dy !== 0 && hitE.x !== state.player.x) return false;
-
         let fNextX = hitE.x + dx, fNextY = hitE.y + dy;
 
         if (hitE.type === 'egg') {
             let nextCol = checkMapCollision(fNextX, fNextY, false, dx, dy);
             let willFloat = false;
-
             if (nextCol.hasRiver && !nextCol.allRiver) {
                 let fNextX2 = hitE.x + dx * 2, fNextY2 = hitE.y + dy * 2;
                 let nextCol2 = checkMapCollision(fNextX2, fNextY2, false, dx, dy);
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
                     fNextX = fNextX2; fNextY = fNextY2; willFloat = true;
                 } else return false;
-            } else if (nextCol.allRiver) {
-                willFloat = true;
-            } else if (nextCol.hit) return false;
-
+            } else if (nextCol.allRiver) { willFloat = true; } 
+            else if (nextCol.hit) return false;
             hitE.willFloat = willFloat;
         } else {
             if (checkMapCollision(fNextX, fNextY, false, dx, dy).hit) return false;
         }
 
         if (getEntityAt(fNextX, fNextY, hitE)) return false;
-
         hitE.startX = hitE.x; hitE.startY = hitE.y;
         hitE.targetX = fNextX; hitE.targetY = fNextY;
         hitE.isMoving = true;
     }
-
     state.player.startX = state.player.x; state.player.startY = state.player.y;
     state.player.targetX = pNextX; state.player.targetY = pNextY;
     return true;
@@ -717,14 +757,11 @@ function tryMove(dx, dy) {
 function tryShoot() {
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
         state.shots--; updateUI();
-        
-        let sx = state.player.x; let sy = state.player.y;
-        // 自身のマスをスキップして発射（宝箱重なり対策：半マス前から開始）
+        let sx = state.player.x, sy = state.player.y;
         if (state.player.dir === 'up') sy -= 1;
         if (state.player.dir === 'down') sy += 1;
         if (state.player.dir === 'left') sx -= 1;
         if (state.player.dir === 'right') sx += 1;
-
         state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
         // ★BGM/SE: エッガーショット発射音★
         se.playSE("shot");
@@ -732,23 +769,17 @@ function tryShoot() {
     }
 }
 
-// アイテム使用処理
 function tryUseItem() {
     if (state.player.x % 2 !== 0 || state.player.y % 2 !== 0) return;
-    
     let itemIndex = state.items.findIndex(i => i.status === 'ready');
     if (itemIndex === -1) return;
     let itemObj = state.items[itemIndex];
 
     let dx = 0, dy = 0;
-    if (state.player.dir === 'up') dy = -1;
-    if (state.player.dir === 'down') dy = 1;
-    if (state.player.dir === 'left') dx = -1;
-    if (state.player.dir === 'right') dx = 1;
+    if (state.player.dir === 'up') dy = -1; if (state.player.dir === 'down') dy = 1;
+    if (state.player.dir === 'left') dx = -1; if (state.player.dir === 'right') dx = 1;
 
-    let tx = Math.floor(state.player.x / 2) + dx;
-    let ty = Math.floor(state.player.y / 2) + dy;
-    
+    let tx = Math.floor(state.player.x / 2) + dx; let ty = Math.floor(state.player.y / 2) + dy;
     if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return;
     let tile = state.map[ty][tx];
     let success = false;
@@ -758,8 +789,7 @@ function tryUseItem() {
         if (arrowMap[tile]) { state.map[ty][tx] = arrowMap[tile]; success = true; }
     } else if (itemObj.type === 'floor_1') {
         if (tile === 5) {
-            state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'F1' : 'F2';
-            success = true;
+            state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'F1' : 'F2'; success = true;
         }
     } else if (itemObj.type === 'hammer') {
         if (tile === 1 || tile === 'W0' || tile === 'W6' || tile === 'W7' || tile === 'W8' || tile === 'W9') {
@@ -768,8 +798,7 @@ function tryUseItem() {
     }
 
     if (success) {
-        itemObj.status = 'used';
-        updateUI();
+        itemObj.status = 'used'; updateUI();
         // ★BGM/SE: アイテム使用音★
         se.playSE("use_item");
     }
@@ -815,9 +844,8 @@ function checkEnemies() {
         } else if (e.type === 'don_medosa') {
             if (overlapX < 2 && checkLOS(e, p, 'y')) { wakeUp = true; if (overlapX === 0) attack = true; }
             if (overlapY < 2 && checkLOS(e, p, 'x')) { wakeUp = true; if (overlapY === 0) attack = true; }
-            if (overlapX < 2 && overlapY < 2) attack = true; // 接触
+            if (overlapX < 2 && overlapY < 2) attack = true;
         } else if (e.type === 'gol' && state.chestOpen) {
-            // ゴル（覚醒時のみ）特定方向の視線
             if (e.golDir === 'up' && overlapX === 0 && p.y < e.y && checkLOS(e, p, 'y')) attack = true;
             if (e.golDir === 'down' && overlapX === 0 && p.y > e.y && checkLOS(e, p, 'y')) attack = true;
             if (e.golDir === 'left' && overlapY === 0 && p.x < e.x && checkLOS(e, p, 'x')) attack = true;
@@ -826,7 +854,7 @@ function checkEnemies() {
         
         e.awake = wakeUp;
         if (attack) {
-            // ★BGM停止箇所★: 
+            // ★BGM停止箇所★
             music.stop();
             // ★SE:ヒット
             se.playSE("hit");
@@ -840,7 +868,7 @@ function update(timestamp) {
     if (gameMode === 'init') {
         if (timestamp - initTimer > 2000) {
             setMode(gameMode === 'test_play' ? 'test_play' : 'game');
-            // ★BGM再生箇所★: 
+            // ★BGM再生箇所★:
             music.play();
         }
         return;
@@ -851,36 +879,32 @@ function update(timestamp) {
         state.needle.progress += 0.1;
         if (state.needle.progress >= 1) {
             if (gameMode === 'test_play') setMode('edit');
-            else loadStage(currentStageIndex);
+            else {
+                let targetStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage);
+                if (targetStage) loadStageData(targetStage);
+            }
         }
         return;
     }
 
     if (state.cleared) return;
 
-    // ゴルの卵化解除（ハート全取得時）
     if (state.chestOpen && !state.wasChestOpen) {
-        state.entities.forEach(e => {
-            if (e.originalType === 'gol' && e.type === 'egg') e.type = 'gol'; // 卵解除して覚醒
-        });
+        state.entities.forEach(e => { if (e.originalType === 'gol' && e.type === 'egg') e.type = 'gol'; });
         state.wasChestOpen = true;
     }
 
-    // 弾の更新
     for (let i = state.projectiles.length - 1; i >= 0; i--) {
         let p = state.projectiles[i];
         if (p.dir === 'up') p.y -= 1; else if (p.dir === 'down') p.y += 1;
         else if (p.dir === 'left') p.x -= 1; else if (p.dir === 'right') p.x += 1;
 
-        // 弾がプレイヤーと重なっている間は、壁・宝箱との衝突判定を無効化する
         let inPlayer = Math.abs(p.x - state.player.x) < 2 && Math.abs(p.y - state.player.y) < 2;
 
-        // 弾の判定範囲（2x2ユニット）がハートに接触しているかチェック
         let hitHeart = false;
         for (let y = 0; y < 2; y++) {
             for (let x = 0; x < 2; x++) {
-                let tx = Math.floor((p.x + x) / 2);
-                let ty = Math.floor((p.y + y) / 2);
+                let tx = Math.floor((p.x + x) / 2), ty = Math.floor((p.y + y) / 2);
                 if (tx >= 0 && tx < 13 && ty >= 0 && ty < 13) {
                     let tile = state.map[ty][tx];
                     if (tile === 2 || tile === 7) hitHeart = true;
@@ -888,14 +912,9 @@ function update(timestamp) {
             }
         }
 
-//        if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || checkMapCollision(p.x, p.y, false).hit) {
-
-        // 条件に「hitHeart」を追加し、ハートに当たった場合も消滅させる
         if (p.x < 0 || p.x > 24 || p.y < 0 || p.y > 24 || (!inPlayer && checkMapCollision(p.x, p.y, false).hit) || hitHeart) {
             state.projectiles.splice(i, 1); continue;
         }
-
-        
         
         let hitE = getEntityAt(p.x, p.y);
         if (hitE) {
@@ -904,7 +923,6 @@ function update(timestamp) {
             if ((p.dir === 'left' || p.dir === 'right') && p.y === hitE.y) isAligned = true;
 
             if (isAligned) {
-                // スネーキー、または睡眠中のゴルのみ卵化
                 if (hitE.type === 'snakey' || (hitE.type === 'gol' && !state.chestOpen)) { 
                     hitE.type = 'egg'; hitE.eggTimer = 16; 
                 } else if (hitE.type === 'egg') {
@@ -916,45 +934,28 @@ function update(timestamp) {
     }
 
     if (!state.animation.active) {
-        let anyMoved = false;
-        let playerDidMove = false;
+        let anyMoved = false, playerDidMove = false;
 
-        if (input.shot) {
-            tryShoot();
-        } else if (input.item) {
-            tryUseItem();
-        } else {
+        if (input.shot) { tryShoot(); } 
+        else if (input.item) { tryUseItem(); } 
+        else {
             let dx = 0, dy = 0;
             if (input.up) dy -= 1; else if (input.down) dy += 1;
             else if (input.left) dx -= 1; else if (input.right) dx += 1;
-            
-            if (dx !== 0 || dy !== 0) {
-                if (tryMove(dx, dy)) {
-                    anyMoved = true;
-                    playerDidMove = true;
-                }
-            }
+            if (dx !== 0 || dy !== 0) { if (tryMove(dx, dy)) { anyMoved = true; playerDidMove = true; } }
         }
 
         let dmDidMove = false;
         for (let e of state.entities) {
             if (e.type === 'don_medosa') {
-                let eDx = e.dmAxis === 'x' ? e.dmDir : 0;
-                let eDy = e.dmAxis === 'y' ? e.dmDir : 0;
-
+                let eDx = e.dmAxis === 'x' ? e.dmDir : 0; let eDy = e.dmAxis === 'y' ? e.dmDir : 0;
                 if (checkDMCollision(e.x + eDx, e.y + eDy, e)) {
-                    e.dmDir *= -1; 
-                    eDx = e.dmAxis === 'x' ? e.dmDir : 0;
-                    eDy = e.dmAxis === 'y' ? e.dmDir : 0;
+                    e.dmDir *= -1; eDx = e.dmAxis === 'x' ? e.dmDir : 0; eDy = e.dmAxis === 'y' ? e.dmDir : 0;
                     if (checkDMCollision(e.x + eDx, e.y + eDy, e)) { eDx = 0; eDy = 0; }
                 }
-
                 if (eDx !== 0 || eDy !== 0) {
-                    e.startX = e.x; e.startY = e.y;
-                    e.targetX = e.x + eDx; e.targetY = e.y + eDy;
-                    e.isMoving = true;
-                    dmDidMove = true;
-                    anyMoved = true;
+                    e.startX = e.x; e.startY = e.y; e.targetX = e.x + eDx; e.targetY = e.y + eDy;
+                    e.isMoving = true; dmDidMove = true; anyMoved = true;
                 }
             }
         }
@@ -964,9 +965,7 @@ function update(timestamp) {
                 state.player.startX = state.player.x; state.player.targetX = state.player.x;
                 state.player.startY = state.player.y; state.player.targetY = state.player.y;
             }
-            state.animation.active = true;
-            state.animation.elapsed = 0;
-            state.animation.startTime = timestamp;
+            state.animation.active = true; state.animation.elapsed = 0; state.animation.startTime = timestamp;
         }
     }
 
@@ -984,7 +983,7 @@ function update(timestamp) {
                     e.x = e.targetX; e.y = e.targetY; e.isMoving = false;
                     if (e.type === 'egg') {
                         e.eggTimer -= 1; 
-                        if (e.eggTimer <= 0) e.type = e.originalType; // ゴルまたはスネーキーに戻る
+                        if (e.eggTimer <= 0) e.type = e.originalType;
                         if (e.willFloat) {
                             state.floatingEggs.push({ x: e.x, y: e.y, walks: 2, objOn: false });
                             state.entities.splice(i, 1);
@@ -999,9 +998,8 @@ function update(timestamp) {
                 let hasObjOn = false;
                 if (state.player.x === fe.x && state.player.y === fe.y) hasObjOn = true;
                 
-                if (hasObjOn && !fe.objOn) {
-                    fe.objOn = true; fe.walks--;
-                } else if (!hasObjOn && fe.objOn) {
+                if (hasObjOn && !fe.objOn) { fe.objOn = true; fe.walks--; } 
+                else if (!hasObjOn && fe.objOn) {
                     fe.objOn = false;
                     if (fe.walks <= 0) state.floatingEggs.splice(i, 1);
                 }
@@ -1014,25 +1012,21 @@ function update(timestamp) {
                     if (tile === 2 || tile === 7) {
                         state.map[ty][tx] = 0; state.collectedHearts++;
                         if (tile === 7) state.shots++;
-
                         // ★効果音ハート取得★
                         se.playSE("pickup_1");
-
-                        // アイテム取得判定
+                        
                         state.items.forEach(itm => {
                             if (itm.status === 'hidden' && state.collectedHearts >= itm.needHearts) {
-                                itm.status = 'ready';
+                                itm.status = 'ready'; 
                                 // ★BGM/SE: アイテム取得音★
                                 se.playSE("get_item");
                             }
                         });
 
                         updateUI();
-
                         // 2. 【宝箱が開いた時】 (すべてのハートを取り終えた瞬間)
-                        if (state.collectedHearts >= state.totalHearts) {
-                            state.chestOpen = true; 
-                            updateUI(); 
+                        if (state.collectedHearts >= state.totalHearts) { 
+                            state.chestOpen = true; updateUI(); 
                             se.playSE("open_box");
                         }
 
@@ -1043,9 +1037,31 @@ function update(timestamp) {
                         music.stop();
                         se.playSE("get_box");
 
+                        // セーブデータ更新（クリア進行度）
+                        if (gameMode === 'game') {
+                            let stageKey = `${currentWorld}-${currentStage}`;
+                            SAVE_DATA.cleared[stageKey] = true;
+                            
+                            let clearCount = 0;
+                            for (let s = 1; s <= 6; s++) { if (SAVE_DATA.cleared[`${currentWorld}-${s}`]) clearCount++; }
+                            if (clearCount >= 4 && SAVE_DATA.unlockedWorld === currentWorld) {
+                                SAVE_DATA.unlockedWorld = Math.min(9, currentWorld + 1);
+                            }
+                            saveGameData();
+                        }
+
                         setTimeout(() => {
-                            if (gameMode === 'test_play') setMode('edit');
-                            else loadStage(currentStageIndex + 1);
+                            if (gameMode === 'test_play') {
+                                setMode('edit');
+                            } else {
+                                // ひとつ右のステージをロード
+                                let nextStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage + 1);
+                                if (nextStage) {
+                                    currentStage++; loadStageData(nextStage);
+                                } else {
+                                    setMode('stage_select'); // 無ければステージ選択へ戻る
+                                }
+                            }
                         }, 1000);
                     }
                 }
@@ -1084,7 +1100,7 @@ function drawEditMode() {
 }
 
 function draw(timestamp) {
-    if (gameMode === 'title') return;
+    if (gameMode === 'title' || gameMode === 'stage_select') return;
     if (gameMode === 'edit') { drawEditMode(); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1094,7 +1110,8 @@ function draw(timestamp) {
         }
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 36px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
-        ctx.fillText(gameMode === 'test_play' ? "TEST PLAY" : `STAGE ${state.stageNum}`, canvas.width / 2, canvas.height / 2);
+        let displayStr = gameMode === 'test_play' ? "TEST PLAY" : `WORLD ${currentWorld} - STAGE ${currentStage}`;
+        ctx.fillText(displayStr, canvas.width / 2, canvas.height / 2);
         ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
         return;
     }
@@ -1118,12 +1135,11 @@ function draw(timestamp) {
                 drawSprite(floorSprite, px, py, TILE_SIZE);
             } else {
                 drawSprite(SPRITES.floor_0, px, py, TILE_SIZE);
-                
                 if (tile === 1) drawSprite(SPRITES.wall_1, px, py, TILE_SIZE);
                 if (typeof tile === 'string' && tile.startsWith('W')) drawSprite(SPRITES[`wall_${tile[1]}`], px, py, TILE_SIZE);
                 if (tile === 4) drawSprite(SPRITES.tree, px, py, TILE_SIZE);
                 if (tile === 5) drawSprite(SPRITES[`river_${riverFrame}`], px, py, TILE_SIZE);
-                if (tile === 'GR') drawSprite(SPRITES.grasses, px, py, TILE_SIZE);
+                if (tile === 'GS') drawSprite(SPRITES.grasses, px, py, TILE_SIZE);
                 if (tile === 'FL') drawSprite(SPRITES[`flower_${fFrame}`], px, py, TILE_SIZE);
                 if (tile === 'U') drawSprite(SPRITES.arrow_top, px, py, TILE_SIZE);
                 if (tile === 'D') drawSprite(SPRITES.arrow_bottom, px, py, TILE_SIZE);
