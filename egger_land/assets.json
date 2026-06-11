@@ -666,7 +666,7 @@
       ".IIFP11P",
       ".PPPPP1.",
       ".P99FPP.",
-      "1111.99F"
+      "PPP1.99F"
     ],
     "gol_left_awake": [
       ".....5..",
@@ -676,7 +676,7 @@
       ".I1FP11P",
       ".PPPPP1.",
       ".P99FPP.",
-      "1111.99F"
+      "PPP1.99F"
     ],
     "gol_right_sleep": [
       "..1.....",
@@ -686,7 +686,7 @@
       "P11PFII.",
       ".1PPPPP.",
       ".PPF99P.",
-      "F99.1111"
+      "F99.1PPP"
     ],
     "gol_right_awake": [
       "..5.....",
@@ -696,7 +696,57 @@
       "P11PF1I.",
       ".1PPPPP.",
       ".PPF99P.",
-      "F99.1111"
+      "F99.1PPP"
+    ],
+    "lava_1": [
+      "GGGGGGGG",
+      "G33GGG3G",
+      "3GGOGGGG",
+      "3GGOGGGG",
+      "GOOGG3GG",
+      "GGGG3GOG",
+      "GGGOGOGG",
+      "GOGGGGGG"
+    ],
+    "lava_2": [
+      "GGGOGGGG",
+      "GOGGG3GG",
+      "GGGOGGGG",
+      "OGGGG33G",
+      "GGOG3GGO",
+      "GGGG3GGO",
+      "GGGGGOOG",
+      "GGGGGGGG"
+    ],
+    "lava_3": [
+      "GGOOGGGG",
+      "GGGGG3GG",
+      "G3GGGGGG",
+      "GGOGGOGG",
+      "GGGGGGGO",
+      "GG33GGGG",
+      "G3GGOGOG",
+      "G3GGOGGG"
+    ],
+    "floor_1_broken": [
+      "G99G999G",
+      "G7GGG77G",
+      "GG99GGGG",
+      "8G77GGGG",
+      "8GGGG99G",
+      "G97GG79G",
+      "G99GGGGG",
+      "GGGGG79G"
+    ],
+    "floor_2_broken": [
+      "GGGGGGGG",
+      "97G7GG97",
+      "97G79GGG",
+      "GGG79G97",
+      "97G6GG97",
+      "88GGGGGG",
+      "GGG98G67",
+      "76G88GGG"
     ]
   }
 }

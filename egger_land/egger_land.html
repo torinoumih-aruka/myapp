@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eggerland Clone - World Map & Save System</title>
+    <title>Eggerland Clone - Lava & Gamepad</title>
     <script src="tori_se.js"></script>
     <script src="tori_music.js"></script>
     <style>
@@ -16,14 +16,12 @@
         .title-btn { padding: 15px 30px; font-size: 1.2rem; font-weight: bold; margin: 10px; border-radius: 8px; border: 2px solid #fff; background-color: #333; color: #fff; cursor: pointer; width: 200px; text-align: center; }
         .title-btn:active { background-color: #555; }
         
-        /* ステージ選択画面 UI */
         #stage-select-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; display: none; flex-direction: column; align-items: center; z-index: 10; overflow-y: auto; padding: 20px 0; box-sizing: border-box; }
         #stage-select-screen h2 { color: #ffcc00; margin-bottom: 20px; }
         #worlds-container { display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 400px; padding-bottom: 30px; }
         .world-row { display: flex; align-items: center; justify-content: center; }
         .world-label { width: 80px; font-weight: bold; color: #fff; text-align: right; margin-right: 10px; font-size: 14px; }
         .stage-nodes { display: flex; gap: 8px; position: relative; }
-        /* 矩形の線を描画 */
         .stage-nodes::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 4px; background-color: #555; z-index: 0; transform: translateY(-50%); }
         .stage-node { width: 35px; height: 35px; background-color: #222; border: 3px solid #aaa; border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; z-index: 1; }
         .stage-node:active { transform: scale(0.95); }
@@ -46,7 +44,6 @@
         .status-bar { position: absolute; top: -30px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-weight: bold; }
         #message { color: yellow; } #shots { color: #00ffaa; }
         
-        /* バーチャルパッド */
         .dpad { position: absolute; left: 20px; bottom: 70px; width: 120px; height: 120px; }
         .btn { position: absolute; width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 10px; display: flex; justify-content: center; align-items: center; user-select: none; }
         .btn:active { background-color: rgba(255, 255, 255, 0.5); }
@@ -62,25 +59,19 @@
         #btn-retry { position: absolute; left: 50%; bottom: 70px; transform: translateX(5px); width: 60px; height: 35px; border-radius: 10px; background-color: rgba(100, 100, 100, 0.4); border: 2px solid rgba(200, 200, 200, 0.6); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; user-select: none; }
         #btn-retry:active { background-color: rgba(100, 100, 100, 0.8); }
 
-        /* エディタUI（タブ構成） */
         #edit-ui { width: 100%; height: 40vh; display: none; flex-direction: column; align-items: center; padding-top: 10px; box-sizing: border-box; }
-        
         .edit-tabs { display: flex; width: 90%; max-width: 400px; background: #333; border-radius: 5px 5px 0 0; overflow: hidden; }
         .edit-tab { flex: 1; text-align: center; padding: 8px 0; font-size: 12px; cursor: pointer; border-right: 1px solid #222; }
         .edit-tab.active { background: #555; font-weight: bold; }
-        
         .tab-content { display: none; width: 90%; max-width: 400px; background: #222; padding: 10px; box-sizing: border-box; border-radius: 0 0 5px 5px; height: 180px; overflow-y: auto; }
         .tab-content.active { display: flex; flex-direction: column; align-items: center; }
-
         .palette-category-title { font-size: 12px; font-weight: bold; margin: 5px 0; width: 100%; text-align: left; border-bottom: 1px solid #444; padding-bottom: 3px; }
         .palette-group { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; width: 100%; margin-bottom: 5px; }
         .palette-btn { width: 30px; height: 30px; border: 2px solid #555; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; background-color: #111; }
         .palette-btn canvas { width: 24px; height: 24px; image-rendering: pixelated; }
-
         .edit-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 5px; width: 100%; }
         .edit-controls button { padding: 6px 12px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: 2px solid #fff; background-color: #444; color: #fff; cursor: pointer; }
         .edit-controls button:active { background-color: #666; }
-        
         #import-json-text { width: 100%; height: 80px; min-height: 80px; flex-shrink: 0; font-size: 0.8rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; resize: none; padding: 4px; margin-bottom: 5px; }
         .edit-input { width: 100px; padding: 5px; font-size: 0.9rem; border-radius: 4px; border: 1px solid #555; background: #111; color: #fff; box-sizing: border-box; }
         .item-setting-row { display: flex; gap: 5px; align-items: center; font-size: 12px;}
@@ -106,17 +97,16 @@
     
     <div id="stage-select-screen">
         <h2>ステージ選択</h2>
-        <div id="worlds-container">
-            </div>
+        <div id="worlds-container"></div>
         <div id="btn-back-title">タイトルへ戻る</div>
     </div>
     
     <dialog id="notes-dialog">
         <h2 style="margin-top:0;">リリースノート</h2>
         <ul style="padding-left:20px; line-height: 1.6;">
-            <li>ワールド／ステージ選択画面を実装しました。</li>
-            <li>進行状況のセーブ機能（ワールド開放・クリアマーク）を実装しました。</li>
-            <li>エディタUIをタブ化し、パレットのカテゴリ分けを行いました。</li>
+            <li>溶岩マス、および「溶岩の上の橋」を追加しました（橋は2回の通行で溶岩に戻ります）。</li>
+            <li>溶岩に卵を落とした場合、1回の通行で卵が沈むように仕様を調整しました。</li>
+            <li>ゲームパッド（コントローラー）操作に対応しました。</li>
         </ul>
         <div style="text-align: right; margin-top: 20px;">
             <button id="btn-close-notes" style="padding: 5px 15px;">閉じる</button>
@@ -143,21 +133,14 @@
             <div class="edit-tab" data-target="tab-save-load">保存／読込</div>
             <div class="edit-tab" data-target="tab-general">総合</div>
         </div>
-        
-        <div id="tab-palette" class="tab-content active">
-            <div id="palette-container" style="width:100%;"></div>
-        </div>
-        
+        <div id="tab-palette" class="tab-content active"><div id="palette-container" style="width:100%;"></div></div>
         <div id="tab-items" class="tab-content">
             <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">アイテム設定</div>
             <div id="edit-items-container"></div>
         </div>
-        
         <div id="tab-save-load" class="tab-content">
             <textarea id="import-json-text" placeholder='{"map":...}'></textarea>
-            <div class="edit-controls">
-                <button id="btn-import-json">JSON読込</button>
-            </div>
+            <div class="edit-controls"><button id="btn-import-json">JSON読込</button></div>
             <hr style="width:100%; border-color:#444; margin:10px 0;">
             <div class="edit-controls">
                 <input type="text" id="save-stage-name" class="edit-input" placeholder="ステージ名">
@@ -168,7 +151,6 @@
                 <button id="btn-load-local">読込</button>
             </div>
         </div>
-
         <div id="tab-general" class="tab-content">
             <div class="edit-controls" style="margin-bottom:10px;">
                 W <input type="number" id="edit-world" class="edit-input" style="width:40px;" value="0" min="0" max="9">
@@ -190,7 +172,7 @@ const ctx = canvas.getContext('2d');
 const msgDiv = document.getElementById('message');
 const shotsSpan = document.getElementById('shots');
 
-const music = loadMusic(5);
+const music = loadMusic ? loadMusic(5) : { play:()=>{}, stop:()=>{} }; // Fallback if missing
 let se = null;
 
 const TILE_SIZE = 32;
@@ -211,12 +193,39 @@ let INITIAL_ITEMS = [];
 let state;
 const input = { up: false, down: false, left: false, right: false, shot: false, item: false };
 
-// --- セーブデータ管理 ---
-let SAVE_DATA = { cleared: {}, unlockedWorld: 0 };
+// --- ゲームパッド管理 ---
+let gpState = { up: false, down: false, left: false, right: false, shot: false, item: false };
 
+function updateGamepad() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let gp = null;
+    for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i] && gamepads[i].connected) { gp = gamepads[i]; break; }
+    }
+    if (!gp) {
+        gpState.up = gpState.down = gpState.left = gpState.right = false;
+        return;
+    }
+
+    gpState.up = gp.buttons[12]?.pressed || gp.axes[1] < -0.5;
+    gpState.down = gp.buttons[13]?.pressed || gp.axes[1] > 0.5;
+    gpState.left = gp.buttons[14]?.pressed || gp.axes[0] < -0.5;
+    gpState.right = gp.buttons[15]?.pressed || gp.axes[0] > 0.5;
+
+    let currentShot = gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
+    if (currentShot && !gpState.shot) input.shot = true;
+    gpState.shot = currentShot;
+
+    let currentItem = gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
+    if (currentItem && !gpState.item) input.item = true;
+    gpState.item = currentItem;
+}
+
+let SAVE_DATA = { cleared: {}, unlockedWorld: 0 };
 let editMap = [];
 let selectedEditItemId = 1;
 
+// エディタパレット拡張（溶岩系を追加）
 const EDIT_PALETTE = [
     { id: 0, sprite: 'floor_0', category: 'terrain' },
     { id: 'F1', sprite: 'floor_1', category: 'terrain' }, { id: 'F2', sprite: 'floor_2', category: 'terrain' }, { id: 'F3', sprite: 'floor_3', category: 'terrain' },
@@ -226,12 +235,13 @@ const EDIT_PALETTE = [
     { id: 'W0', sprite: 'wall_0', category: 'terrain' }, { id: 'W2', sprite: 'wall_2', category: 'terrain' }, { id: 'W3', sprite: 'wall_3', category: 'terrain' },
     { id: 'W4', sprite: 'wall_4', category: 'terrain' }, { id: 'W5', sprite: 'wall_5', category: 'terrain' }, { id: 'W6', sprite: 'wall_6', category: 'terrain' },
     { id: 'W7', sprite: 'wall_7', category: 'terrain' }, { id: 'W8', sprite: 'wall_8', category: 'terrain' }, { id: 'W9', sprite: 'wall_9', category: 'terrain' },
-    { id: 'GS', sprite: 'grasses', category: 'terrain' }, { id: 5, sprite: 'river_1', category: 'terrain' },
+    { id: 'GS', sprite: 'grasses', category: 'terrain' }, { id: 5, sprite: 'river_1', category: 'terrain' }, { id: 6, sprite: 'lava_1', category: 'terrain' },
     { id: 'U', sprite: 'arrow_top', category: 'terrain' }, { id: 'D', sprite: 'arrow_bottom', category: 'terrain' },
     { id: 'L', sprite: 'arrow_left', category: 'terrain' }, { id: 'R', sprite: 'arrow_right', category: 'terrain' },
     
     { id: 4, sprite: 'tree', category: 'object' },
     { id: 'FL', sprite: 'flower_1', category: 'object' },
+    { id: 'B1', sprite: 'floor_1', category: 'object' }, { id: 'B2', sprite: 'floor_2', category: 'object' }, // 溶岩の上の橋
     { id: 2, sprite: 'heart_normal', category: 'object' }, { id: 7, sprite: 'heart_shot', category: 'object' },
     { id: 3, sprite: 'chest_closed', unique: true, category: 'object' },
     { id: 'P', sprite: 'player_down_1', unique: true, category: 'object' },
@@ -249,9 +259,7 @@ function loadGameData() {
     if (data) SAVE_DATA = JSON.parse(data);
     else SAVE_DATA = { cleared: {}, unlockedWorld: 0 };
 }
-function saveGameData() {
-    localStorage.setItem('egger_save', JSON.stringify(SAVE_DATA));
-}
+function saveGameData() { localStorage.setItem('egger_save', JSON.stringify(SAVE_DATA)); }
 
 // --- モード遷移 ---
 function setMode(mode) {
@@ -265,64 +273,36 @@ function setMode(mode) {
     if (mode === 'test_play' || mode === 'game') {
         btnSubMenu.style.display = 'flex';
         btnSubMenu.innerHTML = mode === 'test_play' ? 'エディタに<br>戻る' : 'ステージ<br>選択';
-    } else {
-        btnSubMenu.style.display = 'none';
-    }
+    } else { btnSubMenu.style.display = 'none'; }
     
-    if (mode === 'title') {
-        // ★BGM停止箇所★: 
-        music.stop();
-    } else if (mode === 'stage_select') {
-        buildStageSelectUI();
-        // ★BGM停止箇所★: 
-        music.stop();
-    } else if (mode === 'init') {
-        initTimer = performance.now();
-    } else if (mode === 'edit') {
-        updateLoadSelect();
-    }
+    if (mode === 'title') { music.stop(); } 
+    else if (mode === 'stage_select') { buildStageSelectUI(); music.stop(); } 
+    else if (mode === 'init') { initTimer = performance.now(); } 
+    else if (mode === 'edit') { updateLoadSelect(); }
 }
 
-// --- ステージ選択画面の構築 ---
 function buildStageSelectUI() {
     const container = document.getElementById('worlds-container');
     container.innerHTML = '';
     
     for (let w = 0; w <= SAVE_DATA.unlockedWorld; w++) {
-        if (w > 9) break; // ワールドは最大9まで
-        
-        let row = document.createElement('div');
-        row.className = 'world-row';
-        
-        let label = document.createElement('div');
-        label.className = 'world-label';
-        label.innerText = `ワールド${w}`;
-        row.appendChild(label);
-
-        let nodes = document.createElement('div');
-        nodes.className = 'stage-nodes';
+        if (w > 9) break; 
+        let row = document.createElement('div'); row.className = 'world-row';
+        let label = document.createElement('div'); label.className = 'world-label'; label.innerText = `ワールド${w}`; row.appendChild(label);
+        let nodes = document.createElement('div'); nodes.className = 'stage-nodes';
         
         for (let s = 1; s <= 6; s++) {
-            let node = document.createElement('div');
-            node.className = 'stage-node';
+            let node = document.createElement('div'); node.className = 'stage-node';
             let stageKey = `${w}-${s}`;
-            
             if (SAVE_DATA.cleared[stageKey]) node.classList.add('cleared');
-            
             node.addEventListener('click', () => {
                 let targetStage = STAGES_DATA.find(st => st.world === w && st.stage === s);
-                if (targetStage) {
-                    currentWorld = w;
-                    currentStage = s;
-                    loadStageData(targetStage);
-                } else {
-                    alert("ステージデータがありません");
-                }
+                if (targetStage) { currentWorld = w; currentStage = s; loadStageData(targetStage); } 
+                else { alert("ステージデータがありません"); }
             });
             nodes.appendChild(node);
         }
-        row.appendChild(nodes);
-        container.appendChild(row);
+        row.appendChild(nodes); container.appendChild(row);
     }
 }
 
@@ -334,32 +314,22 @@ function loadStageData(stageInfo) {
 }
 
 // UIイベントリスナ
-document.getElementById('btn-start-game').addEventListener('click', () => {
-    loadGameData();
-    setMode('stage_select');
-});
+document.getElementById('btn-start-game').addEventListener('click', () => { loadGameData(); setMode('stage_select'); });
 document.getElementById('btn-back-title').addEventListener('click', () => { setMode('title'); });
 document.getElementById('btn-show-notes').addEventListener('click', () => document.getElementById('notes-dialog').showModal());
 document.getElementById('btn-close-notes').addEventListener('click', () => document.getElementById('notes-dialog').close());
 
 document.getElementById('btn-retry').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    // ★BGM停止箇所★: 
-    music.stop();
+    e.preventDefault(); music.stop();
     if (gameMode === 'game') {
         let targetStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage);
         if (targetStage) loadStageData(targetStage);
-    } else if (gameMode === 'test_play') {
-        startTestPlay();
-    }
+    } else if (gameMode === 'test_play') { startTestPlay(); }
 });
 
 document.getElementById('btn-sub-menu').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    // ★BGM停止箇所★: 
-    music.stop();
-    if (gameMode === 'test_play') setMode('edit');
-    else setMode('stage_select');
+    e.preventDefault(); music.stop();
+    if (gameMode === 'test_play') setMode('edit'); else setMode('stage_select');
 });
 
 document.getElementById('btn-edit-mode').addEventListener('click', () => { initEditMap(); setEditItems([]); setMode('edit'); });
@@ -367,7 +337,6 @@ document.getElementById('btn-edit-exit').addEventListener('click', () => setMode
 document.getElementById('btn-edit-test').addEventListener('click', startTestPlay);
 document.getElementById('btn-edit-export').addEventListener('click', exportEditMap);
 
-// タブ切り替え処理
 document.querySelectorAll('.edit-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active'));
@@ -377,57 +346,36 @@ document.querySelectorAll('.edit-tab').forEach(tab => {
     });
 });
 
-// エディタアイテム設定UI
 function buildEditItemsUI() {
     const container = document.getElementById('edit-items-container');
     container.innerHTML = '';
     for(let i=0; i<3; i++) {
-        let div = document.createElement('div');
-        div.className = 'item-setting-row';
-        div.innerHTML = `
-            ${i+1}. 
-            <select id="edit-item-type-${i}" class="edit-input" style="width:100px;">
-                <option value="">なし</option>
-                <option value="arrow_top">矢印床変更</option>
-                <option value="floor_1">橋</option>
-                <option value="hammer">ハンマー</option>
-            </select>
-            ♡<input type="number" id="edit-item-hearts-${i}" class="edit-input" value="0" min="0" style="width:40px;">
-        `;
+        let div = document.createElement('div'); div.className = 'item-setting-row';
+        div.innerHTML = `${i+1}. <select id="edit-item-type-${i}" class="edit-input" style="width:100px;">
+                <option value="">なし</option> <option value="arrow_top">矢印床変更</option> <option value="floor_1">橋</option> <option value="hammer">ハンマー</option>
+            </select> ♡<input type="number" id="edit-item-hearts-${i}" class="edit-input" value="0" min="0" style="width:40px;">`;
         container.appendChild(div);
     }
 }
-
 function getEditItems() {
     let items = [];
     for(let i=0; i<3; i++) {
-        let type = document.getElementById(`edit-item-type-${i}`).value;
-        let h = parseInt(document.getElementById(`edit-item-hearts-${i}`).value) || 0;
+        let type = document.getElementById(`edit-item-type-${i}`).value; let h = parseInt(document.getElementById(`edit-item-hearts-${i}`).value) || 0;
         if (type) items.push({ type: type, needHearts: h });
     }
     return items;
 }
-
 function setEditItems(itemsArr) {
     for(let i=0; i<3; i++) {
         let item = (itemsArr && itemsArr[i]) ? itemsArr[i] : {type: '', needHearts: 0};
-        document.getElementById(`edit-item-type-${i}`).value = item.type;
-        document.getElementById(`edit-item-hearts-${i}`).value = item.needHearts;
+        document.getElementById(`edit-item-type-${i}`).value = item.type; document.getElementById(`edit-item-hearts-${i}`).value = item.needHearts;
     }
 }
 
-// エディタ：ローカルセーブ・インポート処理
-function getLocalEditorStages() {
-    let data = localStorage.getItem('egger_stages'); return data ? JSON.parse(data) : {};
-}
+function getLocalEditorStages() { let data = localStorage.getItem('egger_stages'); return data ? JSON.parse(data) : {}; }
 function updateLoadSelect() {
-    let stages = getLocalEditorStages();
-    let select = document.getElementById('load-stage-select');
-    select.innerHTML = '<option value="">--選択--</option>';
-    for (let name in stages) {
-        let opt = document.createElement('option'); opt.value = name; opt.innerText = name;
-        select.appendChild(opt);
-    }
+    let stages = getLocalEditorStages(); let select = document.getElementById('load-stage-select'); select.innerHTML = '<option value="">--選択--</option>';
+    for (let name in stages) { let opt = document.createElement('option'); opt.value = name; opt.innerText = name; select.appendChild(opt); }
 }
 document.getElementById('btn-save-local').addEventListener('click', () => {
     let name = document.getElementById('save-stage-name').value.trim();
@@ -438,52 +386,38 @@ document.getElementById('btn-save-local').addEventListener('click', () => {
     updateLoadSelect(); alert(`「${name}」を保存しました！`);
 });
 document.getElementById('btn-load-local').addEventListener('click', () => {
-    let name = document.getElementById('load-stage-select').value;
-    if (!name) return;
+    let name = document.getElementById('load-stage-select').value; if (!name) return;
     let stages = getLocalEditorStages();
-    if (stages[name]) {
-        editMap = JSON.parse(JSON.stringify(stages[name].map));
-        setEditItems(stages[name].items); alert(`「${name}」を読み込みました！`);
-    }
+    if (stages[name]) { editMap = JSON.parse(JSON.stringify(stages[name].map)); setEditItems(stages[name].items); alert(`「${name}」を読み込みました！`); }
 });
 document.getElementById('btn-import-json').addEventListener('click', () => {
     try {
-        let jsonStr = document.getElementById('import-json-text').value;
-        let data = JSON.parse(jsonStr);
+        let jsonStr = document.getElementById('import-json-text').value; let data = JSON.parse(jsonStr);
         let newMap = data.map || data; 
         if (Array.isArray(newMap) && newMap.length === 13) {
-            editMap = JSON.parse(JSON.stringify(newMap));
-            setEditItems(data.items || []); alert("JSONからマップを読み込みました！");
+            editMap = JSON.parse(JSON.stringify(newMap)); setEditItems(data.items || []); alert("JSONからマップを読み込みました！");
         } else alert("フォーマットが正しくありません。");
     } catch(e) { alert("JSONのパースに失敗しました。"); }
 });
 
 async function bootGame() {
     try {
-        const assetsRes = await fetch('assets.json');
-        const assetsData = await assetsRes.json();
-        PALETTE = assetsData.palette;
-        SPRITES = assetsData.sprites;
+        const assetsRes = await fetch('assets.json'); const assetsData = await assetsRes.json();
+        PALETTE = assetsData.palette; SPRITES = assetsData.sprites;
 
-        const stageRes = await fetch('stage.json');
-        const stageData = await stageRes.json();
+        const stageRes = await fetch('stage.json'); const stageData = await stageRes.json();
         STAGES_DATA = stageData.stages;
 
         buildPaletteUI(); buildEditItemsUI(); setMode('title');
         requestAnimationFrame(loop);
-
-        se = await loadSE();
-
+        if(window.loadSE) se = await loadSE();
     } catch (e) { console.error(e); }
 }
 
 function updateUI() {
     if (!state) return;
     shotsSpan.innerText = state.shots;
-    if (state.cleared) msgDiv.innerText = "ステージクリア！";
-    else if (state.chestOpen) msgDiv.innerText = "宝箱が開いた！";
-    else msgDiv.innerText = "";
-
+    if (state.cleared) msgDiv.innerText = "ステージクリア！"; else if (state.chestOpen) msgDiv.innerText = "宝箱が開いた！"; else msgDiv.innerText = "";
     for(let i=0; i<3; i++) {
         let slot = document.getElementById(`item-slot-${i}`);
         slot.innerHTML = ''; slot.className = 'item-slot'; 
@@ -516,16 +450,14 @@ function drawIconToCanvas(spriteData, ctxCanvas) {
         for (let c = 0; c < 8; c++) {
             const colorCode = spriteData[r][c];
             if (PALETTE[colorCode]) {
-                ctxCanvas.fillStyle = PALETTE[colorCode];
-                ctxCanvas.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+                ctxCanvas.fillStyle = PALETTE[colorCode]; ctxCanvas.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
             }
         }
     }
 }
 
 function buildPaletteUI() {
-    const container = document.getElementById('palette-container');
-    container.innerHTML = '';
+    const container = document.getElementById('palette-container'); container.innerHTML = '';
     const categories = [ { key: 'terrain', name: '地形' }, { key: 'object', name: 'オブジェクト' }, { key: 'enemy', name: '敵' } ];
     categories.forEach(cat => {
         let title = document.createElement('div'); title.className = 'palette-category-title'; title.innerText = cat.name; container.appendChild(title);
@@ -570,7 +502,6 @@ function putEditItem(e) {
 function startTestPlay() {
     INITIAL_MAP = JSON.parse(JSON.stringify(editMap)); INITIAL_ITEMS = getEditItems();
     initGame(0, "TEST"); setMode('test_play');
-    // ★BGM再生箇所★: 
     music.play();
 }
 
@@ -584,11 +515,8 @@ function exportEditMap() {
     };
     const jsonStr = JSON.stringify(outputData);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-        window.location.href = `mailto:?subject=Eggerland%20Stage&body=${encodeURIComponent(jsonStr)}`;
-    } else {
-        navigator.clipboard.writeText(jsonStr).then(() => alert('JSONをクリップボードにコピーしました！')).catch(err => alert('コピー失敗:\n' + jsonStr));
-    }
+    if (isMobile) { window.location.href = `mailto:?subject=Eggerland%20Stage&body=${encodeURIComponent(jsonStr)}`; } 
+    else { navigator.clipboard.writeText(jsonStr).then(() => alert('JSONをクリップボードにコピーしました！')).catch(err => alert('コピー失敗:\n' + jsonStr)); }
 }
 
 // --- ゲームコアロジック ---
@@ -664,7 +592,7 @@ function getEntityAt(hx, hy, ignore = null) {
 }
 
 function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
-    let isAllRiver = true, hasRiver = false, isHit = false;
+    let isAllRiver = true, hasWater = false, hasLava = false, isHit = false;
     let currentX = hx - dx, currentY = hy - dy;
 
     for (let y = 0; y < 2; y++) {
@@ -681,22 +609,26 @@ function checkMapCollision(hx, hy, isPlayer = false, dx = 0, dy = 0) {
             if (isWall) {
                 isHit = true; isAllRiver = false;
             } else if (tile === 5) {
-                if (coveredByFE) isAllRiver = false; else hasRiver = true;
+                if (coveredByFE) isAllRiver = false; else hasWater = true;
+            } else if (tile === 6) {
+                if (coveredByFE) isAllRiver = false; else hasLava = true;
             } else if (isPlayer && (tile === 'U' || tile === 'D' || tile === 'L' || tile === 'R')) {
                 let tileMinX = tx * 2, tileMaxX = tx * 2 + 1, tileMinY = ty * 2, tileMaxY = ty * 2 + 1;
                 let wasOnTile = (currentX <= tileMaxX && currentX + 1 >= tileMinX && currentY <= tileMaxY && currentY + 1 >= tileMinY);
                 if (!wasOnTile) {
-                    if (tile === 'U' && dy === 1) isHit = true;
-                    if (tile === 'D' && dy === -1) isHit = true;
-                    if (tile === 'L' && dx === 1) isHit = true;
-                    if (tile === 'R' && dx === -1) isHit = true;
+                    if (tile === 'U' && dy === 1) isHit = true; if (tile === 'D' && dy === -1) isHit = true;
+                    if (tile === 'L' && dx === 1) isHit = true; if (tile === 'R' && dx === -1) isHit = true;
                 }
                 isAllRiver = false;
             } else { isAllRiver = false; }
         }
     }
-    if (isAllRiver && hasRiver) return { hit: true, tile: 5, hasRiver: true, allRiver: true };
-    else if (hasRiver || isHit) return { hit: true, tile: 5, hasRiver: hasRiver, allRiver: false };
+    
+    let isWaterOrLava = hasWater || hasLava;
+    let outTile = hasLava ? 6 : 5; // 溶岩と水が混ざっている場合は溶岩優先
+    
+    if (isAllRiver && isWaterOrLava) return { hit: true, tile: outTile, hasRiver: true, allRiver: true };
+    else if (isWaterOrLava || isHit) return { hit: true, tile: outTile, hasRiver: isWaterOrLava, allRiver: false };
     return { hit: false, hasRiver: false, allRiver: false };
 }
 
@@ -707,7 +639,7 @@ function checkDMCollision(hx, hy, dm) {
             let tx = Math.floor(cx / 2), ty = Math.floor(cy / 2);
             if (tx < 0 || tx >= 13 || ty < 0 || ty >= 13) return true;
             let tile = state.map[ty][tx];
-            let isPassableFloor = (tile === 0 || (typeof tile === 'string' && tile.match(/^F[1-9]$/)) || ['U','D','L','R'].includes(tile));
+            let isPassableFloor = (tile === 0 || (typeof tile === 'string' && tile.match(/^F[1-9]$/)) || ['U','D','L','R','B1','b1','B2','b2'].includes(tile));
             if (!isPassableFloor) return true;
         }
     }
@@ -736,9 +668,11 @@ function tryMove(dx, dy) {
                 let nextCol2 = checkMapCollision(fNextX2, fNextY2, false, dx, dy);
                 if (nextCol2.allRiver && !getEntityAt(fNextX2, fNextY2, hitE)) {
                     fNextX = fNextX2; fNextY = fNextY2; willFloat = true;
+                    hitE.floatOnLava = (nextCol2.tile === 6);
                 } else return false;
-            } else if (nextCol.allRiver) { willFloat = true; } 
-            else if (nextCol.hit) return false;
+            } else if (nextCol.allRiver) { 
+                willFloat = true; hitE.floatOnLava = (nextCol.tile === 6);
+            } else if (nextCol.hit) return false;
             hitE.willFloat = willFloat;
         } else {
             if (checkMapCollision(fNextX, fNextY, false, dx, dy).hit) return false;
@@ -758,13 +692,10 @@ function tryShoot() {
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
         state.shots--; updateUI();
         let sx = state.player.x, sy = state.player.y;
-        if (state.player.dir === 'up') sy -= 1;
-        if (state.player.dir === 'down') sy += 1;
-        if (state.player.dir === 'left') sx -= 1;
-        if (state.player.dir === 'right') sx += 1;
+        if (state.player.dir === 'up') sy -= 1; if (state.player.dir === 'down') sy += 1;
+        if (state.player.dir === 'left') sx -= 1; if (state.player.dir === 'right') sx += 1;
         state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
-        // ★BGM/SE: エッガーショット発射音★
-        se.playSE("shot");
+        if(se) se.playSE("shot");
         input.shot = false; 
     }
 }
@@ -790,6 +721,8 @@ function tryUseItem() {
     } else if (itemObj.type === 'floor_1') {
         if (tile === 5) {
             state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'F1' : 'F2'; success = true;
+        } else if (tile === 6) { // 溶岩に対して橋を使用
+            state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'B1' : 'B2'; success = true;
         }
     } else if (itemObj.type === 'hammer') {
         if (tile === 1 || tile === 'W0' || tile === 'W6' || tile === 'W7' || tile === 'W8' || tile === 'W9') {
@@ -799,8 +732,7 @@ function tryUseItem() {
 
     if (success) {
         itemObj.status = 'used'; updateUI();
-        // ★BGM/SE: アイテム使用音★
-        se.playSE("use_item");
+        if(se) se.playSE("use_item");
     }
     input.item = false;
 }
@@ -854,10 +786,8 @@ function checkEnemies() {
         
         e.awake = wakeUp;
         if (attack) {
-            // ★BGM停止箇所★
             music.stop();
-            // ★SE:ヒット
-            se.playSE("hit");
+            if(se) se.playSE("hit");
             state.needle = { x: e.x, y: e.y, tx: p.x, ty: p.y, axis: overlapX === 0 ? 'y' : 'x', progress: 0 };
             break;
         }
@@ -868,7 +798,6 @@ function update(timestamp) {
     if (gameMode === 'init') {
         if (timestamp - initTimer > 2000) {
             setMode(gameMode === 'test_play' ? 'test_play' : 'game');
-            // ★BGM再生箇所★:
             music.play();
         }
         return;
@@ -940,8 +869,8 @@ function update(timestamp) {
         else if (input.item) { tryUseItem(); } 
         else {
             let dx = 0, dy = 0;
-            if (input.up) dy -= 1; else if (input.down) dy += 1;
-            else if (input.left) dx -= 1; else if (input.right) dx += 1;
+            if (input.up || gpState.up) dy -= 1; else if (input.down || gpState.down) dy += 1;
+            else if (input.left || gpState.left) dx -= 1; else if (input.right || gpState.right) dx += 1;
             if (dx !== 0 || dy !== 0) { if (tryMove(dx, dy)) { anyMoved = true; playerDidMove = true; } }
         }
 
@@ -976,6 +905,37 @@ function update(timestamp) {
         
         if (elapsed >= state.animation.duration) {
             state.player.x = state.player.targetX; state.player.y = state.player.targetY;
+            
+            /*
+            // 溶岩の上の橋の崩落処理 (プレイヤーが完全な1マスから移動した場合)
+            let oldTx = Math.floor(state.player.startX / 2);
+            let oldTy = Math.floor(state.player.startY / 2);
+            let newTx = Math.floor(state.player.x / 2);
+            let newTy = Math.floor(state.player.y / 2);
+            if (oldTx !== newTx || oldTy !== newTy) {
+                let oldTile = state.map[oldTy][oldTx];
+                if (oldTile === 'B1') state.map[oldTy][oldTx] = 'b1';
+                else if (oldTile === 'b1') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+                else if (oldTile === 'B2') state.map[oldTy][oldTx] = 'b2';
+                else if (oldTile === 'b2') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+            }
+            */
+
+            // ★追加：ぴったり乗っていたマスから、半マス離れた瞬間に橋を劣化させる
+            if (state.player.startX % 2 === 0 && state.player.startY % 2 === 0) {
+                let oldTx = Math.floor(state.player.startX / 2);
+                let oldTy = Math.floor(state.player.startY / 2);
+                
+                // 開始座標から移動している（＝半マス踏み出した）場合
+                if (state.player.x !== state.player.startX || state.player.y !== state.player.startY) {
+                    let oldTile = state.map[oldTy][oldTx];
+                    if (oldTile === 'B1') state.map[oldTy][oldTx] = 'b1';
+                    else if (oldTile === 'b1') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+                    else if (oldTile === 'B2') state.map[oldTy][oldTx] = 'b2';
+                    else if (oldTile === 'b2') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+                }
+            }
+            
 
             for (let i = state.entities.length - 1; i >= 0; i--) {
                 let e = state.entities[i];
@@ -985,7 +945,7 @@ function update(timestamp) {
                         e.eggTimer -= 1; 
                         if (e.eggTimer <= 0) e.type = e.originalType;
                         if (e.willFloat) {
-                            state.floatingEggs.push({ x: e.x, y: e.y, walks: 2, objOn: false });
+                            state.floatingEggs.push({ x: e.x, y: e.y, walks: e.floatOnLava ? 1 : 2, objOn: false });
                             state.entities.splice(i, 1);
                         }
                     }
@@ -1005,68 +965,72 @@ function update(timestamp) {
                 }
             }
 
-            if (state.player.x % 2 === 0 && state.player.y % 2 === 0) {
-                const tx = state.player.x / 2, ty = state.player.y / 2;
-                if (tx >= 0 && tx < 13 && ty >= 0 && ty < 13) {
-                    const tile = state.map[ty][tx];
-                    if (tile === 2 || tile === 7) {
-                        state.map[ty][tx] = 0; state.collectedHearts++;
-                        if (tile === 7) state.shots++;
-                        // ★効果音ハート取得★
-                        se.playSE("pickup_1");
-                        
-                        state.items.forEach(itm => {
-                            if (itm.status === 'hidden' && state.collectedHearts >= itm.needHearts) {
-                                itm.status = 'ready'; 
-                                // ★BGM/SE: アイテム取得音★
-                                se.playSE("get_item");
-                            }
-                        });
+            checkEnemies();
+            
+            if (!state.needle) {
+                if (state.player.x % 2 === 0 && state.player.y % 2 === 0) {
+                    const tx = state.player.x / 2, ty = state.player.y / 2;
+                    if (tx >= 0 && tx < 13 && ty >= 0 && ty < 13) {
+                        const tile = state.map[ty][tx];
 
-                        updateUI();
-                        // 2. 【宝箱が開いた時】 (すべてのハートを取り終えた瞬間)
-                        if (state.collectedHearts >= state.totalHearts) { 
-                            state.chestOpen = true; updateUI(); 
-                            se.playSE("open_box");
-                        }
+                        /*
+                        // ★追加：橋の上の通行判定（完全にマスに乗った時点で劣化・崩落）
+                        if (tile === 'B1') state.map[ty][tx] = 'b1';
+                        else if (tile === 'b1') state.map[ty][tx] = 6; // 溶岩に戻る
+                        else if (tile === 'B2') state.map[ty][tx] = 'b2';
+                        else if (tile === 'b2') state.map[ty][tx] = 6; // 溶岩に戻る
+                        */
 
-                        // 3. 【宝箱を取得した時】 (開いている宝箱に乗った＝ステージクリア)
-                    } else if (tile === 3 && state.chestOpen && !state.cleared) {
-                        state.map[ty][tx] = 0; state.cleared = true; updateUI();
-                        // ★BGM停止箇所★: 
-                        music.stop();
-                        se.playSE("get_box");
-
-                        // セーブデータ更新（クリア進行度）
-                        if (gameMode === 'game') {
-                            let stageKey = `${currentWorld}-${currentStage}`;
-                            SAVE_DATA.cleared[stageKey] = true;
+                        if (tile === 2 || tile === 7) {
+                            state.map[ty][tx] = 0; state.collectedHearts++;
+                            if (tile === 7) state.shots++;
+                            if(se) se.playSE("pickup_1");
                             
-                            let clearCount = 0;
-                            for (let s = 1; s <= 6; s++) { if (SAVE_DATA.cleared[`${currentWorld}-${s}`]) clearCount++; }
-                            if (clearCount >= 4 && SAVE_DATA.unlockedWorld === currentWorld) {
-                                SAVE_DATA.unlockedWorld = Math.min(9, currentWorld + 1);
-                            }
-                            saveGameData();
-                        }
-
-                        setTimeout(() => {
-                            if (gameMode === 'test_play') {
-                                setMode('edit');
-                            } else {
-                                // ひとつ右のステージをロード
-                                let nextStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage + 1);
-                                if (nextStage) {
-                                    currentStage++; loadStageData(nextStage);
-                                } else {
-                                    setMode('stage_select'); // 無ければステージ選択へ戻る
+                            state.items.forEach(itm => {
+                                if (itm.status === 'hidden' && state.collectedHearts >= itm.needHearts) {
+                                    itm.status = 'ready'; 
+                                    if(se) se.playSE("get_item");
                                 }
+                            });
+
+                            updateUI();
+                            if (state.collectedHearts >= state.totalHearts) { 
+                                state.chestOpen = true; updateUI(); 
+                                if(se) se.playSE("open_box");
                             }
-                        }, 1000);
+                        } else if (tile === 3 && state.chestOpen && !state.cleared) {
+                            state.map[ty][tx] = 0; state.cleared = true; updateUI();
+                            music.stop();
+                            if(se) se.playSE("get_box");
+
+                            if (gameMode === 'game') {
+                                let stageKey = `${currentWorld}-${currentStage}`;
+                                SAVE_DATA.cleared[stageKey] = true;
+                                
+                                let clearCount = 0;
+                                for (let s = 1; s <= 6; s++) { if (SAVE_DATA.cleared[`${currentWorld}-${s}`]) clearCount++; }
+                                if (clearCount >= 4 && SAVE_DATA.unlockedWorld === currentWorld) {
+                                    SAVE_DATA.unlockedWorld = Math.min(9, currentWorld + 1);
+                                }
+                                saveGameData();
+                            }
+
+                            setTimeout(() => {
+                                if (gameMode === 'test_play') {
+                                    setMode('edit');
+                                } else {
+                                    let nextStage = STAGES_DATA.find(st => st.world === currentWorld && st.stage === currentStage + 1);
+                                    if (nextStage) {
+                                        currentStage++; loadStageData(nextStage);
+                                    } else {
+                                        setMode('stage_select'); 
+                                    }
+                                }
+                            }, 1000);
+                        }
                     }
                 }
             }
-            checkEnemies();
         }
     }
 }
@@ -1092,8 +1056,12 @@ function drawEditMode() {
             const cell = editMap[y][x];
             const px = x * TILE_SIZE, py = y * TILE_SIZE;
             drawSprite(SPRITES.floor_0, px, py, TILE_SIZE);
+            
+            // 溶岩橋の場合は下に溶岩を描画
+            if (cell === 6 || ['B1','b1','B2','b2'].includes(cell)) drawSprite(SPRITES.lava_1, px, py, TILE_SIZE);
+            
             const item = EDIT_PALETTE.find(p => p.id === cell);
-            if (item && item.id !== 0) drawSprite(SPRITES[item.sprite], px, py, TILE_SIZE);
+            if (item && item.id !== 0 && item.id !== 6) drawSprite(SPRITES[item.sprite], px, py, TILE_SIZE);
             ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
         }
     }
@@ -1122,6 +1090,9 @@ function draw(timestamp) {
     let time = timestamp || 0;
     let riverSeq = Math.floor(time / 300) % 4; 
     let riverFrame = riverSeq === 0 ? 1 : (riverSeq === 1 ? 2 : (riverSeq === 2 ? 3 : 2));
+    
+    // 溶岩はゆっくりとしたアニメーション(500ms周期)
+    let lavaFrame = (Math.floor(time / 500) % 3) + 1;
     let fFrame = Math.floor(time / 500) % 2 + 1;
 
     for (let y = 0; y < 13; y++) {
@@ -1135,10 +1106,20 @@ function draw(timestamp) {
                 drawSprite(floorSprite, px, py, TILE_SIZE);
             } else {
                 drawSprite(SPRITES.floor_0, px, py, TILE_SIZE);
+                
+                // 溶岩および溶岩橋の背景
+                if (tile === 6 || ['B1','b1','B2','b2'].includes(tile)) drawSprite(SPRITES[`lava_${lavaFrame}`], px, py, TILE_SIZE);
+                
                 if (tile === 1) drawSprite(SPRITES.wall_1, px, py, TILE_SIZE);
                 if (typeof tile === 'string' && tile.startsWith('W')) drawSprite(SPRITES[`wall_${tile[1]}`], px, py, TILE_SIZE);
                 if (tile === 4) drawSprite(SPRITES.tree, px, py, TILE_SIZE);
                 if (tile === 5) drawSprite(SPRITES[`river_${riverFrame}`], px, py, TILE_SIZE);
+                
+                if (tile === 'B1') drawSprite(SPRITES.floor_1, px, py, TILE_SIZE);
+                if (tile === 'b1') drawSprite(SPRITES.floor_1_broken, px, py, TILE_SIZE);
+                if (tile === 'B2') drawSprite(SPRITES.floor_2, px, py, TILE_SIZE);
+                if (tile === 'b2') drawSprite(SPRITES.floor_2_broken, px, py, TILE_SIZE);
+                
                 if (tile === 'GS') drawSprite(SPRITES.grasses, px, py, TILE_SIZE);
                 if (tile === 'FL') drawSprite(SPRITES[`flower_${fFrame}`], px, py, TILE_SIZE);
                 if (tile === 'U') drawSprite(SPRITES.arrow_top, px, py, TILE_SIZE);
@@ -1153,6 +1134,7 @@ function draw(timestamp) {
     }
 
     for (let fe of state.floatingEggs) {
+        // 溶岩の場合は egg_sink をすぐ表示する等も可能ですが、共通で処理
         let spriteName = fe.walks <= 1 ? 'egg_sink' : 'egg';
         drawSprite(SPRITES[spriteName], fe.x * (TILE_SIZE/2), fe.y * (TILE_SIZE/2), TILE_SIZE);
     }
@@ -1200,7 +1182,12 @@ function draw(timestamp) {
     }
 }
 
-function loop(timestamp) { update(timestamp); draw(timestamp); requestAnimationFrame(loop); }
+function loop(timestamp) { 
+    updateGamepad();
+    update(timestamp); 
+    draw(timestamp); 
+    requestAnimationFrame(loop); 
+}
 bootGame();
 </script>
 </body>
