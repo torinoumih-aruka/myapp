@@ -173,6 +173,8 @@ const msgDiv = document.getElementById('message');
 const shotsSpan = document.getElementById('shots');
 
 const music = loadMusic ? loadMusic(5) : { play:()=>{}, stop:()=>{} }; // Fallback if missing
+const jingle = loadMusic ? loadMusic(6) : { play:()=>{}, stop:()=>{} }; // Fallback if missing
+
 let se = null;
 
 const TILE_SIZE = 32;
@@ -502,7 +504,7 @@ function putEditItem(e) {
 function startTestPlay() {
     INITIAL_MAP = JSON.parse(JSON.stringify(editMap)); INITIAL_ITEMS = getEditItems();
     initGame(0, "TEST"); setMode('test_play');
-    music.play();
+    music.play(70, 0,100);
 }
 
 function exportEditMap() {
@@ -689,6 +691,7 @@ function tryMove(dx, dy) {
 }
 
 function tryShoot() {
+    input.shot = false; // ★ 追加：弾切れ時のフリーズを防止するため、無条件で最初にリセット
     if (state.shots > 0 && !state.animation.active && !state.needle && state.projectiles.length === 0) {
         state.shots--; updateUI();
         let sx = state.player.x, sy = state.player.y;
@@ -696,14 +699,16 @@ function tryShoot() {
         if (state.player.dir === 'left') sx -= 1; if (state.player.dir === 'right') sx += 1;
         state.projectiles.push({ x: sx, y: sy, dir: state.player.dir, active: true });
         if(se) se.playSE("shot");
-        input.shot = false; 
     }
 }
 
 function tryUseItem() {
+    input.item = false; // アイテム使用不可時のフリーズを防止するため、無条件で最初にリセット
     if (state.player.x % 2 !== 0 || state.player.y % 2 !== 0) return;
     let itemIndex = state.items.findIndex(i => i.status === 'ready');
     if (itemIndex === -1) return;
+
+    // ★この行が前回抜けていました
     let itemObj = state.items[itemIndex];
 
     let dx = 0, dy = 0;
@@ -721,7 +726,7 @@ function tryUseItem() {
     } else if (itemObj.type === 'floor_1') {
         if (tile === 5) {
             state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'F1' : 'F2'; success = true;
-        } else if (tile === 6) { // 溶岩に対して橋を使用
+        } else if (tile === 6) { 
             state.map[ty][tx] = (state.player.dir === 'up' || state.player.dir === 'down') ? 'B1' : 'B2'; success = true;
         }
     } else if (itemObj.type === 'hammer') {
@@ -734,7 +739,6 @@ function tryUseItem() {
         itemObj.status = 'used'; updateUI();
         if(se) se.playSE("use_item");
     }
-    input.item = false;
 }
 
 function checkLOS(m, p, axis) {
@@ -798,7 +802,9 @@ function update(timestamp) {
     if (gameMode === 'init') {
         if (timestamp - initTimer > 2000) {
             setMode(gameMode === 'test_play' ? 'test_play' : 'game');
-            music.play();
+            if (!music.isPlaying) {
+                music.play(70, 0,100);
+            }
         }
         return;
     }
@@ -929,10 +935,21 @@ function update(timestamp) {
                 // 開始座標から移動している（＝半マス踏み出した）場合
                 if (state.player.x !== state.player.startX || state.player.y !== state.player.startY) {
                     let oldTile = state.map[oldTy][oldTx];
-                    if (oldTile === 'B1') state.map[oldTy][oldTx] = 'b1';
-                    else if (oldTile === 'b1') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
-                    else if (oldTile === 'B2') state.map[oldTy][oldTx] = 'b2';
-                    else if (oldTile === 'b2') state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+
+                    if (oldTile === 'B1' || oldTile === 'B2') {
+                        // 劣化処理
+                        state.map[oldTy][oldTx] = (oldTile === 'B1') ? 'b1' : 'b2';
+                        
+                        // ★ここに効果音追加：橋が劣化するとき
+                        if(se) se.playSE("bridge_deterioration");
+                        
+                    } else if (oldTile === 'b1' || oldTile === 'b2') {
+                        // 消失処理
+                        state.map[oldTy][oldTx] = 6; // 溶岩に戻る
+                        
+                        // ★ここに効果音追加：劣化した橋が消失し溶岩になったとき
+                        if(se) se.playSE("bridge_broken");
+                    }
                 }
             }
             
@@ -947,6 +964,8 @@ function update(timestamp) {
                         if (e.willFloat) {
                             state.floatingEggs.push({ x: e.x, y: e.y, walks: e.floatOnLava ? 1 : 2, objOn: false });
                             state.entities.splice(i, 1);
+                            // 卵が川に落ちた音
+                            se.playSE("float_egg");
                         }
                     }
                 }
@@ -989,7 +1008,8 @@ function update(timestamp) {
                             state.items.forEach(itm => {
                                 if (itm.status === 'hidden' && state.collectedHearts >= itm.needHearts) {
                                     itm.status = 'ready'; 
-                                    if(se) se.playSE("get_item");
+                                    //if(se) se.playSE("get_item");
+                                    jingle.play();
                                 }
                             });
 
@@ -1000,7 +1020,7 @@ function update(timestamp) {
                             }
                         } else if (tile === 3 && state.chestOpen && !state.cleared) {
                             state.map[ty][tx] = 0; state.cleared = true; updateUI();
-                            music.stop();
+                            //music.stop();
                             if(se) se.playSE("get_box");
 
                             if (gameMode === 'game') {

@@ -6,7 +6,7 @@
 const ToriAudio = (function() {
     let audioCtx = null;
     let noiseBuffer = null;
-    let activeMusic = null; // 現在再生中のMusicオブジェクトを保持（排他制御用）
+    //let activeMusic = null; // 現在再生中のMusicオブジェクトを保持（排他制御用）
 
     // Web Audio APIの初期化
     function initAudio() {
@@ -125,6 +125,7 @@ const ToriAudio = (function() {
 
             initAudio();
 
+            /*
             // 排他制御: 他の曲が再生中なら自動的に止める
             if (activeMusic && activeMusic !== this && activeMusic.isPlaying) {
                 console.warn(`[tori_music] Warning: music_${activeMusic.number} is currently playing. It will be automatically stopped.`);
@@ -132,6 +133,7 @@ const ToriAudio = (function() {
             }
 
             activeMusic = this;
+            */
             this.stop(); 
             this.isPlaying = true;
             this.playRequested = false;
@@ -307,8 +309,26 @@ const ToriAudio = (function() {
                 const loopStartTick = ((this.data.mml_data.loopS || 1) - 1) * TICKS_PER_BEAT;
                 const loopEndTick = ((this.data.mml_data.loopE || 17) - 1) * TICKS_PER_BEAT;
 
-                if (this.currentPlayTick >= loopEndTick) {
-                    this.currentPlayTick = loopStartTick;
+                // 【追加・変更】曲のタイプによる終了判定
+                const songType = this.data.mml_data.songType || 'loop';
+                
+                if (songType === 'jingle') {
+                    // ジングル：終了拍に到達したら再生を停止
+                    const endBeat = this.data.mml_data.endOfBeat || this.data.mml_data.EndOfBeat || 9;
+                    const jingleEndTick = (endBeat - 1) * TICKS_PER_BEAT;
+                    if (this.currentPlayTick >= jingleEndTick) {
+                        this.isPlaying = false;
+                        // 余韻を残すため2秒後に完全停止
+                        setTimeout(() => { if (!this.isPlaying) this.stop(); }, 2000);
+                        break; // whileループを抜ける
+                    }
+                } else {
+                    // ループ曲：終了拍に到達したら開始拍に戻る
+                    const loopStartTick = ((this.data.mml_data.loopS || 1) - 1) * TICKS_PER_BEAT;
+                    const loopEndTick = ((this.data.mml_data.loopE || 17) - 1) * TICKS_PER_BEAT;
+                    if (this.currentPlayTick >= loopEndTick) {
+                        this.currentPlayTick = loopStartTick;
+                    }
                 }
             }
 

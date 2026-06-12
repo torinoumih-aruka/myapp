@@ -25,7 +25,9 @@
     "M": "#ac11c0",
     "N": "#ff57f9",
     "O": "#550c0c",
-    "P": "#5c85ff"
+    "P": "#5c85ff",
+    "Q": "#69008f",
+    "R": "#30562e"
   },
   "sprites": {
     "tree": [
@@ -529,44 +531,44 @@
       "OOOOOOOO"
     ],
     "floor_4": [
-      "222222D2",
-      "222222D2",
-      "222222D2",
-      "DDDDDDDD",
-      "22D22222",
-      "22D22222",
-      "22D22222",
-      "DDDDDDDD"
+      "QQQMMQQQ",
+      "QQMQQMQQ",
+      "QMQQQQMQ",
+      "MQQQQQQM",
+      "MQQQQQQM",
+      "QMQQQQMQ",
+      "QQMQQMQQ",
+      "QQQMMQQQ"
     ],
     "floor_5": [
-      "222222D2",
-      "222222D2",
-      "222222D2",
-      "DDDDDDDD",
-      "22D22222",
-      "22D22222",
-      "22D22222",
-      "DDDDDDDD"
+      "DODDDODD",
+      "OODOOODO",
+      "DDDODDDO",
+      "DOOODOOO",
+      "DODDDODD",
+      "OODOOODO",
+      "DDDODDDO",
+      "DOOODOOO"
     ],
     "floor_6": [
-      "222222D2",
-      "222222D2",
-      "222222D2",
-      "DDDDDDDD",
-      "22D22222",
-      "22D22222",
-      "22D22222",
-      "DDDDDDDD"
+      "QQQQQQQQ",
+      "QQQMMQQQ",
+      "QQMMMMQQ",
+      "QMMMMMMQ",
+      "QMMMMMMQ",
+      "QQMMMMQQ",
+      "QQQMMQQQ",
+      "QQQQQQQQ"
     ],
     "floor_7": [
-      "222222D2",
-      "222222D2",
-      "222222D2",
-      "DDDDDDDD",
-      "22D22222",
-      "22D22222",
-      "22D22222",
-      "DDDDDDDD"
+      "OOOORRRR",
+      "RROOOORR",
+      "OOOROOOR",
+      "ROOOOORR",
+      "OROOOOOO",
+      "RROOOOOR",
+      "OORRROOO",
+      "RROOOORR"
     ],
     "floor_8": [
       "222222D2",
