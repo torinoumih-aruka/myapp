@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>浮動株時価総額計算ツール</title>
+    <style>
+        /* ベーススタイル・六角形背景（維持） */
+        body {
+            margin: 0;
+            padding: 10px;
+            background-color: #050000;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg id='hexagons' fill='%234d0000' fill-opacity='0.6' fill-rule='nonzero'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* コントロールパネル */
+        .control-panel {
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 2px solid #555;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ボタン共通 (グレー) */
+        .btn-gray {
+            background-color: #cccccc;
+            color: #000;
+            border: 2px solid #888888;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-gray:active {
+            background-color: #aaaaaa;
+        }
+
+        /* 削除/追加用小型ボタン */
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 14px;
+        }
+
+        /* テキスト表示部 */
+        .info-text {
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            padding: 4px 8px;
+            border: 1px solid #999;
+        }
+
+        /* 閾値入力部 */
+        .threshold-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            color: #000;
+            padding: 0 4px;
+            border: 1px solid #999;
+        }
+
+        /* スマホ向け横スクロールテーブルコンテナ */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 2px solid #555;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid #555;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #333;
+            color: #fff;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* 入力要素スタイル（白ベースに統一） */
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 4px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #999;
+        }
+
+        /* 列幅の調整 */
+        .col-code { width: 60px; }
+        .col-name { width: 120px; }
+        .col-num { width: 80px; }
+        .col-unit { width: 60px; }
+        .col-ratio { width: 60px; }
+
+        /* 結果テキスト（基本は白、色付き行の中では黒） */
+        .result-text {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* 判定結果に応じた行の背景色（くすんだ色調） */
+        tr.row-ok { background-color: #7ca67c; } /* くすんだ緑 */
+        tr.row-warn { background-color: #bdae5e; } /* くすんだ黄色 */
+        tr.row-ng { background-color: #bf7c7c; } /* くすんだ赤 */
+
+        /* 色付き行の文字色を見やすくする */
+        tr.row-ok .result-text,
+        tr.row-warn .result-text,
+        tr.row-ng .result-text {
+            color: #000;
+        }
+
+        .footer-controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <button class="btn-gray" onclick="calculate()">計算</button>
+        <button class="btn-gray" onclick="clearData()">データ削除</button>
+        <div class="info-text">最終算出日：<span id="lastCalcDate">YYYY/MM/DD</span></div>
+        <div class="threshold-wrapper">
+            <span style="font-size: 14px; padding: 4px;">閾値：</span>
+            <input type="number" id="threshold" style="width: 60px; border:none; text-align:right; font-weight:bold;" value="390">
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th class="col-code">銘柄コード</th>
+                    <th class="col-name">銘柄名</th>
+                    <th class="col-num">株価<br>(円)</th>
+                    <th class="col-num">発行済み<br>株数</th>
+                    <th class="col-unit">(単位)</th>
+                    <th class="col-ratio">浮動株<br>比率(%)</th>
+                    <th>浮動株<br>時価総額</th>
+                    <th>判定</th>
+                    <th>削除</th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+                </tbody>
+        </table>
+    </div>
+
+    <div class="footer-controls">
+        <button class="btn-gray btn-small" onclick="addRow()">＋</button>
+    </div>
+
+<script>
+    const STORAGE_KEY = 'nerfsys_float_cap_calc_data';
+
+    // 行のHTMLテンプレートを生成する関数
+    function createRowHTML(data = {}) {
+        const code = data.code || '';
+        const name = data.name || '';
+        const price = data.price || '';
+        const shares = data.shares || '';
+        const unit = data.unit || '1000';
+        const ratio = data.ratio || '';
+        const cap = data.cap || '';
+        const mark = data.mark || '';
+
+        // 初期表示時の行の背景色判定
+        let rowClass = '';
+        if (mark === '○') rowClass = 'row-ok';
+        else if (mark === '△') rowClass = 'row-warn';
+        else if (mark === '×') rowClass = 'row-ng';
+
+        return `
+            <tr class="${rowClass}">
+                <td><input type="text" name="code" value="${code}"></td>
+                <td><input type="text" name="name" value="${name}"></td>
+                <td><input type="number" name="price" value="${price}"></td>
+                <td><input type="number" name="shares" value="${shares}"></td>
+                <td>
+                    <select name="unit">
+                        <option value="1000" ${unit === '1000' ? 'selected' : ''}>千株</option>
+                        <option value="10000" ${unit === '10000' ? 'selected' : ''}>万株</option>
+                    </select>
+                </td>
+                <td><input type="number" name="ratio" step="0.1" value="${ratio}"></td>
+                <td><span class="result-text cap-text">${cap}</span></td>
+                <td><span class="result-text mark-text">${mark}</span></td>
+                <td><button class="btn-gray btn-small" onclick="removeRow(this)">－</button></td>
+            </tr>
+        `;
+    }
+
+    // 行追加処理
+    function addRow(data) {
+        const tbody = document.getElementById('tbody');
+        tbody.insertAdjacentHTML('beforeend', createRowHTML(data));
+    }
+
+    // 行削除処理
+    function removeRow(btn) {
+        const tr = btn.closest('tr');
+        tr.remove();
+    }
+
+    // 計算処理 兼 データ保存
+    function calculate() {
+        const threshold = Number(document.getElementById('threshold').value) || 390;
+        const rows = document.querySelectorAll('#tbody tr');
+        let saveData = [];
+
+        rows.forEach(row => {
+            const code = row.querySelector('input[name="code"]').value;
+            const name = row.querySelector('input[name="name"]').value;
+            const price = Number(row.querySelector('input[name="price"]').value) || 0;
+            const shares = Number(row.querySelector('input[name="shares"]').value) || 0;
+            const unit = Number(row.querySelector('select[name="unit"]').value) || 1000;
+            const ratio = Number(row.querySelector('input[name="ratio"]').value) || 0;
+
+            let capStr = '';
+            let markStr = '';
+            
+            // 既存の色クラスを一旦リセット
+            row.classList.remove('row-ok', 'row-warn', 'row-ng');
+
+            if (price > 0 && shares > 0 && ratio > 0) {
+                const rawCap = price * (shares * unit) * (ratio / 100);
+                const capInOku = Math.floor(rawCap / 100000000);
+                capStr = capInOku + '億円';
+
+                // 判定と背景色クラスの付与
+                if (capInOku >= threshold * 1.05) {
+                    markStr = '○';
+                    row.classList.add('row-ok');
+                } else if (capInOku <= threshold * 0.95) {
+                    markStr = '×';
+                    row.classList.add('row-ng');
+                } else {
+                    markStr = '△';
+                    row.classList.add('row-warn');
+                }
+            }
+
+            row.querySelector('.cap-text').textContent = capStr;
+            row.querySelector('.mark-text').textContent = markStr;
+
+            saveData.push({
+                code: code,
+                name: name,
+                price: price || '',
+                shares: shares || '',
+                unit: unit.toString(),
+                ratio: ratio || '',
+                cap: capStr,
+                mark: markStr
+            });
+        });
+
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        const dateStr = `${y}/${m}/${d}`;
+        document.getElementById('lastCalcDate').textContent = dateStr;
+
+        const storeObj = {
+            lastCalcDate: dateStr,
+            rows: saveData
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(storeObj));
+    }
+
+    // データ消去処理
+    function clearData() {
+        if (confirm("保存されたデータをすべて削除します。よろしいですか？")) {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('tbody').innerHTML = '';
+            document.getElementById('lastCalcDate').textContent = 'YYYY/MM/DD';
+            addRow();
+        }
+    }
+
+    // 初期化処理
+    function init() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                document.getElementById('lastCalcDate').textContent = parsed.lastCalcDate || 'YYYY/MM/DD';
+                if (parsed.rows && parsed.rows.length > 0) {
+                    parsed.rows.forEach(rowData => {
+                        addRow(rowData);
+                    });
+                } else {
+                    addRow();
+                }
+            } catch (e) {
+                console.error("データの復元に失敗しました", e);
+                addRow();
+            }
+        } else {
+            addRow();
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
