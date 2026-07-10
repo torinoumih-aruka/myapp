@@ -1,0 +1,894 @@
+{
+  "palette": {
+    "1": "#002288",
+    "2": "#a05040",
+    "3": "#ff0055",
+    "4": "#8B4513",
+    "5": "#FFD700",
+    "6": "#474747",
+    "7": "#A9A9A9",
+    "8": "#808080",
+    "9": "#ffffff",
+    ".": null,
+    "A": "#00ffaa",
+    "B": "#00aa77",
+    "C": "#00ff00",
+    "D": "#703020",
+    "E": "#0000ff",
+    "F": "#33ccff",
+    "G": "#aa0000",
+    "H": "#aaaaaa",
+    "I": "#000000",
+    "J": "#ffdbd8",
+    "K": "#fffbb9",
+    "L": "#a67b01",
+    "M": "#ac11c0",
+    "N": "#ff57f9",
+    "O": "#550c0c",
+    "P": "#5c85ff",
+    "Q": "#69008f",
+    "R": "#30562e"
+  },
+  "sprites": {
+    "tree": [
+      "OOCCCBOO",
+      "OCCCBCBO",
+      "CCCBCBCB",
+      "BCBCBCBB",
+      "BBBBBBBB",
+      "OBB4DBBO",
+      "OO44DDOO",
+      "ODDDDDDO"
+    ],
+    "_river_1": [
+      "EEFEEEEE",
+      "EEFEEEEE",
+      "E9FF99EE",
+      "FFEEEEFF",
+      "EEFEEEFE",
+      "EE9EEE9E",
+      "EEF99FEE",
+      "EEFEEEEE"
+    ],
+    "_river_2": [
+      "EEEFEEEE",
+      "EEEFEEEE",
+      "EE9F9EEE",
+      "EEFEEFEE",
+      "FFFEEEFF",
+      "EEE9EE9E",
+      "EEEF9FEE",
+      "EEEFEEEE"
+    ],
+    "_river_3": [
+      "EEEEFEEE",
+      "EEEFEEEE",
+      "EEEFEEEE",
+      "EEEFFEEE",
+      "EEFFE9FE",
+      "FFE99FEF",
+      "EEEEFEEE",
+      "EEEEFEEE"
+    ],
+    "heart_normal": [
+      "O999999O",
+      "99399399",
+      "93333339",
+      "93333339",
+      "99333399",
+      "99933999",
+      "G999999G",
+      "OGGGGGGO"
+    ],
+    "_heart_shot": [
+      "O999999O",
+      "99599599",
+      "95555559",
+      "95555559",
+      "99555599",
+      "99955999",
+      "G999999G",
+      "OGGGGGGO"
+    ],
+    "chest_closed": [
+      "OLLLLLLO",
+      "J444444J",
+      "JL4444LJ",
+      "JLLLLLLJ",
+      "JKKOOKKJ",
+      "J44OO44J",
+      "J444444J",
+      "OJJJJJJO"
+    ],
+    "_chest_open": [
+      "OLL55LLO",
+      "J699556J",
+      "J695556J",
+      "J555555J",
+      "JKKOOKKJ",
+      "J44OO44J",
+      "J444444J",
+      "OJJJJJJO"
+    ],
+    "_framer_1": [
+      "99999999",
+      "9AAAAAA9",
+      "9AAAAAA9",
+      "9AAAAAA9",
+      "99999999",
+      "9BBBBBB9",
+      "9BBBBBB9",
+      "99999999"
+    ],
+    "_framer_2": [
+      "99999999",
+      "9999AA99",
+      "999AA9A9",
+      "99AA9AA9",
+      "99999999",
+      "9BBBBBB9",
+      "9BBBBBB9",
+      "99999999"
+    ],
+    "snakey_left": [
+      ".AAB....",
+      "AAAAB.B.",
+      "AIAIA.B.",
+      "AIAIA.AB",
+      "AAAAAAAB",
+      "B99AAABB",
+      "B9999BB.",
+      ".BBBBB.."
+    ],
+    "_snakey_right": [
+      "....BAA.",
+      ".B.BAAAA",
+      ".B.AIAIA",
+      "BA.AIAIA",
+      "BAAAAAAA",
+      "BBAAA99B",
+      ".BB9999B",
+      "..BBBBB."
+    ],
+    "_snakey_happy_1": [
+      "..AAB...",
+      ".AAAAB..",
+      ".AIAIA..",
+      ".AIAIA.B",
+      ".AAAAAAB",
+      ".A999ABB",
+      ".B9999B.",
+      "..BBBB.."
+    ],
+    "_snakey_happy_2": [
+      "...BAA..",
+      "..BAAAA.",
+      "..AIAIA.",
+      "B.AIAIA.",
+      "BAAAAAA.",
+      "BBA999A.",
+      ".B9999B.",
+      "..BBBB.."
+    ],
+    "_medusa_sleep": [
+      "..KKKK..",
+      ".KLLLLK.",
+      "KL7997LK",
+      "L99LL99L",
+      "L79LL97L",
+      "LL7997LL",
+      ".DLLLLD.",
+      ".DLLLLD."
+    ],
+    "medusa_awake": [
+      "..KKKK..",
+      ".KLLLLK.",
+      "KL73G7LK",
+      "L93GGG9L",
+      "L7GGGG7L",
+      "LL7GG7LL",
+      ".DLLLLD.",
+      ".DLLLLD."
+    ],
+    "_egg": [
+      "........",
+      "..JJJJ..",
+      ".JJJJJJ.",
+      "JJJJJJJJ",
+      "JJJJJJJ3",
+      "JJJJJJ33",
+      ".JJJJ33.",
+      "..3333.."
+    ],
+    "_egg_sink": [
+      "........",
+      ".9....9.",
+      "9.JJJJ.9",
+      ".JJJJJJ.",
+      ".JJJJJJ.",
+      ".JJJJJJ.",
+      "9.JJJJ.9",
+      ".9....9."
+    ],
+    "_needle_h": [
+      "........",
+      "........",
+      "........",
+      "79999997",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "_needle_v": [
+      "...7....",
+      "...9....",
+      "...9....",
+      "...9....",
+      "...9....",
+      "...9....",
+      "...9....",
+      "...7...."
+    ],
+    "_bullet": [
+      "........",
+      "........",
+      "........",
+      "...99...",
+      "...99...",
+      "........",
+      "........",
+      "........"
+    ],
+    "player_up_1": [
+      "..1111..",
+      ".111111.",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11919111",
+      ".119111.",
+      ".333...."
+    ],
+    "player_up_2": [
+      "..1111..",
+      ".111111.",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11191911",
+      ".111911.",
+      "....333."
+    ],
+    "player_down_1": [
+      "..1111..",
+      ".111111.",
+      "19911991",
+      "19311391",
+      "19911991",
+      "11111111",
+      ".331111.",
+      ".33..33."
+    ],
+    "player_down_2": [
+      "..1111..",
+      ".111111.",
+      "19911991",
+      "19311391",
+      "19911991",
+      "11111111",
+      ".111133.",
+      ".33..33."
+    ],
+    "player_left_1": [
+      "..111...",
+      ".11111..",
+      "1991111.",
+      "1391111.",
+      "1991111.",
+      "11111111",
+      ".111111.",
+      "..3331.."
+    ],
+    "player_left_2": [
+      "........",
+      "..1111..",
+      ".111111.",
+      "1991111.",
+      "1391111.",
+      "19911111",
+      "33111113",
+      ".331113."
+    ],
+    "player_right_1": [
+      "...111..",
+      "..11111.",
+      ".1111991",
+      ".1111931",
+      ".1111991",
+      "11111111",
+      ".111111.",
+      "..1333.."
+    ],
+    "player_right_2": [
+      "........",
+      "..1111..",
+      ".111111.",
+      ".1111991",
+      ".1111931",
+      "11111991",
+      "31111133",
+      ".311133."
+    ],
+    "_arrow_top": [
+      "O999999O",
+      "9BB99BB9",
+      "9B9999B9",
+      "99999999",
+      "9BB99BB9",
+      "9BB99BB9",
+      "B999999B",
+      "OBBBBBBO"
+    ],
+    "_arrow_bottom": [
+      "O999999O",
+      "9BB99BB9",
+      "9BB99BB9",
+      "99999999",
+      "9B9999B9",
+      "9BB99BB9",
+      "B999999B",
+      "OBBBBBBO"
+    ],
+    "_arrow_left": [
+      "O999999O",
+      "9BB9BBB9",
+      "9B99BBB9",
+      "99999999",
+      "9B99BBB9",
+      "9BB9BBB9",
+      "B999999B",
+      "OBBBBBBO"
+    ],
+    "_arrow_right": [
+      "O999999O",
+      "9BBB9BB9",
+      "9BBB99B9",
+      "99999999",
+      "9BBB99B9",
+      "9BBB9BB9",
+      "B999999B",
+      "OBBBBBBO"
+    ],
+    "_grasses": [
+      "CBCBCCBC",
+      "BCCCBCBC",
+      "BCBCBBCB",
+      "CCBBCCBB",
+      "CBCCBCBC",
+      "BBCBBBCC",
+      "BCCCCBCB",
+      "CBCBCCCB"
+    ],
+    "_flower_1": [
+      "CBCBCCBC",
+      "BCCC55BC",
+      "BCB5995B",
+      "C555995B",
+      "599555BC",
+      "5995BBCC",
+      "B55CCBCB",
+      "CBCBCCCB"
+    ],
+    "_flower_2": [
+      "CBCBCCBC",
+      "BCCCB55C",
+      "BCBC5995",
+      "CC555995",
+      "C599555C",
+      "B5995BCC",
+      "BC55CBCB",
+      "CBCBCCCB"
+    ],
+    "_wall_0": [
+      "6DDDDDD6",
+      "DD22D2DD",
+      "D2222DDD",
+      "D222D2DD",
+      "DD2D2DDD",
+      "D2D2D2DD",
+      "DD2D2DDD",
+      "6DDDDDD6"
+    ],
+    "wall_1": [
+      "OO6686OO",
+      "O68788OO",
+      "O676886O",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "O666666O"
+    ],
+    "_wall_2": [
+      "KKKKKKKK",
+      "KKKKKKKK",
+      "LLLLLLLL",
+      "222D222D",
+      "DDDDDDDD",
+      "2D222D22",
+      "DDDDDDDD",
+      "222D222D"
+    ],
+    "_wall_3": [
+      "LKKKKKKL",
+      "LKKKKLKL",
+      "LKLKKKKL",
+      "LKKKKKKL",
+      "LKKKKKKL",
+      "LKKKKLKL",
+      "LKLKKKKL",
+      "LKKKKKKL"
+    ],
+    "_wall_4": [
+      "LLLLLLLL",
+      "KKKKKKKK",
+      "KKLKKKLK",
+      "KKKKKKKK",
+      "KLKKKLKK",
+      "KKKKKKKK",
+      "LLLLLLLL",
+      "DDDDDDDD"
+    ],
+    "_wall_5": [
+      "DLLLLLLD",
+      "LLKKKKLL",
+      "LKKKKLKL",
+      "LKKKKKLL",
+      "LKLKLLKL",
+      "LLKLKLLL",
+      "DLLLLLLD",
+      "LDDDDDDL"
+    ],
+    "_wall_6": [
+      "4444444O",
+      "477888OO",
+      "7888866O",
+      "8786666O",
+      "8888666O",
+      "6686866O",
+      "6868666O",
+      "O66666OO"
+    ],
+    "_wall_7": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "_wall_8": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "_wall_9": [
+      "22668622",
+      "26878822",
+      "26768862",
+      "68688866",
+      "67888666",
+      "67886866",
+      "66768666",
+      "D666666D"
+    ],
+    "_floor_0": [
+      "DDDDDDDO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "DOOOOOOO",
+      "OOOOOOOO"
+    ],
+    "_floor_1": [
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796",
+      "69999996",
+      "69777796"
+    ],
+    "_floor_2": [
+      "77777777",
+      "97979797",
+      "97979797",
+      "97979797",
+      "97979797",
+      "97979797",
+      "67676767",
+      "66666666"
+    ],
+    "_floor_3": [
+      "DDDODDDO",
+      "DOOODOOO",
+      "DOOODOOO",
+      "OOOOOOOO",
+      "DDDODDDO",
+      "DOOODOOO",
+      "DOOODOOO",
+      "OOOOOOOO"
+    ],
+    "_floor_4": [
+      "QQQMMQQQ",
+      "QQMQQMQQ",
+      "QMQQQQMQ",
+      "MQQQQQQM",
+      "MQQQQQQM",
+      "QMQQQQMQ",
+      "QQMQQMQQ",
+      "QQQMMQQQ"
+    ],
+    "_floor_5": [
+      "DODDDODD",
+      "OODOOODO",
+      "DDDODDDO",
+      "DOOODOOO",
+      "DODDDODD",
+      "OODOOODO",
+      "DDDODDDO",
+      "DOOODOOO"
+    ],
+    "_floor_6": [
+      "QQQQQQQQ",
+      "QQQMMQQQ",
+      "QQMMMMQQ",
+      "QMMMMMMQ",
+      "QMMMMMMQ",
+      "QQMMMMQQ",
+      "QQQMMQQQ",
+      "QQQQQQQQ"
+    ],
+    "_floor_7": [
+      "OOOORRRR",
+      "RROOOORR",
+      "OOOROOOR",
+      "ROOOOORR",
+      "OROOOOOO",
+      "RROOOOOR",
+      "OORRROOO",
+      "RROOOORR"
+    ],
+    "_floor_8": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "_floor_9": [
+      "222222D2",
+      "222222D2",
+      "222222D2",
+      "DDDDDDDD",
+      "22D22222",
+      "22D22222",
+      "22D22222",
+      "DDDDDDDD"
+    ],
+    "don_medosa_1": [
+      ".M....M.",
+      "MNNNNNNM",
+      "MGGNNGGM",
+      "MGGNNGGM",
+      ".MMMMMM.",
+      ".MNNNNM.",
+      ".MNNNNM.",
+      "..M..M.."
+    ],
+    "_don_medosa_2": [
+      "........",
+      ".M....M.",
+      "MNNNNNNM",
+      "MGGNNGGM",
+      "MGGNNGGM",
+      ".MMMMMM.",
+      ".MNNNNM.",
+      ".M....M."
+    ],
+    "_hammer": [
+      "...86...",
+      "5555555L",
+      "5LLLLLLL",
+      "L4444444",
+      "...86...",
+      "...86...",
+      "...86...",
+      "...86..."
+    ],
+    "_gol_up_sleep": [
+      ".1....1.",
+      ".PPFFPP.",
+      "1FFFFFF1",
+      "1FFFFFF1",
+      "PPFFFFPP",
+      ".PPPPPP.",
+      ".PPFFPP.",
+      "11.PP.11"
+    ],
+    "_gol_up_awake": [
+      ".5....5.",
+      ".LPFFPL.",
+      "1LFFFFL1",
+      "1FFFFFF1",
+      "PPFFFFPP",
+      ".PPPPPP.",
+      ".PPFFPP.",
+      "11.PP.11"
+    ],
+    "_gol_down_sleep": [
+      ".1....1.",
+      ".PPFFPP.",
+      "1PFFFFP1",
+      "1IFIIFI1",
+      "PPIFFIPP",
+      ".PPPPPP.",
+      ".P9999P.",
+      "11P99P11"
+    ],
+    "gol_down_awake": [
+      ".5....5.",
+      ".LPFFPL.",
+      "11I11I11",
+      "1I5II5I1",
+      "P1I11I1P",
+      ".PPPPPP.",
+      ".P9999P.",
+      "11P99P11"
+    ],
+    "_gol_left_sleep": [
+      ".....1..",
+      ".FFFPPP.",
+      "FFFFFPPP",
+      "IFFIF11P",
+      ".IIFP11P",
+      ".PPPPP1.",
+      ".P99FPP.",
+      "PPP1.99F"
+    ],
+    "_gol_left_awake": [
+      ".....5..",
+      ".FFFPLP.",
+      "1I1FFPLP",
+      "I55IF11L",
+      ".I1FP11P",
+      ".PPPPP1.",
+      ".P99FPP.",
+      "PPP1.99F"
+    ],
+    "_gol_right_sleep": [
+      "..1.....",
+      ".PPPFFF.",
+      "PPPFFFFF",
+      "P11FIFFI",
+      "P11PFII.",
+      ".1PPPPP.",
+      ".PPF99P.",
+      "F99.1PPP"
+    ],
+    "_gol_right_awake": [
+      "..5.....",
+      ".PLPFFF.",
+      "PLPFF1I1",
+      "L11FI55I",
+      "P11PF1I.",
+      ".1PPPPP.",
+      ".PPF99P.",
+      "F99.1PPP"
+    ],
+    "_lava_1": [
+      "GGGGGGGG",
+      "G33GGG3G",
+      "3GGOGGGG",
+      "3GGOGGGG",
+      "GOOGG3GG",
+      "GGGG3GOG",
+      "GGGOGOGG",
+      "GOGGGGGG"
+    ],
+    "_lava_2": [
+      "GGGOGGGG",
+      "GOGGG3GG",
+      "GGGOGGGG",
+      "OGGGG33G",
+      "GGOG3GGO",
+      "GGGG3GGO",
+      "GGGGGOOG",
+      "GGGGGGGG"
+    ],
+    "_lava_3": [
+      "GGOOGGGG",
+      "GGGGG3GG",
+      "G3GGGGGG",
+      "GGOGGOGG",
+      "GGGGGGGO",
+      "GG33GGGG",
+      "G3GGOGOG",
+      "G3GGOGGG"
+    ],
+    "_floor_1_broken": [
+      "G99G999G",
+      "G7GGG77G",
+      "GG99GGGG",
+      "8G77GGGG",
+      "8GGGG99G",
+      "G97GG79G",
+      "G99GGGGG",
+      "GGGGG79G"
+    ],
+    "_floor_2_broken": [
+      "GGGGGGGG",
+      "97G7GG97",
+      "97G79GGG",
+      "GGG79G97",
+      "97G6GG97",
+      "88GGGGGG",
+      "GGG98G67",
+      "76G88GGG"
+    ],
+    "item_magic_bullet": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_sword": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_fireball": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_thunderbolt": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_poison_mist": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_scroll": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_magnet": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_magnifier": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_boots": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_cross": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "item_coin_bag": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "exp": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "bat": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ],
+    "knight": [
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........",
+      "........"
+    ]
+  }
+}
