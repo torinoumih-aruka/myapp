@@ -27,7 +27,8 @@
 "O": "#550c0c",
 "P": "#5c85ff",
 "Q": "#69008f",
-"R": "#30562e"
+"R": "#30562e",
+"S": "#be8cff"
 },
 "sprites": {
 "tree": [
@@ -159,36 +160,6 @@
 "11111991",
 "31111133",
 ".311133."
-],
-"_grasses": [
-"CBCBCCBC",
-"BCCCBCBC",
-"BCBCBBCB",
-"CCBBCCBB",
-"CBCCBCBC",
-"BBCBBBCC",
-"BCCCCBCB",
-"CBCBCCCB"
-],
-"_flower_1": [
-"CBCBCCBC",
-"BCCC55BC",
-"BCB5995B",
-"C555995B",
-"599555BC",
-"5995BBCC",
-"B55CCBCB",
-"CBCBCCCB"
-],
-"_flower_2": [
-"CBCBCCBC",
-"BCCCB55C",
-"BCBC5995",
-"CC555995",
-"C599555C",
-"B5995BCC",
-"BC55CBCB",
-"CBCBCCCB"
 ],
 "wall_1": [
 "..6686..",
@@ -479,6 +450,196 @@
 "..89F8..",
 "...88...",
 "........"
+],
+"hero_knight_left_1": [
+"9.88668G",
+"9888866G",
+"9.IKIL6.",
+"K.IKIL6.",
+"18888866",
+"1866666K",
+"..888OO.",
+".OO6666."
+],
+"hero_knight_left_2": [
+"..88668G",
+"9888866G",
+"9.IKIL6.",
+"9.IKIL66",
+"K888886K",
+"1866666.",
+"1OO8886.",
+"..666OO."
+],
+"hero_knight_right_1": [
+"G86688.9",
+"G6688889",
+".6LIKI.9",
+".6LIKI.K",
+"66888881",
+"K6666681",
+".OO888..",
+".6666OO."
+],
+"hero_knight_right_2": [
+"G86688..",
+"G6688889",
+".6LIKI.9",
+"66LIKI.9",
+"K688888K",
+".6666681",
+".6888OO1",
+".OO666.."
+],
+"hero_knight_up_1": [
+"GG6688.9",
+"GG688889",
+".68888.9",
+".66666.K",
+"66888881",
+"K6666681",
+".OO888..",
+"...66OO."
+],
+"hero_knight_up_2": [
+"..6688..",
+"GG688889",
+"GG8888.9",
+"666666.9",
+"K688888K",
+".6666681",
+".6888OO1",
+".OO66..."
+],
+"hero_knight_down_1": [
+"9.88668G",
+"9888866G",
+"9.IKIL6.",
+"K.IKIL6.",
+"18888866",
+"1866666K",
+"..888OO.",
+".OO6666."
+],
+"hero_knight_down_2": [
+"..88668G",
+"9888866G",
+"9.IKIL6.",
+"9.IKIL66",
+"K888886K",
+"1866666.",
+"1OO8886.",
+"..666OO."
+],
+"hero_wiz_left_1": [
+"L.SSSSSQ",
+"LSSSSSQ.",
+"L.IKILQ.",
+"K.IKILQ.",
+"LSSSSSQQ",
+"L.Q3QQQK",
+"L.SSSOO.",
+".OOQQQQ."
+],
+"hero_wiz_left_2": [
+"..SSSSSQ",
+"LSSSSSQ.",
+"L.IKILQ.",
+"L.IKILQQ",
+"KSSSSSQK",
+"L.Q3QQQ.",
+"LOOSSQQ.",
+"L..QQOO."
+],
+"hero_wiz_right_1": [
+"QSSSSS.L",
+".QSSSSSL",
+".QLIKI.L",
+".QLIKI.K",
+"QQSSSSSL",
+"KQQQ3Q.L",
+".OOSSS.L",
+".QQQQOO."
+],
+"hero_wiz_right_2": [
+"QSSSSS..",
+".QSSSSSL",
+".QLIKI.L",
+"QQLIKI.L",
+"KQSSSSSK",
+".QQQ3Q.L",
+".QQSSOOL",
+".OOQQ..L"
+],
+"hero_wiz_up_1": [
+"QSSSSS.L",
+".QSSSSSL",
+".QSSSS.L",
+".QQQQQ.K",
+"QQSSSSSL",
+"KQQQQQ.L",
+".OOSSS.L",
+"...QQOO."
+],
+"hero_wiz_up_2": [
+".SSSSS..",
+"QSSSSSSL",
+".QSSSS.L",
+"QQQQQQ.L",
+"KQSSSSSK",
+".QQQQQ.L",
+".QQSSOOL",
+".OOQQ..L"
+],
+"hero_wiz_down_1": [
+"L.SSSSSQ",
+"LSSSSSQ.",
+"L.IKILQ.",
+"K.IKILQ.",
+"LSSSSSQQ",
+"L.Q3QQQK",
+"L.SSSOO.",
+".OOQQQQ."
+],
+"hero_wiz_down_2": [
+"..SSSSSQ",
+"LSSSSSQ.",
+"L.IKILQ.",
+"L.IKILQQ",
+"KSSSSSQK",
+"L.Q3QQQ.",
+"LOOSSQQ.",
+"L..QQOO."
+],
+"grasses": [
+"CBCBCCBC",
+"BCCCBCBC",
+"BCBCBBCB",
+"CCBBCCBB",
+"CBCCBCBC",
+"BBCBBBCC",
+"BCCCCBCB",
+"CBCBCCCB"
+],
+"flower_1": [
+"CBCBCCBC",
+"BCCC55BC",
+"BCB5995B",
+"C555995B",
+"599555BC",
+"5995BBCC",
+"B55CCBCB",
+"CBCBCCCB"
+],
+"flower_2": [
+"CBCBCCBC",
+"BCCCB55C",
+"BCBC5995",
+"CC555995",
+"C599555C",
+"B5995BCC",
+"BC55CBCB",
+"CBCBCCCB"
 ]
 }
 }
