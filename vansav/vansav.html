@@ -11,7 +11,8 @@
         #game-container { width: 100vw; height: 100vh; position: relative; display: flex; justify-content: center; align-items: center; background: #000; }
         #gameCanvas { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
         
-        @font-face { font-family: 'SolidLinker'; src: local('SolidLinker'); } /* Assuming it is installed or just using font-family */
+        @font-face { font-family: "縁架ドット明朝24"; src: url('fonts/EnkaDotMincho24.woff2') format('woff2'); }
+        @font-face { font-family: 'DonguriDuel'; src: url('fonts/x10y12pxDonguriDuel.woff2') format('woff2'); }
         
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); z-index: 10; overflow-y: auto; }
         h1, h2 { color: #ffcc00; text-shadow: 2px 2px 0px #ff0000; text-align: center; margin: 10px; }
