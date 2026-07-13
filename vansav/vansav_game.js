@@ -47,28 +47,89 @@ let INPUTS = [
 ];
 
 // Save Data
-let SAVE_DATA = { coins: 0, hpLvl: 0, luckLvl: 0, lalaUnlocked: false };
+let SAVE_DATA = { 
+    coins: 0, hpLvl: 0, luckLvl: 0, 
+    atkLvl: 0, defLvl: 0, spdLvl: 0,
+    wizUnlocked: false,
+    bombUnlocked: false,
+    boomerangUnlocked: false,
+    iceblustUnlocked: false,
+    stonedustUnlocked: false
+};
 
 const CHARACTERS = [
-    { id: 'knight', name: 'ナイト', desc: '主人公。平均的なステータス。', hp: 100, atk: 10, def: 5, spd: 100, luck: 1, sprite: 'hero_knight_down_1', unlocked: true },
-    { id: 'wiz', name: 'ウィザード', desc: '魔法使い。体力が少し低いが、素早く行動できる。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false }
+    { id: 'knight', name: 'ナイト', desc: '勇かんなナイト。操作は難しいが、バランスのとれた強さ。', hp: 100, atk: 10, def: 5, spd: 100, luck: 1, sprite: 'hero_knight_down_1', unlocked: true },
+    { id: 'wiz', name: 'ウィザード', desc: 'まほうつかいの女の子。素早く動ける。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false }
 ];
 
 const EQUIP_DATA = {
     // Attack
-    magic_bullet: { type: 'atk', name: '魔法弾', icon: 'item_magic_bullet', maxLvl: 10, desc: '前方に魔法弾を発射する。', enhance: '発射弾数+1 / 威力増加' },
-    sword: { type: 'atk', name: 'ソード', icon: 'item_sword', maxLvl: 10, desc: '近い敵を切り裂く。', enhance: '攻撃範囲拡大 / 威力増加' },
-    fireball: { type: 'atk', name: 'ファイヤーボール', icon: 'item_fireball', maxLvl: 10, desc: '周囲を回転する炎をまとう。', enhance: '炎の数+1 / 威力増加' },
-    thunderbolt: { type: 'atk', name: 'サンダーボルト', icon: 'item_thunderbolt', maxLvl: 10, desc: 'ランダムな敵に雷を落とす。', enhance: '雷の数+1 / クールタイム-0.2秒' },
-    poison_mist: { type: 'atk', name: 'ポイズンミスト', icon: 'item_poison_mist', maxLvl: 10, desc: '敵を遅延・毒状態にする霧。', enhance: '霧の数+1 / 威力増加' },
-    bomb: { type: 'atk', name: 'ボム', icon: 'item_bomb', maxLvl: 10, desc: '前方に爆弾を投げる。', enhance: '爆発範囲拡大 / 爆発時間-0.1秒' },
-    axe: { type: 'atk', name: 'オノ', icon: 'item_axe', maxLvl: 10, desc: '上空へオノを投擲する。', enhance: '発射数+1 / クールタイム減少' },
+    magic_bullet: { type: 'atk', name: 'マジックショット', icon: 'item_magic_bullet', maxLvl: 10, desc: '一番近い敵に向かって飛んでいくこうげきを放つ。', enhance: '発射弾数+1 / 威力増加' },
+    sword: { type: 'atk', name: 'ソード', icon: 'item_sword', maxLvl: 10, desc: '前方に剣をふってこうげき。はんい内の敵にダメージをあたえる。', enhance: '攻撃範囲拡大 / 威力増加' },
+    fireball: { type: 'atk', name: 'ファイヤーボール', icon: 'item_fireball', maxLvl: 10, desc: '自分の周りに、回転する火の玉を展開する。', enhance: '炎の数+1 / 威力増加' },
+    thunderbolt: { type: 'atk', name: 'サンダーボルト', icon: 'item_thunderbolt', maxLvl: 10, desc: 'ランダムに、敵にいかずちを落とす。周囲にもダメージ。', enhance: '雷の数+1 / クールタイム-0.2秒' },
+    poison_mist: { type: 'atk', name: 'ポイズンミスト', icon: 'item_poison_mist', maxLvl: 10, desc: '毒のキリを発生させる。敵の移動速度を遅くさせつつダメージもあたえる。', enhance: '霧の数+1 / 威力増加' },
+    bomb: { type: 'atk', name: 'ボム', icon: 'item_bomb', maxLvl: 10, desc: '目の前にボムを設置。ばくふうのはんい内の敵にダメージをあたえる。', enhance: '設置個数+1 / 爆発時間-0.1秒' },
+    axe: { type: 'atk', name: 'アックス', icon: 'item_axe', maxLvl: 10, desc: 'オノをなげて投げてこうげき。当たった敵全てにダメージをあたえる。', enhance: '発射数+1 / クールタイム減少' },
+    boomerang: { type: 'atk', name: 'ブーメラン', icon: 'item_boomerang', maxLvl: 10, desc: '投げると返ってくるこうげきを放つ。', enhance: '発射数追加 / 威力増加' },
+    iceblust: { type: 'atk', name: 'アイスブラスト', icon: 'item_iceblust', maxLvl: 10, desc: '周囲に氷のエリアを展開し、敵をこおらせる。ダメージはぼほない。', enhance: '展開時間延長 / 範囲拡大' },
+    stonedust: { type: 'atk', name: 'ストーンダスト', icon: 'item_stonedust', maxLvl: 10, desc: 'たくさんの小石を放ち続けて、小さなダメージをあたえ続ける。', enhance: 'クールタイム短縮 / 威力微増' },
     // Buff
-    scroll: { type: 'buf', name: '巻物', icon: 'item_scroll', maxLvl: 5, desc: '武器のクールタイムを短縮。', enhance: 'クールタイム追加短縮' },
-    magnet: { type: 'buf', name: '磁石', icon: 'item_magnet', maxLvl: 5, desc: 'アイテムを引き寄せる。', enhance: '引き寄せ範囲拡大' },
-    magnifier: { type: 'buf', name: '拡大鏡', icon: 'item_magnifier', maxLvl: 5, desc: '攻撃のサイズを大きくする。', enhance: 'サイズさらに拡大' },
-    shield: { type: 'buf', name: 'シールド', icon: 'item_shield', maxLvl: 5, desc: '被ダメージを軽減する。', enhance: '防御力+2' }
+    scroll: { type: 'buf', name: '巻物', icon: 'item_scroll', maxLvl: 5, desc: 'こうげきのクールタイムを短くする。', enhance: 'クールタイム追加短縮' },
+    magnet: { type: 'buf', name: '磁石', icon: 'item_magnet', maxLvl: 5, desc: '落ちているアイテムを吸い寄せる。', enhance: '引き寄せ範囲拡大' },
+    magnifier: { type: 'buf', name: '拡大鏡', icon: 'item_magnifier', maxLvl: 5, desc: 'こうげきのはんいを拡げる。', enhance: 'サイズさらに拡大' },
+    shield: { type: 'buf', name: 'シールド', icon: 'item_shield', maxLvl: 5, desc: '敵からうけるダメージを低減させる。', enhance: '防御力+2' },
+    boots: { type: 'buf', name: 'ブーツ', icon: 'item_boots', maxLvl: 5, desc: 'このゲーム中に限り、すばやさが一時的に上がる。', enhance: 'すばやささらに上昇' }
 };
+
+const SPAWN_TABLE = [
+    { minTime: 0, maxTime: 120, interval: 2.0, enemies: [ 
+        { type: 'snakey', scale: 0.8, weight: 10, formProb: 0.0, singleCount: 1 } 
+    ] },
+    { minTime: 120, maxTime: 300, interval: 1.5, enemies: [ 
+        { type: 'snakey', scale: 0.8, weight: 10, formProb: 0.1, formType: 'circle', formCount: 10, singleCount: 2 },
+        { type: 'bat', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 } 
+    ] },
+    { minTime: 300, maxTime: 420, interval: 1.2, enemies: [
+        { type: 'snakey', scale: 1.2, weight: 10, formProb: 0.15, formType: 'lines', formCount: 10, singleCount: 3 },
+        { type: 'bat', scale: 0.8, weight: 5, formProb: 0.1, formType: 'group', formCount: 5, singleCount: 2 },
+        { type: 'medusa', scale: 0.8, weight: 5, formProb: 0, singleCount: 2 }
+    ] },
+    { minTime: 420, maxTime: 540, interval: 1.0, enemies: [
+        { type: 'snakey', scale: 1.2, weight: 10, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
+        { type: 'bat', scale: 0.8, weight: 5, formProb: 0.1, formType: 'group', formCount: 8, singleCount: 3 },
+        { type: 'medusa', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
+        { type: 'knight', scale: 0.8, weight: 5, formProb: 0, singleCount: 2 }
+    ] },
+    { minTime: 540, maxTime: 600, interval: 0.8, enemies: [
+        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 }, 
+        { type: 'bat', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 10, singleCount: 4 },
+        { type: 'medusa', scale: 1.2, weight: 5, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
+        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
+        { type: 'gol', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 }
+    ] },
+    { minTime: 600, maxTime: 840, interval: 0.8, enemies: [
+        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 }, 
+        { type: 'bat', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 10, singleCount: 4 },
+        { type: 'medusa', scale: 1.2, weight: 5, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
+        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
+        { type: 'gol', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 }, 
+        { type: 'moving_statue', scale: 0.8, weight: 2, formProb: 0, singleCount: 1 }
+    ] },
+    { minTime: 840, maxTime: 9999, interval: 0.5, enemies: [
+        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 },
+        { type: 'bat', scale: 3.2, weight: 2, formProb: 0, singleCount: 1 },
+        { type: 'medusa', scale: 3.2, weight: 2, formProb: 0, singleCount: 1 },
+        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 15, singleCount: 3 },
+        { type: 'gol', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 8, singleCount: 2 },
+        { type: 'ghost', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
+        { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
+        { type: 'wolf', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
+        { type: 'moving_statue', scale: 0.8, weight: 2, formProb: 0, singleCount: 1 } 
+    ] }
+];
 
 const REQUIRED_SPRITES = [
     'item_magic_bullet', 'item_sword', 'item_fireball', 'item_thunderbolt', 'item_poison_mist',
@@ -127,14 +188,14 @@ function loadSaveData() {
     let data = localStorage.getItem('vansav_save');
     if (data) {
         try {
-            let p = JSON.parse(data);
-            SAVE_DATA.coins = p.coins || 0;
-            SAVE_DATA.hpLvl = p.hpLvl || 0;
-            SAVE_DATA.luckLvl = p.luckLvl || 0;
-            SAVE_DATA.lalaUnlocked = p.lalaUnlocked || false;
+            let parsed = JSON.parse(data);
+            SAVE_DATA = Object.assign({ coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false }, parsed);
+            if (SAVE_DATA.wizUnlocked) {
+                let wiz = CHARACTERS.find(c => c.id === 'wiz');
+                if (wiz) wiz.unlocked = true;
+            }
         } catch(e) {}
     }
-    CHARACTERS.find(c => c.id === 'wiz').unlocked = SAVE_DATA.lalaUnlocked;
 }
 function saveGameData() { localStorage.setItem('vansav_save', JSON.stringify(SAVE_DATA)); }
 
@@ -149,9 +210,9 @@ class Player {
         this.h = 32;
         this.maxHp = charData.hp + (SAVE_DATA.hpLvl * 10);
         this.hp = this.maxHp;
-        this.baseAtk = charData.atk;
-        this.baseDef = charData.def;
-        this.baseSpd = charData.spd;
+        this.baseAtk = charData.atk + (SAVE_DATA.atkLvl * 2);
+        this.baseDef = charData.def + (SAVE_DATA.defLvl * 1);
+        this.baseSpd = charData.spd + (SAVE_DATA.spdLvl * 10);
         this.baseLuck = charData.luck + SAVE_DATA.luckLvl;
         if (charData.id === 'knight') this.spriteNameBase = 'hero_knight';
         else if (charData.id === 'wiz') this.spriteNameBase = 'hero_wiz';
@@ -170,7 +231,10 @@ class Player {
         // Internal weapon timers
         this.weaponTimers = {};
     }
-    get spd() { return this.baseSpd; }
+    get spd() { 
+        let boots = this.equips.find(e => e.id === 'boots');
+        return this.baseSpd + (boots ? boots.lvl * 20 : 0);
+    }
     get atk() { return this.baseAtk; }
     get def() {
         let shield = this.equips.find(e => e.id === 'shield');
@@ -181,7 +245,7 @@ class Player {
 }
 
 class Enemy {
-    constructor(x, y, type) {
+    constructor(x, y, type, forcedScale = null) {
         this.x = x; this.y = y; this.w = 32; this.h = 32;
         this.type = type;
         this.dead = false;
@@ -191,30 +255,30 @@ class Enemy {
         this.isBoss = false;
         this.scale = 0.8; // Small by default
         
-        // Base stats (ATK is effectively doubled compared to original here)
+        // Base stats
         if (type === 'snakey') { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
-        else if (type === 'medusa') { this.hp = 100; this.spd = 30; this.atk = 30; this.def = 4; this.expDrop = 5; this.sprite = 'medusa_awake'; this.ignoreWalls = true; }
-        else if (type === 'gol') { this.hp = 400; this.spd = 20; this.atk = 40; this.def = 6; this.expDrop = 10; this.sprite = 'gol_down_awake'; }
-        else if (type === 'don_medusa') { this.hp = 1500; this.spd = 25; this.atk = 60; this.expDrop = 50; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.0; }
-        else if (type === 'bat') { this.hp = 10; this.spd = 80; this.atk = 20; this.expDrop = 3; this.sprite = 'bat'; }
-        else if (type === 'knight') { this.hp = 200; this.spd = 15; this.atk = 60; this.expDrop = 15; this.sprite = 'knight'; }
-        else if (type === 'ghost') { this.hp = 30; this.spd = 90; this.atk = 30; this.expDrop = 5; this.sprite = 'ghost'; this.ignoreWalls = true; }
-        else { this.hp = 10; this.spd = 50; this.atk = 4; this.expDrop = 1; this.sprite = 'snakey_left'; }
+        else if (type === 'medusa') { this.hp = 100; this.spd = 30; this.atk = 25; this.def = 2; this.expDrop = 5; this.sprite = 'medusa_awake'; this.ignoreWalls = false; }
+        else if (type === 'gol') { this.hp = 75; this.spd = 40; this.atk = 40; this.def = 0; this.expDrop = 7; this.sprite = 'gol_down_awake'; }
+        else if (type === 'don_medusa_1') { this.hp = 1000; this.spd = 25; this.atk = 30; this.def = 2; this.expDrop = 100; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.0; }
+        else if (type === 'don_medusa_2') { this.hp = 3000; this.spd = 35; this.atk = 60; this.def = 3; this.expDrop = 200; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.5; }
+        else if (type === 'don_medusa_3') { this.hp = 8000; this.spd = 45; this.atk = 80; this.def = 5; this.expDrop = 999; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 4.0; }
+        else if (type === 'bat') { this.hp = 10; this.spd = 65; this.atk = 20; this.expDrop = 3; this.sprite = 'bat'; }
+        else if (type === 'knight') { this.hp = 180; this.spd = 15; this.atk = 35; this.def = 3; this.expDrop = 15; this.sprite = 'knight'; }
+        else if (type === 'ghost') { this.hp = 25; this.spd = 110; this.atk = 30; this.expDrop = 5; this.sprite = 'ghost'; this.ignoreWalls = true; }
+        else if (type === 'item_box') { this.hp = 1; this.spd = 0; this.atk = 0; this.expDrop = 0; this.sprite = 'itembox'; this.isItemBox = true; }
+        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 80; this.def = 5; this.expDrop = 20; this.sprite = 'shooter_lily'; }
+        else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 10; this.sprite = 'moving_statue'; this.isShooter = true; this.attackTimer = 7.0; }
+        else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 20; this.sprite = 'snakey_left'; /* placeholder sprite */ this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
+        else { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
         
-        // Size variations (Not applied to bosses)
-        if (!this.isBoss && type !== 'ghost') {
-            let r = Math.random();
-            if (r < 0.05 && GAME.time >= 900) { // 15 mins Large
-                this.scale = 3.2; // 400% of small
-                this.hp *= 10;
-                this.atk *= 5;
-                this.expDrop *= 3;
-            } else if (r < 0.25 && GAME.time >= 420) { // 7 mins Medium
-                this.scale = 1.2; // 150% of small
-                this.hp *= 2;
-                this.atk *= 2;
-                this.expDrop = Math.ceil(this.expDrop * 1.5);
-            }
+        // Size variations are now passed via constructor
+        if (!this.isBoss && forcedScale === null) {
+            this.scale = 0.8;
+        } else if (forcedScale !== null) {
+            this.scale = forcedScale;
+            this.hp *= (this.scale / 0.8);
+            this.atk *= (this.scale / 0.8);
+            this.expDrop = Math.ceil(this.expDrop * (this.scale / 0.8));
         }
         
         this.w *= this.scale;
@@ -361,7 +425,11 @@ function setMode(mode) {
         document.getElementById('screen-char').style.display = 'flex';
     } else if (mode === 'game') {
         document.getElementById('hud').style.display = 'block';
+        if(GAME.mode !== 'pause') INPUTS = [{vx:0,vy:0},{vx:0,vy:0}]; // Don't reset inputs if unpausing? Actually just reset them to be safe
         INPUTS = [{vx:0,vy:0},{vx:0,vy:0}];
+    } else if (mode === 'pause') {
+        document.getElementById('hud').style.display = 'block';
+        document.getElementById('screen-pause').style.display = 'flex';
     } else if (mode === 'levelup') {
         document.getElementById('screen-levelup').style.display = 'flex';
     } else if (mode === 'chest') {
@@ -394,6 +462,16 @@ function setupUIEvents() {
         }
         startGame();
     });
+    
+    document.getElementById('btn-pause').addEventListener('click', (e) => {
+        if (GAME.mode === 'game') {
+            setMode('pause');
+            e.stopPropagation();
+        }
+    });
+    document.getElementById('screen-pause').addEventListener('click', () => {
+        if (GAME.mode === 'pause') setMode('game');
+    });
 }
 
 function buildShopUI() {
@@ -402,9 +480,16 @@ function buildShopUI() {
     list.innerHTML = '';
     const prices = [100, 500, 1000, 2000, 4000];
     
-    const addItem = (title, icon, lvl, maxLvl, desc, condition, action) => {
+    const addItem = (title, icon, lvl, maxLvl, desc, condition, action, fixedCost = null) => {
         let div = document.createElement('div'); div.className = 'popup-item';
-        let cost = lvl < maxLvl ? prices[lvl] : (lvl==='unlock'? (condition? '解放済':1000) : 'MAX');
+        let cost;
+        if (fixedCost !== null) cost = fixedCost;
+        else cost = lvl < maxLvl ? prices[lvl] : (lvl==='unlock'? (condition? '解放済':1000) : 'MAX');
+        
+        if (lvl === 'unlock' && fixedCost !== null) {
+            cost = condition ? '解放済' : fixedCost;
+        }
+        
         div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${title}</b><br>${desc}<br>価格: ${cost}</div>`;
         if (PRE_RENDERED[icon]) {
             let cvs = div.querySelector('canvas');
@@ -412,24 +497,32 @@ function buildShopUI() {
             cvs.getContext('2d').drawImage(PRE_RENDERED[icon], 0, 0, 48, 48);
         }
         div.addEventListener('click', () => {
-            if (lvl < maxLvl && SAVE_DATA.coins >= prices[lvl]) { SAVE_DATA.coins -= prices[lvl]; action(); buildShopUI(); }
-            else if (lvl === 'unlock' && !condition && SAVE_DATA.coins >= 1000) { SAVE_DATA.coins -= 1000; action(); buildShopUI(); }
+            if (lvl < maxLvl && cost !== 'MAX' && SAVE_DATA.coins >= cost) { SAVE_DATA.coins -= cost; action(); buildShopUI(); }
+            else if (lvl === 'unlock' && !condition && SAVE_DATA.coins >= cost) { SAVE_DATA.coins -= cost; action(); buildShopUI(); }
         });
         list.appendChild(div);
     };
     
     addItem('HPアップ', 'heart_normal', SAVE_DATA.hpLvl, 5, `(Lv.${SAVE_DATA.hpLvl}/5) 初期HP+10`, false, () => { SAVE_DATA.hpLvl++; saveGameData(); });
-    addItem('うんのよさアップ', 'item_cross', SAVE_DATA.luckLvl, 5, `(Lv.${SAVE_DATA.luckLvl}/5) 初期運+1`, false, () => { SAVE_DATA.luckLvl++; saveGameData(); });
-    addItem('キャラ解放: ウィザード', 'hero_wiz_left_1', 'unlock', 1, `キャラクターを追加`, SAVE_DATA.lalaUnlocked, () => { SAVE_DATA.lalaUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); });
+    addItem('うんのよさアップ', 'status_lukup', SAVE_DATA.luckLvl, 5, `(Lv.${SAVE_DATA.luckLvl}/5) 初期運+1`, false, () => { SAVE_DATA.luckLvl++; saveGameData(); });
+    addItem('こうげき力アップ', 'status_atkup', SAVE_DATA.atkLvl, 5, `(Lv.${SAVE_DATA.atkLvl}/5) 初期攻撃力+2`, false, () => { SAVE_DATA.atkLvl++; saveGameData(); });
+    addItem('ぼうぎょ力アップ', 'status_defup', SAVE_DATA.defLvl, 5, `(Lv.${SAVE_DATA.defLvl}/5) 初期防御力+1`, false, () => { SAVE_DATA.defLvl++; saveGameData(); });
+    addItem('すばやさアップ', 'status_spdup', SAVE_DATA.spdLvl, 5, `(Lv.${SAVE_DATA.spdLvl}/5) 初期素早さ+10`, false, () => { SAVE_DATA.spdLvl++; saveGameData(); });
     
-    let btnResetUnlock = document.createElement('div'); btnResetUnlock.className = 'btn'; btnResetUnlock.innerText = 'キャラ解放リセット';
+    addItem('キャラ解放: ウィザード', 'hero_wiz_left_1', 'unlock', 1, `魔法使いの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
+    addItem('武器解放: ボム', 'item_bomb', 'unlock', 1, `ボムをドロップに追加。`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
+    addItem('武器解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランをドロップに追加。`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
+    addItem('武器解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストをドロップに追加。`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
+    addItem('武器解放: ストーンダスト', 'item_stonedust', 'unlock', 1, `ストーンダストをドロップに追加。`, SAVE_DATA.stonedustUnlocked, () => { SAVE_DATA.stonedustUnlocked = true; saveGameData(); }, 1500);
+    
+    let btnResetUnlock = document.createElement('div'); btnResetUnlock.className = 'btn'; btnResetUnlock.innerText = 'データリセット';
     btnResetUnlock.style.marginTop = '20px';
-    btnResetUnlock.onclick = () => { SAVE_DATA.lalaUnlocked = false; CHARACTERS.find(c => c.id === 'wiz').unlocked = false; saveGameData(); buildShopUI(); };
+    btnResetUnlock.onclick = () => { 
+        SAVE_DATA = { coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false }; 
+        CHARACTERS.find(c => c.id === 'wiz').unlocked = false; 
+        saveGameData(); buildShopUI(); 
+    };
     list.appendChild(btnResetUnlock);
-    
-    let btnResetUpgrades = document.createElement('div'); btnResetUpgrades.className = 'btn'; btnResetUpgrades.innerText = '強化リセット';
-    btnResetUpgrades.onclick = () => { SAVE_DATA.hpLvl = 0; SAVE_DATA.luckLvl = 0; saveGameData(); buildShopUI(); };
-    list.appendChild(btnResetUpgrades);
 }
 
 function buildCharSelectUI() {
@@ -468,6 +561,7 @@ function startGame() {
     GAME.time = 0;
     GAME.frameCount = 0;
     GAME.spawnTimer = 0;
+    GAME.itemBoxTimer = 120;
     GAME.bossSpawned = [false, false, false];
     GAME.coinsThisRun = 0;
     GAME.bgFeatures = [];
@@ -670,9 +764,19 @@ function updateGame(dt) {
     
     // Midbosses
     let mins = GAME.time / 60;
-    if (mins >= 5 && !GAME.bossSpawned[0]) { spawnMidBoss(); GAME.bossSpawned[0] = true; }
-    if (mins >= 10 && !GAME.bossSpawned[1]) { spawnMidBoss(); GAME.bossSpawned[1] = true; }
-    if (mins >= 15 && !GAME.bossSpawned[2]) { spawnMidBoss(); GAME.bossSpawned[2] = true; }
+    if (mins >= 5 && !GAME.bossSpawned[0]) { spawnMidBoss(1); GAME.bossSpawned[0] = true; }
+    if (mins >= 10 && !GAME.bossSpawned[1]) { spawnMidBoss(2); GAME.bossSpawned[1] = true; }
+    if (mins >= 15 && !GAME.bossSpawned[2]) { spawnMidBoss(3); GAME.bossSpawned[2] = true; }
+    
+    GAME.itemBoxTimer -= dt;
+    if (GAME.itemBoxTimer <= 0) {
+        GAME.itemBoxTimer = 120;
+        let p = GAME.players[0]; if(p.dead && GAME.players[1]) p = GAME.players[1];
+        if (p) {
+            let ang = Math.random() * Math.PI * 2;
+            spawnSingleEnemy(p.x + Math.cos(ang)*300, p.y + Math.sin(ang)*300, 'item_box', 1.0);
+        }
+    }
     
     // Enemies Update
     GAME.enemies.forEach(e => {
@@ -685,6 +789,16 @@ function updateGame(dt) {
                 if (e.fbTimers[key] > 0) e.fbTimers[key] -= dt;
             }
         }
+        if (e.boomInvincibles) {
+            for(let key in e.boomInvincibles) {
+                if (e.boomInvincibles[key] > 0) e.boomInvincibles[key] -= dt;
+            }
+        }
+        
+        if (e.frozenTimer > 0) {
+            e.frozenTimer -= dt;
+            return;
+        }
         
         // Find closest player
         let targetP = null, minDist = Infinity;
@@ -696,8 +810,33 @@ function updateGame(dt) {
         
         if (targetP) {
             let ang = Math.atan2(targetP.y - e.y, targetP.x - e.x);
-            let nextX = e.x + Math.cos(ang) * e.spd * dt;
-            let nextY = e.y + Math.sin(ang) * e.spd * dt;
+            let nextX, nextY;
+            if (e.isItemBox) {
+                nextX = e.x; nextY = e.y;
+            } else if (e.isWolf) {
+                e.wolfTimer -= dt;
+                if (e.wolfState === 'arc') {
+                    let arcAng = ang + (Math.PI/2) * e.wolfArcDir;
+                    nextX = e.x + Math.cos(arcAng) * e.spd * dt;
+                    nextY = e.y + Math.sin(arcAng) * e.spd * dt;
+                    if (e.wolfTimer <= 0) {
+                        e.wolfState = 'dash';
+                        e.wolfTimer = 1.0;
+                        e.dashAng = ang; // Lock angle
+                    }
+                } else if (e.wolfState === 'dash') {
+                    nextX = e.x + Math.cos(e.dashAng) * (e.spd * 2.5) * dt;
+                    nextY = e.y + Math.sin(e.dashAng) * (e.spd * 2.5) * dt;
+                    if (e.wolfTimer <= 0) {
+                        e.wolfState = 'arc';
+                        e.wolfTimer = 2.0;
+                        e.wolfArcDir = Math.random()>0.5?1:-1;
+                    }
+                }
+            } else {
+                nextX = e.x + Math.cos(ang) * e.spd * dt;
+                nextY = e.y + Math.sin(ang) * e.spd * dt;
+            }
             
             if (e.ignoreWalls) {
                 e.x = nextX; e.y = nextY;
@@ -706,20 +845,20 @@ function updateGame(dt) {
                 if (!checkWallCollision(e.x, nextY, 14)) e.y = nextY;
             }
             
-            if (e.isBoss) {
+            if (e.isBoss || e.isShooter) {
                 e.attackTimer -= dt;
                 if (e.attackTimer <= 0) {
-                    e.attackTimer = 1.5;
+                    e.attackTimer = e.isShooter ? 7.0 : 1.5;
                     GAME.projectiles.push({
-                        x: e.x, y: e.y, vx: Math.cos(ang)*150, vy: Math.sin(ang)*150,
-                        life: 4, size: 12, dmg: e.atk, pierce: false, type: 'enemy_shot'
+                        x: e.x, y: e.y, vx: Math.cos(ang)*(e.isShooter?200:150), vy: Math.sin(ang)*(e.isShooter?200:150),
+                        life: 4, size: e.isShooter?8:12, dmg: e.atk, pierce: false, type: 'enemy_shot'
                     });
                 }
             }
             
             // Player collision
             if (minDist < 20 && targetP.invincibleTimer <= 0) {
-                let dmg = Math.max(1, e.atk - targetP.def);
+                let dmg = Math.ceil(Math.max(1, e.atk - targetP.def));
                 targetP.hp -= dmg;
                 targetP.invincibleTimer = 0.5;
                 addDamageText(targetP.x, targetP.y - 20, `-${dmg}`, '#ff0000');
@@ -742,7 +881,7 @@ function updateGame(dt) {
                 if(e.dead) return;
                 if (e.bombInvincible > 0) return;
                 if (Math.hypot(e.x - proj.x, e.y - proj.y) < proj.blastRadius) {
-                    let dmg = Math.max(1, proj.dmg - (e.def || 0));
+                    let dmg = Math.ceil(Math.max(1, proj.dmg - (e.def || 0)));
                     e.hp -= dmg;
                     e.bombInvincible = 0.3;
                     addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
@@ -764,6 +903,12 @@ function updateGame(dt) {
             proj.rotAngle += dt * 3;
             proj.x = proj.owner.x + Math.cos(proj.rotAngle) * proj.orbitDist;
             proj.y = proj.owner.y + Math.sin(proj.rotAngle) * proj.orbitDist;
+        } else if (proj.type === 'boomerang') {
+            proj.rot = (proj.rot || 0) + 15 * dt;
+            proj.vx += proj.ax * dt;
+            proj.vy += proj.ay * dt;
+            proj.x += proj.vx * dt;
+            proj.y += proj.vy * dt;
         } else {
             proj.x += proj.vx * dt;
             proj.y += proj.vy * dt;
@@ -774,7 +919,7 @@ function updateGame(dt) {
                 if (p.dead || proj.dead || p.invincibleTimer > 0) return;
                 let d = Math.hypot(p.x - proj.x, p.y - proj.y);
                 if (d < (proj.size + p.w/2)) {
-                    let dmg = Math.max(1, proj.dmg - p.def);
+                    let dmg = Math.ceil(Math.max(1, proj.dmg - p.def));
                     p.hp -= dmg;
                     p.invincibleTimer = 0.5;
                     addDamageText(p.x, p.y - 20, `-${dmg}`, '#ff0000');
@@ -793,13 +938,17 @@ function updateGame(dt) {
                     if (!e.fbTimers) e.fbTimers = {};
                     if (e.fbTimers[proj.projId] > 0) return;
                 }
+                if (proj.type === 'boomerang') {
+                    if (!e.boomInvincibles) e.boomInvincibles = {};
+                    if (e.boomInvincibles[proj.projId] > 0) return;
+                }
                 
                 let hitRange = proj.size + e.w/2;
                 if (proj.type === 'sword') hitRange += 30; // extend sword forward
                 
                 let d = Math.hypot(e.x - proj.x, e.y - proj.y);
                 if (d < hitRange) {
-                    let dmg = Math.max(1, proj.dmg - (e.def || 0));
+                    let dmg = Math.ceil(Math.max(1, proj.dmg - (e.def || 0)));
                     e.hp -= dmg;
                     addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
                     if (e.hp <= 0) {
@@ -808,6 +957,9 @@ function updateGame(dt) {
                     }
                     if (proj.type === 'fireball') {
                         e.fbTimers[proj.projId] = 0.5;
+                    }
+                    if (proj.type === 'boomerang') {
+                        e.boomInvincibles[proj.projId] = 0.8;
                     }
                     if (!proj.pierce) proj.dead = true;
                 }
@@ -827,12 +979,26 @@ function updateGame(dt) {
                 if (e.dead) return;
                 if (Math.hypot(e.x - pt.x, e.y - pt.y) < pt.radius) {
                     if (GAME.frameCount % 30 === 0) { // dmg tick every 0.5s roughly
-                        let dmg = Math.max(1, pt.dmg - (e.def || 0));
+                        let dmg = Math.ceil(Math.max(1, pt.dmg - (e.def || 0)));
                         e.hp -= dmg;
-                        addDamageText(e.x, e.y - 20, `${Math.floor(dmg)}`, '#cc00ff');
+                        addDamageText(e.x, e.y - 20, `${dmg}`, '#cc00ff');
                         if (e.hp <= 0) { e.dead = true; dropItem(e); }
                     }
                     e.x -= Math.cos(Math.atan2(e.y - pt.y, e.x - pt.x)) * e.spd * 0.5 * dt; // Simple slow by pushing back
+                }
+            });
+        } else if (pt.type === 'iceblust') {
+            pt.x = pt.owner.x; pt.y = pt.owner.y; // Follow player
+            GAME.enemies.forEach(e => {
+                if (e.dead) return;
+                if (Math.hypot(e.x - pt.x, e.y - pt.y) < pt.radius) {
+                    if (GAME.frameCount % 10 === 0) {
+                        let dmg = Math.ceil(Math.max(1, pt.dmg - (e.def || 0)));
+                        e.hp -= dmg;
+                        addDamageText(e.x, e.y - 20, `${dmg}`, '#00ffff');
+                        if (e.hp <= 0) { e.dead = true; dropItem(e); }
+                    }
+                    e.frozenTimer = pt.freezeTime;
                 }
             });
         }
@@ -853,10 +1019,19 @@ function fireWeapon(p, eq) {
     let sizeMul = mag ? (1 + mag.lvl * 0.1) : 1;
     
     if (eq.id === 'magic_bullet') {
-        p.weaponTimers[eq.id] = 2.0 * cdReducer;
+        p.weaponTimers[eq.id] = Math.max(0.5, 2.0 * cdReducer - 0.2);
+        // Target nearest enemy
+        let targetE = null, minDist = Infinity;
+        GAME.enemies.forEach(e => {
+            if (e.dead || e.frozenTimer > 0) return;
+            let d = Math.hypot(e.x - p.x, e.y - p.y);
+            if (d < minDist) { minDist = d; targetE = e; }
+        });
+        
         let count = Math.min(3, Math.ceil(eq.lvl / 3));
         for(let i=0; i<count; i++) {
             let ang = (p.angle !== undefined) ? p.angle : Math.PI/2;
+            if (targetE) ang = Math.atan2(targetE.y - p.y, targetE.x - p.x);
             ang += (i - (count-1)/2) * 0.2;
             GAME.projectiles.push({
                 x: p.x, y: p.y, vx: Math.cos(ang)*200, vy: Math.sin(ang)*200,
@@ -896,7 +1071,7 @@ function fireWeapon(p, eq) {
         let speed = 1.5 + eq.lvl * 0.15;
         for(let i=0; i<count; i++) {
             GAME.projectiles.push({
-                owner: p, rotAngle: (i/count) * Math.PI*2, orbitDist: 120 + sizeMul*30,
+                owner: p, rotAngle: (i/count) * Math.PI*2, orbitDist: 72 + sizeMul*30,
                 x: p.x, y: p.y, vx: 0, vy: 0,
                 life: 3, size: 11.25 * sizeMul, dmg: (p.atk + eq.lvl)/2, pierce: true, type: 'fireball', projId: Math.random()
             });
@@ -904,14 +1079,21 @@ function fireWeapon(p, eq) {
     }
     else if (eq.id === 'bomb') {
         p.weaponTimers[eq.id] = Math.max(1.5, 4.0 - eq.lvl * 0.2) * cdReducer;
-        let ang = (p.angle !== undefined) ? p.angle : Math.PI/2;
-        let bx = p.x + Math.cos(ang) * 60;
-        let by = p.y + Math.sin(ang) * 60;
-        GAME.projectiles.push({
-            x: bx, y: by, vx: 0, vy: 0,
-            life: Math.max(0.5, 1.0 - eq.lvl * 0.05), size: 16, dmg: p.atk * 2 + eq.lvl * 5, pierce: true, type: 'bomb',
-            blastRadius: 50 + eq.lvl * 5 * sizeMul
-        });
+        let count = 1 + Math.floor((eq.lvl - 1) / 2);
+        if (count > 5) count = 5;
+        let baseAng = (p.angle !== undefined) ? p.angle : Math.PI/2;
+        let step = Math.PI * 2 / count;
+        
+        for (let i = 0; i < count; i++) {
+            let ang = baseAng + i * step;
+            let bx = p.x + Math.cos(ang) * 60;
+            let by = p.y + Math.sin(ang) * 60;
+            GAME.projectiles.push({
+                x: bx, y: by, vx: 0, vy: 0,
+                life: Math.max(0.5, 1.0 - eq.lvl * 0.05), size: 16, dmg: p.atk * 2 + eq.lvl * 5, pierce: true, type: 'bomb',
+                blastRadius: 50 * sizeMul
+            });
+        }
     }
     else if (eq.id === 'axe') {
         p.weaponTimers[eq.id] = Math.max(1.5, 3.5 - eq.lvl * 0.2) * cdReducer;
@@ -955,6 +1137,44 @@ function fireWeapon(p, eq) {
             }, i * 100);
         }
     }
+    else if (eq.id === 'boomerang') {
+        p.weaponTimers[eq.id] = 3.0 * cdReducer;
+        let count = eq.lvl >= 10 ? 4 : 1 + Math.floor((eq.lvl - 1) / 3);
+        let ang = (p.angle !== undefined) ? p.angle : Math.PI/2;
+        
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                if (p.dead) return;
+                GAME.projectiles.push({
+                    x: p.x, y: p.y, vx: Math.cos(ang) * 300, vy: Math.sin(ang) * 300,
+                    ax: -Math.cos(ang) * 300, ay: -Math.sin(ang) * 300,
+                    startX: p.x, startY: p.y, returning: false, projId: Math.random(),
+                    life: 5, size: 16 * sizeMul, dmg: p.atk * 1.2 + eq.lvl * 2 + 7, pierce: true, type: 'boomerang'
+                });
+            }, i * 300);
+        }
+    }
+    else if (eq.id === 'iceblust') {
+        p.weaponTimers[eq.id] = 4.0 * cdReducer;
+        let lvlIdx = Math.min(eq.lvl - 1, 9);
+        let durations = [0.5, 0.8, 1, 1.2, 1.3, 1.5, 1.7, 1.8, 1.9, 2];
+        let ranges = [1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.2, 3.5];
+        let freezes = [1, 1, 1.5, 1.5, 2, 2, 2.5, 2.5, 3, 3];
+        
+        GAME.particles.push({
+            owner: p, x: p.x, y: p.y, type: 'iceblust', 
+            life: durations[lvlIdx], radius: 32 * ranges[lvlIdx] * sizeMul, freezeTime: freezes[lvlIdx], dmg: 1
+        });
+    }
+    else if (eq.id === 'stonedust') {
+        p.weaponTimers[eq.id] = Math.max(0.15, 0.3 - (eq.lvl - 1) * 0.02) * cdReducer;
+        let baseAng = (p.angle !== undefined) ? p.angle : Math.PI/2;
+        let ang = baseAng + (Math.random() - 0.5) * (25 * Math.PI / 180);
+        GAME.projectiles.push({
+            x: p.x, y: p.y, vx: Math.cos(ang) * 400, vy: Math.sin(ang) * 400,
+            life: 1.5, size: 4 * sizeMul, dmg: 2 + eq.lvl * 0.5, pierce: false, type: 'stonedust'
+        });
+    }
 }
 
 function dropItem(e) {
@@ -966,15 +1186,22 @@ function dropItem(e) {
         GAME.items.push(new Drop(e.x, e.y, 'chest', 1));
         return;
     }
+    if (e.isItemBox) {
+        let r = Math.random() * 100;
+        if (r < 80) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
+        else if (r < 90) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
+        else GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
+        return;
+    }
     
-    let baseDrop = 0.05;
-    if (e.expDrop >= 50) baseDrop += 0.1;
+    let baseDrop = 0.1;
+    if (e.expDrop >= 50) baseDrop += 0.2;
     let prob = baseDrop + luck * 0.05;
     
     let rand = Math.random() * 100;
     if (rand < prob) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
     else if (rand < prob * 2) GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
-    else if (rand < prob * 6) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', Math.floor(GAME.time/60)+1));
+    else if (rand < prob * 10) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
     else GAME.items.push(new Drop(e.x, e.y, 'exp', e.expDrop));
 }
 
@@ -1009,45 +1236,65 @@ function spawnEnemies() {
     let p = GAME.players[0]; if(p.dead && GAME.players[1]) p = GAME.players[1];
     if(p.dead) return;
     
-    let phase = Math.floor(GAME.time / 120);
-    let types = ['snakey'];
-    if (GAME.time > 120) types.push('bat');
-    if (GAME.time > 180) types.push('medusa');
-    if (GAME.time > 240) types.push('knight');
-    if (GAME.time > 300) types.push('gol');
-    if (GAME.time > 420) types.push('ghost');
+    let currentPhase = SPAWN_TABLE.find(t => GAME.time >= t.minTime && GAME.time < t.maxTime) || SPAWN_TABLE[SPAWN_TABLE.length-1];
+    GAME.spawnTimer = currentPhase.interval;
     
-    let type = types[Math.floor(Math.random() * types.length)];
+    let totalWeight = currentPhase.enemies.reduce((sum, e) => sum + e.weight, 0);
+    let r = Math.random() * totalWeight;
+    let selectedEnemy = null;
+    for (let e of currentPhase.enemies) {
+        if (r < e.weight) { selectedEnemy = e; break; }
+        r -= e.weight;
+    }
+    if (!selectedEnemy) selectedEnemy = currentPhase.enemies[0];
+    
     let dist = 400; // Outside screen
     
-    if (phase >= 1 && Math.random() < 0.15) {
-        let count = 10 + phase * 2;
-        for(let i=0; i<count; i++) {
-            let ang = (i/count) * Math.PI * 2;
-            let ex = p.x + Math.cos(ang)*dist;
-            let ey = p.y + Math.sin(ang)*dist;
-            if (ex < GAME.stageBounds.minX) ex = GAME.stageBounds.minX;
-            if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
-            if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
-            if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
-            GAME.enemies.push(new Enemy(ex, ey, type));
+    if (Math.random() < selectedEnemy.formProb) {
+        let count = selectedEnemy.formCount;
+        let formType = selectedEnemy.formType || 'circle';
+        
+        if (formType === 'circle') {
+            for(let i=0; i<count; i++) {
+                let ang = (i/count) * Math.PI * 2;
+                spawnSingleEnemy(p.x + Math.cos(ang)*dist, p.y + Math.sin(ang)*dist, selectedEnemy.type, selectedEnemy.scale);
+            }
+        } else if (formType === 'group') {
+            let baseAng = Math.random() * Math.PI * 2;
+            let cx = p.x + Math.cos(baseAng)*dist;
+            let cy = p.y + Math.sin(baseAng)*dist;
+            for(let i=0; i<count; i++) {
+                let offX = (Math.random() - 0.5) * 100;
+                let offY = (Math.random() - 0.5) * 100;
+                spawnSingleEnemy(cx + offX, cy + offY, selectedEnemy.type, selectedEnemy.scale);
+            }
+        } else if (formType === 'lines') {
+            // Two vertical lines on left and right of the player
+            let countPerSide = Math.ceil(count / 2);
+            for(let i=0; i<countPerSide; i++) {
+                let yOff = (i - countPerSide/2) * 50;
+                spawnSingleEnemy(p.x - dist, p.y + yOff, selectedEnemy.type, selectedEnemy.scale);
+                spawnSingleEnemy(p.x + dist, p.y + yOff, selectedEnemy.type, selectedEnemy.scale);
+            }
         }
     } else {
-        let spawnCount = 1 + phase;
+        let spawnCount = selectedEnemy.singleCount || 1;
         for(let i=0; i<spawnCount; i++) {
             let ang = Math.random() * Math.PI * 2;
-            let ex = p.x + Math.cos(ang)*dist;
-            let ey = p.y + Math.sin(ang)*dist;
-            if (ex < GAME.stageBounds.minX) ex = GAME.stageBounds.minX;
-            if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
-            if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
-            if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
-            GAME.enemies.push(new Enemy(ex, ey, type));
+            spawnSingleEnemy(p.x + Math.cos(ang)*dist, p.y + Math.sin(ang)*dist, selectedEnemy.type, selectedEnemy.scale);
         }
     }
 }
 
-function spawnMidBoss() {
+function spawnSingleEnemy(ex, ey, type, scale) {
+    if (ex < GAME.stageBounds.minX) ex = GAME.stageBounds.minX;
+    if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
+    if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
+    if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
+    GAME.enemies.push(new Enemy(ex, ey, type, scale));
+}
+
+function spawnMidBoss(level) {
     let p = GAME.players[0]; if(p.dead && GAME.players[1]) p = GAME.players[1];
     if(p.dead) return;
     let ang = Math.random() * Math.PI * 2;
@@ -1057,7 +1304,7 @@ function spawnMidBoss() {
     if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
     if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
     if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
-    GAME.enemies.push(new Enemy(ex, ey, 'don_medusa'));
+    GAME.enemies.push(new Enemy(ex, ey, 'don_medusa_' + level));
 }
 
 function addDamageText(x, y, text, color) {
@@ -1148,7 +1395,20 @@ function drawGame() {
     // Enemies
     GAME.enemies.forEach(e => {
         if(PRE_RENDERED[e.sprite]) {
-            ctx.drawImage(PRE_RENDERED[e.sprite], 0, 0, 32, 32, e.x - 16*e.scale, e.y - 16*e.scale, 32*e.scale, 32*e.scale);
+            if (e.frozenTimer > 0) {
+                ctx.save();
+                ctx.translate(e.x, e.y);
+                ctx.drawImage(PRE_RENDERED[e.sprite], 0, 0, 32, 32, -16*e.scale, -16*e.scale, 32*e.scale, 32*e.scale);
+                ctx.globalCompositeOperation = 'source-atop';
+                ctx.fillStyle = 'rgba(100, 200, 255, 0.6)';
+                ctx.fillRect(-16*e.scale, -16*e.scale, 32*e.scale, 32*e.scale);
+                ctx.globalCompositeOperation = 'source-over';
+                // Additional icy particles
+                if (Math.random() < 0.2) GAME.particles.push({x: e.x + (Math.random()-0.5)*32*e.scale, y: e.y + (Math.random()-0.5)*32*e.scale, type:'sparkle', life: 0.3, size: 2});
+                ctx.restore();
+            } else {
+                ctx.drawImage(PRE_RENDERED[e.sprite], 0, 0, 32, 32, e.x - 16*e.scale, e.y - 16*e.scale, 32*e.scale, 32*e.scale);
+            }
         }
         // HP Bar
         ctx.fillStyle = 'red'; ctx.fillRect(e.x - 16, e.y - 20 - 16*(e.scale-1), 32, 4);
@@ -1185,12 +1445,14 @@ function drawGame() {
                 } else {
                     ctx.fillStyle = 'orange'; ctx.beginPath(); ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI*2); ctx.fill();
                 }
-            } else if (proj.type === 'axe') {
+            } else if (proj.type === 'axe' || proj.type === 'boomerang') {
                 ctx.save(); ctx.translate(proj.x, proj.y); ctx.rotate(proj.rot);
-                if (PRE_RENDERED['item_axe']) ctx.drawImage(PRE_RENDERED['item_axe'], -16, -16);
+                if (PRE_RENDERED['item_' + proj.type]) {
+                    ctx.drawImage(PRE_RENDERED['item_' + proj.type], 0, 0, 32, 32, -16, -16, 32, 32);
+                }
                 ctx.restore();
             } else if (proj.type === 'bomb') {
-                if (PRE_RENDERED['item_bomb']) ctx.drawImage(PRE_RENDERED['item_bomb'], proj.x - 16, proj.y - 16);
+                if (PRE_RENDERED['item_bomb']) ctx.drawImage(PRE_RENDERED['item_bomb'], 0, 0, 32, 32, proj.x - 16, proj.y - 16, 32, 32);
             } else {
                 ctx.fillStyle = 'yellow';
                 ctx.beginPath(); ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI*2); ctx.fill();
@@ -1223,6 +1485,24 @@ function drawGame() {
         } else if (pt.type === 'poison') {
             ctx.fillStyle = `rgba(150, 0, 200, ${pt.life > 1 ? 0.3 : pt.life * 0.3})`;
             ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI*2); ctx.fill();
+        } else if (pt.type === 'iceblust') {
+            ctx.fillStyle = `rgba(100, 255, 255, ${pt.life > 0.5 ? 0.3 : pt.life * 0.6})`;
+            ctx.beginPath();
+            for(let i=0; i<6; i++) {
+                let ang = i * Math.PI / 3 + GAME.time;
+                let px = pt.x + Math.cos(ang) * pt.radius;
+                let py = pt.y + Math.sin(ang) * pt.radius;
+                if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath(); ctx.fill();
+            if (Math.random() < 0.5) {
+                let r = Math.random() * pt.radius;
+                let a = Math.random() * Math.PI * 2;
+                GAME.particles.push({x: pt.x + Math.cos(a)*r, y: pt.y + Math.sin(a)*r, type: 'sparkle', life: 0.3, size: 2});
+            }
+        } else if (pt.type === 'sparkle') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2); ctx.fill();
         }
     });
     
@@ -1249,6 +1529,11 @@ function triggerLevelUp(p) {
     let available = [];
     for(let k in EQUIP_DATA) {
         let eq = EQUIP_DATA[k];
+        if (k === 'bomb' && !SAVE_DATA.bombUnlocked) continue;
+        if (k === 'boomerang' && !SAVE_DATA.boomerangUnlocked) continue;
+        if (k === 'iceblust' && !SAVE_DATA.iceblustUnlocked) continue;
+        if (k === 'stonedust' && !SAVE_DATA.stonedustUnlocked) continue;
+        
         let has = p.equips.find(e => e.id === k);
         let currentLvl = has ? has.lvl : 0;
         if (currentLvl < eq.maxLvl) {
@@ -1317,14 +1602,19 @@ function triggerChest() {
     chestItems = [];
     let p = GAME.players[0]; // Simplification for chest to P1
     for(let i=0; i<numItems; i++) {
-        let dKeys = Object.keys(EQUIP_DATA);
-        let cid = dKeys[Math.floor(Math.random()*dKeys.length)];
+        let availableKeys = p.equips.filter(e => e.lvl < EQUIP_DATA[e.id].maxLvl).map(e => e.id);
+        
+        if (availableKeys.length === 0) {
+            // Already MAXed all equipped, fallback to random coin drop
+            GAME.coinsThisRun += 100;
+            chestItems.push({name: "コイン袋", desc: "100G獲得", icon: "item_coin_bag"});
+            continue;
+        }
+        
+        let cid = availableKeys[Math.floor(Math.random()*availableKeys.length)];
         let d = EQUIP_DATA[cid];
         let has = p.equips.find(e => e.id === cid);
         if (has && has.lvl < d.maxLvl) has.lvl++;
-        else if (!has && ((d.type==='atk' && p.equips.filter(e=>EQUIP_DATA[e.id].type==='atk').length < p.maxAtkSlots) || (d.type==='buf' && p.equips.filter(e=>EQUIP_DATA[e.id].type==='buf').length < p.maxBufSlots))) {
-            p.equips.push({id: cid, lvl: 1});
-        }
         chestItems.push(d);
     }
     

@@ -24,7 +24,8 @@
         #exp-bar-container { position: absolute; top: 5px; left: 5%; width: 90%; height: 10px; background: #333; border: 1px solid #fff; border-radius: 5px; overflow: hidden; }
         #exp-bar { width: 0%; height: 100%; background: #0088ff; }
         #timer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; color: #fff; text-shadow: 2px 2px 0 #000; }
-        #coin-disp { position: absolute; top: 20px; right: 5%; font-size: 20px; font-weight: bold; color: gold; text-shadow: 2px 2px 0 #000; }
+        #coin-disp { position: absolute; top: 25px; right: calc(5% + 40px); font-size: 20px; font-weight: bold; color: gold; text-shadow: 2px 2px 0 #000; }
+        #btn-pause { position: absolute; top: 25px; right: 5%; font-size: 24px; font-weight: bold; cursor: pointer; color: #fff; pointer-events: auto; text-shadow: 2px 2px 0 #000; }
         
         .equipment-area { position: absolute; top: 20px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
         #equip-1p { left: 5%; }
@@ -61,6 +62,7 @@
         <div id="exp-bar-container"><div id="exp-bar"></div></div>
         <div id="timer">00:00</div>
         <div id="coin-disp">0 G</div>
+        <div id="btn-pause">||</div>
         <div class="equipment-area" id="equip-1p">
             <div class="equip-row" id="eq-atk-1p"></div>
             <div class="equip-row" id="eq-buf-1p"></div>
@@ -87,10 +89,10 @@
     </div>
 
     <div id="screen-char" class="screen">
-        <h2 id="char-select-title" style="font-size:2rem; margin-bottom:20px;">キャラクター選択 (1P)</h2>
+        <h2 id="char-select-title" style="font-size:1.5rem; margin-bottom:20px;">キャラクターセレクト (1P)</h2>
         <div style="display:flex; flex-wrap:wrap; justify-content:center; max-width:800px;" id="char-list"></div>
         <div class="btn disabled" id="btn-char-decide">決定</div>
-        <div class="btn" id="btn-char-back" style="margin-top:20px; background:#444;">戻る</div>
+        <div class="btn" id="btn-char-back" style="margin-top:20px; background:#444;">タイトルへ</div>
     </div>
 
     <div id="screen-shop" class="screen">
@@ -114,8 +116,12 @@
     <div id="screen-result" class="screen">
         <h1 id="result-title" style="font-size:4rem; margin-bottom:20px;">GAME OVER</h1>
         <div style="font-size:24px; margin:10px;">生存時間: <span id="result-time"></span></div>
-        <div style="font-size:24px; margin:10px; color:gold;">獲得コイン: <span id="result-coins"></span></div>
+        <div style="font-size:24px; margin:10px; color:gold;">集めたコイン: <span id="result-coins"></span></div>
         <div class="btn" id="btn-result-back" style="margin-top:40px;">タイトルへ</div>
+    </div>
+
+    <div id="screen-pause" class="screen" style="background:rgba(0,0,0,0.7); cursor:pointer;">
+        <h1 style="font-size:4rem; margin:auto;">pause</h1>
     </div>
 </div>
 
