@@ -59,7 +59,7 @@ let SAVE_DATA = {
 
 const CHARACTERS = [
     { id: 'knight', name: 'ナイト', desc: '勇かんなナイト。操作は難しいが、バランスのとれた強さ。', hp: 100, atk: 10, def: 5, spd: 100, luck: 1, sprite: 'hero_knight_down_1', unlocked: true },
-    { id: 'wiz', name: 'ウィザード', desc: 'まほうつかいの女の子。素早く動ける。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false }
+    { id: 'wiz', name: 'ウィッチ', desc: 'まほうつかいの女の子。素早く動ける。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false }
 ];
 
 const EQUIP_DATA = {
@@ -102,32 +102,41 @@ const SPAWN_TABLE = [
         { type: 'knight', scale: 0.8, weight: 5, formProb: 0, singleCount: 2 }
     ] },
     { minTime: 540, maxTime: 600, interval: 0.8, enemies: [
-        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 }, 
-        { type: 'bat', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 10, singleCount: 4 },
-        { type: 'medusa', scale: 1.2, weight: 5, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
-        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
-        { type: 'gol', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 },
-        { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 }
+        { type: 'snakey', scale: 3.2, weight: 5, formProb: 0, singleCount: 1 }, 
+        { type: 'bat', scale: 1.2, weight: 8, formProb: 0.1, formType: 'group', formCount: 10, singleCount: 4 },
+        { type: 'ghost', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'medusa', scale: 1.2, weight: 10, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
+        { type: 'knight', scale: 1.2, weight: 15, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
+        { type: 'gol', scale: 0.8, weight: 10, formProb: 0, singleCount: 1 },
+        { type: 'shooter_lily', scale: 0.8, weight: 1, formProb: 0, singleCount: 1 }
     ] },
     { minTime: 600, maxTime: 840, interval: 0.8, enemies: [
-        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 }, 
-        { type: 'bat', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 10, singleCount: 4 },
-        { type: 'medusa', scale: 1.2, weight: 5, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
-        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
-        { type: 'gol', scale: 0.8, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'ghost', scale: 0.8, weight: 10, formProb: 0, singleCount: 1 },
+        { type: 'medusa', scale: 1.2, weight: 10, formProb: 0.1, formType: 'circle', formCount: 15, singleCount: 3 },
+        { type: 'knight', scale: 1.2, weight: 15, formProb: 0.1, formType: 'lines', formCount: 10, singleCount: 2 },
+        { type: 'gol', scale: 0.8, weight: 10, formProb: 0, singleCount: 2 },
         { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 }, 
-        { type: 'moving_statue', scale: 0.8, weight: 2, formProb: 0, singleCount: 1 }
+        { type: 'moving_statue', scale: 0.8, weight: 1, formProb: 0, singleCount: 1 }
     ] },
-    { minTime: 840, maxTime: 9999, interval: 0.5, enemies: [
-        { type: 'snakey', scale: 3.2, weight: 3, formProb: 0, singleCount: 1 },
-        { type: 'bat', scale: 3.2, weight: 2, formProb: 0, singleCount: 1 },
-        { type: 'medusa', scale: 3.2, weight: 2, formProb: 0, singleCount: 1 },
-        { type: 'knight', scale: 1.2, weight: 5, formProb: 0.1, formType: 'lines', formCount: 15, singleCount: 3 },
-        { type: 'gol', scale: 1.2, weight: 5, formProb: 0.1, formType: 'group', formCount: 8, singleCount: 2 },
-        { type: 'ghost', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
-        { type: 'shooter_lily', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
+    { minTime: 840, maxTime: 900, interval: 0.5, enemies: [
+        { type: 'bat', scale: 3.2, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'medusa', scale: 3.2, weight: 7, formProb: 0, singleCount: 1 },
+        { type: 'knight', scale: 1.2, weight: 7, formProb: 0.1, formType: 'lines', formCount: 15, singleCount: 3 },
+        { type: 'gol', scale: 1.2, weight: 7, formProb: 0.1, formType: 'group', formCount: 8, singleCount: 2 },
+        { type: 'ghost', scale: 1.2, weight: 5, formProb: 0, singleCount: 3 },
+        { type: 'shooter_lily', scale: 0.8, weight: 2, formProb: 0, singleCount: 2 },
         { type: 'wolf', scale: 0.8, weight: 3, formProb: 0, singleCount: 2 },
         { type: 'moving_statue', scale: 0.8, weight: 2, formProb: 0, singleCount: 1 } 
+    ] },
+    { minTime: 900, maxTime: 9999, interval: 0.5, enemies: [
+        { type: 'bat', scale: 3.2, weight: 4, formProb: 0, singleCount: 1 },
+        { type: 'medusa', scale: 3.2, weight: 5, formProb: 0, singleCount: 1 },
+        { type: 'knight', scale: 3.2, weight: 7, formProb: 0, singleCount: 1 },
+        { type: 'gol', scale: 3.2, weight: 7, formProb: 0, singleCount: 1 },
+        { type: 'ghost', scale: 3.2, weight: 5, formProb: 0.5, formType: 'lines', formCount: 10, singleCount: 1 },
+        { type: 'shooter_lily', scale: 1.2, weight: 2, formProb: 0, singleCount: 1 },
+        { type: 'wolf', scale: 0.8, weight: 4, formProb: 0, singleCount: 3 },
+        { type: 'moving_statue', scale: 1.2, weight: 1, formProb: 0, singleCount: 2 } 
     ] }
 ];
 
@@ -509,7 +518,7 @@ function buildShopUI() {
     addItem('ぼうぎょ力アップ', 'status_defup', SAVE_DATA.defLvl, 5, `(Lv.${SAVE_DATA.defLvl}/5) 初期防御力+1`, false, () => { SAVE_DATA.defLvl++; saveGameData(); });
     addItem('すばやさアップ', 'status_spdup', SAVE_DATA.spdLvl, 5, `(Lv.${SAVE_DATA.spdLvl}/5) 初期素早さ+10`, false, () => { SAVE_DATA.spdLvl++; saveGameData(); });
     
-    addItem('キャラ解放: ウィザード', 'hero_wiz_left_1', 'unlock', 1, `魔法使いの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
+    addItem('キャラ: ウィッチ', 'hero_wiz_left_1', 'unlock', 1, `魔法使いの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
     addItem('武器解放: ボム', 'item_bomb', 'unlock', 1, `ボムをドロップに追加。`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
     addItem('武器解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランをドロップに追加。`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
     addItem('武器解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストをドロップに追加。`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
