@@ -275,7 +275,7 @@ class Enemy {
         else if (type === 'knight') { this.hp = 180; this.spd = 15; this.atk = 35; this.def = 3; this.expDrop = 15; this.sprite = 'knight'; }
         else if (type === 'ghost') { this.hp = 25; this.spd = 110; this.atk = 30; this.expDrop = 5; this.sprite = 'ghost'; this.ignoreWalls = true; }
         else if (type === 'item_box') { this.hp = 1; this.spd = 0; this.atk = 0; this.expDrop = 0; this.sprite = 'itembox'; this.isItemBox = true; }
-        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 80; this.def = 5; this.expDrop = 20; this.sprite = 'shooter_lily'; }
+        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 40; this.def = 5; this.expDrop = 20; this.sprite = 'shooter_lily'; }
         else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 10; this.sprite = 'moving_statue'; this.isShooter = true; this.attackTimer = 7.0; }
         else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 20; this.sprite = 'snakey_left'; /* placeholder sprite */ this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
         else { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
@@ -764,6 +764,10 @@ function updateGame(dt) {
     
     GAME.items = GAME.items.filter(i => !i.dead);
     
+    if (GAME.flashTimer > 0) {
+        GAME.flashTimer -= dt;
+    }
+    
     // Spawning Logic
     GAME.spawnTimer -= dt;
     if (GAME.spawnTimer <= 0) {
@@ -800,7 +804,12 @@ function updateGame(dt) {
         }
         if (e.boomInvincibles) {
             for(let key in e.boomInvincibles) {
-                if (e.boomInvincibles[key] > 0) e.boomInvincibles[key] -= dt;
+                if(e.boomInvincibles[key]>0) e.boomInvincibles[key]-=dt;
+            }
+        }
+        if (e.axeInvincibles) {
+            for(let key in e.axeInvincibles) {
+                if(e.axeInvincibles[key]>0) e.axeInvincibles[key]-=dt;
             }
         }
         
@@ -951,6 +960,10 @@ function updateGame(dt) {
                     if (!e.boomInvincibles) e.boomInvincibles = {};
                     if (e.boomInvincibles[proj.projId] > 0) return;
                 }
+                if (proj.type === 'axe') {
+                    if (!e.axeInvincibles) e.axeInvincibles = {};
+                    if (e.axeInvincibles[proj.projId] > 0) return;
+                }
                 
                 let hitRange = proj.size + e.w/2;
                 if (proj.type === 'sword') hitRange += 30; // extend sword forward
@@ -969,6 +982,9 @@ function updateGame(dt) {
                     }
                     if (proj.type === 'boomerang') {
                         e.boomInvincibles[proj.projId] = 0.8;
+                    }
+                    if (proj.type === 'axe') {
+                        e.axeInvincibles[proj.projId] = 0.7;
                     }
                     if (!proj.pierce) proj.dead = true;
                 }
@@ -1028,7 +1044,7 @@ function fireWeapon(p, eq) {
     let sizeMul = mag ? (1 + mag.lvl * 0.1) : 1;
     
     if (eq.id === 'magic_bullet') {
-        p.weaponTimers[eq.id] = Math.max(0.5, 2.0 * cdReducer - 0.2);
+        p.weaponTimers[eq.id] = Math.max(0.5, 2.0 - eq.lvl * 0.1) * cdReducer;
         // Target nearest enemy
         let targetE = null, minDist = Infinity;
         GAME.enemies.forEach(e => {
@@ -1044,45 +1060,51 @@ function fireWeapon(p, eq) {
             ang += (i - (count-1)/2) * 0.2;
             GAME.projectiles.push({
                 x: p.x, y: p.y, vx: Math.cos(ang)*200, vy: Math.sin(ang)*200,
-                life: 2, size: 5 * sizeMul, dmg: p.atk + eq.lvl*2, pierce: false, type: 'bullet'
+                life: 2, size: 5 * sizeMul, dmg: p.atk + eq.lvl*2 + eq.lvl, pierce: false, type: 'bullet'
             });
         }
         if(audioSE) audioSE.playSE("shot");
     }
     else if (eq.id === 'sword') {
         p.weaponTimers[eq.id] = 1.5 * cdReducer;
-        let ang = (p.angle !== undefined) ? p.angle : Math.PI/2;
-        let range = 60 * sizeMul + eq.lvl * 5;
-        let arc = Math.PI/2 + (eq.lvl * 0.1);
-        GAME.enemies.forEach(e => {
-            if (e.dead) return;
-            let d = Math.hypot(e.x - p.x, e.y - p.y);
-            if (d < range + 30) {
-                let ea = Math.atan2(e.y - p.y, e.x - p.x);
-                let diff = Math.abs(ea - ang);
-                if (diff > Math.PI) diff = Math.PI*2 - diff;
-                if (diff <= arc/2) {
-                    let dmg = Math.max(1, p.atk + eq.lvl * 3 - (e.def || 0));
-                    e.hp -= dmg;
-                    addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
-                    if (e.hp <= 0) { e.dead = true; dropItem(e); }
-                }
-            }
-        });
-        if(audioSE) audioSE.playSE("shot"); // placeholder se
-        // Visual effect
-        GAME.particles.push({x: p.x, y: p.y, type:'slash', ang, range, arc, life:0.2});
+        let slashes = eq.lvl >= 10 ? 3 : eq.lvl >= 5 ? 2 : 1;
+        for(let i=0; i<slashes; i++) {
+            setTimeout(() => {
+                if (p.dead) return;
+                let ang = (p.angle !== undefined) ? p.angle : Math.PI/2;
+                let range = 60 * sizeMul + eq.lvl * 5;
+                let arc = Math.PI/2 + (eq.lvl * 0.1);
+                GAME.enemies.forEach(e => {
+                    if (e.dead) return;
+                    let d = Math.hypot(e.x - p.x, e.y - p.y);
+                    if (d < range + 30) {
+                        let ea = Math.atan2(e.y - p.y, e.x - p.x);
+                        let diff = Math.abs(ea - ang);
+                        if (diff > Math.PI) diff = Math.PI*2 - diff;
+                        if (diff <= arc/2) {
+                            let dmg = Math.ceil(Math.max(1, p.atk + eq.lvl * 7 + eq.lvl - (e.def || 0)));
+                            e.hp -= dmg;
+                            addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
+                            if (e.hp <= 0) { e.dead = true; dropItem(e); }
+                        }
+                    }
+                });
+                if(audioSE) audioSE.playSE("shot"); // placeholder se
+                // Visual effect
+                GAME.particles.push({x: p.x, y: p.y, type:'slash', ang, range, arc, life:0.2});
+            }, i * 200);
+        }
     }
     else if (eq.id === 'fireball') {
-        p.weaponTimers[eq.id] = 4.5 * cdReducer;
+        p.weaponTimers[eq.id] = 5.5 * cdReducer;
         let fbCounts = [1,1,2,2,3,3,4,4,5,5];
         let count = fbCounts[Math.min(eq.lvl-1, 9)] || 5;
         let speed = 1.5 + eq.lvl * 0.15;
         for(let i=0; i<count; i++) {
             GAME.projectiles.push({
-                owner: p, rotAngle: (i/count) * Math.PI*2, orbitDist: 72 + sizeMul*30,
+                owner: p, rotAngle: (i/count) * Math.PI*2, orbitDist: 56 + sizeMul*30,
                 x: p.x, y: p.y, vx: 0, vy: 0,
-                life: 3, size: 11.25 * sizeMul, dmg: (p.atk + eq.lvl)/2, pierce: true, type: 'fireball', projId: Math.random()
+                life: 3, size: 11.25 * sizeMul, dmg: ((p.atk*2) + eq.lvl)/2, pierce: true, type: 'fireball', projId: Math.random()
             });
         }
     }
@@ -1105,19 +1127,21 @@ function fireWeapon(p, eq) {
         }
     }
     else if (eq.id === 'axe') {
-        p.weaponTimers[eq.id] = Math.max(1.5, 3.5 - eq.lvl * 0.2) * cdReducer;
+        p.weaponTimers[eq.id] = Math.max(1.5, 3.5 - eq.lvl * 0.1) * cdReducer;
         let axCounts = [1,1,2,2,3,4,4,5,5,6];
         let count = axCounts[Math.min(eq.lvl-1, 9)] || 6;
         let baseAng = (p.angle !== undefined) ? p.angle : Math.PI/2;
         for(let i=0; i<count; i++) {
             if (!p.axeQueue) p.axeQueue = [];
             let ang = baseAng + (i%2===0?1:-1) * Math.ceil(i/2) * (Math.PI/6);
-            p.axeQueue.push({ delay: i * 0.2, ang: ang, dmg: p.atk + eq.lvl * 4 });
+            p.axeQueue.push({ delay: i * 0.2, ang: ang, dmg: p.atk + eq.lvl * 4, projId: Math.random() });
         }
     }
     else if (eq.id === 'thunderbolt') {
         p.weaponTimers[eq.id] = Math.max(2.0, 5.0 - eq.lvl*0.2) * cdReducer;
-        let count = 1 + Math.floor((eq.lvl-1)/3);
+        let count = 1;
+        if (eq.lvl >= 4) count = 2;
+        if (eq.lvl >= 8) count = 3;
         let targets = [...GAME.enemies].sort(()=>0.5-Math.random()).slice(0, count);
         targets.forEach(t => {
             let area = 50 * sizeMul;
@@ -1125,8 +1149,9 @@ function fireWeapon(p, eq) {
             GAME.enemies.forEach(e => {
                 if(e.dead) return;
                 if (Math.hypot(e.x - t.x, e.y - t.y) < area) {
-                    e.hp -= (p.atk * 1.5 + eq.lvl * 5);
-                    addDamageText(e.x, e.y - 20, `${p.atk * 1.5 + eq.lvl * 5}`, '#ffffff');
+                    let dmg = Math.ceil((p.atk * 1.5) + (eq.lvl * 4));
+                    e.hp -= dmg;
+                    addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
                     if (e.hp <= 0) { e.dead = true; dropItem(e); }
                 }
             });
@@ -1177,12 +1202,15 @@ function fireWeapon(p, eq) {
     }
     else if (eq.id === 'stonedust') {
         p.weaponTimers[eq.id] = Math.max(0.15, 0.3 - (eq.lvl - 1) * 0.02) * cdReducer;
-        let baseAng = (p.angle !== undefined) ? p.angle : Math.PI/2;
-        let ang = baseAng + (Math.random() - 0.5) * (25 * Math.PI / 180);
-        GAME.projectiles.push({
-            x: p.x, y: p.y, vx: Math.cos(ang) * 400, vy: Math.sin(ang) * 400,
-            life: 1.5, size: 4 * sizeMul, dmg: 2 + eq.lvl * 0.5, pierce: false, type: 'stonedust'
-        });
+        let count = 1 + Math.floor((eq.lvl - 1) / 2);
+        for(let i=0; i<count; i++) {
+            let baseAng = (p.angle !== undefined) ? p.angle : Math.PI/2;
+            let ang = baseAng + (Math.random() - 0.5) * (25 * Math.PI / 180);
+            GAME.projectiles.push({
+                x: p.x, y: p.y, vx: Math.cos(ang) * 400, vy: Math.sin(ang) * 400,
+                life: 1.5, size: 4 * sizeMul, dmg: 2 + eq.lvl * 0.3, pierce: false, type: 'stonedust'
+            });
+        }
     }
 }
 
@@ -1237,6 +1265,7 @@ function collectItem(p, itm) {
     } else if (itm.type === 'chest') {
         triggerChest();
     } else if (itm.type === 'cross') {
+        GAME.flashTimer = 1.0;
         GAME.enemies.forEach(e => { if(!e.isBoss) { e.dead = true; dropItem(e); } });
     }
 }
@@ -1523,6 +1552,11 @@ function drawGame() {
     });
     
     ctx.restore();
+    
+    if (GAME.flashTimer > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${GAME.flashTimer})`;
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    }
 }
 
 function triggerLevelUp(p) {
