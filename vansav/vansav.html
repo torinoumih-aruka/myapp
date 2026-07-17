@@ -102,11 +102,13 @@
     </div>
 
     <div id="screen-levelup" class="screen">
-        <h2 id="levelup-title" style="font-size:2.5rem; margin-bottom:10px;">レベルアップ！ (1P)</h2>
-        <div id="levelup-choices" style="display:flex; flex-direction:column; align-items:center;"></div>
-        <div id="reroll-container" style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-            <div class="btn" id="btn-reroll" style="margin:0; width:auto; padding:5px 15px; font-size:1rem;">リロール</div>
-            <div style="font-size:16px;">残り: <span id="reroll-count"></span>回</div>
+        <h2 id="levelup-title" style="font-size:1.5rem; margin-bottom:5px;">レベルアップ！ (1P)</h2>
+        <div style="display:flex; width:100%; max-width:600px; padding:0 20px; align-items:flex-start;">
+            <div id="reroll-container" style="display:flex; flex-direction:column; align-items:center; width:80px; margin-right:10px; margin-top:10px; flex-shrink:0;">
+                <div class="btn" id="btn-reroll" style="margin:0; width:100%; padding:5px; font-size:14px;">リロール</div>
+                <div style="font-size:12px; margin-top:5px;">残り: <span id="reroll-count"></span>回</div>
+            </div>
+            <div id="levelup-choices" style="display:flex; flex-direction:column; align-items:stretch; flex-grow:1; width:100%;"></div>
         </div>
     </div>
 

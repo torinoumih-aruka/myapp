@@ -70,24 +70,24 @@ const CHARACTERS = [
 
 const EQUIP_DATA = {
     // Attack
-    magic_bullet: { type: 'atk', name: 'マジックショット', icon: 'item_magic_bullet', maxLvl: 10, desc: '一番近い敵に向かって飛んでいくこうげきを放つ。', enhance: '発射弾数+1 / 威力増加' },
-    sword: { type: 'atk', name: 'ソード', icon: 'item_sword', maxLvl: 10, desc: '前方に剣をふってこうげき。はんい内の敵にダメージをあたえる。', enhance: '攻撃範囲拡大 / 威力増加' },
-    fireball: { type: 'atk', name: 'ファイヤーボール', icon: 'item_fireball', maxLvl: 10, desc: '自分の周りに、回転する火の玉を展開する。', enhance: '炎の数+1 / 威力増加' },
+    magic_bullet: { type: 'atk', name: 'マジックショット', icon: 'item_magic_bullet', maxLvl: 10, desc: '一番近い敵に向かって飛んでいくこうげきを放つ。', enhance: '発射ショット数+1 / ダメージ量増加' },
+    sword: { type: 'atk', name: 'ソード', icon: 'item_sword', maxLvl: 10, desc: '前方に剣をふってこうげき。はんい内の敵にダメージをあたえる。', enhance: 'こうげきはんい拡大 / ダメージ量増加' },
+    fireball: { type: 'atk', name: 'ファイヤーボール', icon: 'item_fireball', maxLvl: 10, desc: '自分の周りに、回転する火の玉を展開する。', enhance: '火の玉の数+1 / ダメージ量増加' },
     thunderbolt: { type: 'atk', name: 'サンダーボルト', icon: 'item_thunderbolt', maxLvl: 10, desc: 'ランダムに、敵にいかずちを落とす。周囲にもダメージ。', enhance: '雷の数+1 / クールタイム-0.2秒' },
-    poison_mist: { type: 'atk', name: 'ポイズンミスト', icon: 'item_poison_mist', maxLvl: 10, desc: '毒のキリを発生させる。敵の移動速度を遅くさせつつダメージもあたえる。', enhance: '霧の数+1 / 威力増加' },
+    poison_mist: { type: 'atk', name: 'ポイズンミスト', icon: 'item_poison_mist', maxLvl: 10, desc: '毒のキリを発生させる。敵の移動速度を遅くさせつつダメージもあたえる。', enhance: '霧の数+1 / ダメージ量増加' },
     bomb: { type: 'atk', name: 'ボム', icon: 'item_bomb', maxLvl: 10, desc: '目の前にボムを設置。ばくふうのはんい内の敵にダメージをあたえる。', enhance: '設置個数+1 / 爆発時間-0.1秒' },
     axe: { type: 'atk', name: 'アックス', icon: 'item_axe', maxLvl: 10, desc: 'オノをなげて投げてこうげき。当たった敵全てにダメージをあたえる。', enhance: '発射数+1 / クールタイム減少' },
-    boomerang: { type: 'atk', name: 'ブーメラン', icon: 'item_boomerang', maxLvl: 10, desc: '投げると返ってくるこうげきを放つ。', enhance: '発射数追加 / 威力増加' },
-    iceblust: { type: 'atk', name: 'アイスブラスト', icon: 'item_iceblust', maxLvl: 10, desc: '周囲に氷のエリアを展開し、敵をこおらせる。ダメージはぼほない。', enhance: '展開時間延長 / 範囲拡大' },
-    stonedust: { type: 'atk', name: 'ストーンダスト', icon: 'item_stonedust', maxLvl: 10, desc: 'たくさんの小石を放ち続けて、小さなダメージをあたえ続ける。', enhance: 'クールタイム短縮 / 威力微増' },
+    boomerang: { type: 'atk', name: 'ブーメラン', icon: 'item_boomerang', maxLvl: 10, desc: '投げると返ってくるこうげきを放つ。', enhance: '発射数追加 / ダメージ量増加' },
+    iceblust: { type: 'atk', name: 'アイスブラスト', icon: 'item_iceblust', maxLvl: 10, desc: '周囲に氷のエリアを展開し、敵をこおらせる。ダメージはぼほない。', enhance: '展開時間延長 / はんい拡大' },
+    stonedust: { type: 'atk', name: 'ストーンダスト', icon: 'item_stonedust', maxLvl: 10, desc: 'たくさんの小石を放ち続けて、小さなダメージをあたえ続ける。', enhance: 'クールタイム短縮 / ダメージ量微増' },
     // Buff
     scroll: { type: 'buf', name: '巻物', icon: 'item_scroll', maxLvl: 5, desc: 'こうげきのクールタイムを短くする。', enhance: 'クールタイム追加短縮' },
-    magnet: { type: 'buf', name: '磁石', icon: 'item_magnet', maxLvl: 5, desc: '落ちているアイテムを吸い寄せる。', enhance: '引き寄せ範囲拡大' },
+    magnet: { type: 'buf', name: '磁石', icon: 'item_magnet', maxLvl: 5, desc: '落ちているアイテムを吸い寄せる。', enhance: '引き寄せはんい拡大' },
     magnifier: { type: 'buf', name: '拡大鏡', icon: 'item_magnifier', maxLvl: 5, desc: 'こうげきのはんいを拡げる。', enhance: 'サイズさらに拡大' },
     shield: { type: 'buf', name: 'シールド', icon: 'item_shield', maxLvl: 5, desc: '敵からうけるダメージを低減させる。', enhance: '防御力+2' },
     boots: { type: 'buf', name: 'ブーツ', icon: 'item_boots', maxLvl: 5, desc: 'このゲーム中に限り、すばやさが一時的に上がる。', enhance: 'すばやささらに上昇' },
     regeneration: { type: 'buf', name: 'リジェネレーション', icon: 'item_regene', maxLvl: 5, desc: 'レベルアップ時に、最大HPの割合に応じて回復する。', enhance: '回復量+3%' },
-    magic_barrier: { type: 'buf', name: 'マジックバリア', icon: 'item_barrier', maxLvl: 5, desc: '敵が放つ遠距離攻撃を1度だけ無効化するバリアを張る。', enhance: 'クールタイム短縮' }
+    magic_barrier: { type: 'buf', name: 'マジックバリア', icon: 'item_barrier', maxLvl: 5, desc: '敵が放つショットを1発だけ無力化するバリアを張る。時間が経つとバリアは復活する', enhance: 'クールタイム短縮' }
 };
 
 const SPAWN_TABLE = [
@@ -555,34 +555,36 @@ function buildShopUI() {
         list.appendChild(div);
     };
     
-    addItem('HPアップ', 'heart_normal', SAVE_DATA.hpLvl, 5, `(Lv.${SAVE_DATA.hpLvl}/5) 初期HP+10`, false, () => { SAVE_DATA.hpLvl++; saveGameData(); });
-    addItem('うんのよさアップ', 'status_lukup', SAVE_DATA.luckLvl, 5, `(Lv.${SAVE_DATA.luckLvl}/5) 初期運+1`, false, () => { SAVE_DATA.luckLvl++; saveGameData(); });
-    addItem('こうげき力アップ', 'status_atkup', SAVE_DATA.atkLvl, 5, `(Lv.${SAVE_DATA.atkLvl}/5) 初期攻撃力+2`, false, () => { SAVE_DATA.atkLvl++; saveGameData(); });
-    addItem('ぼうぎょ力アップ', 'status_defup', SAVE_DATA.defLvl, 5, `(Lv.${SAVE_DATA.defLvl}/5) 初期防御力+1`, false, () => { SAVE_DATA.defLvl++; saveGameData(); });
-    addItem('すばやさアップ', 'status_spdup', SAVE_DATA.spdLvl, 5, `(Lv.${SAVE_DATA.spdLvl}/5) 初期素早さ+10`, false, () => { SAVE_DATA.spdLvl++; saveGameData(); });
+    addItem('HPアップ', 'heart_normal', SAVE_DATA.hpLvl, 5, `(Lv.${SAVE_DATA.hpLvl}/5) HP+10`, false, () => { SAVE_DATA.hpLvl++; saveGameData(); });
+    addItem('うんのよさアップ', 'status_lukup', SAVE_DATA.luckLvl, 5, `(Lv.${SAVE_DATA.luckLvl}/5) うんのよさ+1`, false, () => { SAVE_DATA.luckLvl++; saveGameData(); });
+    addItem('こうげきアップ', 'status_atkup', SAVE_DATA.atkLvl, 5, `(Lv.${SAVE_DATA.atkLvl}/5) こうげき+2`, false, () => { SAVE_DATA.atkLvl++; saveGameData(); });
+    addItem('ぼうぎょアップ', 'status_defup', SAVE_DATA.defLvl, 5, `(Lv.${SAVE_DATA.defLvl}/5) ぼうぎょ+1`, false, () => { SAVE_DATA.defLvl++; saveGameData(); });
+    addItem('すばやさアップ', 'status_spdup', SAVE_DATA.spdLvl, 5, `(Lv.${SAVE_DATA.spdLvl}/5) すばやさ+10`, false, () => { SAVE_DATA.spdLvl++; saveGameData(); });
     addItem('回復量アップ', 'status_healplus', SAVE_DATA.healPlusLvl, 5, `(Lv.${SAVE_DATA.healPlusLvl}/5) 回復量+3%`, false, () => { SAVE_DATA.healPlusLvl++; saveGameData(); }, null, [100, 400, 1000, 2500, 5000]);
-    addItem('エクストラロール', 'status_exroll', SAVE_DATA.exrollLvl, 5, `(Lv.${SAVE_DATA.exrollLvl}/5) 選択肢3つになる確率+10%`, false, () => { SAVE_DATA.exrollLvl++; saveGameData(); }, null, [500, 1500, 2500, 3500, 4500]);
-    addItem('リロール', 'status_reroll', SAVE_DATA.rerollLvl, 3, `(Lv.${SAVE_DATA.rerollLvl}/3) 再抽選回数+1`, false, () => { SAVE_DATA.rerollLvl++; saveGameData(); }, null, [3000, 6000, 9000]);
+    addItem('エクストラロール', 'status_exroll', SAVE_DATA.exrollLvl, 5, `(Lv.${SAVE_DATA.exrollLvl}/5) レベルアップ時、アップグレード候補が3つになる確率+10%`, false, () => { SAVE_DATA.exrollLvl++; saveGameData(); }, null, [500, 1500, 2500, 3500, 4500]);
+    addItem('リロール', 'status_reroll', SAVE_DATA.rerollLvl, 3, `(Lv.${SAVE_DATA.rerollLvl}/3) リロール回数+1`, false, () => { SAVE_DATA.rerollLvl++; saveGameData(); }, null, [3000, 6000, 9000]);
     
-    addItem('蘇生のルーン', 'status_lune', 'unlock', 1, `HP0時に1度だけ復活。`, SAVE_DATA.reviveLuneUnlocked, () => { SAVE_DATA.reviveLuneUnlocked = true; saveGameData(); }, 5000);
-    addItem('キャラ: ウィッチ', 'hero_wiz_left_1', 'unlock', 1, `魔法使いの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
-    addItem('装備解放: ボム', 'item_bomb', 'unlock', 1, `ボムを候補に追加。`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
-    addItem('装備解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランを候補に追加。`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
-    addItem('装備解放: リジェネレーション', 'item_regene', 'unlock', 1, `リジェネレーションを候補に追加。`, SAVE_DATA.regeneUnlocked, () => { SAVE_DATA.regeneUnlocked = true; saveGameData(); }, 600);
-    addItem('装備解放: マジックバリア', 'item_barrier', 'unlock', 1, `マジックバリアを候補に追加。`, SAVE_DATA.barrierUnlocked, () => { SAVE_DATA.barrierUnlocked = true; saveGameData(); }, 600);
-    addItem('装備解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストを候補に追加。`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
-    addItem('装備解放: ストーンダスト', 'item_stonedust', 'unlock', 1, `ストーンダストを候補に追加。`, SAVE_DATA.stonedustUnlocked, () => { SAVE_DATA.stonedustUnlocked = true; saveGameData(); }, 1500);
+    addItem('そせいのルーン', 'status_lune', 'unlock', 1, `HP0時に1度だけ復活。`, SAVE_DATA.reviveLuneUnlocked, () => { SAVE_DATA.reviveLuneUnlocked = true; saveGameData(); }, 5000);
+    addItem('キャラ: ウィッチ', 'hero_wiz_left_1', 'unlock', 1, `まほうつかいの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
+    addItem('装備解放: ボム', 'item_bomb', 'unlock', 1, `ボムが登場するようになる`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
+    addItem('装備解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランが登場するようになる`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
+    addItem('装備解放: リジェネレーション', 'item_regene', 'unlock', 1, `リジェネレーションが登場するようになる`, SAVE_DATA.regeneUnlocked, () => { SAVE_DATA.regeneUnlocked = true; saveGameData(); }, 600);
+    addItem('装備解放: マジックバリア', 'item_barrier', 'unlock', 1, `マジックバリアが登場するようになる`, SAVE_DATA.barrierUnlocked, () => { SAVE_DATA.barrierUnlocked = true; saveGameData(); }, 600);
+    addItem('装備解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストが登場するようになる`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
+    addItem('装備解放: ストーンダスト', 'item_stonedust', 'unlock', 1, `ストーンダストを登場するようになる`, SAVE_DATA.stonedustUnlocked, () => { SAVE_DATA.stonedustUnlocked = true; saveGameData(); }, 1500);
     
     let btnResetUnlock = document.createElement('div'); btnResetUnlock.className = 'btn'; btnResetUnlock.innerText = 'データリセット';
     btnResetUnlock.style.marginTop = '20px';
     btnResetUnlock.onclick = () => { 
-        SAVE_DATA = { 
-            coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
-            wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
-            regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
-        }; 
-        CHARACTERS.find(c => c.id === 'wiz').unlocked = false; 
-        saveGameData(); buildShopUI(); 
+        if (confirm('本当にリセットしても良いですか？y/n')) {
+            SAVE_DATA = { 
+                coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
+                wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
+                regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
+            }; 
+            CHARACTERS.find(c => c.id === 'wiz').unlocked = false; 
+            saveGameData(); buildShopUI(); 
+        }
     };
     list.appendChild(btnResetUnlock);
 }
@@ -760,6 +762,19 @@ function updateGame(dt) {
         
         if (p.invincibleTimer > 0) p.invincibleTimer -= dt;
         
+        let bEquip = p.equips.find(e => e.id === 'magic_barrier');
+        if (bEquip) {
+            if (p.barrierRot1 === undefined) { p.barrierRot1 = 0; p.barrierRot2 = 0; }
+            if (!p.hasBarrier && p.barrierTimer <= 0) p.hasBarrier = true;
+            if (p.barrierTimer > 0) {
+                p.barrierTimer -= dt;
+                if (p.barrierTimer <= 0) p.hasBarrier = true;
+            }
+            p.barrierRot1 += dt * 2;
+            p.barrierRot2 -= dt * 2;
+        } else {
+            p.hasBarrier = false;
+        }
         // Handle Weapons
         p.equips.forEach(eq => {
             if (EQUIP_DATA[eq.id].type === 'atk') {
@@ -1359,8 +1374,9 @@ function dropItem(e) {
     }
     if (e.isItemBox) {
         let r = Math.random() * 100;
-        if (r < 80) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
-        else if (r < 90) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
+        if (r < 75) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
+        else if (r < 85) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
+        else if (r < 95) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
         else GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
         return;
     }
@@ -1372,7 +1388,7 @@ function dropItem(e) {
     let rand = Math.random() * 100;
     if (rand < prob) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
     else if (rand < prob * 2) GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
-    else if (rand < prob * 3) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
+    else if (rand < prob * 4) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
     else if (rand < prob * 10) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
     else GAME.items.push(new Drop(e.x, e.y, 'exp', e.expDrop));
 }
@@ -1833,6 +1849,8 @@ function triggerLevelUp(p, isReroll = false) {
         let nextLvl = has ? has.lvl + 1 : 1;
         let div = document.createElement('div');
         div.className = 'popup-item';
+        div.style.width = 'auto';
+        div.style.flex = '1';
         if (choices.length === 3) div.style.margin = '5px'; // Adjust for 3 choices
         div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${d.name}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${d.enhance}</span></div>`;
         if (PRE_RENDERED[d.icon]) {
