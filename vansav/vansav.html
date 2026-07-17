@@ -102,8 +102,12 @@
     </div>
 
     <div id="screen-levelup" class="screen">
-        <h2 id="levelup-title" style="font-size:3rem; margin-bottom:30px;">レベルアップ！ (1P)</h2>
+        <h2 id="levelup-title" style="font-size:2.5rem; margin-bottom:10px;">レベルアップ！ (1P)</h2>
         <div id="levelup-choices" style="display:flex; flex-direction:column; align-items:center;"></div>
+        <div id="reroll-container" style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+            <div class="btn" id="btn-reroll" style="margin:0; width:auto; padding:5px 15px; font-size:1rem;">リロール</div>
+            <div style="font-size:16px;">残り: <span id="reroll-count"></span>回</div>
+        </div>
     </div>
 
     <div id="screen-chest" class="screen" style="background:rgba(0,0,0,0.9);">
@@ -114,10 +118,14 @@
     </div>
     
     <div id="screen-result" class="screen">
-        <h1 id="result-title" style="font-size:4rem; margin-bottom:20px;">GAME OVER</h1>
-        <div style="font-size:24px; margin:10px;">生存時間: <span id="result-time"></span></div>
-        <div style="font-size:24px; margin:10px; color:gold;">集めたコイン: <span id="result-coins"></span></div>
-        <div class="btn" id="btn-result-back" style="margin-top:40px;">タイトルへ</div>
+        <h1 id="result-title" style="font-size:3rem; margin-bottom:10px;">GAME OVER</h1>
+        <div style="font-size:20px; margin:5px;">生存時間: <span id="result-time"></span></div>
+        <div style="font-size:20px; margin:5px; color:gold;">集めたコイン: <span id="result-coins"></span></div>
+        <div style="font-size:20px; margin:5px;">あたえたダメージ: <span id="result-dmg-dealt"></span></div>
+        <div style="font-size:20px; margin:5px;">受けたダメージ: <span id="result-dmg-taken"></span></div>
+        <div style="font-size:20px; margin:5px;">たおした敵の数: <span id="result-kills"></span></div>
+        <div id="result-equips" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; justify-content:center; max-width:80%;"></div>
+        <div class="btn" id="btn-result-back" style="margin-top:20px;">タイトルへ</div>
     </div>
 
     <div id="screen-pause" class="screen" style="background:rgba(0,0,0,0.7); cursor:pointer;">

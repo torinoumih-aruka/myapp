@@ -54,7 +54,13 @@ let SAVE_DATA = {
     bombUnlocked: false,
     boomerangUnlocked: false,
     iceblustUnlocked: false,
-    stonedustUnlocked: false
+    stonedustUnlocked: false,
+    regeneUnlocked: false,
+    barrierUnlocked: false,
+    healPlusLvl: 0,
+    reviveLuneUnlocked: false,
+    rerollLvl: 0,
+    exrollLvl: 0
 };
 
 const CHARACTERS = [
@@ -79,7 +85,9 @@ const EQUIP_DATA = {
     magnet: { type: 'buf', name: '磁石', icon: 'item_magnet', maxLvl: 5, desc: '落ちているアイテムを吸い寄せる。', enhance: '引き寄せ範囲拡大' },
     magnifier: { type: 'buf', name: '拡大鏡', icon: 'item_magnifier', maxLvl: 5, desc: 'こうげきのはんいを拡げる。', enhance: 'サイズさらに拡大' },
     shield: { type: 'buf', name: 'シールド', icon: 'item_shield', maxLvl: 5, desc: '敵からうけるダメージを低減させる。', enhance: '防御力+2' },
-    boots: { type: 'buf', name: 'ブーツ', icon: 'item_boots', maxLvl: 5, desc: 'このゲーム中に限り、すばやさが一時的に上がる。', enhance: 'すばやささらに上昇' }
+    boots: { type: 'buf', name: 'ブーツ', icon: 'item_boots', maxLvl: 5, desc: 'このゲーム中に限り、すばやさが一時的に上がる。', enhance: 'すばやささらに上昇' },
+    regeneration: { type: 'buf', name: 'リジェネレーション', icon: 'item_regene', maxLvl: 5, desc: 'レベルアップ時に、最大HPの割合に応じて回復する。', enhance: '回復量+3%' },
+    magic_barrier: { type: 'buf', name: 'マジックバリア', icon: 'item_barrier', maxLvl: 5, desc: '敵が放つ遠距離攻撃を1度だけ無効化するバリアを張る。', enhance: 'クールタイム短縮' }
 };
 
 const SPAWN_TABLE = [
@@ -143,7 +151,8 @@ const SPAWN_TABLE = [
 const REQUIRED_SPRITES = [
     'item_magic_bullet', 'item_sword', 'item_fireball', 'item_thunderbolt', 'item_poison_mist',
     'item_scroll', 'item_magnet', 'item_magnifier', 'item_bomb', 'item_axe', 'item_shield',
-    'exp', 'exp_m', 'exp_l', 'exp_xl', 'item_boots', 'item_cross', 'item_coin_bag'
+    'exp', 'exp_m', 'exp_l', 'exp_xl', 'item_boots', 'item_cross', 'item_coin_bag',
+    'item_regene', 'item_barrier', 'attract_ball', 'status_healplus', 'status_lune', 'status_reroll', 'status_exroll'
 ];
 
 // --- Initialization & Asset Loading ---
@@ -198,7 +207,11 @@ function loadSaveData() {
     if (data) {
         try {
             let parsed = JSON.parse(data);
-            SAVE_DATA = Object.assign({ coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false }, parsed);
+            SAVE_DATA = Object.assign({ 
+                coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
+                wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
+                regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
+            }, parsed);
             if (SAVE_DATA.wizUnlocked) {
                 let wiz = CHARACTERS.find(c => c.id === 'wiz');
                 if (wiz) wiz.unlocked = true;
@@ -236,6 +249,18 @@ class Player {
         
         this.invincibleTimer = 0;
         this.dead = false;
+        
+        this.totalDmgDealt = 0;
+        this.totalDmgTaken = 0;
+        this.totalKills = 0;
+        
+        this.barrierTimer = 0;
+        this.hasBarrier = false;
+        this.barrierRot1 = 0;
+        this.barrierRot2 = 0;
+        
+        this.rerollCount = SAVE_DATA.rerollLvl || 0;
+        this.revived = false;
         
         // Internal weapon timers
         this.weaponTimers = {};
@@ -275,9 +300,9 @@ class Enemy {
         else if (type === 'knight') { this.hp = 180; this.spd = 15; this.atk = 35; this.def = 3; this.expDrop = 15; this.sprite = 'knight'; }
         else if (type === 'ghost') { this.hp = 25; this.spd = 110; this.atk = 30; this.expDrop = 5; this.sprite = 'ghost'; this.ignoreWalls = true; }
         else if (type === 'item_box') { this.hp = 1; this.spd = 0; this.atk = 0; this.expDrop = 0; this.sprite = 'itembox'; this.isItemBox = true; }
-        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 40; this.def = 5; this.expDrop = 20; this.sprite = 'shooter_lily'; }
-        else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 10; this.sprite = 'moving_statue'; this.isShooter = true; this.attackTimer = 7.0; }
-        else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 20; this.sprite = 'snakey_left'; /* placeholder sprite */ this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
+        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 40; this.def = 5; this.expDrop = 20; this.sprite = 'moving_statue'; }
+        else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 10; this.sprite = 'shooter_lily'; this.isShooter = true; this.attackTimer = 7.0; }
+        else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 20; this.sprite = 'wolf'; this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
         else { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
         
         // Size variations are now passed via constructor
@@ -447,6 +472,27 @@ function setMode(mode) {
         document.getElementById('screen-result').style.display = 'flex';
         document.getElementById('result-time').innerText = Math.floor(GAME.time/60) + "分 " + Math.floor(GAME.time%60) + "秒";
         document.getElementById('result-coins').innerText = GAME.coinsThisRun;
+        document.getElementById('result-dmg-dealt').innerText = GAME.players[0].totalDmgDealt;
+        document.getElementById('result-dmg-taken').innerText = GAME.players[0].totalDmgTaken;
+        document.getElementById('result-kills').innerText = GAME.players[0].totalKills;
+        
+        let equipBox = document.getElementById('result-equips');
+        if (equipBox) {
+            equipBox.innerHTML = '';
+            GAME.players[0].equips.forEach(eq => {
+                let div = document.createElement('div');
+                let d = EQUIP_DATA[eq.id];
+                div.style.textAlign = 'center';
+                div.innerHTML = `<canvas width="32" height="32" style="border:1px solid #fff;"></canvas><br><span style="font-size:12px;">Lv.${eq.lvl}</span>`;
+                if (PRE_RENDERED[d.icon]) {
+                    let ctx = div.querySelector('canvas').getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(PRE_RENDERED[d.icon], 0, 0, 32, 32);
+                }
+                equipBox.appendChild(div);
+            });
+        }
+        
         SAVE_DATA.coins += GAME.coinsThisRun;
         saveGameData();
     }
@@ -489,15 +535,12 @@ function buildShopUI() {
     list.innerHTML = '';
     const prices = [100, 500, 1000, 2000, 4000];
     
-    const addItem = (title, icon, lvl, maxLvl, desc, condition, action, fixedCost = null) => {
+    const addItem = (title, icon, lvl, maxLvl, desc, condition, action, fixedCost = null, customPrices = null) => {
         let div = document.createElement('div'); div.className = 'popup-item';
         let cost;
-        if (fixedCost !== null) cost = fixedCost;
+        if (fixedCost !== null && lvl === 'unlock') cost = condition ? '解放済' : fixedCost;
+        else if (customPrices) cost = lvl < maxLvl ? customPrices[lvl] : 'MAX';
         else cost = lvl < maxLvl ? prices[lvl] : (lvl==='unlock'? (condition? '解放済':1000) : 'MAX');
-        
-        if (lvl === 'unlock' && fixedCost !== null) {
-            cost = condition ? '解放済' : fixedCost;
-        }
         
         div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${title}</b><br>${desc}<br>価格: ${cost}</div>`;
         if (PRE_RENDERED[icon]) {
@@ -517,17 +560,27 @@ function buildShopUI() {
     addItem('こうげき力アップ', 'status_atkup', SAVE_DATA.atkLvl, 5, `(Lv.${SAVE_DATA.atkLvl}/5) 初期攻撃力+2`, false, () => { SAVE_DATA.atkLvl++; saveGameData(); });
     addItem('ぼうぎょ力アップ', 'status_defup', SAVE_DATA.defLvl, 5, `(Lv.${SAVE_DATA.defLvl}/5) 初期防御力+1`, false, () => { SAVE_DATA.defLvl++; saveGameData(); });
     addItem('すばやさアップ', 'status_spdup', SAVE_DATA.spdLvl, 5, `(Lv.${SAVE_DATA.spdLvl}/5) 初期素早さ+10`, false, () => { SAVE_DATA.spdLvl++; saveGameData(); });
+    addItem('回復量アップ', 'status_healplus', SAVE_DATA.healPlusLvl, 5, `(Lv.${SAVE_DATA.healPlusLvl}/5) 回復量+3%`, false, () => { SAVE_DATA.healPlusLvl++; saveGameData(); }, null, [100, 400, 1000, 2500, 5000]);
+    addItem('エクストラロール', 'status_exroll', SAVE_DATA.exrollLvl, 5, `(Lv.${SAVE_DATA.exrollLvl}/5) 選択肢3つになる確率+10%`, false, () => { SAVE_DATA.exrollLvl++; saveGameData(); }, null, [500, 1500, 2500, 3500, 4500]);
+    addItem('リロール', 'status_reroll', SAVE_DATA.rerollLvl, 3, `(Lv.${SAVE_DATA.rerollLvl}/3) 再抽選回数+1`, false, () => { SAVE_DATA.rerollLvl++; saveGameData(); }, null, [3000, 6000, 9000]);
     
+    addItem('蘇生のルーン', 'status_lune', 'unlock', 1, `HP0時に1度だけ復活。`, SAVE_DATA.reviveLuneUnlocked, () => { SAVE_DATA.reviveLuneUnlocked = true; saveGameData(); }, 5000);
     addItem('キャラ: ウィッチ', 'hero_wiz_left_1', 'unlock', 1, `魔法使いの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
-    addItem('武器解放: ボム', 'item_bomb', 'unlock', 1, `ボムをドロップに追加。`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
-    addItem('武器解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランをドロップに追加。`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
-    addItem('武器解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストをドロップに追加。`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
-    addItem('武器解放: ストーンダスト', 'item_stonedust', 'unlock', 1, `ストーンダストをドロップに追加。`, SAVE_DATA.stonedustUnlocked, () => { SAVE_DATA.stonedustUnlocked = true; saveGameData(); }, 1500);
+    addItem('装備解放: ボム', 'item_bomb', 'unlock', 1, `ボムを候補に追加。`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
+    addItem('装備解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランを候補に追加。`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
+    addItem('装備解放: リジェネレーション', 'item_regene', 'unlock', 1, `リジェネレーションを候補に追加。`, SAVE_DATA.regeneUnlocked, () => { SAVE_DATA.regeneUnlocked = true; saveGameData(); }, 600);
+    addItem('装備解放: マジックバリア', 'item_barrier', 'unlock', 1, `マジックバリアを候補に追加。`, SAVE_DATA.barrierUnlocked, () => { SAVE_DATA.barrierUnlocked = true; saveGameData(); }, 600);
+    addItem('装備解放: アイスブラスト', 'item_iceblust', 'unlock', 1, `アイスブラストを候補に追加。`, SAVE_DATA.iceblustUnlocked, () => { SAVE_DATA.iceblustUnlocked = true; saveGameData(); }, 1000);
+    addItem('装備解放: ストーンダスト', 'item_stonedust', 'unlock', 1, `ストーンダストを候補に追加。`, SAVE_DATA.stonedustUnlocked, () => { SAVE_DATA.stonedustUnlocked = true; saveGameData(); }, 1500);
     
     let btnResetUnlock = document.createElement('div'); btnResetUnlock.className = 'btn'; btnResetUnlock.innerText = 'データリセット';
     btnResetUnlock.style.marginTop = '20px';
     btnResetUnlock.onclick = () => { 
-        SAVE_DATA = { coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false }; 
+        SAVE_DATA = { 
+            coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
+            wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
+            regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
+        }; 
         CHARACTERS.find(c => c.id === 'wiz').unlocked = false; 
         saveGameData(); buildShopUI(); 
     };
@@ -718,7 +771,6 @@ function updateGame(dt) {
             }
         });
         
-        // Axe Queue Update
         if (p.axeQueue && p.axeQueue.length > 0) {
             for(let i=p.axeQueue.length-1; i>=0; i--) {
                 let q = p.axeQueue[i];
@@ -780,6 +832,27 @@ function updateGame(dt) {
     if (mins >= 5 && !GAME.bossSpawned[0]) { spawnMidBoss(1); GAME.bossSpawned[0] = true; }
     if (mins >= 10 && !GAME.bossSpawned[1]) { spawnMidBoss(2); GAME.bossSpawned[1] = true; }
     if (mins >= 15 && !GAME.bossSpawned[2]) { spawnMidBoss(3); GAME.bossSpawned[2] = true; }
+    
+    // Treasure Enemy Spawn (4, 8, 12, 16 min)
+    let tIndex = Math.floor(GAME.time / 240) - 1;
+    if (tIndex >= 0 && tIndex < 4) {
+        if (!GAME.treasureSpawned) GAME.treasureSpawned = [false,false,false,false];
+        if (!GAME.treasureSpawned[tIndex] && GAME.time >= (tIndex+1)*240) {
+            GAME.treasureSpawned[tIndex] = true;
+            let ang = Math.random() * Math.PI * 2;
+            let p = GAME.players[0];
+            let currentPhase = SPAWN_TABLE.find(t => GAME.time >= t.minTime && GAME.time < t.maxTime) || SPAWN_TABLE[SPAWN_TABLE.length-1];
+            let type = currentPhase.enemies[0].type;
+            let e = new Enemy(type, p.x + Math.cos(ang) * 400, p.y + Math.sin(ang) * 400, 0.75);
+            e.hp += (tIndex+1) * 240;
+            e.maxHp = e.hp;
+            e.spd *= 0.5;
+            e.isTreasure = true;
+            e.treasureTimer = 120;
+            e.isBoss = true;
+            GAME.enemies.push(e);
+        }
+    }
     
     GAME.itemBoxTimer -= dt;
     if (GAME.itemBoxTimer <= 0) {
@@ -863,6 +936,23 @@ function updateGame(dt) {
                 if (!checkWallCollision(e.x, nextY, 14)) e.y = nextY;
             }
             
+            if (e.isTreasure) {
+                e.treasureTimer -= dt;
+                if (e.treasureTimer <= 0) {
+                    if (!e.escaping) {
+                        e.escaping = true;
+                        e.spd *= 8;
+                        e.escapeAng = Math.atan2(e.y - targetP.y, e.x - targetP.x);
+                    }
+                    e.ignoreWalls = true;
+                }
+                if (e.escaping) {
+                    ang = e.escapeAng;
+                    if (minDist > 1000) { e.dead = true; e.hp = 0; }
+                }
+                if (Math.random() < 0.2) GAME.particles.push({x: e.x + (Math.random()-0.5)*32, y: e.y + (Math.random()-0.5)*32, type:'sparkle', life: 0.3, size: 2});
+            }
+            
             if (e.isBoss || e.isShooter) {
                 e.attackTimer -= dt;
                 if (e.attackTimer <= 0) {
@@ -876,13 +966,23 @@ function updateGame(dt) {
             
             // Player collision
             if (minDist < 20 && targetP.invincibleTimer <= 0) {
-                let dmg = Math.ceil(Math.max(1, e.atk - targetP.def));
+                let dmg = Math.ceil(Math.max(1, e.atk - targetP.baseDef));
                 targetP.hp -= dmg;
+                targetP.totalDmgTaken += dmg;
                 targetP.invincibleTimer = 0.5;
                 addDamageText(targetP.x, targetP.y - 20, `-${dmg}`, '#ff0000');
                 if(audioSE) audioSE.playSE("damage");
                 if (targetP.hp <= 0) {
-                    targetP.hp = 0; targetP.dead = true;
+                    let healBonus = SAVE_DATA.healPlusLvl * 0.03;
+                    if (SAVE_DATA.reviveLuneUnlocked && !targetP.revived) {
+                        targetP.revived = true;
+                        targetP.hp = Math.floor(targetP.maxHp * (0.5 + healBonus));
+                        targetP.invincibleTimer = 3.0;
+                        if(audioSE) audioSE.playSE("heal"); // Reused sound for revive
+                        GAME.particles.push({x: targetP.x, y: targetP.y, type:'heal', life:1});
+                    } else {
+                        targetP.hp = 0; targetP.dead = true;
+                    }
                 }
             }
         }
@@ -937,12 +1037,32 @@ function updateGame(dt) {
                 if (p.dead || proj.dead || p.invincibleTimer > 0) return;
                 let d = Math.hypot(p.x - proj.x, p.y - proj.y);
                 if (d < (proj.size + p.w/2)) {
-                    let dmg = Math.ceil(Math.max(1, proj.dmg - p.def));
+                    if (p.hasBarrier) {
+                        p.hasBarrier = false;
+                        let barrierLvl = (p.equips.find(e=>e.id==='magic_barrier')||{lvl:1}).lvl;
+                        p.barrierTimer = 100 - (barrierLvl - 1) * 15;
+                        proj.dead = true;
+                        if(audioSE) audioSE.playSE("guard"); // placeholder
+                        return;
+                    }
+                    let dmg = Math.ceil(Math.max(1, proj.dmg - p.baseDef));
                     p.hp -= dmg;
+                    p.totalDmgTaken += dmg;
                     p.invincibleTimer = 0.5;
                     addDamageText(p.x, p.y - 20, `-${dmg}`, '#ff0000');
                     if(audioSE) audioSE.playSE("damage");
-                    if (p.hp <= 0) { p.hp = 0; p.dead = true; }
+                    if (p.hp <= 0) {
+                        let healBonus = SAVE_DATA.healPlusLvl * 0.03;
+                        if (SAVE_DATA.reviveLuneUnlocked && !p.revived) {
+                            p.revived = true;
+                            p.hp = Math.floor(p.maxHp * (0.5 + healBonus));
+                            p.invincibleTimer = 3.0;
+                            if(audioSE) audioSE.playSE("heal");
+                            GAME.particles.push({x: p.x, y: p.y, type:'heal', life:1});
+                        } else {
+                            p.hp = 0; p.dead = true;
+                        }
+                    }
                     if (!proj.pierce) proj.dead = true;
                 }
             });
@@ -972,9 +1092,14 @@ function updateGame(dt) {
                 if (d < hitRange) {
                     let dmg = Math.ceil(Math.max(1, proj.dmg - (e.def || 0)));
                     e.hp -= dmg;
+                    if (proj.owner) proj.owner.totalDmgDealt += dmg;
+                    else GAME.players[0].totalDmgDealt += dmg;
+                    
                     addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
                     if (e.hp <= 0) {
                         e.dead = true;
+                        if (proj.owner) proj.owner.totalKills++;
+                        else GAME.players[0].totalKills++;
                         dropItem(e);
                     }
                     if (proj.type === 'fireball') {
@@ -1006,8 +1131,15 @@ function updateGame(dt) {
                     if (GAME.frameCount % 30 === 0) { // dmg tick every 0.5s roughly
                         let dmg = Math.ceil(Math.max(1, pt.dmg - (e.def || 0)));
                         e.hp -= dmg;
+                        if (pt.owner) pt.owner.totalDmgDealt += dmg;
+                        else GAME.players[0].totalDmgDealt += dmg;
                         addDamageText(e.x, e.y - 20, `${dmg}`, '#cc00ff');
-                        if (e.hp <= 0) { e.dead = true; dropItem(e); }
+                        if (e.hp <= 0) { 
+                            e.dead = true; 
+                            if (pt.owner) pt.owner.totalKills++;
+                            else GAME.players[0].totalKills++;
+                            dropItem(e); 
+                        }
                     }
                     e.x -= Math.cos(Math.atan2(e.y - pt.y, e.x - pt.x)) * e.spd * 0.5 * dt; // Simple slow by pushing back
                 }
@@ -1084,8 +1216,9 @@ function fireWeapon(p, eq) {
                         if (diff <= arc/2) {
                             let dmg = Math.ceil(Math.max(1, p.atk + eq.lvl * 7 + eq.lvl - (e.def || 0)));
                             e.hp -= dmg;
+                            p.totalDmgDealt += dmg;
                             addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
-                            if (e.hp <= 0) { e.dead = true; dropItem(e); }
+                            if (e.hp <= 0) { e.dead = true; p.totalKills++; dropItem(e); }
                         }
                     }
                 });
@@ -1151,8 +1284,9 @@ function fireWeapon(p, eq) {
                 if (Math.hypot(e.x - t.x, e.y - t.y) < area) {
                     let dmg = Math.ceil((p.atk * 1.5) + (eq.lvl * 4));
                     e.hp -= dmg;
+                    p.totalDmgDealt += dmg;
                     addDamageText(e.x, e.y - 20, `${dmg}`, '#ffffff');
-                    if (e.hp <= 0) { e.dead = true; dropItem(e); }
+                    if (e.hp <= 0) { e.dead = true; p.totalKills++; dropItem(e); }
                 }
             });
         });
@@ -1238,6 +1372,7 @@ function dropItem(e) {
     let rand = Math.random() * 100;
     if (rand < prob) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
     else if (rand < prob * 2) GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
+    else if (rand < prob * 3) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
     else if (rand < prob * 10) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
     else GAME.items.push(new Drop(e.x, e.y, 'exp', e.expDrop));
 }
@@ -1259,7 +1394,8 @@ function collectItem(p, itm) {
             triggerLevelUp(targetP);
         }
     } else if (itm.type === 'heart') {
-        p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.2);
+        let healBonus = SAVE_DATA.healPlusLvl * 0.03;
+        p.hp = Math.min(p.maxHp, p.hp + p.maxHp * (0.2 + healBonus));
     } else if (itm.type === 'coin_bag') {
         GAME.coinsThisRun += itm.val * 2;
     } else if (itm.type === 'chest') {
@@ -1267,6 +1403,17 @@ function collectItem(p, itm) {
     } else if (itm.type === 'cross') {
         GAME.flashTimer = 1.0;
         GAME.enemies.forEach(e => { if(!e.isBoss) { e.dead = true; dropItem(e); } });
+    } else if (itm.type === 'attract_ball') {
+        if(audioSE) audioSE.playSE("heal"); // Reused sound
+        GAME.items.forEach(i => {
+            if (i.type === 'exp') {
+                i.pulled = true;
+                // Force fast pull to player
+                let ang = Math.atan2(p.y - i.y, p.x - i.x);
+                i.vx = Math.cos(ang) * 600;
+                i.vy = Math.sin(ang) * 600;
+            }
+        });
     }
 }
 
@@ -1436,7 +1583,9 @@ function drawGame() {
             if (e.frozenTimer > 0) {
                 ctx.save();
                 ctx.translate(e.x, e.y);
+                if (e.isTreasure) ctx.filter = 'grayscale(100%)';
                 ctx.drawImage(PRE_RENDERED[e.sprite], 0, 0, 32, 32, -16*e.scale, -16*e.scale, 32*e.scale, 32*e.scale);
+                ctx.filter = 'none';
                 ctx.globalCompositeOperation = 'source-atop';
                 ctx.fillStyle = 'rgba(100, 200, 255, 0.6)';
                 ctx.fillRect(-16*e.scale, -16*e.scale, 32*e.scale, 32*e.scale);
@@ -1445,7 +1594,10 @@ function drawGame() {
                 if (Math.random() < 0.2) GAME.particles.push({x: e.x + (Math.random()-0.5)*32*e.scale, y: e.y + (Math.random()-0.5)*32*e.scale, type:'sparkle', life: 0.3, size: 2});
                 ctx.restore();
             } else {
+                ctx.save();
+                if (e.isTreasure) ctx.filter = 'grayscale(100%)';
                 ctx.drawImage(PRE_RENDERED[e.sprite], 0, 0, 32, 32, e.x - 16*e.scale, e.y - 16*e.scale, 32*e.scale, 32*e.scale);
+                ctx.restore();
             }
         }
         // HP Bar
@@ -1467,6 +1619,45 @@ function drawGame() {
         // HP Bar
         ctx.fillStyle = 'red'; ctx.fillRect(pl.x - 16, pl.y - 20, 32, 4);
         ctx.fillStyle = 'blue'; ctx.fillRect(pl.x - 16, pl.y - 20, 32 * (pl.hp/pl.maxHp), 4);
+        
+        // Barrier Render
+        if (pl.hasBarrier) {
+            ctx.save();
+            ctx.translate(pl.x, pl.y);
+            let bSize = 25;
+            let sides = 12;
+            
+            ctx.lineWidth = 1;
+            
+            // Red Dodecagon
+            ctx.strokeStyle = 'red';
+            ctx.beginPath();
+            for(let i=0; i<=sides; i++) {
+                let a = pl.barrierRot1 + (i * Math.PI * 2 / sides);
+                let px = Math.cos(a) * bSize;
+                let py = Math.sin(a) * bSize;
+                if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            // Yellow Dodecagon
+            ctx.strokeStyle = 'yellow';
+            ctx.beginPath();
+            for(let i=0; i<=sides; i++) {
+                let a = pl.barrierRot2 + (i * Math.PI * 2 / sides);
+                let px = Math.cos(a) * (bSize + 2);
+                let py = Math.sin(a) * (bSize + 2);
+                if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            // Particles/Glow
+            if (Math.random() < 0.3) {
+                let a = Math.random() * Math.PI * 2;
+                GAME.particles.push({x: pl.x + Math.cos(a)*bSize, y: pl.y + Math.sin(a)*bSize, type:'sparkle', life: 0.2, size: 2, color: Math.random()>0.5?'red':'yellow'});
+            }
+            ctx.restore();
+        }
     });
     
     // Projectiles
@@ -1559,8 +1750,20 @@ function drawGame() {
     }
 }
 
-function triggerLevelUp(p) {
-    if(audioSE) audioSE.playSE("get_egg");
+function triggerLevelUp(p, isReroll = false) {
+    if (!isReroll) {
+        if(audioSE) audioSE.playSE("get_egg");
+        
+        // Apply Regeneration
+        if (p.equips.some(e=>e.id==='regeneration')) {
+            let regeneLvl = p.equips.find(e=>e.id==='regeneration').lvl;
+            let healPct = (regeneLvl * 0.03) + (SAVE_DATA.healPlusLvl * 0.03);
+            p.hp = Math.min(p.maxHp, p.hp + p.maxHp * healPct);
+            if(audioSE) audioSE.playSE("heal");
+            GAME.particles.push({x: p.x, y: p.y, type:'heal', life:1});
+        }
+    }
+    
     setMode('levelup');
     let title = document.getElementById('levelup-title');
     title.innerText = `レベルアップ！ (${p.id+1}P)`;
@@ -1568,7 +1771,27 @@ function triggerLevelUp(p) {
     let choicesBox = document.getElementById('levelup-choices');
     choicesBox.innerHTML = '';
     
-    // Generate 2 random choices
+    // Reroll UI
+    let rerollContainer = document.getElementById('reroll-container');
+    let rerollBtn = document.getElementById('btn-reroll');
+    let rerollCount = document.getElementById('reroll-count');
+    if (SAVE_DATA.rerollLvl > 0) {
+        rerollContainer.style.display = 'flex';
+        rerollCount.innerText = p.rerollCount;
+        if (p.rerollCount > 0) {
+            rerollBtn.className = 'btn';
+            rerollBtn.onclick = () => {
+                p.rerollCount--;
+                triggerLevelUp(p, true);
+            };
+        } else {
+            rerollBtn.className = 'btn disabled';
+            rerollBtn.onclick = null;
+        }
+    } else {
+        rerollContainer.style.display = 'none';
+    }
+    
     let available = [];
     for(let k in EQUIP_DATA) {
         let eq = EQUIP_DATA[k];
@@ -1576,19 +1799,27 @@ function triggerLevelUp(p) {
         if (k === 'boomerang' && !SAVE_DATA.boomerangUnlocked) continue;
         if (k === 'iceblust' && !SAVE_DATA.iceblustUnlocked) continue;
         if (k === 'stonedust' && !SAVE_DATA.stonedustUnlocked) continue;
+        if (k === 'regeneration' && !SAVE_DATA.regeneUnlocked) continue;
+        if (k === 'magic_barrier' && !SAVE_DATA.barrierUnlocked) continue;
         
         let has = p.equips.find(e => e.id === k);
         let currentLvl = has ? has.lvl : 0;
         if (currentLvl < eq.maxLvl) {
             let typeCount = p.equips.filter(e => EQUIP_DATA[e.id].type === eq.type).length;
-            if (has || (eq.type === 'atk' && typeCount < p.maxAtkSlots) || (eq.type === 'buf' && typeCount < p.maxBufSlots)) {
+            if (has || (eq.type === 'atk' && typeCount < 4) || (eq.type === 'buf' && typeCount < 3)) {
                 available.push(k);
             }
         }
     }
     
     available.sort(() => Math.random() - 0.5);
-    let choices = available.slice(0, 2);
+    
+    // Extra Roll logic
+    let rollCount = 2;
+    if (SAVE_DATA.exrollLvl > 0 && Math.random() < SAVE_DATA.exrollLvl * 0.1) {
+        rollCount = 3;
+    }
+    let choices = available.slice(0, rollCount);
     
     if (choices.length === 0) {
         choicesBox.innerHTML = '<div class="btn">MAX - 回復する</div>';
@@ -1602,6 +1833,7 @@ function triggerLevelUp(p) {
         let nextLvl = has ? has.lvl + 1 : 1;
         let div = document.createElement('div');
         div.className = 'popup-item';
+        if (choices.length === 3) div.style.margin = '5px'; // Adjust for 3 choices
         div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${d.name}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${d.enhance}</span></div>`;
         if (PRE_RENDERED[d.icon]) {
             let cvs = div.querySelector('canvas');
