@@ -37,7 +37,9 @@ let GAME = {
     coinsThisRun: 0,
     cameraX: 0,
     cameraY: 0,
-    levelUpTurn: 0
+    levelUpTurn: 0,
+    reviveTimer: 0,
+    reviveTarget: null
 };
 
 // Inputs
@@ -210,11 +212,24 @@ function loadSaveData() {
             SAVE_DATA = Object.assign({ 
                 coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
                 wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
-                regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
+                regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0,
+                clearedChars: [], clearedEquips: []
             }, parsed);
             if (SAVE_DATA.wizUnlocked) {
                 let wiz = CHARACTERS.find(c => c.id === 'wiz');
                 if (wiz) wiz.unlocked = true;
+            }
+            if (SAVE_DATA.clearedChars) {
+                SAVE_DATA.clearedChars.forEach(cid => {
+                    let c = CHARACTERS.find(x => x.id === cid);
+                    if (c && !c.name.endsWith('＊')) c.name += '＊';
+                });
+            }
+            if (SAVE_DATA.clearedEquips) {
+                SAVE_DATA.clearedEquips.forEach(eid => {
+                    let e = EQUIP_DATA[eid];
+                    if (e && !e.name.endsWith('＊')) e.name += '＊';
+                });
             }
         } catch(e) {}
     }
@@ -470,6 +485,16 @@ function setMode(mode) {
         document.getElementById('screen-chest').style.display = 'flex';
     } else if (mode === 'result') {
         document.getElementById('screen-result').style.display = 'flex';
+        let resultTitle = document.getElementById('result-title');
+        if (resultTitle) {
+            if (GAME.isCleared) {
+                resultTitle.innerText = "Complete";
+                resultTitle.style.color = "gold";
+            } else {
+                resultTitle.innerText = "GAME OVER";
+                resultTitle.style.color = "red";
+            }
+        }
         document.getElementById('result-time').innerText = Math.floor(GAME.time/60) + "分 " + Math.floor(GAME.time%60) + "秒";
         document.getElementById('result-coins').innerText = GAME.coinsThisRun;
         document.getElementById('result-dmg-dealt').innerText = GAME.players[0].totalDmgDealt;
@@ -699,10 +724,49 @@ function gameLoop(timestamp) {
 }
 
 function updateGame(dt) {
+    if (GAME.reviveTimer > 0) {
+        GAME.reviveTimer -= dt;
+        if (GAME.reviveTimer <= 0 && GAME.reviveTarget) {
+            let p = GAME.reviveTarget;
+            let healBonus = SAVE_DATA.healPlusLvl * 0.03;
+            p.hp = Math.floor(p.maxHp * (0.5 + healBonus));
+            p.invincibleTimer = 3.0;
+            if(audioSE) audioSE.playSE("heal");
+            GAME.particles.push({x: p.x, y: p.y, type:'heal', life:1});
+            GAME.reviveTarget = null;
+        }
+        return;
+    }
+    
     GAME.time += dt;
     GAME.frameCount++;
     
     if (GAME.time >= MAX_TIME) {
+        let isCleared = GAME.bossSpawned[0] && GAME.bossSpawned[1] && GAME.bossSpawned[2] && 
+                        !GAME.enemies.some(e => e.type.startsWith('don_medusa_'));
+        GAME.isCleared = isCleared;
+        if (isCleared) {
+            let p = GAME.players[0];
+            let charId = p.id; // Just 1P for now
+            let cData = CHARACTERS.find(c => c.id === charId);
+            if (cData && !cData.name.endsWith('＊')) {
+                cData.name += '＊';
+                if (!SAVE_DATA.clearedChars) SAVE_DATA.clearedChars = [];
+                if (!SAVE_DATA.clearedChars.includes(charId)) SAVE_DATA.clearedChars.push(charId);
+            }
+            if (!SAVE_DATA.clearedEquips) SAVE_DATA.clearedEquips = [];
+            p.equips.forEach(eq => {
+                let maxLvl = EQUIP_DATA[eq.id].maxLvl;
+                if (eq.lvl >= maxLvl) {
+                    let eData = EQUIP_DATA[eq.id];
+                    if (eData && !eData.name.endsWith('＊')) {
+                        eData.name += '＊';
+                        if (!SAVE_DATA.clearedEquips.includes(eq.id)) SAVE_DATA.clearedEquips.push(eq.id);
+                    }
+                }
+            });
+            saveGameData();
+        }
         if(audioSE) audioSE.playSE("gameover");
         setMode('result');
         return;
@@ -956,7 +1020,7 @@ function updateGame(dt) {
                 if (e.treasureTimer <= 0) {
                     if (!e.escaping) {
                         e.escaping = true;
-                        e.spd *= 8;
+                        e.spd *= 4;
                         e.escapeAng = Math.atan2(e.y - targetP.y, e.x - targetP.x);
                     }
                     e.ignoreWalls = true;
@@ -991,10 +1055,9 @@ function updateGame(dt) {
                     let healBonus = SAVE_DATA.healPlusLvl * 0.03;
                     if (SAVE_DATA.reviveLuneUnlocked && !targetP.revived) {
                         targetP.revived = true;
-                        targetP.hp = Math.floor(targetP.maxHp * (0.5 + healBonus));
-                        targetP.invincibleTimer = 3.0;
-                        if(audioSE) audioSE.playSE("heal"); // Reused sound for revive
-                        GAME.particles.push({x: targetP.x, y: targetP.y, type:'heal', life:1});
+                        targetP.hp = 1; // Keep alive during animation
+                        GAME.reviveTimer = 1.4;
+                        GAME.reviveTarget = targetP;
                     } else {
                         targetP.hp = 0; targetP.dead = true;
                     }
@@ -1070,10 +1133,9 @@ function updateGame(dt) {
                         let healBonus = SAVE_DATA.healPlusLvl * 0.03;
                         if (SAVE_DATA.reviveLuneUnlocked && !p.revived) {
                             p.revived = true;
-                            p.hp = Math.floor(p.maxHp * (0.5 + healBonus));
-                            p.invincibleTimer = 3.0;
-                            if(audioSE) audioSE.playSE("heal");
-                            GAME.particles.push({x: p.x, y: p.y, type:'heal', life:1});
+                            p.hp = 1;
+                            GAME.reviveTimer = 1.4;
+                            GAME.reviveTarget = p;
                         } else {
                             p.hp = 0; p.dead = true;
                         }
@@ -1290,7 +1352,14 @@ function fireWeapon(p, eq) {
         let count = 1;
         if (eq.lvl >= 4) count = 2;
         if (eq.lvl >= 8) count = 3;
-        let targets = [...GAME.enemies].sort(()=>0.5-Math.random()).slice(0, count);
+        let cx = GAME.cameraX - SCREEN_W/2;
+        let cy = GAME.cameraY - SCREEN_H/2;
+        let onScreenEnemies = GAME.enemies.filter(e => 
+            e.x > cx - 50 && e.x < cx + SCREEN_W + 50 &&
+            e.y > cy - 50 && e.y < cy + SCREEN_H + 50
+        );
+        let candidateEnemies = onScreenEnemies.length > 0 ? onScreenEnemies : GAME.enemies;
+        let targets = [...candidateEnemies].sort(()=>0.5-Math.random()).slice(0, count);
         targets.forEach(t => {
             let area = 50 * sizeMul;
             GAME.particles.push({x: t.x, y: t.y, type:'thunder', life:0.5, radius: area});
@@ -1505,7 +1574,9 @@ function spawnMidBoss(level) {
     if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
     if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
     if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
-    GAME.enemies.push(new Enemy(ex, ey, 'don_medusa_' + level));
+    let e = new Enemy(ex, ey, 'don_medusa_' + level);
+    if (level === 2 || level === 3) e.ignoreWalls = true;
+    GAME.enemies.push(e);
 }
 
 function addDamageText(x, y, text, color) {
@@ -1580,7 +1651,13 @@ function drawGame() {
     
     // Drops
     GAME.items.forEach(itm => {
-        let spr = itm.type === 'heart' ? 'heart_normal' : itm.type === 'coin_bag' ? 'item_coin_bag' : itm.type === 'chest' ? 'chest_closed' : itm.type === 'cross' ? 'item_cross' : 'exp';
+        let spr = 'exp';
+        if (itm.type === 'heart') spr = 'heart_normal';
+        else if (itm.type === 'coin_bag') spr = 'item_coin_bag';
+        else if (itm.type === 'chest') spr = 'chest_closed';
+        else if (itm.type === 'cross') spr = 'item_cross';
+        else if (itm.type === 'attract_ball') spr = 'attract_ball';
+        
         if (itm.type === 'exp') {
             if (itm.val >= 100) spr = 'exp_xl';
             else if (itm.val >= 30) spr = 'exp_l';
@@ -1764,6 +1841,58 @@ function drawGame() {
         ctx.fillStyle = `rgba(255, 255, 255, ${GAME.flashTimer})`;
         ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     }
+    
+    if (GAME.reviveTimer > 0) {
+        if (GAME.reviveTimer > 0.4) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            if (GAME.reviveTarget) {
+                let p = GAME.reviveTarget;
+                let cx = p.x - (GAME.cameraX - SCREEN_W/2);
+                let cy = p.y - (GAME.cameraY - SCREEN_H/2);
+                let grd = ctx.createLinearGradient(0, 0, 0, cy);
+                grd.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                grd.addColorStop(0.5, 'rgba(255, 255, 150, 0.8)');
+                grd.addColorStop(1, 'rgba(255, 255, 255, 1)');
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.moveTo(cx - 30, 0);
+                ctx.lineTo(cx + 30, 0);
+                ctx.lineTo(cx + 10, cy);
+                ctx.lineTo(cx - 10, cy);
+                ctx.fill();
+            }
+        } else {
+            let fRatio = GAME.reviveTimer / 0.4;
+            ctx.fillStyle = `rgba(255, 255, 255, ${fRatio})`;
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+        }
+    }
+}
+function getEnhanceText(id, lvl) {
+    if (lvl === 1) return '新しく取得する';
+    if (id === 'sword') {
+        if (lvl <= 4 || (lvl >= 6 && lvl <= 9)) return 'こうげきはんい拡大';
+        else return 'こうげきはんい拡大, こうげき回数+1';
+    } else if (id === 'magic_bullet') {
+        return '発射数+1, ダメージ量増加';
+    } else if (id === 'fireball') {
+        return 'ダメージ量増加';
+    } else if (id === 'thunderbolt') {
+        if (lvl === 4 || lvl === 8) return '雷の数+1, クールタイム-0.2秒';
+        return 'クールタイム-0.2秒';
+    } else if (id === 'poison_mist') {
+        if (lvl % 2 === 1) return '霧の数+1, ダメージ量増加';
+        return 'ダメージ量増加';
+    } else if (id === 'bomb') {
+        if (lvl % 2 === 1) return '設置個数+1, 爆発時間-0.1秒';
+        return '爆発時間-0.1秒';
+    } else if (id === 'axe') {
+        let axCounts = [1,1,2,2,3,4,4,5,5,6];
+        if (axCounts[lvl-1] > axCounts[lvl-2]) return '発射数+1, クールタイム減少';
+        return 'クールタイム減少';
+    }
+    return EQUIP_DATA[id].enhance;
 }
 
 function triggerLevelUp(p, isReroll = false) {
@@ -1852,7 +1981,8 @@ function triggerLevelUp(p, isReroll = false) {
         div.style.width = 'auto';
         div.style.flex = '1';
         if (choices.length === 3) div.style.margin = '5px'; // Adjust for 3 choices
-        div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${d.name}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${d.enhance}</span></div>`;
+        let enhanceText = getEnhanceText(cid, nextLvl);
+        div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${d.name}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${enhanceText}</span></div>`;
         if (PRE_RENDERED[d.icon]) {
             let cvs = div.querySelector('canvas');
             cvs.width = 48; cvs.height = 48;
