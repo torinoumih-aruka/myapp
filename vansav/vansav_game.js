@@ -266,9 +266,8 @@ class Player {
         this.baseDef = charData.def + (SAVE_DATA.defLvl * 1);
         this.baseSpd = charData.spd + (SAVE_DATA.spdLvl * 10);
         this.baseLuck = charData.luck + SAVE_DATA.luckLvl;
-        if (charData.id === 'knight') this.spriteNameBase = 'hero_knight';
-        else if (charData.id === 'wiz') this.spriteNameBase = 'hero_wiz';
-        else this.spriteNameBase = charData.sprite.split('_')[0];
+        let parts = charData.sprite.split('_');
+        this.spriteNameBase = parts[0] + '_' + parts[1];
         this.dir = 'down';
         this.angle = Math.PI/2;
         
