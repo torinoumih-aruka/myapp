@@ -50,7 +50,7 @@
         .char-card.selected { border-color: #00ff00; background: #004400; }
         .char-card.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         .char-card canvas { width:48px; height:48px; object-fit: contain; image-rendering: pixelated;}
-        .char-stats { font-size:12px; line-height:1.2; }
+        .char-stats { font-size:11px; line-height:1.2; }
     </style>
 </head>
 <body>
@@ -121,12 +121,12 @@
     
     <div id="screen-result" class="screen">
         <h1 id="result-title" style="font-size:3rem; margin-bottom:10px;">GAME OVER</h1>
-        <div style="font-size:20px; margin:5px;">生存時間: <span id="result-time"></span></div>
-        <div style="font-size:20px; margin:5px; color:gold;">集めたコイン: <span id="result-coins"></span></div>
-        <div style="font-size:20px; margin:5px;">あたえたダメージ: <span id="result-dmg-dealt"></span></div>
-        <div style="font-size:20px; margin:5px;">受けたダメージ: <span id="result-dmg-taken"></span></div>
-        <div style="font-size:20px; margin:5px;">たおした敵の数: <span id="result-kills"></span></div>
-        <div id="result-equips" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; justify-content:center; max-width:80%;"></div>
+        <div style="font-size:16px; margin:2px;">生存時間: <span id="result-time"></span></div>
+        <div style="font-size:16px; margin:2px; color:gold;">集めたコイン: <span id="result-coins"></span></div>
+        <div style="font-size:16px; margin:2px;">与ダメージ: <span id="result-dmg-dealt"></span></div>
+        <div style="font-size:16px; margin:2px;">被ダメージ: <span id="result-dmg-taken"></span></div>
+        <div style="font-size:16px; margin:2px;">倒した敵の数: <span id="result-kills"></span></div>
+        <div id="result-equips" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center; max-width:80%;"></div>
         <div class="btn" id="btn-result-back" style="margin-top:20px;">タイトルへ</div>
     </div>
 

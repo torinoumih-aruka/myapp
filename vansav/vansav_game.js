@@ -34,6 +34,7 @@ let GAME = {
     bgFeatures: [],
     spawnTimer: 0,
     bossSpawned: [false, false, false], // 5, 10, 15
+    treasureSpawned: [false, false, false, false], // 4, 8, 12, 16
     coinsThisRun: 0,
     cameraX: 0,
     cameraY: 0,
@@ -307,17 +308,17 @@ class Enemy {
         // Base stats
         if (type === 'snakey') { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
         else if (type === 'medusa') { this.hp = 100; this.spd = 30; this.atk = 25; this.def = 2; this.expDrop = 5; this.sprite = 'medusa_awake'; this.ignoreWalls = false; }
-        else if (type === 'gol') { this.hp = 75; this.spd = 40; this.atk = 40; this.def = 0; this.expDrop = 7; this.sprite = 'gol_down_awake'; }
+        else if (type === 'gol') { this.hp = 75; this.spd = 40; this.atk = 40; this.def = 0; this.expDrop = 12; this.sprite = 'gol_down_awake'; }
         else if (type === 'don_medusa_1') { this.hp = 1000; this.spd = 25; this.atk = 30; this.def = 2; this.expDrop = 100; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.0; }
-        else if (type === 'don_medusa_2') { this.hp = 3000; this.spd = 35; this.atk = 60; this.def = 3; this.expDrop = 200; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.5; }
-        else if (type === 'don_medusa_3') { this.hp = 8000; this.spd = 45; this.atk = 80; this.def = 5; this.expDrop = 999; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 4.0; }
+        else if (type === 'don_medusa_2') { this.hp = 3000; this.spd = 35; this.atk = 60; this.def = 3; this.expDrop = 1000; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 1.5; }
+        else if (type === 'don_medusa_3') { this.hp = 8000; this.spd = 45; this.atk = 80; this.def = 5; this.expDrop = 5000; this.sprite = 'don_medosa_1'; this.isBoss = true; this.scale = 4.0; }
         else if (type === 'bat') { this.hp = 10; this.spd = 65; this.atk = 20; this.expDrop = 3; this.sprite = 'bat'; }
         else if (type === 'knight') { this.hp = 180; this.spd = 15; this.atk = 35; this.def = 3; this.expDrop = 15; this.sprite = 'knight'; }
-        else if (type === 'ghost') { this.hp = 25; this.spd = 110; this.atk = 30; this.expDrop = 5; this.sprite = 'ghost'; this.ignoreWalls = true; }
+        else if (type === 'ghost') { this.hp = 25; this.spd = 110; this.atk = 30; this.expDrop = 8; this.sprite = 'ghost'; this.ignoreWalls = true; }
         else if (type === 'item_box') { this.hp = 1; this.spd = 0; this.atk = 0; this.expDrop = 0; this.sprite = 'itembox'; this.isItemBox = true; }
-        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 40; this.def = 5; this.expDrop = 20; this.sprite = 'moving_statue'; }
-        else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 10; this.sprite = 'shooter_lily'; this.isShooter = true; this.attackTimer = 7.0; }
-        else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 20; this.sprite = 'wolf'; this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
+        else if (type === 'moving_statue') { this.hp = 500; this.spd = 25; this.atk = 40; this.def = 5; this.expDrop = 100; this.sprite = 'moving_statue'; }
+        else if (type === 'shooter_lily') { this.hp = 50; this.spd = 10; this.atk = 50; this.expDrop = 60; this.sprite = 'shooter_lily'; this.isShooter = true; this.attackTimer = 7.0; }
+        else if (type === 'wolf') { this.hp = 110; this.spd = 120; this.atk = 40; this.def = 1; this.expDrop = 90; this.sprite = 'wolf'; this.isWolf = true; this.wolfState = 'arc'; this.wolfTimer = 2.0; this.wolfArcDir = Math.random()>0.5?1:-1; this.ignoreWalls = true; }
         else { this.hp = 20; this.spd = 40; this.atk = 20; this.expDrop = 2; this.sprite = 'snakey_left'; }
         
         // Size variations are now passed via constructor
@@ -622,7 +623,7 @@ function buildCharSelectUI() {
     CHARACTERS.forEach(char => {
         let card = document.createElement('div'); card.className = 'char-card';
         if (!char.unlocked) card.classList.add('locked');
-        card.innerHTML = `<div><canvas></canvas></div><div class="char-stats"><b>${char.name}</b><br>${char.desc}<br>HP:${char.hp} 攻:${char.atk} 防:${char.def} 速:${char.spd} 運:${char.luck}</div>`;
+        card.innerHTML = `<div><canvas></canvas></div><div class="char-stats"><b>${char.name}</b><br>${char.desc}<br>HP:${char.hp} こ:${char.atk} ぼ:${char.def} す:${char.spd} う:${char.luck}</div>`;
         if (PRE_RENDERED[char.sprite]) {
             let cvs = card.querySelector('canvas');
             cvs.width = 48; cvs.height = 48;
@@ -652,6 +653,7 @@ function startGame() {
     GAME.spawnTimer = 0;
     GAME.itemBoxTimer = 120;
     GAME.bossSpawned = [false, false, false];
+    GAME.treasureSpawned = [false, false, false, false];
     GAME.coinsThisRun = 0;
     GAME.bgFeatures = [];
     
@@ -726,6 +728,9 @@ function gameLoop(timestamp) {
 function updateGame(dt) {
     if (GAME.reviveTimer > 0) {
         GAME.reviveTimer -= dt;
+        if (GAME.reviveTarget && Math.random() < 0.3) {
+            GAME.particles.push({x: GAME.reviveTarget.x + (Math.random()-0.5)*30, y: GAME.reviveTarget.y + (Math.random()-0.5)*30, type: 'sparkle', life: 0.5, radius: 3});
+        }
         if (GAME.reviveTimer <= 0 && GAME.reviveTarget) {
             let p = GAME.reviveTarget;
             let healBonus = SAVE_DATA.healPlusLvl * 0.03;
@@ -733,6 +738,7 @@ function updateGame(dt) {
             p.invincibleTimer = 3.0;
             if(audioSE) audioSE.playSE("heal");
             GAME.particles.push({x: p.x, y: p.y, type:'heal', life:1});
+            GAME.flashTimer = 0.4; // Screen flash at end
             GAME.reviveTarget = null;
         }
         return;
@@ -874,11 +880,13 @@ function updateGame(dt) {
         GAME.items.forEach(itm => {
             if (itm.dead) return;
             let dist = Math.hypot(p.x - itm.x, p.y - itm.y);
-            if (dist < magnetRange) {
+            
+            if (dist < magnetRange || itm.pulledByAttract) {
                 itm.pulled = true;
+                let speed = itm.pulledByAttract ? 600 : 300;
                 let ang = Math.atan2(p.y - itm.y, p.x - itm.x);
-                itm.x += Math.cos(ang) * 300 * dt;
-                itm.y += Math.sin(ang) * 300 * dt;
+                itm.x += Math.cos(ang) * speed * dt;
+                itm.y += Math.sin(ang) * speed * dt;
             }
             if (dist < 20) {
                 collectItem(p, itm);
@@ -906,32 +914,16 @@ function updateGame(dt) {
         GAME.spawnTimer = Math.max(0.5, 2 - (GAME.time / 600)); // Gets faster over time
     }
     
-    // Midbosses
+    // Midbosses and Treasure Monsters
     let mins = GAME.time / 60;
     if (mins >= 5 && !GAME.bossSpawned[0]) { spawnMidBoss(1); GAME.bossSpawned[0] = true; }
     if (mins >= 10 && !GAME.bossSpawned[1]) { spawnMidBoss(2); GAME.bossSpawned[1] = true; }
     if (mins >= 15 && !GAME.bossSpawned[2]) { spawnMidBoss(3); GAME.bossSpawned[2] = true; }
     
-    // Treasure Enemy Spawn (4, 8, 12, 16 min)
-    let tIndex = Math.floor(GAME.time / 240) - 1;
-    if (tIndex >= 0 && tIndex < 4) {
-        if (!GAME.treasureSpawned) GAME.treasureSpawned = [false,false,false,false];
-        if (!GAME.treasureSpawned[tIndex] && GAME.time >= (tIndex+1)*240) {
-            GAME.treasureSpawned[tIndex] = true;
-            let ang = Math.random() * Math.PI * 2;
-            let p = GAME.players[0];
-            let currentPhase = SPAWN_TABLE.find(t => GAME.time >= t.minTime && GAME.time < t.maxTime) || SPAWN_TABLE[SPAWN_TABLE.length-1];
-            let type = currentPhase.enemies[0].type;
-            let e = new Enemy(type, p.x + Math.cos(ang) * 400, p.y + Math.sin(ang) * 400, 0.75);
-            e.hp += (tIndex+1) * 240;
-            e.maxHp = e.hp;
-            e.spd *= 0.5;
-            e.isTreasure = true;
-            e.treasureTimer = 120;
-            e.isBoss = true;
-            GAME.enemies.push(e);
-        }
-    }
+    if (mins >= 4 && !GAME.treasureSpawned[0]) { spawnTreasureEnemy(1); GAME.treasureSpawned[0] = true; }
+    if (mins >= 8 && !GAME.treasureSpawned[1]) { spawnTreasureEnemy(2); GAME.treasureSpawned[1] = true; }
+    if (mins >= 12 && !GAME.treasureSpawned[2]) { spawnTreasureEnemy(3); GAME.treasureSpawned[2] = true; }
+    if (mins >= 16 && !GAME.treasureSpawned[3]) { spawnTreasureEnemy(4); GAME.treasureSpawned[3] = true; }
     
     GAME.itemBoxTimer -= dt;
     if (GAME.itemBoxTimer <= 0) {
@@ -980,6 +972,23 @@ function updateGame(dt) {
         
         if (targetP) {
             let ang = Math.atan2(targetP.y - e.y, targetP.x - e.x);
+            if (e.isTreasure) {
+                e.treasureTimer -= dt;
+                if (e.treasureTimer <= 0) {
+                    if (!e.escaping) {
+                        e.escaping = true;
+                        e.spd *= 4;
+                        e.escapeAng = Math.atan2(e.y - targetP.y, e.x - targetP.x); // away from player
+                    }
+                    e.ignoreWalls = true;
+                }
+                if (e.escaping) {
+                    ang = e.escapeAng;
+                    if (minDist > 1000) { e.dead = true; e.hp = 0; }
+                }
+                if (Math.random() < 0.2) GAME.particles.push({x: e.x + (Math.random()-0.5)*32, y: e.y + (Math.random()-0.5)*32, type:'sparkle', life: 0.3, size: 2});
+            }
+            
             let nextX, nextY;
             if (e.isItemBox) {
                 nextX = e.x; nextY = e.y;
@@ -1015,23 +1024,6 @@ function updateGame(dt) {
                 if (!checkWallCollision(e.x, nextY, 14)) e.y = nextY;
             }
             
-            if (e.isTreasure) {
-                e.treasureTimer -= dt;
-                if (e.treasureTimer <= 0) {
-                    if (!e.escaping) {
-                        e.escaping = true;
-                        e.spd *= 4;
-                        e.escapeAng = Math.atan2(e.y - targetP.y, e.x - targetP.x);
-                    }
-                    e.ignoreWalls = true;
-                }
-                if (e.escaping) {
-                    ang = e.escapeAng;
-                    if (minDist > 1000) { e.dead = true; e.hp = 0; }
-                }
-                if (Math.random() < 0.2) GAME.particles.push({x: e.x + (Math.random()-0.5)*32, y: e.y + (Math.random()-0.5)*32, type:'sparkle', life: 0.3, size: 2});
-            }
-            
             if (e.isBoss || e.isShooter) {
                 e.attackTimer -= dt;
                 if (e.attackTimer <= 0) {
@@ -1056,7 +1048,7 @@ function updateGame(dt) {
                     if (SAVE_DATA.reviveLuneUnlocked && !targetP.revived) {
                         targetP.revived = true;
                         targetP.hp = 1; // Keep alive during animation
-                        GAME.reviveTimer = 1.4;
+                        GAME.reviveTimer = 3.5;
                         GAME.reviveTarget = targetP;
                     } else {
                         targetP.hp = 0; targetP.dead = true;
@@ -1134,7 +1126,7 @@ function updateGame(dt) {
                         if (SAVE_DATA.reviveLuneUnlocked && !p.revived) {
                             p.revived = true;
                             p.hp = 1;
-                            GAME.reviveTimer = 1.4;
+                            GAME.reviveTimer = 3.5;
                             GAME.reviveTarget = p;
                         } else {
                             p.hp = 0; p.dead = true;
@@ -1437,29 +1429,39 @@ function dropItem(e) {
     
     let luck = Math.max(...GAME.players.filter(p=>!p.dead).map(p=>p.baseLuck));
     
+    // Always drop EXP if expDrop > 0
+    if (e.expDrop > 0) {
+        GAME.items.push(new Drop(e.x, e.y, 'exp', e.expDrop));
+    }
+
     if (e.isBoss) {
         GAME.items.push(new Drop(e.x, e.y, 'chest', 1));
         return;
     }
+    if (e.isTreasure && !e.escaping) {
+        GAME.items.push(new Drop(e.x, e.y, 'chest', 1));
+        return;
+    }
+    if (e.isTreasure && e.escaping) {
+        return;
+    }
+
     if (e.isItemBox) {
         let r = Math.random() * 100;
-        if (r < 75) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
-        else if (r < 85) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
+        if (r < 80) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
+        else if (r < 90) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
         else if (r < 95) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
         else GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
         return;
     }
     
-    let baseDrop = 0.1;
-    if (e.expDrop >= 50) baseDrop += 0.2;
-    let prob = baseDrop + luck * 0.05;
+    let prob = 0.1 + luck * 0.05;
     
     let rand = Math.random() * 100;
-    if (rand < prob) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
-    else if (rand < prob * 2) GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
+    if (rand < prob * 2) GAME.items.push(new Drop(e.x, e.y, 'heart', 1));
+    else if (rand < prob * 3) GAME.items.push(new Drop(e.x, e.y, 'cross', 1));
     else if (rand < prob * 4) GAME.items.push(new Drop(e.x, e.y, 'attract_ball', 1));
     else if (rand < prob * 10) GAME.items.push(new Drop(e.x, e.y, 'coin_bag', (Math.floor(GAME.time/60)+1) * 5));
-    else GAME.items.push(new Drop(e.x, e.y, 'exp', e.expDrop));
 }
 
 function collectItem(p, itm) {
@@ -1492,11 +1494,7 @@ function collectItem(p, itm) {
         if(audioSE) audioSE.playSE("heal"); // Reused sound
         GAME.items.forEach(i => {
             if (i.type === 'exp') {
-                i.pulled = true;
-                // Force fast pull to player
-                let ang = Math.atan2(p.y - i.y, p.x - i.x);
-                i.vx = Math.cos(ang) * 600;
-                i.vy = Math.sin(ang) * 600;
+                i.pulledByAttract = true;
             }
         });
     }
@@ -1576,6 +1574,28 @@ function spawnMidBoss(level) {
     if (ey > GAME.stageBounds.maxY) ey = GAME.stageBounds.maxY;
     let e = new Enemy(ex, ey, 'don_medusa_' + level);
     if (level === 2 || level === 3) e.ignoreWalls = true;
+    GAME.enemies.push(e);
+}
+
+function spawnTreasureEnemy(level) {
+    let p = GAME.players[0]; if(p.dead && GAME.players[1]) p = GAME.players[1];
+    if(p.dead) return;
+    
+    let table = SPAWN_TABLE.find(t => GAME.time >= t.minTime && GAME.time < t.maxTime);
+    if (!table) table = SPAWN_TABLE[SPAWN_TABLE.length - 1];
+    let type = table.enemies[Math.floor(Math.random() * table.enemies.length)].type;
+    
+    let ex = GAME.cameraX + (Math.random() > 0.5 ? SCREEN_W : -100);
+    let ey = GAME.cameraY + Math.random() * SCREEN_H;
+    
+    let e = new Enemy(ex, ey, type);
+    e.isTreasure = true;
+    e.treasureLevel = level;
+    e.hp += level * 240;
+    e.spd *= 0.5;
+    e.scale *= 0.75;
+    e.expDrop = 0;
+    e.treasureTimer = 120; // 120 seconds
     GAME.enemies.push(e);
 }
 
@@ -1805,7 +1825,7 @@ function drawGame() {
                 ctx.beginPath(); ctx.arc(bx, by, pt.radius * 0.4, 0, Math.PI*2); ctx.fill();
             }
         } else if (pt.type === 'poison') {
-            ctx.fillStyle = `rgba(150, 0, 200, ${pt.life > 1 ? 0.3 : pt.life * 0.3})`;
+            ctx.fillStyle = `rgba(200, 160, 255, ${pt.life > 1 ? 0.3 : pt.life * 0.3})`;
             ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI*2); ctx.fill();
         } else if (pt.type === 'iceblust') {
             ctx.fillStyle = `rgba(100, 255, 255, ${pt.life > 0.5 ? 0.3 : pt.life * 0.6})`;
@@ -1843,29 +1863,25 @@ function drawGame() {
     }
     
     if (GAME.reviveTimer > 0) {
-        if (GAME.reviveTimer > 0.4) {
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-            if (GAME.reviveTarget) {
-                let p = GAME.reviveTarget;
-                let cx = p.x - (GAME.cameraX - SCREEN_W/2);
-                let cy = p.y - (GAME.cameraY - SCREEN_H/2);
-                let grd = ctx.createLinearGradient(0, 0, 0, cy);
-                grd.addColorStop(0, 'rgba(255, 255, 255, 0)');
-                grd.addColorStop(0.5, 'rgba(255, 255, 150, 0.8)');
-                grd.addColorStop(1, 'rgba(255, 255, 255, 1)');
-                ctx.fillStyle = grd;
-                ctx.beginPath();
-                ctx.moveTo(cx - 30, 0);
-                ctx.lineTo(cx + 30, 0);
-                ctx.lineTo(cx + 10, cy);
-                ctx.lineTo(cx - 10, cy);
-                ctx.fill();
-            }
-        } else {
-            let fRatio = GAME.reviveTimer / 0.4;
-            ctx.fillStyle = `rgba(255, 255, 255, ${fRatio})`;
-            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+        let elapsed = 3.5 - GAME.reviveTimer;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+        
+        if (GAME.reviveTarget && elapsed > 0.5) {
+            let p = GAME.reviveTarget;
+            let cx = p.x - (GAME.cameraX - SCREEN_W/2);
+            let cy = p.y - (GAME.cameraY - SCREEN_H/2);
+            let beamElapsed = elapsed - 0.5;
+            let beamHeight = Math.min(cy + 16, (beamElapsed / 3.0) * SCREEN_H);
+            
+            let grd = ctx.createLinearGradient(0, cy - beamHeight, 0, cy);
+            grd.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            grd.addColorStop(0.5, 'rgba(255, 255, 150, 0.8)');
+            grd.addColorStop(1, 'rgba(255, 255, 255, 1)');
+            
+            ctx.fillStyle = grd;
+            ctx.fillRect(cx - 20, cy - beamHeight, 40, beamHeight);
         }
     }
 }
@@ -1892,7 +1908,7 @@ function getEnhanceText(id, lvl) {
         if (axCounts[lvl-1] > axCounts[lvl-2]) return '発射数+1, クールタイム減少';
         return 'クールタイム減少';
     }
-    return EQUIP_DATA[id].enhance;
+    return EQUIP_DATA[id] ? EQUIP_DATA[id].enhance : '強化';
 }
 
 function triggerLevelUp(p, isReroll = false) {

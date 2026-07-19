@@ -28,7 +28,8 @@
 "P": "#5c85ff",
 "Q": "#69008f",
 "R": "#30562e",
-"S": "#be8cff"
+"S": "#be8cff",
+"T": "#002e00"
 },
 "sprites": {
 "tree": [
@@ -612,14 +613,14 @@
 "L..QQOO."
 ],
 "grasses": [
-"RRRRRRRR",
-"BRBRRRRR",
-"RBRRBRRR",
-"RRRRRRRR",
-"RRBRBRRR",
-"RRRBRRRR",
-"RRRRRRBR",
-"RRBRRRRR"
+"TTTTTTTT",
+"RTRTTRTT",
+"TRTTRTTT",
+"TTTTTTTT",
+"TTRTRTTT",
+"TTTRTTTT",
+"TTTTTTRT",
+"TTRTTTTT"
 ],
 "flower_1": [
 "........",
@@ -742,24 +743,24 @@
 "...11..."
 ],
 "status_reroll": [
-"..IIIII.",
-".I55555I",
-".I5III5I",
-".I5I.I5I",
-"II5III5I",
-"I555II5I",
-".I5I.III",
-"..I....."
+"..EEEEE.",
+".E55555E",
+".E5EEE5E",
+".E5E.E5E",
+"EE5EEE5E",
+"E555EE5E",
+".E5E.EEE",
+"..E....."
 ],
 "status_exroll": [
-"....III.",
-"...II5I.",
-".III55I.",
-"II5II5I.",
-"I555I5I.",
-"II5II5I.",
-".IIII5I.",
-"....III."
+"....EEE.",
+"...EE5E.",
+".EEE55E.",
+"EE5EE5E.",
+"E555E5E.",
+"EE5EE5E.",
+".EEEE5E.",
+"....EEE."
 ],
 "item_regene": [
 "..A...B.",
@@ -790,6 +791,166 @@
 "33N77391",
 ".G33N96.",
 "..GGG6.."
+],
+"hero_bomb_left_1": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_left_2": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_right_1": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_right_2": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_up1": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_up_2": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_down_1": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_bomb_down_2": [
+"..999H33",
+".99999H3",
+".KIKI5H.",
+"9KIKI5H.",
+"H999977H",
+".HFFFFP9",
+"..FFF88.",
+".88PP..."
+],
+"hero_week_left_1": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_left_2": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_right_1": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_right_2": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_up_1": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_up_2": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_down_1": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
+],
+"hero_week_down_2": [
+"..DDDD3.",
+".D2222D3",
+".4IKIDD.",
+".KIKI5D.",
+"G39993G.",
+"G3333G3.",
+".GKKG3..",
+".88G88.."
 ]
 }
 }
