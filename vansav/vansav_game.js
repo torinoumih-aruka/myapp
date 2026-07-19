@@ -780,24 +780,26 @@ function updateGame(dt) {
                         !GAME.enemies.some(e => e.type.startsWith('don_medusa_'));
         GAME.isCleared = isCleared;
         if (isCleared) {
-            let p = GAME.players[0];
-            let charId = p.id; // Just 1P for now
-            let cData = CHARACTERS.find(c => c.id === charId);
-            if (cData && !cData.name.endsWith('＊')) {
-                cData.name += '＊';
-                if (!SAVE_DATA.clearedChars) SAVE_DATA.clearedChars = [];
-                if (!SAVE_DATA.clearedChars.includes(charId)) SAVE_DATA.clearedChars.push(charId);
-            }
-            if (!SAVE_DATA.clearedEquips) SAVE_DATA.clearedEquips = [];
-            p.equips.forEach(eq => {
-                let maxLvl = EQUIP_DATA[eq.id].maxLvl;
-                if (eq.lvl >= maxLvl) {
-                    let eData = EQUIP_DATA[eq.id];
-                    if (eData && !eData.name.endsWith('＊')) {
-                        eData.name += '＊';
-                        if (!SAVE_DATA.clearedEquips.includes(eq.id)) SAVE_DATA.clearedEquips.push(eq.id);
-                    }
+            GAME.players.forEach(p => {
+                let charId = p.charData.id;
+                let cData = CHARACTERS.find(c => c.id === charId);
+                if (cData && !cData.name.endsWith('＊')) {
+                    cData.name += '＊';
+                    if (!SAVE_DATA.clearedChars) SAVE_DATA.clearedChars = [];
+                    if (!SAVE_DATA.clearedChars.includes(charId)) SAVE_DATA.clearedChars.push(charId);
                 }
+                
+                if (!SAVE_DATA.clearedEquips) SAVE_DATA.clearedEquips = [];
+                p.equips.forEach(eq => {
+                    let maxLvl = EQUIP_DATA[eq.id].maxLvl;
+                    if (eq.lvl >= maxLvl) {
+                        let eData = EQUIP_DATA[eq.id];
+                        if (eData && !eData.name.endsWith('＊')) {
+                            eData.name += '＊';
+                            if (!SAVE_DATA.clearedEquips.includes(eq.id)) SAVE_DATA.clearedEquips.push(eq.id);
+                        }
+                    }
+                });
             });
             saveGameData();
         }
