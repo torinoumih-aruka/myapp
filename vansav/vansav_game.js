@@ -67,8 +67,10 @@ let SAVE_DATA = {
 };
 
 const CHARACTERS = [
-    { id: 'knight', name: 'ナイト', desc: '勇かんなナイト。操作は難しいが、バランスのとれた強さ。', hp: 100, atk: 10, def: 5, spd: 100, luck: 1, sprite: 'hero_knight_down_1', unlocked: true },
-    { id: 'wiz', name: 'ウィッチ', desc: 'まほうつかいの女の子。素早く動ける。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false }
+    { id: 'knight', name: 'ナイト', desc: '勇かんなナイト。操作は難しいが、バランスのとれた強さ。', hp: 100, atk: 10, def: 5, spd: 100, luck: 1, sprite: 'hero_knight_down_1', unlocked: true, initialEquip: 'sword' },
+    { id: 'wiz', name: 'ウィッチ', desc: 'まほうつかいの女の子。素早く動ける。', hp: 80, atk: 10, def: 6, spd: 130, luck: 2, sprite: 'hero_wiz_left_1', unlocked: false, initialEquip: 'magic_bullet' },
+    { id: 'bomber', name: 'ボンバーマン', desc: 'ばくだん男。こうげきアイテムの装備数が多いかわりに、こうげき以外のアイテムが1つしか装備できない。', hp: 110, atk: 8, def: 6, spd: 100, luck: 2, sprite: 'hero_bomb_down_1', unlocked: false, maxAtk: 6, maxBuf: 1, initialEquip: 'bomb' },
+    { id: 'villager', name: 'むらむすめ', desc: 'か弱い女の子。アイテム所持数が少ない代わりに、うんのよさが極めて高い', hp: 70, atk: 5, def: 5, spd: 150, luck: 10, sprite: 'hero_week_down_1', unlocked: false, maxAtk: 3, maxBuf: 3, initialEquip: 'poison_mist' }
 ];
 
 const EQUIP_DATA = {
@@ -157,6 +159,8 @@ const REQUIRED_SPRITES = [
     'exp', 'exp_m', 'exp_l', 'exp_xl', 'item_boots', 'item_cross', 'item_coin_bag',
     'item_regene', 'item_barrier', 'attract_ball', 'status_healplus', 'status_lune', 'status_reroll', 'status_exroll'
 ];
+const _dirs = ['down', 'left', 'right', 'up'];
+['bomb', 'week'].forEach(h => _dirs.forEach(d => [1,2].forEach(n => REQUIRED_SPRITES.push(`hero_${h}_${d}_${n}`))));
 
 // --- Initialization & Asset Loading ---
 async function boot() {
@@ -214,11 +218,20 @@ function loadSaveData() {
                 coins: 0, hpLvl: 0, luckLvl: 0, atkLvl: 0, defLvl: 0, spdLvl: 0, 
                 wizUnlocked: false, bombUnlocked: false, boomerangUnlocked: false, iceblustUnlocked: false, stonedustUnlocked: false,
                 regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0,
+                bomberUnlocked: false, villagerUnlocked: false,
                 clearedChars: [], clearedEquips: []
             }, parsed);
             if (SAVE_DATA.wizUnlocked) {
                 let wiz = CHARACTERS.find(c => c.id === 'wiz');
                 if (wiz) wiz.unlocked = true;
+            }
+            if (SAVE_DATA.bomberUnlocked) {
+                let bomber = CHARACTERS.find(c => c.id === 'bomber');
+                if (bomber) bomber.unlocked = true;
+            }
+            if (SAVE_DATA.villagerUnlocked) {
+                let villager = CHARACTERS.find(c => c.id === 'villager');
+                if (villager) villager.unlocked = true;
             }
             if (SAVE_DATA.clearedChars) {
                 SAVE_DATA.clearedChars.forEach(cid => {
@@ -241,6 +254,7 @@ function saveGameData() { localStorage.setItem('vansav_save', JSON.stringify(SAV
 class Player {
     constructor(id, charData, x, y) {
         this.id = id;
+        this.charData = charData;
         this.name = charData.name;
         this.x = x;
         this.y = y;
@@ -535,13 +549,13 @@ function setupUIEvents() {
     
     document.getElementById('btn-char-decide').addEventListener('click', () => {
         if (!GAME.p1SelectedChar) return;
-        if (GAME.is2P && !GAME.p2SelectedChar) {
-            document.getElementById('char-select-title').innerText = "キャラクター選択 (2P)";
-            document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+        if (GAME.is2P && GAME.p1SelectedChar && !GAME.p2SelectedChar) {
+            document.getElementById('char-select-title').innerText = "キャラクターセレクト (2P)";
+            updateCharacterList();
             document.getElementById('btn-char-decide').classList.add('disabled');
-            return;
+        } else {
+            startGame();
         }
-        startGame();
     });
     
     document.getElementById('btn-pause').addEventListener('click', (e) => {
@@ -592,6 +606,12 @@ function buildShopUI() {
     
     addItem('そせいのルーン', 'status_lune', 'unlock', 1, `HP0時に1度だけ復活。`, SAVE_DATA.reviveLuneUnlocked, () => { SAVE_DATA.reviveLuneUnlocked = true; saveGameData(); }, 5000);
     addItem('キャラ: ウィッチ', 'hero_wiz_left_1', 'unlock', 1, `まほうつかいの女の子。`, SAVE_DATA.wizUnlocked, () => { SAVE_DATA.wizUnlocked = true; CHARACTERS.find(c => c.id === 'wiz').unlocked = true; saveGameData(); }, 1);
+    if (SAVE_DATA.clearedChars && SAVE_DATA.clearedChars.length > 0) {
+        addItem('キャラ: ボンバーマン', 'hero_bomb_down_1', 'unlock', 1, `ばくだん男。こうげきアイテムの装備数が多いかわりに、こうげき以外のアイテムが1つしか装備できない。`, SAVE_DATA.bomberUnlocked, () => { SAVE_DATA.bomberUnlocked = true; CHARACTERS.find(c => c.id === 'bomber').unlocked = true; saveGameData(); }, 100);
+    }
+    if (SAVE_DATA.clearedChars && ['knight', 'wiz', 'bomber'].every(id => SAVE_DATA.clearedChars.includes(id))) {
+        addItem('キャラ: むらむすめ', 'hero_week_down_1', 'unlock', 1, `か弱い女の子。アイテム所持数が少ない代わりに、うんのよさが極めて高い`, SAVE_DATA.villagerUnlocked, () => { SAVE_DATA.villagerUnlocked = true; CHARACTERS.find(c => c.id === 'villager').unlocked = true; saveGameData(); }, 100);
+    }
     addItem('装備解放: ボム', 'item_bomb', 'unlock', 1, `ボムが登場するようになる`, SAVE_DATA.bombUnlocked, () => { SAVE_DATA.bombUnlocked = true; saveGameData(); }, 300);
     addItem('装備解放: ブーメラン', 'item_boomerang', 'unlock', 1, `ブーメランが登場するようになる`, SAVE_DATA.boomerangUnlocked, () => { SAVE_DATA.boomerangUnlocked = true; saveGameData(); }, 500);
     addItem('装備解放: リジェネレーション', 'item_regene', 'unlock', 1, `リジェネレーションが登場するようになる`, SAVE_DATA.regeneUnlocked, () => { SAVE_DATA.regeneUnlocked = true; saveGameData(); }, 600);
@@ -609,6 +629,8 @@ function buildShopUI() {
                 regeneUnlocked: false, barrierUnlocked: false, healPlusLvl: 0, reviveLuneUnlocked: false, rerollLvl: 0, exrollLvl: 0
             }; 
             CHARACTERS.find(c => c.id === 'wiz').unlocked = false; 
+            CHARACTERS.find(c => c.id === 'bomber').unlocked = false; 
+            CHARACTERS.find(c => c.id === 'villager').unlocked = false; 
             saveGameData(); buildShopUI(); 
         }
     };
@@ -616,7 +638,11 @@ function buildShopUI() {
 }
 
 function buildCharSelectUI() {
-    document.getElementById('char-select-title').innerText = "キャラクター選択 (1P)";
+    document.getElementById('char-select-title').innerText = "キャラクターセレクト (1P)";
+    updateCharacterList();
+}
+
+function updateCharacterList() {
     document.getElementById('btn-char-decide').classList.add('disabled');
     const list = document.getElementById('char-list');
     list.innerHTML = '';
@@ -684,12 +710,12 @@ function startGame() {
     }
 
     let p1 = new Player(0, GAME.p1SelectedChar, 0, 0);
-    p1.equips.push({ id: GAME.p1SelectedChar.id === 'knight' ? 'sword' : 'magic_bullet', lvl: 1 }); // Starter weapon
+    p1.equips.push({ id: GAME.p1SelectedChar.initialEquip, lvl: 1 }); // Starter weapon
     GAME.players.push(p1);
     
     if (GAME.is2P && GAME.p2SelectedChar) {
         let p2 = new Player(1, GAME.p2SelectedChar, 40, 0);
-        p2.equips.push({ id: GAME.p2SelectedChar.id === 'knight' ? 'sword' : 'magic_bullet', lvl: 1 });
+        p2.equips.push({ id: GAME.p2SelectedChar.initialEquip, lvl: 1 });
         GAME.players.push(p2);
         document.getElementById('equip-2p').style.display = 'flex';
     } else {
@@ -2026,7 +2052,9 @@ function triggerLevelUp(p, isReroll = false) {
         let currentLvl = has ? has.lvl : 0;
         if (currentLvl < eq.maxLvl) {
             let typeCount = p.equips.filter(e => EQUIP_DATA[e.id].type === eq.type).length;
-            if (has || (eq.type === 'atk' && typeCount < 4) || (eq.type === 'buf' && typeCount < 3)) {
+            let maxAtk = p.charData.maxAtk || 4;
+            let maxBuf = p.charData.maxBuf || 3;
+            if (has || (eq.type === 'atk' && typeCount < maxAtk) || (eq.type === 'buf' && typeCount < maxBuf)) {
                 available.push(k);
             }
         }
