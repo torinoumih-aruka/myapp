@@ -136,6 +136,21 @@ class Player {
         
         this.hp = Math.min(this.maxHp, this.maxHp * hpRatio);
         this.mp = Math.min(this.maxMp, this.maxMp * mpRatio);
+        
+        // パレットにセットされている武器の条件を再チェック
+        for (let i = 0; i < 6; i++) {
+            let item = this.palette[i];
+            if (item && item.type === 'weapon') {
+                let valid = true;
+                if (item.reqClass && this.classId !== item.reqClass) valid = false;
+                if (item.reqDex && this.dex < item.reqDex) valid = false;
+                
+                if (!valid) {
+                    this.palette[i] = null;
+                    // Note: updatePaletteUI will be called if needed, or caller handles UI refresh
+                }
+            }
+        }
     }
 
     update(dt) {
