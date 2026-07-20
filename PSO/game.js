@@ -1,0 +1,862 @@
+// game.js
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const SCREEN_W = 640;
+const SCREEN_H = 360;
+let FPS = 60;
+
+// Data
+let MAP_DATA = null;
+let PALETTE = {};
+let SPRITES = {};
+let PRE_RENDERED = {};
+
+// Game State
+let GAME = {
+    mode: 'title', // title, town, map, gameover
+    players: [],
+    enemies: [],
+    projectiles: [],
+    particles: [],
+    is2P: false,
+    cameraX: 0,
+    cameraY: 0,
+    currentStage: null,
+    currentArea: null,
+    currentMapPattern: null,
+    lastTime: performance.now()
+};
+
+// Inputs
+let INPUTS = [
+    { vx: 0, vy: 0, act: false, menu: false, palLeft: false, palRight: false, tVx: 0, tVy: 0, tAct: false, tMenu: false, tPalLeft: false, tPalRight: false, kAct: false, kMenu: false, kPalLeft: false, kPalRight: false, touchActive: false },
+    { vx: 0, vy: 0, act: false, menu: false, palLeft: false, palRight: false, tVx: 0, tVy: 0, tAct: false, tMenu: false, tPalLeft: false, tPalRight: false, kAct: false, kMenu: false, kPalLeft: false, kPalRight: false, touchActive: false }
+];
+
+// Classes
+const CLASS_DATA = {
+    swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, sprite: 'hero_knight_down_1', type: 'melee' },
+    ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, sprite: 'hero_wiz_down_1', type: 'ranged' },
+    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, sprite: 'hero_week_down_1', type: 'magic' }
+};
+
+// Player Entity
+class Player {
+    constructor(id, classId, x, y) {
+        this.id = id; // 0 for 1P, 1 for 2P
+        this.classId = classId;
+        this.level = 1;
+        const cdata = CLASS_DATA[classId];
+        this.maxHp = cdata.hp;
+        this.hp = this.maxHp;
+        this.maxMp = cdata.mp;
+        this.mp = this.maxMp;
+        this.atk = cdata.atk;
+        this.def = cdata.def;
+        this.spd = cdata.spd;
+        this.sprite = cdata.sprite;
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.dirX = 0;
+        this.dirY = 1;
+        this.maxMp = cdata.mp;
+        this.mp = this.maxMp;
+        this.atk = cdata.atk;
+        this.def = cdata.def;
+        this.spd = cdata.spd;
+        
+        this.palette = [null, null, null, null, null, null];
+        this.paletteIndex = 1; // 0=L, 1=ACT, 2=R
+        
+        // Add requested default items
+        this.inventory = [
+            { id: 'w_saber', name: 'セイバー', type: 'weapon', atk: 10, range: 40 },
+            { id: 'w_handgun', name: 'ハンドガン', type: 'weapon', atk: 5, range: 120 },
+            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10 },
+            { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
+            { id: 'u_hp', name: 'HP＋ユニット', type: 'unit', hp: 20 },
+            { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
+            { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
+            { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
+        ];
+
+        // Combo system
+        this.comboCount = 0;
+        this.attackTimer = 0;
+        this.comboWindow = 0;
+        this.state = 'idle'; // idle, move, attack, dead
+        this.menuOpen = false;
+
+        // Default weapon for testing
+        this.palette[0] = this.inventory[0];
+        this.palette[1] = this.inventory[1];
+    }
+
+    update(dt) {
+        if (this.hp <= 0) {
+            this.state = 'dead';
+            return;
+        }
+
+        let input = INPUTS[this.id];
+        
+        if (this.state === 'attack') {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) {
+                this.state = 'idle';
+                this.comboWindow = 0.5; // 0.5 sec to input next combo
+            }
+        } else {
+            if (this.comboWindow > 0) {
+                this.comboWindow -= dt;
+                if (this.comboWindow <= 0) this.comboCount = 0;
+            }
+
+            // Movement
+            if (input.vx !== 0 || input.vy !== 0) {
+                this.vx = input.vx * this.spd;
+                this.vy = input.vy * this.spd;
+                this.dirX = input.vx;
+                this.dirY = input.vy;
+                this.state = 'move';
+            } else {
+                this.vx = 0;
+                this.vy = 0;
+                this.state = 'idle';
+            }
+
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+
+            // 2P Screen Constraint (Invisible wall relative to 1P)
+            if (this.id === 1 && GAME.players[0]) {
+                const p1 = GAME.players[0];
+                const halfW = SCREEN_W / 2;
+                const halfH = SCREEN_H / 2;
+                if (this.x < p1.x - halfW + 16) this.x = p1.x - halfW + 16;
+                if (this.x > p1.x + halfW - 16) this.x = p1.x + halfW - 16;
+                if (this.y < p1.y - halfH + 16) this.y = p1.y - halfH + 16;
+                if (this.y > p1.y + halfH - 16) this.y = p1.y + halfH - 16;
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.state === 'dead') return;
+        ctx.fillStyle = this.id === 0 ? 'blue' : 'green';
+        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        
+        // Draw Direction Indicator
+        ctx.strokeStyle = 'white';
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
+        ctx.stroke();
+
+        // Draw attack bounding box (Placeholder)
+        if (this.state === 'attack') {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(this.x + this.dirX * 20, this.y + this.dirY * 20, 30, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    doAction() {
+        if (this.state === 'attack' || this.state === 'dead') return;
+
+        if (GAME.mode === 'town') {
+            // Check NPC distance
+            let closestNPC = null;
+            let minDist = 30;
+            MAP_DATA.town.npcs.forEach(npc => {
+                let dist = Math.hypot(npc.x - this.x, npc.y - this.y);
+                if (dist < minDist) { minDist = dist; closestNPC = npc; }
+            });
+            if (closestNPC) {
+                if (closestNPC.type === 'inn') {
+                    if (confirm('宿屋に泊まりますか？ (10コイン)')) {
+                        this.hp = this.maxHp; this.mp = this.maxMp;
+                        alert('HPとMPが回復しました！');
+                    }
+                } else if (closestNPC.type === 'appraiser') {
+                    alert('未鑑定アイテムはありません。');
+                } else if (closestNPC.type === 'shop') {
+                    alert('ショップ機能は準備中です。');
+                } else if (closestNPC.type === 'teleporter') {
+                    if (confirm('ステージ1へ転送しますか？')) {
+                        GAME.mode = 'map';
+                        loadArea(MAP_DATA.stages[0].areas[0].patterns[0]);
+                    }
+                }
+                return; // Prevent attacking in town near NPC
+            }
+        }
+
+        let action = this.palette[this.paletteIndex];
+        if (!action) return;
+
+        if (action.type === 'weapon') {
+            this.state = 'attack';
+            this.attackTimer = 0.3; // 300ms attack animation
+            this.comboCount++;
+            if (this.comboCount > 3) this.comboCount = 1;
+            console.log(`Player ${this.id+1} attacks! Combo: ${this.comboCount}`);
+            
+            // Auto lock-on logic placeholder
+            let target = null;
+            let minDist = 100;
+            GAME.enemies.forEach(e => {
+                let dx = e.x - this.x;
+                let dy = e.y - this.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < minDist) { minDist = dist; target = e; }
+            });
+
+            if (target) {
+                let dmg = this.atk * (1 + this.comboCount * 0.2);
+                if (action.attr && action.attr.native) dmg *= 1.2; // Example attribute bonus
+                target.hp -= dmg; 
+                console.log(`Hit enemy! Enemy HP: ${target.hp}`);
+            }
+
+        } else if (action.type === 'item') {
+            if (action.healHp) {
+                this.hp = Math.min(this.maxHp, this.hp + action.healHp);
+                if (action.stack > 0) action.stack--;
+                if (action.stack <= 0) {
+                    // Remove from palette and inventory
+                    this.palette[this.paletteIndex] = null;
+                    this.inventory = this.inventory.filter(i => i !== action);
+                }
+                console.log(`Player ${this.id+1} uses item! HP: ${this.hp}`);
+            }
+        }
+    }
+}
+
+// Enemy Entity
+class Enemy {
+    constructor(type, x, y) {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.hp = 50;
+        this.maxHp = 50;
+        this.atk = 5;
+        this.spd = 40;
+    }
+
+    update(dt) {
+        if (this.hp <= 0) return;
+        // Simple follow 1P
+        let target = GAME.players[0];
+        if (!target || target.state === 'dead') return;
+
+        let dx = target.x - this.x;
+        let dy = target.y - this.y;
+        let dist = Math.hypot(dx, dy);
+        
+        if (dist > 20) {
+            this.x += (dx / dist) * this.spd * dt;
+            this.y += (dy / dist) * this.spd * dt;
+        }
+    }
+
+    draw(ctx) {
+        if (this.hp <= 0) return;
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        
+        // HP Bar
+        ctx.fillStyle = 'black';
+        ctx.fillRect(this.x - 10, this.y - 15, 20, 4);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x - 10, this.y - 15, 20 * (this.hp / this.maxHp), 4);
+    }
+}
+
+// Map Loading
+async function loadMapData() {
+    try {
+        const res = await fetch('maps.json');
+        MAP_DATA = await res.json();
+    } catch(e) {
+        console.error('Failed to load maps.json', e);
+    }
+}
+
+function loadArea(areaPattern) {
+    GAME.currentMapPattern = areaPattern;
+    GAME.enemies = [];
+    if (areaPattern.enemies) {
+        areaPattern.enemies.forEach(ed => {
+            GAME.enemies.push(new Enemy(ed.type, ed.x, ed.y));
+        });
+    }
+    
+    // Set players to start
+    GAME.players.forEach(p => {
+        p.x = areaPattern.start.x;
+        p.y = areaPattern.start.y;
+    });
+}
+
+function startGame(is2P, class1, class2) {
+    GAME.mode = 'town';
+    GAME.is2P = is2P;
+    GAME.players = [];
+    GAME.players.push(new Player(0, class1, MAP_DATA.town.start.x, MAP_DATA.town.start.y));
+    if (is2P) {
+        GAME.players.push(new Player(1, class2 || 'ranger', MAP_DATA.town.start.x + 30, MAP_DATA.town.start.y));
+    }
+    
+    // Hide screens
+    document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
+    document.getElementById('hud').style.display = 'block';
+    
+    if (is2P) {
+        document.getElementById('status-2p').style.display = 'flex';
+        document.getElementById('palette-2p').style.display = 'flex';
+    }
+
+    // Touch controls
+    document.getElementById('vpad-1p').style.display = 'block';
+    document.getElementById('btns-1p').style.display = 'block';
+
+    updateUI();
+}
+
+// Input Handling
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.code] = true; });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function processInputs() {
+    let i1 = INPUTS[0];
+    let kx = 0; let ky = 0;
+    if (keys['ArrowUp'] || keys['KeyW']) ky = -1;
+    if (keys['ArrowDown'] || keys['KeyS']) ky = 1;
+    if (keys['ArrowLeft'] || keys['KeyA']) kx = -1;
+    if (keys['ArrowRight'] || keys['KeyD']) kx = 1;
+
+    if (kx !== 0 && ky !== 0) {
+        let len = Math.hypot(kx, ky);
+        kx /= len; ky /= len;
+    }
+
+    if (i1.touchActive) {
+        i1.vx = i1.tVx;
+        i1.vy = i1.tVy;
+    } else {
+        i1.vx = kx;
+        i1.vy = ky;
+    }
+
+    let rawAct = keys['Space'] || i1.tAct;
+    if (rawAct) { if (!i1.actHeld) { i1.act = true; i1.actHeld = true; } else { i1.act = false; } }
+    else { i1.actHeld = false; i1.act = false; }
+    
+    let rawPalLeft = keys['KeyQ'] || i1.tPalLeft;
+    if (rawPalLeft) { if (!i1.lHeld) { i1.palLeft = true; i1.lHeld = true; } else { i1.palLeft = false; } }
+    else { i1.lHeld = false; i1.palLeft = false; }
+    
+    let rawPalRight = keys['KeyE'] || i1.tPalRight;
+    if (rawPalRight) { if (!i1.rHeld) { i1.palRight = true; i1.rHeld = true; } else { i1.palRight = false; } }
+    else { i1.rHeld = false; i1.palRight = false; }
+    
+    let rawMenu = keys['Enter'] || i1.tMenu;
+    if (rawMenu) { if (!i1.mHeld) { i1.menu = true; i1.mHeld = true; } else { i1.menu = false; } }
+    else { i1.mHeld = false; i1.menu = false; }
+
+    // Gamepad override for 1P/2P
+    const pads = navigator.getGamepads();
+    for (let i = 0; i < 2; i++) {
+        const pad = pads[i];
+        if (pad && INPUTS[i]) {
+            let px = pad.axes[0];
+            let py = pad.axes[1];
+            if (Math.abs(px) < 0.2) px = 0;
+            if (Math.abs(py) < 0.2) py = 0;
+            if (px !== 0 || py !== 0) {
+                INPUTS[i].vx = px;
+                INPUTS[i].vy = py;
+            }
+            // Buttons
+            if (pad.buttons[0].pressed) { if (!INPUTS[i].actHeldP) { INPUTS[i].act = true; INPUTS[i].actHeldP = true; } else { INPUTS[i].act = false; } }
+            else { INPUTS[i].actHeldP = false; }
+        }
+    }
+}
+
+function handleActions() {
+    GAME.players.forEach(p => {
+        let input = INPUTS[p.id];
+        
+        if (input.palLeft) {
+            p.paletteIndex--;
+            if (p.paletteIndex < 0) p.paletteIndex = 5;
+            updatePaletteUI(p.id);
+        }
+        if (input.palRight) {
+            p.paletteIndex++;
+            if (p.paletteIndex > 5) p.paletteIndex = 0;
+            updatePaletteUI(p.id);
+        }
+        if (input.act && !p.menuOpen) {
+            p.doAction();
+        }
+        if (input.menu) {
+            p.menuOpen = !p.menuOpen;
+            let el = document.getElementById(`menu-${p.id + 1}p`);
+            if (p.menuOpen) {
+                el.classList.add('open');
+                renderMenu(p.id);
+            } else {
+                el.classList.remove('open');
+            }
+        }
+    });
+}
+
+// Global Drag and Drop state
+let dndState = {
+    item: null,
+    clone: null,
+    pid: 0
+};
+
+let currentMenuTab = 'inv';
+
+function openItemModal(item, pid, source, slotIdx = -1) {
+    let p = GAME.players[pid];
+    let modal = document.getElementById('item-modal');
+    document.getElementById('modal-item-name').innerText = item.name;
+    
+    // Set descriptions
+    document.getElementById('modal-item-desc').innerText = item.name + " の説明文がここに入ります。";
+    let stats = "";
+    if (item.atk) stats += "ATK: " + item.atk + " ";
+    if (item.def) stats += "DEF: " + item.def + " ";
+    if (item.hp) stats += "HP: " + item.hp + " ";
+    if (item.dex) stats += "DEX: " + item.dex + " ";
+    if (item.healHp) stats += "回復HP: " + item.healHp + " ";
+    if (item.healMp) stats += "回復MP: " + item.healMp + " ";
+    document.getElementById('modal-item-stats').innerText = stats;
+    
+    let btnUse = document.getElementById('btn-modal-use');
+    let btnEquip = document.getElementById('btn-modal-equip');
+    btnUse.style.display = 'none';
+    btnEquip.style.display = 'none';
+    
+    // Default action visibility
+    if (item.type === 'item' || item.type === 'disk') {
+        btnUse.style.display = 'inline-block';
+        btnUse.onclick = () => {
+            if (item.type === 'item') {
+                if (item.healHp) p.hp = Math.min(p.maxHp, p.hp + item.healHp);
+                if (item.healMp) p.mp = Math.min(p.maxMp, p.mp + item.healMp);
+                if (item.stack > 0) item.stack--;
+                if (item.stack <= 0) p.inventory = p.inventory.filter(i => i !== item);
+            } else if (item.type === 'disk') {
+                if (!p.magic) p.magic = [];
+                p.magic.push({ id: item.id, name: item.name.replace('ディスク',''), type: 'magic', magic: item.magic, lv: item.lv });
+                p.inventory = p.inventory.filter(i => i !== item);
+            }
+            modal.style.display = 'none';
+            renderMenu(pid);
+        };
+    }
+    
+    document.getElementById('btn-modal-close').onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    modal.style.display = 'flex';
+}
+
+// Global Drag and Drop state
+let dndState = {
+    item: null,
+    clone: null,
+    pid: 0,
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    source: null, // 'inv', 'magic', 'palette'
+    slotIdx: -1,
+    longPressTimer: null
+};
+
+function renderMenu(pid) {
+    let p = GAME.players[pid];
+    if (!p.magic) p.magic = [];
+    
+    if (currentMenuTab === 'status') {
+        let st = document.getElementById('status-content');
+        if (st) {
+            st.innerHTML = `
+                LV: ${p.level} <br>
+                EXP: 0 / 100 <br>
+                HP: ${Math.floor(p.hp)} / ${p.maxHp} <br>
+                MP: ${Math.floor(p.mp)} / ${p.maxMp} <br>
+                POW: ${p.atk} <br>
+                DEF: ${p.def} <br>
+                DEX: 50 <br>
+                MIND: 40 <br>
+                EIV: 30 <br>
+                LUCK: 10 <br>
+            `;
+        }
+        let equipList = document.getElementById('equip-list');
+        if (equipList) equipList.innerHTML = `武器: (実装予定)<br>防具: (実装予定)<br>ユニット: (実装予定)`;
+        return;
+    }
+
+    let isMagic = (currentMenuTab === 'magic');
+    let invEl = document.getElementById(isMagic ? `menu-magic-${pid+1}p` : `menu-list-${pid+1}p`);
+    let palEl = document.getElementById(isMagic ? `menu-palette-magic-${pid+1}p` : `menu-palette-${pid+1}p`);
+    if (!invEl || !palEl) return;
+    
+    invEl.innerHTML = '';
+    palEl.innerHTML = '';
+    
+    // Render palette slots
+    for (let i = 0; i < 6; i++) {
+        let pdiv = document.createElement('div');
+        pdiv.className = 'menu-item palette-menu-slot';
+        pdiv.setAttribute('data-slot-idx', i);
+        pdiv.style.minHeight = '30px';
+        let item = p.palette[i];
+        pdiv.innerHTML = `<span>[${i+1}] ${item ? item.name : '空'}</span>`;
+        
+        if (item) {
+            pdiv.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                pdiv.setPointerCapture(e.pointerId);
+                dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: 'palette', slotIdx: i };
+                dndState.longPressTimer = setTimeout(() => {
+                    if (dndState.item) {
+                        let i_ref = dndState.item;
+                        dndState.item = null; // Cancel D&D
+                        openItemModal(i_ref, pid, 'palette', i);
+                    }
+                }, 500);
+            });
+        }
+        palEl.appendChild(pdiv);
+    }
+    
+    let listSource = isMagic ? p.magic : p.inventory;
+    listSource.forEach((item, idx) => {
+        let div = document.createElement('div');
+        div.className = 'menu-item';
+        div.innerHTML = `<span>${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        
+        div.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            div.setPointerCapture(e.pointerId);
+            dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1 };
+        });
+
+        invEl.appendChild(div);
+    });
+}
+
+// Global touch handlers for drag and drop
+window.addEventListener('pointermove', (e) => {
+    if (dndState.item) {
+        let dx = e.clientX - dndState.startX;
+        let dy = e.clientY - dndState.startY;
+        if (Math.hypot(dx, dy) > 10) {
+            clearTimeout(dndState.longPressTimer);
+            if (!dndState.clone) {
+                let div = document.createElement('div');
+                div.className = 'menu-item';
+                div.style.background = '#ffcc00';
+                div.style.color = '#000';
+                div.innerText = dndState.item.name;
+                dndState.clone = div;
+                dndState.clone.style.position = 'fixed';
+                dndState.clone.style.zIndex = 1000;
+                dndState.clone.style.opacity = '0.8';
+                dndState.clone.style.pointerEvents = 'none';
+                document.body.appendChild(dndState.clone);
+            }
+            dndState.clone.style.left = e.clientX - 50 + 'px';
+            dndState.clone.style.top = e.clientY - 20 + 'px';
+        }
+    }
+});
+
+window.addEventListener('pointerup', cleanupDnd);
+window.addEventListener('pointercancel', cleanupDnd);
+
+function cleanupDnd(e) {
+    if (dndState.item) {
+        clearTimeout(dndState.longPressTimer);
+        let dx = e.clientX - dndState.startX;
+        let dy = e.clientY - dndState.startY;
+        let isTap = Math.hypot(dx, dy) <= 10 && (Date.now() - dndState.startTime < 500);
+
+        if (isTap && dndState.source !== 'palette') {
+            // Tap on inventory/magic item -> open modal
+            openItemModal(dndState.item, dndState.pid, dndState.source);
+        } else if (dndState.clone) {
+            // It was dragged
+            let target = document.elementFromPoint(e.clientX, e.clientY);
+            if (target) {
+                let slot = target.closest('.palette-menu-slot');
+                let trash = target.closest('.trash-bin');
+                let p = GAME.players[dndState.pid];
+                
+                if (trash && dndState.source === 'palette') {
+                    // Remove from palette
+                    p.palette[dndState.slotIdx] = null;
+                    updatePaletteUI(dndState.pid);
+                    renderMenu(dndState.pid);
+                } else if (slot && dndState.source !== 'palette') {
+                    // Validate D&D
+                    let item = dndState.item;
+                    let valid = false;
+                    if (dndState.source === 'inv' && (item.type === 'weapon' || item.type === 'item')) valid = true;
+                    if (dndState.source === 'magic' && (item.type === 'magic' || item.type === 'disk')) valid = true;
+                    
+                    if (valid) {
+                        let targetIdx = parseInt(slot.getAttribute('data-slot-idx'));
+                        p.palette[targetIdx] = item;
+                        updatePaletteUI(dndState.pid);
+                        renderMenu(dndState.pid);
+                    } else {
+                        alert("このアイテム種別はパレットにセットできません。");
+                    }
+                }
+            }
+        }
+        
+        if (dndState.clone) dndState.clone.remove();
+        dndState.item = null;
+        dndState.clone = null;
+    }
+}
+
+function updateUI() {
+    GAME.players.forEach(p => {
+        let idstr = `${p.id + 1}p`;
+        document.getElementById(`hp-${idstr}`).style.width = `${(p.hp / p.maxHp) * 100}%`;
+        document.getElementById(`mp-${idstr}`).style.width = `${(p.mp / p.maxMp) * 100}%`;
+        
+        document.getElementById(`hp-val-${idstr}`).innerText = `${Math.floor(p.hp)}/${p.maxHp}`;
+        document.getElementById(`mp-val-${idstr}`).innerText = `${Math.floor(p.mp)}/${p.maxMp}`;
+        
+        let cdata = CLASS_DATA[p.classId];
+        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}`;
+        
+        updatePaletteUI(p.id);
+    });
+}
+
+function updatePaletteUI(pid) {
+    let p = GAME.players[pid];
+    let idstr = `${pid + 1}p`;
+    
+    let leftIdx = (p.paletteIndex - 1 + 6) % 6;
+    let rightIdx = (p.paletteIndex + 1) % 6;
+    
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerText = p.palette[leftIdx] ? p.palette[leftIdx].name.substring(0,2) : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerText = p.palette[p.paletteIndex] ? p.palette[p.paletteIndex].name.substring(0,4) : '空';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,2) : '';
+}
+
+// Game Loop
+function update() {
+    let now = performance.now();
+    let dt = (now - GAME.lastTime) / 1000;
+    GAME.lastTime = now;
+    if (dt > 0.1) dt = 0.1;
+
+    processInputs();
+
+    if (GAME.mode === 'town' || GAME.mode === 'map') {
+        handleActions();
+
+        GAME.players.forEach(p => p.update(dt));
+        
+        GAME.enemies.forEach(e => e.update(dt));
+        GAME.enemies = GAME.enemies.filter(e => e.hp > 0);
+
+        // Map transition (Removed auto-transition, now using Teleporter)
+        
+        // Camera logic (Focus 1P)
+        if (GAME.players[0]) {
+            GAME.cameraX = GAME.players[0].x - SCREEN_W / 2;
+            GAME.cameraY = GAME.players[0].y - SCREEN_H / 2;
+        }
+
+        updateUI();
+    }
+}
+
+function draw() {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+
+    ctx.save();
+    ctx.translate(-GAME.cameraX, -GAME.cameraY);
+
+    // Draw Map grid (Placeholder)
+    ctx.strokeStyle = '#333';
+    for (let x = 0; x < 2000; x+=100) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 2000); ctx.stroke();
+    }
+    for (let y = 0; y < 2000; y+=100) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2000, y); ctx.stroke();
+    }
+
+    if (GAME.mode === 'town') {
+        ctx.fillStyle = 'white';
+        ctx.font = '20px sans-serif';
+        MAP_DATA.town.npcs.forEach(npc => {
+            ctx.fillStyle = 'purple';
+            ctx.fillRect(npc.x - 15, npc.y - 15, 30, 30);
+            ctx.fillStyle = 'white';
+            ctx.fillText(npc.name, npc.x - 20, npc.y - 20);
+        });
+    }
+
+    if (GAME.mode === 'map') {
+        GAME.enemies.forEach(e => e.draw(ctx));
+    }
+
+    GAME.players.forEach(p => p.draw(ctx));
+
+    ctx.restore();
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// Init
+window.onload = async () => {
+    await loadMapData();
+
+    // DOM bindings
+    document.getElementById('btn-start-1p').onclick = () => {
+        document.getElementById('screen-title').style.display = 'none';
+        document.getElementById('screen-class').style.display = 'flex';
+        GAME.is2P = false;
+    };
+    
+    document.getElementById('btn-start-2p').onclick = () => {
+        document.getElementById('screen-title').style.display = 'none';
+        document.getElementById('screen-class').style.display = 'flex';
+        GAME.is2P = true;
+    };
+
+    document.querySelectorAll('.class-btn').forEach(btn => {
+        btn.onclick = () => {
+            let cls = btn.getAttribute('data-class');
+            startGame(GAME.is2P, cls, 'ranger');
+        };
+    });
+
+    // Virtual Stick logic (pointer events for robust tap/mouse emulation)
+    const vpad = document.getElementById('vpad-1p');
+    const vstick = vpad.querySelector('.vstick');
+    let vpadPointerId = null;
+
+    vpad.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        vpadPointerId = e.pointerId;
+        vpad.setPointerCapture(vpadPointerId);
+        INPUTS[0].touchActive = true;
+        updateStick(e);
+    });
+    vpad.addEventListener('pointermove', e => {
+        e.preventDefault();
+        if (e.pointerId === vpadPointerId) updateStick(e);
+    });
+    const endStick = e => {
+        e.preventDefault();
+        if (e.pointerId === vpadPointerId) {
+            vpadPointerId = null;
+            vstick.style.transform = `translate(0px, 0px)`;
+            INPUTS[0].tVx = 0; INPUTS[0].tVy = 0;
+            INPUTS[0].touchActive = false;
+        }
+    };
+    vpad.addEventListener('pointerup', endStick);
+    vpad.addEventListener('pointercancel', endStick);
+
+    function updateStick(t) {
+        let rect = vpad.getBoundingClientRect();
+        let cx = rect.left + rect.width / 2;
+        let cy = rect.top + rect.height / 2;
+        let dx = t.clientX - cx;
+        let dy = t.clientY - cy;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 35) { dx = dx/dist*35; dy = dy/dist*35; }
+        vstick.style.transform = `translate(${dx}px, ${dy}px)`;
+        
+        let normDist = Math.min(dist / 35, 1.0);
+        let ang = Math.atan2(dy, dx);
+        INPUTS[0].tVx = Math.cos(ang) * normDist;
+        INPUTS[0].tVy = Math.sin(ang) * normDist;
+    }
+    
+    // Action buttons touch support (pointer events)
+    ['up','down','left','right'].forEach(dir => {
+        let btn = document.getElementById(`btn-1p-${dir}`);
+        if(btn) {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                btn.setPointerCapture(e.pointerId);
+                if (dir === 'up') INPUTS[0].tAct = true;
+                if (dir === 'left') INPUTS[0].tPalLeft = true;
+                if (dir === 'right') INPUTS[0].tPalRight = true;
+                if (dir === 'down') INPUTS[0].tMenu = true;
+            });
+            const handleRelease = (e) => {
+                e.preventDefault();
+                if (dir === 'up') INPUTS[0].tAct = false;
+                if (dir === 'left') INPUTS[0].tPalLeft = false;
+                if (dir === 'right') INPUTS[0].tPalRight = false;
+                if (dir === 'down') INPUTS[0].tMenu = false;
+            };
+            btn.addEventListener('pointerup', handleRelease);
+            btn.addEventListener('pointercancel', handleRelease);
+        }
+    });
+    
+    // Close menus
+    document.getElementById('btn-menu-close-1p').onclick = () => {
+        GAME.players[0].menuOpen = false;
+        document.getElementById('menu-1p').classList.remove('open');
+    };
+
+    // Menu Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.style.borderColor = '#fff';
+                b.classList.remove('active');
+            });
+            btn.style.borderColor = '#ffcc00';
+            btn.classList.add('active');
+            currentMenuTab = btn.getAttribute('data-tab');
+            document.getElementById('tab-inv').style.display = 'none';
+            document.getElementById('tab-magic').style.display = 'none';
+            document.getElementById('tab-status').style.display = 'none';
+            
+            document.getElementById(`tab-${currentMenuTab}`).style.display = 'flex';
+            renderMenu(0);
+        };
+    });
+
+    requestAnimationFrame(loop);
+};

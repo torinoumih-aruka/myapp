@@ -1,0 +1,58 @@
+{
+    "stages": [
+        {
+            "id": "stage1",
+            "name": "表層",
+            "bgType": "forest",
+            "areas": [
+                {
+                    "id": "area1",
+                    "patterns": [
+                        {
+                            "width": 1000,
+                            "height": 1000,
+                            "start": { "x": 100, "y": 100 },
+                            "goal": { "x": 900, "y": 900 },
+                            "enemies": [
+                                { "type": "native_wolf", "x": 500, "y": 500 },
+                                { "type": "native_wolf", "x": 600, "y": 550 },
+                                { "type": "native_bear", "x": 800, "y": 200 }
+                            ],
+                            "boxes": [
+                                { "x": 200, "y": 800 }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "area2",
+                    "patterns": [
+                        {
+                            "width": 800,
+                            "height": 1200,
+                            "start": { "x": 400, "y": 1100 },
+                            "goal": { "x": 400, "y": 100, "isBoss": true },
+                            "enemies": [
+                                { "type": "native_wolf", "x": 400, "y": 800 },
+                                { "type": "native_wolf", "x": 300, "y": 600 },
+                                { "type": "native_bear", "x": 500, "y": 600 }
+                            ],
+                            "boxes": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "town": {
+        "width": 800,
+        "height": 600,
+        "start": { "x": 400, "y": 500 },
+        "npcs": [
+            { "type": "inn", "x": 200, "y": 200, "name": "宿屋" },
+            { "type": "shop", "x": 400, "y": 200, "name": "道具屋" },
+            { "type": "appraiser", "x": 600, "y": 200, "name": "鑑定屋" },
+            { "type": "teleporter", "x": 400, "y": 100, "name": "転送装置" }
+        ]
+    }
+}
