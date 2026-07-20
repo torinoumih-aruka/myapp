@@ -67,6 +67,19 @@ class Player {
         this.def = cdata.def;
         this.spd = cdata.spd;
         
+        this.dex = 50;
+        
+        this.baseStats = {
+            maxHp: cdata.hp,
+            maxMp: cdata.mp,
+            atk: cdata.atk,
+            def: cdata.def,
+            spd: cdata.spd,
+            dex: 50
+        };
+        
+        this.equip = { armor: null };
+        
         this.palette = [null, null, null, null, null, null];
         this.paletteIndex = 1; // 0=L, 1=ACT, 2=R
         
@@ -74,7 +87,9 @@ class Player {
         this.inventory = [
             { id: 'w_saber', name: 'セイバー', type: 'weapon', atk: 10, range: 40 },
             { id: 'w_handgun', name: 'ハンドガン', type: 'weapon', atk: 5, range: 120 },
-            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10 },
+            { id: 'w_sword', name: 'ソード', type: 'weapon', atk: 20, range: 50, reqClass: 'swordman' },
+            { id: 'w_railgun', name: 'レールガン', type: 'weapon', atk: 15, range: 150, reqDex: 53 },
+            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] },
             { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
             { id: 'u_hp', name: 'HP＋ユニット', type: 'unit', hp: 20 },
             { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
@@ -92,6 +107,35 @@ class Player {
         // Default weapon for testing
         this.palette[0] = this.inventory[0];
         this.palette[1] = this.inventory[1];
+    }
+    
+    recalculateStats() {
+        let hpRatio = this.hp / this.maxHp;
+        let mpRatio = this.maxMp > 0 ? (this.mp / this.maxMp) : 0;
+        
+        this.maxHp = this.baseStats.maxHp;
+        this.maxMp = this.baseStats.maxMp;
+        this.atk = this.baseStats.atk;
+        this.def = this.baseStats.def;
+        this.spd = this.baseStats.spd;
+        this.dex = this.baseStats.dex;
+        
+        if (this.equip.armor) {
+            if (this.equip.armor.def) this.def += this.equip.armor.def;
+            if (this.equip.armor.slottedUnits) {
+                this.equip.armor.slottedUnits.forEach(u => {
+                    if (u) {
+                        if (u.atk) this.atk += u.atk;
+                        if (u.def) this.def += u.def;
+                        if (u.hp) this.maxHp += u.hp;
+                        if (u.dex) this.dex += u.dex;
+                    }
+                });
+            }
+        }
+        
+        this.hp = Math.min(this.maxHp, this.maxHp * hpRatio);
+        this.mp = Math.min(this.maxMp, this.maxMp * mpRatio);
     }
 
     update(dt) {
@@ -421,37 +465,113 @@ function handleActions() {
     });
 }
 
-// Global Drag and Drop state
-let dndState = {
-    item: null,
-    clone: null,
-    pid: 0
-};
 
 let currentMenuTab = 'inv';
+
+let currentModalItem = null;
+let currentModalPid = 0;
 
 function openItemModal(item, pid, source, slotIdx = -1) {
     let p = GAME.players[pid];
     let modal = document.getElementById('item-modal');
-    document.getElementById('modal-item-name').innerText = item.name;
+    currentModalItem = item;
+    currentModalPid = pid;
     
-    // Set descriptions
+    document.getElementById('modal-item-name').innerText = item.name;
     document.getElementById('modal-item-desc').innerText = item.name + " の説明文がここに入ります。";
+    
+    let bonus = { atk: 0, def: 0, hp: 0, dex: 0 };
+    if (item.type === 'armor' && item.slottedUnits) {
+        item.slottedUnits.forEach(u => {
+            if (u) {
+                if (u.atk) bonus.atk += u.atk;
+                if (u.def) bonus.def += u.def;
+                if (u.hp) bonus.hp += u.hp;
+                if (u.dex) bonus.dex += u.dex;
+            }
+        });
+    }
+
     let stats = "";
-    if (item.atk) stats += "ATK: " + item.atk + " ";
-    if (item.def) stats += "DEF: " + item.def + " ";
-    if (item.hp) stats += "HP: " + item.hp + " ";
-    if (item.dex) stats += "DEX: " + item.dex + " ";
+    if (item.atk || bonus.atk) stats += `ATK: ${item.atk || 0} ` + (bonus.atk ? `<span style="color: #88ff88;">(+${bonus.atk})</span> ` : '');
+    if (item.def || bonus.def) stats += `DEF: ${item.def || 0} ` + (bonus.def ? `<span style="color: #88ff88;">(+${bonus.def})</span> ` : '');
+    if (item.hp || bonus.hp) stats += `HP: ${item.hp || 0} ` + (bonus.hp ? `<span style="color: #88ff88;">(+${bonus.hp})</span> ` : '');
+    if (item.dex || bonus.dex) stats += `DEX: ${item.dex || 0} ` + (bonus.dex ? `<span style="color: #88ff88;">(+${bonus.dex})</span> ` : '');
     if (item.healHp) stats += "回復HP: " + item.healHp + " ";
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
-    document.getElementById('modal-item-stats').innerText = stats;
+    document.getElementById('modal-item-stats').innerHTML = stats;
     
     let btnUse = document.getElementById('btn-modal-use');
     let btnEquip = document.getElementById('btn-modal-equip');
     btnUse.style.display = 'none';
     btnEquip.style.display = 'none';
     
-    // Default action visibility
+    let slotsEl = document.getElementById('modal-item-slots');
+    let invEl = document.getElementById('modal-item-inventory');
+    let trashEl = document.getElementById('modal-trash');
+    slotsEl.style.display = 'none';
+    invEl.style.display = 'none';
+    trashEl.style.display = 'none';
+    slotsEl.innerHTML = '';
+    invEl.innerHTML = '';
+    
+    if (item.type === 'armor' && item.slotCount) {
+        slotsEl.style.display = 'flex';
+        trashEl.style.display = 'block';
+        invEl.style.display = 'flex';
+        if (!item.slottedUnits) item.slottedUnits = new Array(item.slotCount).fill(null);
+        
+        // Render Slots
+        for (let i = 0; i < item.slotCount; i++) {
+            let u = item.slottedUnits[i];
+            let div = document.createElement('div');
+            div.className = 'modal-slot';
+            div.setAttribute('data-modal-slot-idx', i);
+            div.innerHTML = `[Slot ${i+1}] ${u ? u.name : '空'}`;
+            if (u) {
+                div.addEventListener('pointerdown', e => {
+                    e.preventDefault();
+                    div.setPointerCapture(e.pointerId);
+                    dndState = { item: u, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: 'modal-slot', slotIdx: i, longPressTimer: null };
+                });
+            }
+            slotsEl.appendChild(div);
+        }
+        
+        // Render Units in Inventory
+        let units = p.inventory.filter(i => i.type === 'unit');
+        units.forEach(u => {
+            let div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerText = u.name;
+            div.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                div.setPointerCapture(e.pointerId);
+                dndState = { item: u, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: 'modal-inv', slotIdx: -1, longPressTimer: null };
+            });
+            invEl.appendChild(div);
+        });
+        
+        btnEquip.style.display = 'inline-block';
+        if (p.equip.armor === item) {
+            btnEquip.innerText = '外す';
+            btnEquip.onclick = () => {
+                p.equip.armor = null;
+                p.recalculateStats();
+                modal.style.display = 'none';
+                renderMenu(pid);
+            };
+        } else {
+            btnEquip.innerText = '装備する';
+            btnEquip.onclick = () => {
+                p.equip.armor = item;
+                p.recalculateStats();
+                modal.style.display = 'none';
+                renderMenu(pid);
+            };
+        }
+    }
+
     if (item.type === 'item' || item.type === 'disk') {
         btnUse.style.display = 'inline-block';
         btnUse.onclick = () => {
@@ -472,6 +592,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     
     document.getElementById('btn-modal-close').onclick = () => {
         modal.style.display = 'none';
+        currentModalItem = null;
     };
     
     modal.style.display = 'flex';
@@ -504,14 +625,25 @@ function renderMenu(pid) {
                 MP: ${Math.floor(p.mp)} / ${p.maxMp} <br>
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
-                DEX: 50 <br>
+                DEX: ${p.dex} <br>
                 MIND: 40 <br>
                 EIV: 30 <br>
                 LUCK: 10 <br>
             `;
         }
         let equipList = document.getElementById('equip-list');
-        if (equipList) equipList.innerHTML = `武器: (実装予定)<br>防具: (実装予定)<br>ユニット: (実装予定)`;
+        if (equipList) {
+            let actWeapon = p.palette[p.paletteIndex];
+            let weaponName = (actWeapon && actWeapon.type === 'weapon') ? actWeapon.name : 'なし';
+            let armorName = p.equip.armor ? p.equip.armor.name : 'なし';
+            let unitsStr = '';
+            if (p.equip.armor && p.equip.armor.slottedUnits) {
+                p.equip.armor.slottedUnits.forEach((u, i) => {
+                    unitsStr += `スロット${i+1}: ${u ? u.name : '空'}<br>`;
+                });
+            }
+            equipList.innerHTML = `武器: ${weaponName}<br>防具: ${armorName}<br>ユニット:<br>${unitsStr}`;
+        }
         return;
     }
 
@@ -601,7 +733,7 @@ function cleanupDnd(e) {
         let dy = e.clientY - dndState.startY;
         let isTap = Math.hypot(dx, dy) <= 10 && (Date.now() - dndState.startTime < 500);
 
-        if (isTap && dndState.source !== 'palette') {
+        if (isTap && dndState.source !== 'palette' && dndState.source !== 'modal-slot' && dndState.source !== 'modal-inv') {
             // Tap on inventory/magic item -> open modal
             openItemModal(dndState.item, dndState.pid, dndState.source);
         } else if (dndState.clone) {
@@ -610,18 +742,47 @@ function cleanupDnd(e) {
             if (target) {
                 let slot = target.closest('.palette-menu-slot');
                 let trash = target.closest('.trash-bin');
+                let mSlot = target.closest('.modal-slot');
+                let mTrash = target.closest('.modal-trash');
                 let p = GAME.players[dndState.pid];
                 
-                if (trash && dndState.source === 'palette') {
+                if (mSlot && dndState.source === 'modal-inv' && currentModalItem) {
+                    let targetIdx = parseInt(mSlot.getAttribute('data-modal-slot-idx'));
+                    let prevUnit = currentModalItem.slottedUnits[targetIdx];
+                    if (prevUnit) p.inventory.push(prevUnit);
+                    currentModalItem.slottedUnits[targetIdx] = dndState.item;
+                    p.inventory = p.inventory.filter(i => i !== dndState.item);
+                    if (p.equip.armor === currentModalItem) p.recalculateStats();
+                    openItemModal(currentModalItem, dndState.pid, 'inv');
+                } else if (mTrash && dndState.source === 'modal-slot' && currentModalItem) {
+                    p.inventory.push(dndState.item);
+                    currentModalItem.slottedUnits[dndState.slotIdx] = null;
+                    if (p.equip.armor === currentModalItem) p.recalculateStats();
+                    openItemModal(currentModalItem, dndState.pid, 'inv');
+                } else if (trash && dndState.source === 'palette') {
                     // Remove from palette
                     p.palette[dndState.slotIdx] = null;
                     updatePaletteUI(dndState.pid);
                     renderMenu(dndState.pid);
-                } else if (slot && dndState.source !== 'palette') {
+                } else if (slot && dndState.source !== 'palette' && dndState.source !== 'modal-slot' && dndState.source !== 'modal-inv') {
                     // Validate D&D
                     let item = dndState.item;
                     let valid = false;
-                    if (dndState.source === 'inv' && (item.type === 'weapon' || item.type === 'item')) valid = true;
+                    let errorMsg = "このアイテム種別はパレットにセットできません。";
+                    
+                    if (dndState.source === 'inv' && (item.type === 'weapon' || item.type === 'item')) {
+                        valid = true;
+                        if (item.type === 'weapon') {
+                            if (item.reqClass && p.classId !== item.reqClass) {
+                                valid = false;
+                                errorMsg = `装備できません。要求クラス: ${item.reqClass}`;
+                            }
+                            if (item.reqDex && p.dex < item.reqDex) {
+                                valid = false;
+                                errorMsg = `装備できません。要求命中力(DEX)が足りません (必要: ${item.reqDex}, 現在: ${p.dex})`;
+                            }
+                        }
+                    }
                     if (dndState.source === 'magic' && (item.type === 'magic' || item.type === 'disk')) valid = true;
                     
                     if (valid) {
@@ -630,7 +791,7 @@ function cleanupDnd(e) {
                         updatePaletteUI(dndState.pid);
                         renderMenu(dndState.pid);
                     } else {
-                        alert("このアイテム種別はパレットにセットできません。");
+                        alert(errorMsg);
                     }
                 }
             }
