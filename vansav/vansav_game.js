@@ -361,11 +361,16 @@ class Drop {
 // --- Input Handling ---
 function setupInputEvents() {
     document.querySelectorAll('.vpad').forEach(pad => {
-        const pIdx = parseInt(pad.getAttribute('data-player'));
-        const stick = pad.querySelector('.vstick');
         let dragging = false;
         
+        const getIdx = () => {
+            let base = parseInt(pad.getAttribute('data-player'));
+            if (base === 0 && GAME.is2P) return GAME.gamepad1P ? 1 : 0;
+            return base;
+        };
+
         const updateStick = (ev) => {
+            let pIdx = getIdx();
             let rect = pad.getBoundingClientRect();
             let centerX = rect.left + rect.width/2;
             let centerY = rect.top + rect.height/2;
@@ -377,12 +382,15 @@ function setupInputEvents() {
                 dx = (dx/dist) * maxDist;
                 dy = (dy/dist) * maxDist;
             }
+            let stick = pad.querySelector('.vstick');
             stick.style.transform = `translate(${dx}px, ${dy}px)`;
             INPUTS[pIdx].vx = dx / maxDist;
             INPUTS[pIdx].vy = dy / maxDist;
         };
         
         const resetStick = () => {
+            let pIdx = getIdx();
+            let stick = pad.querySelector('.vstick');
             stick.style.transform = `translate(0px, 0px)`;
             INPUTS[pIdx].vx = 0;
             INPUTS[pIdx].vy = 0;
@@ -439,7 +447,11 @@ function updateGamepads() {
     for (let i = 0; i < gamepads.length; i++) {
         const gp = gamepads[i];
         if (gp && gp.connected) {
-            const pIdx = padCount;
+            let pIdx = padCount;
+            if (GAME.is2P) {
+                if (padCount === 0) pIdx = GAME.gamepad1P ? 0 : 1;
+                else continue;
+            }
             if (pIdx > 1) break; 
             let vx = gp.axes[0]; let vy = gp.axes[1];
             if (gp.buttons[12]?.pressed) vy = -1;
@@ -457,8 +469,13 @@ function updateGamepads() {
         }
     }
     if (GAME.mode === 'game') {
-        document.getElementById('vpad-1p').style.display = padCount >= 1 ? 'none' : 'block';
-        if (GAME.is2P) document.getElementById('vpad-2p').style.display = padCount >= 2 ? 'none' : 'block';
+        if (!GAME.is2P) {
+            document.getElementById('vpad-1p').style.display = padCount >= 1 ? 'none' : 'block';
+            document.getElementById('vpad-2p').style.display = 'none';
+        } else {
+            document.getElementById('vpad-1p').style.display = 'block';
+            document.getElementById('vpad-2p').style.display = 'none';
+        }
     } else {
         document.getElementById('vpad-1p').style.display = 'none';
         document.getElementById('vpad-2p').style.display = 'none';
@@ -533,7 +550,22 @@ function setMode(mode) {
 
 function setupUIEvents() {
     document.getElementById('btn-start-1p').addEventListener('click', () => { GAME.is2P = false; GAME.p1SelectedChar = null; setMode('char_select'); });
-    document.getElementById('btn-start-2p').addEventListener('click', () => { GAME.is2P = true; GAME.p1SelectedChar = null; GAME.p2SelectedChar = null; setMode('char_select'); });
+    document.getElementById('btn-start-2p').addEventListener('click', () => { 
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let padCount = 0;
+        for (let i = 0; i < gamepads.length; i++) {
+            if (gamepads[i] && gamepads[i].connected) padCount++;
+        }
+        if (padCount === 0) {
+            alert('2人で遊ぶときはゲームパッドの接続が必要です。');
+            return;
+        }
+        GAME.is2P = true; 
+        GAME.p1SelectedChar = null; 
+        GAME.p2SelectedChar = null; 
+        GAME.gamepad1P = true;
+        setMode('char_select'); 
+    });
     document.getElementById('btn-shop').addEventListener('click', () => setMode('shop'));
     
     document.getElementById('btn-shop-back').addEventListener('click', () => setMode('title'));
@@ -543,6 +575,14 @@ function setupUIEvents() {
     document.getElementById('btn-char-decide').addEventListener('click', () => {
         if (!GAME.p1SelectedChar) return;
         if (GAME.is2P && GAME.p1SelectedChar && !GAME.p2SelectedChar) {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let padCount = 0;
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i] && gamepads[i].connected) padCount++;
+            }
+            if (padCount >= 1) {
+                GAME.gamepad1P = confirm('1Pをゲームパッドで操作しますか？');
+            }
             document.getElementById('char-select-title').innerText = "キャラクターセレクト (2P)";
             updateCharacterList();
             document.getElementById('btn-char-decide').classList.add('disabled');
@@ -692,12 +732,11 @@ function startGame() {
         if (typeRand > 0.95) type = 'tree';
         else if (typeRand > 0.9) type = 'wall_1';
         else if (typeRand > 0.45) type = 'flower_2';
-        GAME.bgFeatures.push({
-            type: type,
-            x: Math.random() * 3800 - 1900,
-            y: Math.random() * 3800 - 1900,
-            solid: (type === 'tree' || type === 'wall_1')
-        });
+        let bx = Math.random() * 3800 - 1900;
+        let by = Math.random() * 3800 - 1900;
+        let solid = (type === 'tree' || type === 'wall_1');
+        if (solid && Math.abs(bx - 20) < 150 && Math.abs(by) < 150) continue;
+        GAME.bgFeatures.push({ type: type, x: bx, y: by, solid: solid });
     }
     // Generate Borders
     for(let x=-2000; x<=2000; x+=32) {
@@ -1576,8 +1615,14 @@ function spawnEnemies() {
     } else {
         let spawnCount = selectedEnemy.singleCount || 1;
         for(let i=0; i<spawnCount; i++) {
-            let ang = Math.random() * Math.PI * 2;
-            spawnSingleEnemy(p.x + Math.cos(ang)*dist, p.y + Math.sin(ang)*dist, selectedEnemy.type, selectedEnemy.scale);
+            let ex = 0, ey = 0;
+            for(let tries = 0; tries < 10; tries++) {
+                let ang = Math.random() * Math.PI * 2;
+                ex = p.x + Math.cos(ang)*dist;
+                ey = p.y + Math.sin(ang)*dist;
+                if (!GAME.bgFeatures.some(bg => bg.solid && Math.abs(ex - bg.x) < 32 && Math.abs(ey - bg.y) < 32)) break;
+            }
+            spawnSingleEnemy(ex, ey, selectedEnemy.type, selectedEnemy.scale);
         }
     }
 }
@@ -1593,9 +1638,13 @@ function spawnSingleEnemy(ex, ey, type, scale) {
 function spawnMidBoss(level) {
     let p = GAME.players[0]; if(p.dead && GAME.players[1]) p = GAME.players[1];
     if(p.dead) return;
-    let ang = Math.random() * Math.PI * 2;
-    let ex = p.x + Math.cos(ang)*400;
-    let ey = p.y + Math.sin(ang)*400;
+    let ex = 0, ey = 0;
+    for(let tries = 0; tries < 10; tries++) {
+        let ang = Math.random() * Math.PI * 2;
+        ex = p.x + Math.cos(ang)*400;
+        ey = p.y + Math.sin(ang)*400;
+        if (!GAME.bgFeatures.some(bg => bg.solid && Math.abs(ex - bg.x) < 48 && Math.abs(ey - bg.y) < 48)) break;
+    }
     if (ex < GAME.stageBounds.minX) ex = GAME.stageBounds.minX;
     if (ex > GAME.stageBounds.maxX) ex = GAME.stageBounds.maxX;
     if (ey < GAME.stageBounds.minY) ey = GAME.stageBounds.minY;
@@ -1613,8 +1662,12 @@ function spawnTreasureEnemy(level) {
     if (!table) table = SPAWN_TABLE[SPAWN_TABLE.length - 1];
     let type = table.enemies[Math.floor(Math.random() * table.enemies.length)].type;
     
-    let ex = GAME.cameraX + (Math.random() > 0.5 ? SCREEN_W : -100);
-    let ey = GAME.cameraY + Math.random() * SCREEN_H;
+    let ex = 0, ey = 0;
+    for(let tries = 0; tries < 10; tries++) {
+        ex = GAME.cameraX + (Math.random() > 0.5 ? SCREEN_W : -100);
+        ey = GAME.cameraY + (Math.random() - 0.5) * SCREEN_H;
+        if (!GAME.bgFeatures.some(bg => bg.solid && Math.abs(ex - bg.x) < 32 && Math.abs(ey - bg.y) < 32)) break;
+    }
     
     let e = new Enemy(ex, ey, type);
     e.isTreasure = true;
@@ -2054,6 +2107,10 @@ function triggerLevelUp(p, isReroll = false) {
             let typeCount = p.equips.filter(e => EQUIP_DATA[e.id].type === eq.type).length;
             let maxAtk = p.charData.maxAtk || 4;
             let maxBuf = p.charData.maxBuf || 3;
+            if (GAME.is2P) {
+                maxAtk = Math.max(1, maxAtk - 1);
+                maxBuf = Math.max(0, maxBuf - 1);
+            }
             if (has || (eq.type === 'atk' && typeCount < maxAtk) || (eq.type === 'buf' && typeCount < maxBuf)) {
                 available.push(k);
             }
