@@ -234,16 +234,10 @@ function loadSaveData() {
                 if (villager) villager.unlocked = true;
             }
             if (SAVE_DATA.clearedChars) {
-                SAVE_DATA.clearedChars.forEach(cid => {
-                    let c = CHARACTERS.find(x => x.id === cid);
-                    if (c && !c.name.endsWith('＊')) c.name += '＊';
-                });
+                // Do not mutate CHARACTERS array here
             }
             if (SAVE_DATA.clearedEquips) {
-                SAVE_DATA.clearedEquips.forEach(eid => {
-                    let e = EQUIP_DATA[eid];
-                    if (e && !e.name.endsWith('＊')) e.name += '＊';
-                });
+                // Do not mutate EQUIP_DATA array here
             }
         } catch(e) {}
     }
@@ -566,6 +560,12 @@ function setupUIEvents() {
     document.getElementById('screen-pause').addEventListener('click', () => {
         if (GAME.mode === 'pause') setMode('game');
     });
+    document.getElementById('btn-pause-back').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm('タイトル画面に戻ります。よろしいですか？※ゲーム中に獲得したコインは失われます。')) {
+            setMode('title');
+        }
+    });
 }
 
 function buildShopUI() {
@@ -682,6 +682,7 @@ function startGame() {
     GAME.bossSpawned = [false, false, false];
     GAME.treasureSpawned = [false, false, false, false];
     GAME.coinsThisRun = 0;
+    GAME.isCleared = false;
     GAME.bgFeatures = [];
     
     // Generate Random Map Features
@@ -782,8 +783,7 @@ function updateGame(dt) {
             GAME.players.forEach(p => {
                 let charId = p.charData.id;
                 let cData = CHARACTERS.find(c => c.id === charId);
-                if (cData && !cData.name.endsWith('＊')) {
-                    cData.name += '＊';
+                if (cData) {
                     if (!SAVE_DATA.clearedChars) SAVE_DATA.clearedChars = [];
                     if (!SAVE_DATA.clearedChars.includes(charId)) SAVE_DATA.clearedChars.push(charId);
                 }
@@ -793,8 +793,7 @@ function updateGame(dt) {
                     let maxLvl = EQUIP_DATA[eq.id].maxLvl;
                     if (eq.lvl >= maxLvl) {
                         let eData = EQUIP_DATA[eq.id];
-                        if (eData && !eData.name.endsWith('＊')) {
-                            eData.name += '＊';
+                        if (eData) {
                             if (!SAVE_DATA.clearedEquips.includes(eq.id)) SAVE_DATA.clearedEquips.push(eq.id);
                         }
                     }
@@ -2086,7 +2085,9 @@ function triggerLevelUp(p, isReroll = false) {
         div.style.flex = '1';
         if (choices.length === 3) div.style.margin = '5px'; // Adjust for 3 choices
         let enhanceText = getEnhanceText(cid, nextLvl);
-        div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${d.name}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${enhanceText}</span></div>`;
+        let dispName = d.name;
+        if (SAVE_DATA && SAVE_DATA.clearedEquips && SAVE_DATA.clearedEquips.includes(cid)) dispName += '＊';
+        div.innerHTML = `<div class="popup-icon"><canvas></canvas></div><div class="popup-desc"><b>${dispName}</b> (Lv.${nextLvl})<br><span style="font-size:12px;">${d.desc}</span><br><span style="color:yellow; font-weight:bold; font-size:12px;">${enhanceText}</span></div>`;
         if (PRE_RENDERED[d.icon]) {
             let cvs = div.querySelector('canvas');
             cvs.width = 48; cvs.height = 48;
