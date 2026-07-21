@@ -524,15 +524,20 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     let slotsEl = document.getElementById('modal-item-slots');
     let invEl = document.getElementById('modal-item-inventory');
     let trashEl = document.getElementById('modal-trash');
+    let modalContent = document.getElementById('modal-content');
+    let rightCol = document.getElementById('modal-col-right');
     slotsEl.style.display = 'none';
-    invEl.style.display = 'none';
     trashEl.style.display = 'none';
+    rightCol.style.display = 'none';
+    modalContent.classList.remove('two-col');
     slotsEl.innerHTML = '';
     invEl.innerHTML = '';
     
     if (item.type === 'armor' && item.slotCount) {
+        modalContent.classList.add('two-col');
         slotsEl.style.display = 'flex';
         trashEl.style.display = 'block';
+        rightCol.style.display = 'flex';
         invEl.style.display = 'flex';
         if (!item.slottedUnits) item.slottedUnits = new Array(item.slotCount).fill(null);
         
