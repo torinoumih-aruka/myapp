@@ -37,8 +37,135 @@ let INPUTS = [
 const CLASS_DATA = {
     swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, sprite: 'hero_knight_down_1', type: 'melee' },
     ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, sprite: 'hero_wiz_down_1', type: 'ranged' },
-    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, sprite: 'hero_week_down_1', type: 'magic' }
 };
+
+const WEAPON_TYPES = {
+    handgun: {
+        attackType: 'ranged',
+        motions: [0, 0, 0], // No movement during combo
+        targetType: 'single',
+        targetNum: 1,
+        shape: 'none',
+        icon: 'icon_weapon_gun',
+        maxCombo: 3,
+        timing: [0.8, 0.8], // Combo timings
+        classMod: { swordman: 0.1, ranger: 0.0, sorcerer: 0.1 }
+    },
+    shotgun: {
+        attackType: 'ranged',
+        motions: [0, 0, 0],
+        targetType: 'scopeN',
+        targetNum: 5,
+        shape: 'fan45',
+        icon: 'icon_weapon_gun',
+        maxCombo: 3,
+        timing: [1.2, 1.2],
+        classMod: { swordman: 0.1, ranger: 0.0, sorcerer: 0.1 }
+    },
+    saber: {
+        attackType: 'melee',
+        motions: [5, 5, 8],
+        targetType: 'scope',
+        targetNum: 99,
+        shape: 'circle1', // radius 1 -> 10px scaled
+        ranges: [60, 60, 80],
+        offsets: [{angle: -20, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 40}], // 1st front-left
+        icon: 'icon_weapon_sword',
+        maxCombo: 3,
+        timing: [0.8, 0.8],
+        classMod: { swordman: 0.0, ranger: 0.2, sorcerer: 0.3 }
+    },
+    dagger: {
+        attackType: 'melee',
+        motions: [5, 5, 5],
+        targetType: 'scopeN',
+        targetNum: 2,
+        shape: 'circle1',
+        ranges: [60, 60, 50],
+        offsets: [{angle: 0, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 0}], // 3rd around player
+        icon: 'icon_weapon_sword',
+        maxCombo: 3,
+        timing: [0.7, 0.7],
+        classMod: { swordman: 0.0, ranger: 0.3, sorcerer: 0.3 }
+    },
+    cane: {
+        attackType: 'melee',
+        motions: [3, 3, 5],
+        targetType: 'scope',
+        targetNum: 99,
+        shape: 'circle1',
+        ranges: [40, 40, 50],
+        offsets: [{angle: 0, dist: 20}, {angle: 0, dist: 20}, {angle: 0, dist: 25}],
+        icon: 'icon_weapon_cane',
+        maxCombo: 3,
+        timing: [0.7, 0.7],
+        classMod: { swordman: 0.4, ranger: 0.4, sorcerer: 0.0 }
+    }
+};
+
+const BASE_WEAPONS = {
+    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
+    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
+    'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 25, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
+    'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 60, baseDex: 18, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 120, baseDex: 19, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
+    'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 20, baseDex: 18, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
+    'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 50, baseDex: 19, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
+};
+
+const ENCHANTS = [
+    { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire' },
+    { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire' },
+    { id: 'shock', name: 'ショック', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'thunder' },
+    { id: 'thunder', name: 'サンダー', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'thunder' },
+    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', effect: 'ice' },
+    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', effect: 'ice' },
+    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'confuse', effect: 'purple_fog' },
+    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'confuse', effect: 'purple_fog' },
+    { id: 'draw', name: 'ドロー', type: 'drain', drainPercent: 0.05, effect: 'green_fog' },
+    { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog' }
+];
+
+function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedAttrs = null) {
+    let base = BASE_WEAPONS[baseId];
+    if (!base) return null;
+    let wType = WEAPON_TYPES[base.weaponType];
+    
+    let w = {
+        uid: 'w_' + Date.now() + Math.floor(Math.random() * 1000), // Unique ID
+        id: baseId,
+        type: 'weapon',
+        weaponType: base.weaponType,
+        baseName: base.name,
+        desc: base.desc,
+        reqClass: base.reqClass,
+        reqPow: base.reqPow,
+        reqDex: base.reqDex,
+        reqMind: base.reqMind,
+        basePow: base.basePow,
+        baseDex: base.baseDex,
+        baseDef: base.baseDef || 0,
+        rarity: base.baseRarity,
+        range: base.range,
+        maxEnhance: base.maxEnhance,
+        enhance: forcedEnhance,
+        enchant: forcedEnchant,
+        attrs: forcedAttrs || { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 }
+    };
+    
+    // Calculate final stats
+    w.atk = w.basePow + w.enhance;
+    w.dex = w.baseDex; // Hit attribute logic might apply here later
+    w.def = w.baseDef;
+    
+    // Construct display name
+    let prefix = w.enchant ? ENCHANTS.find(e => e.id === w.enchant).name + ' ' : '';
+    let suffix = w.enhance > 0 ? ' +' + w.enhance : '';
+    w.name = prefix + w.baseName + suffix;
+    
+    return w;
+}
 
 // Player Entity
 class Player {
@@ -85,10 +212,15 @@ class Player {
         
         // Add requested default items
         this.inventory = [
-            { id: 'w_saber', name: 'セイバー', type: 'weapon', atk: 10, range: 40 },
-            { id: 'w_handgun', name: 'ハンドガン', type: 'weapon', atk: 5, range: 120 },
-            { id: 'w_sword', name: 'ソード', type: 'weapon', atk: 20, range: 50, reqClass: 'swordman' },
-            { id: 'w_railgun', name: 'レールガン', type: 'weapon', atk: 15, range: 150, reqDex: 53 },
+            generateWeapon('w_saber', 0, 'heat', {native: 15, mutant: 0, machine: 0, dark: 5, hit: 5}),
+            generateWeapon('w_handgun'),
+            generateWeapon('w_sword'),
+            generateWeapon('w_railgun'),
+            generateWeapon('w_shotgun', 2, 'ice'),
+            generateWeapon('w_buster', 3, 'fire'),
+            generateWeapon('w_dagger'),
+            generateWeapon('w_cane', 0, 'draw'),
+            generateWeapon('w_mace', 1, 'drain'),
             { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] },
             { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
             { id: 'u_hp', name: 'HP＋ユニット', type: 'unit', hp: 20 },
@@ -99,8 +231,7 @@ class Player {
 
         // Combo system
         this.comboCount = 0;
-        this.attackTimer = 0;
-        this.comboWindow = 0;
+        this.comboTimer = 0;
         this.state = 'idle'; // idle, move, attack, dead
         this.menuOpen = false;
 
@@ -162,17 +293,27 @@ class Player {
         let input = INPUTS[this.id];
         
         if (this.state === 'attack') {
-            this.attackTimer -= dt;
-            if (this.attackTimer <= 0) {
-                this.state = 'idle';
-                this.comboWindow = 0.5; // 0.5 sec to input next combo
+            this.comboTimer += dt;
+            let action = this.palette[this.paletteIndex];
+            if (action && action.weaponType) {
+                let wType = WEAPON_TYPES[action.weaponType];
+                if (this.comboCount < wType.maxCombo) {
+                    let classMod = wType.classMod[this.classId] || 0;
+                    let targetTime = wType.timing[this.comboCount - 1] + classMod;
+                    if (this.comboTimer > targetTime + 0.15) {
+                        this.state = 'idle';
+                        this.comboCount = 0;
+                    }
+                } else {
+                    if (this.comboTimer > 0.6) {
+                        this.state = 'idle';
+                        this.comboCount = 0;
+                    }
+                }
+            } else {
+                if (this.comboTimer > 0.5) { this.state = 'idle'; this.comboCount = 0; }
             }
         } else {
-            if (this.comboWindow > 0) {
-                this.comboWindow -= dt;
-                if (this.comboWindow <= 0) this.comboCount = 0;
-            }
-
             // Movement
             if (input.vx !== 0 || input.vy !== 0) {
                 this.vx = input.vx * this.spd;
@@ -224,7 +365,7 @@ class Player {
     }
 
     doAction() {
-        if (this.state === 'attack' || this.state === 'dead') return;
+        if (this.state === 'dead') return;
 
         if (GAME.mode === 'town') {
             // Check NPC distance
@@ -250,7 +391,7 @@ class Player {
                         loadArea(MAP_DATA.stages[0].areas[0].patterns[0]);
                     }
                 }
-                return; // Prevent attacking in town near NPC
+                return;
             }
         }
 
@@ -258,28 +399,104 @@ class Player {
         if (!action) return;
 
         if (action.type === 'weapon') {
-            this.state = 'attack';
-            this.attackTimer = 0.3; // 300ms attack animation
-            this.comboCount++;
-            if (this.comboCount > 3) this.comboCount = 1;
-            console.log(`Player ${this.id+1} attacks! Combo: ${this.comboCount}`);
+            let wType = WEAPON_TYPES[action.weaponType];
+            let classMod = wType.classMod[this.classId] || 0;
             
-            // Auto lock-on logic placeholder
-            let target = null;
-            let minDist = 100;
-            GAME.enemies.forEach(e => {
-                let dx = e.x - this.x;
-                let dy = e.y - this.y;
-                let dist = Math.hypot(dx, dy);
-                if (dist < minDist) { minDist = dist; target = e; }
-            });
-
-            if (target) {
-                let dmg = this.atk * (1 + this.comboCount * 0.2);
-                if (action.attr && action.attr.native) dmg *= 1.2; // Example attribute bonus
-                target.hp -= dmg; 
-                console.log(`Hit enemy! Enemy HP: ${target.hp}`);
+            if (this.state === 'attack') {
+                if (this.comboCount >= wType.maxCombo) return;
+                
+                let targetTime = wType.timing[this.comboCount - 1] + classMod;
+                if (this.comboTimer >= targetTime && this.comboTimer <= targetTime + 0.15) {
+                    this.comboCount++;
+                } else {
+                    return; // Ignore if pressed outside window
+                }
+            } else {
+                this.state = 'attack';
+                this.comboCount = 1;
             }
+            
+            this.comboTimer = 0;
+            
+            // Motion
+            let motion = wType.motions[this.comboCount - 1];
+            let dirLen = Math.hypot(this.dirX, this.dirY);
+            let nX = dirLen > 0 ? this.dirX / dirLen : 0;
+            let nY = dirLen > 0 ? this.dirY / dirLen : 1;
+            
+            if (motion > 0) {
+                this.x += nX * motion * 5; // Scale pixels
+                this.y += nY * motion * 5;
+            }
+            
+            console.log(`Player ${this.id+1} attacks! Combo: ${this.comboCount}, Weapon: ${action.name}`);
+            
+            // Target logic
+            let targets = [];
+            let inRange = GAME.enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
+            
+            let pAngle = Math.atan2(this.dirY, this.dirX);
+            
+            if (wType.shape === 'none') {
+                // Just get the closest one
+                if (inRange.length > 0) {
+                    inRange.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
+                    targets.push(inRange[0]);
+                }
+            } else if (wType.shape === 'fan45') {
+                targets = inRange.filter(e => {
+                    let angleToEnemy = Math.atan2(e.y - this.y, e.x - this.x);
+                    let diff = Math.abs(angleToEnemy - pAngle);
+                    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+                    return diff <= (Math.PI / 4) / 2; // +/- 22.5 degrees
+                });
+            } else if (wType.shape === 'circle1') {
+                let offset = wType.offsets[this.comboCount - 1];
+                let cx = this.x;
+                let cy = this.y;
+                let radius = 20; // 1 -> 20px scaled radius
+                if (offset) {
+                    let hitAngle = pAngle + (offset.angle * Math.PI / 180);
+                    cx += Math.cos(hitAngle) * offset.dist;
+                    cy += Math.sin(hitAngle) * offset.dist;
+                    // Dagger 3rd combo "自キャラの周囲" means a bigger radius around player
+                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range; 
+                }
+                targets = inRange.filter(e => Math.hypot(e.x - cx, e.y - cy) <= radius);
+            }
+            
+            // Apply target limits
+            if (wType.targetType === 'single' && targets.length > 1) {
+                targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
+                targets = [targets[0]];
+            } else if (wType.targetType === 'scopeN' && targets.length > wType.targetNum) {
+                // Shuffle and pick N
+                targets.sort(() => Math.random() - 0.5);
+                targets = targets.slice(0, wType.targetNum);
+            }
+
+            targets.forEach(target => {
+                let dmg = this.atk * (1 + this.comboCount * 0.2);
+                if (action.attrs && action.attrs.native) dmg *= 1.2;
+                target.hp -= dmg;
+                console.log(`Hit enemy! Enemy HP: ${target.hp}`);
+                
+                // Trigger enchant on 3rd combo
+                if (this.comboCount === 3 && action.enchant) {
+                    let ench = ENCHANTS.find(e => e.id === action.enchant);
+                    if (ench) {
+                        if (ench.type === 'add_dmg') {
+                            let edmg = ench.value(this.level);
+                            target.hp -= edmg;
+                            console.log(`Enchant Damage! +${edmg}`);
+                        } else if (ench.type === 'drain') {
+                            let heal = Math.floor(target.hp * ench.drainPercent);
+                            this.hp = Math.min(this.maxHp, this.hp + heal);
+                            console.log(`Drain! Healed: ${heal}`);
+                        }
+                    }
+                }
+            });
 
         } else if (action.type === 'item') {
             if (action.healHp) {
@@ -493,7 +710,13 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     currentModalPid = pid;
     
     document.getElementById('modal-item-name').innerText = item.name;
-    document.getElementById('modal-item-desc').innerText = item.name + " の説明文がここに入ります。";
+    
+    let descTxt = item.desc || (item.name + " の説明文がここに入ります。");
+    if (item.rarity) {
+        let stars = Math.floor(item.rarity / 2) + 1;
+        descTxt = "★".repeat(stars) + "\n" + descTxt;
+    }
+    document.getElementById('modal-item-desc').innerText = descTxt;
     
     let bonus = { atk: 0, def: 0, hp: 0, dex: 0 };
     if (item.type === 'armor' && item.slottedUnits) {
@@ -514,6 +737,19 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (item.dex || bonus.dex) stats += `DEX: ${item.dex || 0} ` + (bonus.dex ? `<span style="color: #88ff88;">(+${bonus.dex})</span> ` : '');
     if (item.healHp) stats += "回復HP: " + item.healHp + " ";
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
+    
+    if (item.attrs) {
+        let attrStr = [];
+        if (item.attrs.native) attrStr.push(`原生生物 ${item.attrs.native}%`);
+        if (item.attrs.mutant) attrStr.push(`突然変異 ${item.attrs.mutant}%`);
+        if (item.attrs.machine) attrStr.push(`機械 ${item.attrs.machine}%`);
+        if (item.attrs.dark) attrStr.push(`闇 ${item.attrs.dark}%`);
+        if (item.attrs.hit) attrStr.push(`Hit ${item.attrs.hit}%`);
+        if (attrStr.length > 0) {
+            stats += `<br><span style="color: #ffaa00; font-size:12px;">属性: ${attrStr.join(', ')}</span>`;
+        }
+    }
+    
     document.getElementById('modal-item-stats').innerHTML = stats;
     
     let btnUse = document.getElementById('btn-modal-use');
