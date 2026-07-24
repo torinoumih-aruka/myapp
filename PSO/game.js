@@ -214,10 +214,9 @@ class Player {
         this.inventory = [
             generateWeapon('w_saber', 0, 'heat', {native: 15, mutant: 0, machine: 0, dark: 5, hit: 5}),
             generateWeapon('w_handgun'),
-            generateWeapon('w_sword'),
-            generateWeapon('w_railgun'),
             generateWeapon('w_shotgun', 2, 'ice'),
             generateWeapon('w_buster', 3, 'fire'),
+            generateWeapon('w_railgun'),
             generateWeapon('w_dagger'),
             generateWeapon('w_cane', 0, 'draw'),
             generateWeapon('w_mace', 1, 'drain'),
@@ -227,13 +226,16 @@ class Player {
             { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
             { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
             { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
-        ];
+        ].filter(i => i !== null);
 
         // Combo system
         this.comboCount = 0;
         this.comboTimer = 0;
         this.state = 'idle'; // idle, move, attack, dead
         this.menuOpen = false;
+        
+        this.debugInfo = [];
+        this.lastAttackShape = null;
 
         // Default weapon for testing
         this.palette[0] = this.inventory[0];
@@ -295,25 +297,37 @@ class Player {
         if (this.state === 'attack') {
             this.comboTimer += dt;
             let action = this.palette[this.paletteIndex];
+            
+            this.debugInfo = [
+                `Combo: ${this.comboCount}`,
+                `Timer: ${this.comboTimer.toFixed(2)}`
+            ];
+            
             if (action && action.weaponType) {
                 let wType = WEAPON_TYPES[action.weaponType];
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
+                    this.debugInfo.push(`Window: ${targetTime.toFixed(2)} - ${(targetTime+0.15).toFixed(2)}`);
+                    
                     if (this.comboTimer > targetTime + 0.15) {
                         this.state = 'idle';
                         this.comboCount = 0;
+                        this.lastAttackShape = null;
                     }
                 } else {
                     if (this.comboTimer > 0.6) {
                         this.state = 'idle';
                         this.comboCount = 0;
+                        this.lastAttackShape = null;
                     }
                 }
             } else {
-                if (this.comboTimer > 0.5) { this.state = 'idle'; this.comboCount = 0; }
+                if (this.comboTimer > 0.5) { this.state = 'idle'; this.comboCount = 0; this.lastAttackShape = null; }
             }
         } else {
+            this.debugInfo = [];
+            this.lastAttackShape = null;
             // Movement
             if (input.vx !== 0 || input.vy !== 0) {
                 this.vx = input.vx * this.spd;
@@ -355,12 +369,28 @@ class Player {
         ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
         ctx.stroke();
 
-        // Draw attack bounding box (Placeholder)
-        if (this.state === 'attack') {
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        // Draw attack bounding box (Visualizer)
+        if (this.state === 'attack' && this.lastAttackShape) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
             ctx.beginPath();
-            ctx.arc(this.x + this.dirX * 20, this.y + this.dirY * 20, 30, 0, Math.PI*2);
-            ctx.fill();
+            let shape = this.lastAttackShape;
+            
+            if (shape.type === 'fan45') {
+                ctx.moveTo(this.x, this.y);
+                ctx.arc(this.x, this.y, shape.range, shape.angle - Math.PI/8, shape.angle + Math.PI/8);
+                ctx.closePath();
+                ctx.fill();
+            } else if (shape.type === 'circle1') {
+                ctx.arc(shape.cx, shape.cy, shape.radius, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        
+        // Debug Text
+        ctx.fillStyle = 'white';
+        ctx.font = '12px sans-serif';
+        for (let i = 0; i < this.debugInfo.length; i++) {
+            ctx.fillText(this.debugInfo[i], this.x - 20, this.y - 30 - (i * 14));
         }
     }
 
@@ -427,6 +457,7 @@ class Player {
             if (motion > 0) {
                 this.x += nX * motion * 5; // Scale pixels
                 this.y += nY * motion * 5;
+                this.debugInfo.push(`Moved: ${motion*5}px`);
             }
             
             console.log(`Player ${this.id+1} attacks! Combo: ${this.comboCount}, Weapon: ${action.name}`);
@@ -436,6 +467,8 @@ class Player {
             let inRange = GAME.enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
             
             let pAngle = Math.atan2(this.dirY, this.dirX);
+            
+            this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: 20 };
             
             if (wType.shape === 'none') {
                 // Just get the closest one
@@ -448,7 +481,7 @@ class Player {
                     let angleToEnemy = Math.atan2(e.y - this.y, e.x - this.x);
                     let diff = Math.abs(angleToEnemy - pAngle);
                     if (diff > Math.PI) diff = Math.PI * 2 - diff;
-                    return diff <= (Math.PI / 4) / 2; // +/- 22.5 degrees
+                    return diff <= (Math.PI / 8); // 45 degrees is +/- 22.5 (PI/8)
                 });
             } else if (wType.shape === 'circle1') {
                 let offset = wType.offsets[this.comboCount - 1];
@@ -459,9 +492,12 @@ class Player {
                     let hitAngle = pAngle + (offset.angle * Math.PI / 180);
                     cx += Math.cos(hitAngle) * offset.dist;
                     cy += Math.sin(hitAngle) * offset.dist;
-                    // Dagger 3rd combo "自キャラの周囲" means a bigger radius around player
                     if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range; 
                 }
+                this.lastAttackShape.cx = cx;
+                this.lastAttackShape.cy = cy;
+                this.lastAttackShape.radius = radius;
+                
                 targets = inRange.filter(e => Math.hypot(e.x - cx, e.y - cy) <= radius);
             }
             
@@ -470,7 +506,6 @@ class Player {
                 targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
                 targets = [targets[0]];
             } else if (wType.targetType === 'scopeN' && targets.length > wType.targetNum) {
-                // Shuffle and pick N
                 targets.sort(() => Math.random() - 0.5);
                 targets = targets.slice(0, wType.targetNum);
             }
@@ -485,6 +520,7 @@ class Player {
                 if (this.comboCount === 3 && action.enchant) {
                     let ench = ENCHANTS.find(e => e.id === action.enchant);
                     if (ench) {
+                        this.debugInfo.push(`Enchant: ${ench.name}!`);
                         if (ench.type === 'add_dmg') {
                             let edmg = ench.value(this.level);
                             target.hp -= edmg;
