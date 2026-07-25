@@ -46,7 +46,7 @@ const WEAPON_TYPES = {
         motions: [0, 0, 0], // No movement during combo
         targetType: 'single',
         targetNum: 1,
-        shape: 'none',
+        shape: 'fan30', // changed from none
         icon: 'icon_weapon_gun',
         maxCombo: 3,
         timing: [0.8, 0.8], // Combo timings
@@ -423,6 +423,29 @@ class Player {
             }
         }
         
+        // Combo Timing UI
+        if (this.state === 'attack' && this.comboCount > 0 && this.comboCount <= 2) {
+            let action = this.palette[this.paletteIndex];
+            if (action && action.weaponType) {
+                let wType = WEAPON_TYPES[action.weaponType];
+                if (this.comboCount < wType.maxCombo) {
+                    let classMod = wType.classMod[this.classId] || 0;
+                    let targetTime = wType.timing[this.comboCount - 1] + classMod;
+                    let centerTime = targetTime + 0.075;
+                    
+                    if (this.comboTimer <= targetTime + 0.15) {
+                        let diff = centerTime - this.comboTimer;
+                        let ringRadius = 10 + Math.max(0, (diff / 0.075)) * 5; // Max 15px, shrinks to 10px
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+                        ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#fff';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
         // Debug Text
         ctx.fillStyle = 'white';
         ctx.font = '12px sans-serif';
@@ -526,6 +549,13 @@ class Player {
                     if (diff > Math.PI) diff = Math.PI * 2 - diff;
                     return diff <= (Math.PI / 8); // 45 degrees is +/- 22.5 (PI/8)
                 });
+            } else if (wType.shape === 'fan30') {
+                targets = inRange.filter(e => {
+                    let angleToEnemy = Math.atan2(e.y - this.y, e.x - this.x);
+                    let diff = Math.abs(angleToEnemy - pAngle);
+                    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+                    return diff <= (Math.PI / 12); // 30 degrees is +/- 15 (PI/12)
+                });
             } else if (wType.shape === 'circle1') {
                 let offset = wType.offsets[this.comboCount - 1];
                 let cx = this.x;
@@ -545,12 +575,62 @@ class Player {
             }
             
             // Apply target limits
-            if (wType.targetType === 'single' && targets.length > 1) {
+            if (wType.shape === 'fan30' || wType.shape === 'fan45') {
+                targets.sort((a,b) => {
+                    let diffA = Math.abs(Math.atan2(a.y - this.y, a.x - this.x) - pAngle);
+                    if (diffA > Math.PI) diffA = Math.PI * 2 - diffA;
+                    let diffB = Math.abs(Math.atan2(b.y - this.y, b.x - this.x) - pAngle);
+                    if (diffB > Math.PI) diffB = Math.PI * 2 - diffB;
+                    return diffA - diffB;
+                });
+            } else {
                 targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
-                targets = [targets[0]];
+            }
+
+            if (this.comboCount === 1 || !this.mainTarget || this.mainTarget.hp <= 0 || !targets.includes(this.mainTarget)) {
+                this.mainTarget = targets.length > 0 ? targets[0] : null;
+            }
+
+            if (wType.targetType === 'single') {
+                targets = this.mainTarget ? [this.mainTarget] : [];
             } else if (wType.targetType === 'scopeN' && targets.length > wType.targetNum) {
+                let finalTargets = [];
+                if (this.mainTarget) {
+                    finalTargets.push(this.mainTarget);
+                    targets = targets.filter(t => t !== this.mainTarget);
+                }
                 targets.sort(() => Math.random() - 0.5);
-                targets = targets.slice(0, wType.targetNum);
+                finalTargets = finalTargets.concat(targets.slice(0, wType.targetNum - finalTargets.length));
+                targets = finalTargets;
+            }
+
+            // Visual Effects (Particles / Trails)
+            if (action.weaponType === 'saber' || action.weaponType === 'cane') {
+                let isLeftToRight = (this.comboCount !== 2); // 1 and 3 are L->R
+                let startAng = pAngle + (isLeftToRight ? -Math.PI/2 : Math.PI/2);
+                let endAng = pAngle + (isLeftToRight ? Math.PI/2 : -Math.PI/2);
+                addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng, endAngle: endAng, anticlockwise: !isLeftToRight, color: '#00ffff' });
+            } else if (action.weaponType === 'dagger') {
+                let startAng = pAngle - Math.PI/2;
+                let endAng = pAngle + Math.PI/2;
+                let anticlockwise = false;
+                if (this.comboCount === 2) {
+                    startAng = pAngle + Math.PI/2;
+                    endAng = pAngle - Math.PI/2;
+                    anticlockwise = true;
+                    addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng, endAngle: endAng, anticlockwise: anticlockwise, color: '#00ffff' });
+                } else if (this.comboCount === 3) {
+                    startAng = pAngle;
+                    endAng = pAngle + Math.PI;
+                    addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng, endAngle: endAng, anticlockwise: false, color: '#00ffff' });
+                    addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng + Math.PI, endAngle: endAng + Math.PI, anticlockwise: false, color: '#00ffff' });
+                } else {
+                    addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng, endAngle: endAng, anticlockwise: anticlockwise, color: '#00ffff' });
+                }
+            } else if (action.weaponType === 'handgun' || action.weaponType === 'shotgun') {
+                targets.forEach(t => {
+                    addEffect('bullet', { x1: this.x, y1: this.y, x2: t.x, y2: t.y, color: '#ffcc00' });
+                });
             }
 
             targets.forEach(target => {
@@ -607,12 +687,13 @@ class Player {
             }
             this.state = 'idle'; // Prevent item spam
             
-        } else if (action.type === 'disk') {
+        } else if (action.type === 'disk' || action.type === 'magic') {
             if (action.magic === 'resta') {
                 let cost = 10;
                 if (this.mp >= cost) {
                     this.mp -= cost;
-                    let heal = Math.min(this.maxHp - this.hp, 50 * action.lv);
+                    let lv = action.lv || 1;
+                    let heal = Math.min(this.maxHp - this.hp, 50 * lv);
                     this.hp += heal;
                     addFloatingText(this.x, this.y - 20, heal, '#33ff33');
                 } else {
@@ -1041,6 +1122,54 @@ function drawLevelUpUI(ctx) {
     ctx.restore();
 }
 
+// --- Effects System ---
+let EFFECTS = [];
+function addEffect(type, data) {
+    EFFECTS.push({ type: type, data: data, life: 0.2, maxLife: 0.2 });
+}
+function updateEffects(dt) {
+    for (let i = EFFECTS.length - 1; i >= 0; i--) {
+        EFFECTS[i].life -= dt;
+        if (EFFECTS[i].life <= 0) EFFECTS.splice(i, 1);
+    }
+}
+function drawEffects(ctx) {
+    ctx.save();
+    EFFECTS.forEach(ef => {
+        let p = ef.life / ef.maxLife; // 1 to 0
+        ctx.globalAlpha = p;
+        if (ef.type === 'slash') {
+            let curAngle = ef.data.startAngle + (ef.data.endAngle - ef.data.startAngle) * Math.max(0, 1.0 - p); // sweep progress
+            let sweepDist = (ef.data.endAngle - ef.data.startAngle) * 0.5; // length of tail is half of total arc
+            
+            ctx.beginPath();
+            ctx.arc(ef.data.cx, ef.data.cy, ef.data.r, curAngle - sweepDist, curAngle, ef.data.anticlockwise);
+            ctx.strokeStyle = ef.data.color;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Add a subtle inner glow line for particle-like look
+            ctx.beginPath();
+            ctx.arc(ef.data.cx, ef.data.cy, ef.data.r, curAngle - sweepDist, curAngle, ef.data.anticlockwise);
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else if (ef.type === 'bullet') {
+            ctx.beginPath();
+            ctx.moveTo(ef.data.x1, ef.data.y1);
+            let cx = ef.data.x1 + (ef.data.x2 - ef.data.x1) * (1-p);
+            let cy = ef.data.y1 + (ef.data.y2 - ef.data.y1) * (1-p);
+            ctx.lineTo(cx, cy);
+            ctx.strokeStyle = ef.data.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    });
+    ctx.restore();
+}
+
 function gainExp(p, amount) {
     p.exp += amount;
     addFloatingText(p.x, p.y - 40, `+${amount} EXP`, '#e066ff');
@@ -1413,6 +1542,7 @@ function update() {
         
         resolveCollisions(dt);
         updateFloatingTexts(dt);
+        updateEffects(dt);
 
         // Map transition (Removed auto-transition, now using Teleporter)
         
@@ -1459,6 +1589,7 @@ function draw() {
 
     GAME.players.forEach(p => p.draw(ctx));
 
+    drawEffects(ctx);
     drawFloatingTexts(ctx);
 
     ctx.restore();
