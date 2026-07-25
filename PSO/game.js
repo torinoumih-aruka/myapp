@@ -37,6 +37,7 @@ let INPUTS = [
 const CLASS_DATA = {
     swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, sprite: 'hero_knight_down_1', type: 'melee' },
     ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, sprite: 'hero_wiz_down_1', type: 'ranged' },
+    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, sprite: 'hero_week_down_1', type: 'magic' }
 };
 
 const WEAPON_TYPES = {
@@ -195,15 +196,19 @@ class Player {
         this.spd = cdata.spd;
         
         this.dex = 50;
-        
         this.baseStats = {
             maxHp: cdata.hp,
             maxMp: cdata.mp,
             atk: cdata.atk,
             def: cdata.def,
             spd: cdata.spd,
-            dex: 50
+            dex: 50,
+            mind: 40,
+            luck: 10
         };
+        
+        this.exp = 0;
+        this.nextExp = 100;
         
         this.equip = { armor: null };
         
@@ -236,6 +241,15 @@ class Player {
         
         this.debugInfo = [];
         this.lastAttackShape = null;
+        
+        this.attackMoveTime = 0;
+        this.attackMoveTotal = 0;
+        this.attackMoveStartX = 0;
+        this.attackMoveStartY = 0;
+        this.attackMoveTargetX = 0;
+        this.attackMoveTargetY = 0;
+        
+        this.invincibleTimer = 0;
 
         // Default weapon for testing
         this.palette[0] = this.inventory[0];
@@ -288,10 +302,10 @@ class Player {
 
     update(dt) {
         if (this.hp <= 0) {
-            this.state = 'dead';
-            return;
+           if (this.state === 'dead') return;
         }
-
+        if (this.invincibleTimer > 0) this.invincibleTimer -= dt;
+        
         let input = INPUTS[this.id];
         
         if (this.state === 'attack') {
@@ -324,6 +338,29 @@ class Player {
                 }
             } else {
                 if (this.comboTimer > 0.5) { this.state = 'idle'; this.comboCount = 0; this.lastAttackShape = null; }
+            }
+            
+            // Continuous attack movement
+            if (this.attackMoveTime < this.attackMoveTotal) {
+                this.attackMoveTime += dt;
+                let progress = Math.min(1, this.attackMoveTime / this.attackMoveTotal);
+                this.x = this.attackMoveStartX + (this.attackMoveTargetX - this.attackMoveStartX) * progress;
+                this.y = this.attackMoveStartY + (this.attackMoveTargetY - this.attackMoveStartY) * progress;
+                
+                // Update shape origin
+                if (this.lastAttackShape) {
+                    if (this.lastAttackShape.type === 'circle1' && action.weaponType) {
+                        let offset = WEAPON_TYPES[action.weaponType].offsets[this.comboCount - 1];
+                        if (offset) {
+                            let hitAngle = this.lastAttackShape.angle + (offset.angle * Math.PI / 180);
+                            this.lastAttackShape.cx = this.x + Math.cos(hitAngle) * offset.dist;
+                            this.lastAttackShape.cy = this.y + Math.sin(hitAngle) * offset.dist;
+                        }
+                    } else if (this.lastAttackShape.type === 'fan45') {
+                        this.lastAttackShape.cx = this.x;
+                        this.lastAttackShape.cy = this.y;
+                    }
+                }
             }
         } else {
             this.debugInfo = [];
@@ -455,9 +492,15 @@ class Player {
             let nY = dirLen > 0 ? this.dirY / dirLen : 1;
             
             if (motion > 0) {
-                this.x += nX * motion * 5; // Scale pixels
-                this.y += nY * motion * 5;
-                this.debugInfo.push(`Moved: ${motion*5}px`);
+                this.attackMoveTotal = 0.5; // 0.5s move
+                this.attackMoveTime = 0;
+                this.attackMoveStartX = this.x;
+                this.attackMoveStartY = this.y;
+                this.attackMoveTargetX = this.x + nX * motion * 5;
+                this.attackMoveTargetY = this.y + nY * motion * 5;
+                this.debugInfo.push(`Move Target: ${motion*5}px`);
+            } else {
+                this.attackMoveTotal = 0;
             }
             
             console.log(`Player ${this.id+1} attacks! Combo: ${this.comboCount}, Weapon: ${action.name}`);
@@ -513,7 +556,10 @@ class Player {
             targets.forEach(target => {
                 let dmg = this.atk * (1 + this.comboCount * 0.2);
                 if (action.attrs && action.attrs.native) dmg *= 1.2;
+                dmg = Math.floor(dmg);
                 target.hp -= dmg;
+                target.stunTimer = 1.0; // Stun for 1.0s on hit
+                addFloatingText(target.x, target.y - 20, dmg, 'white');
                 console.log(`Hit enemy! Enemy HP: ${target.hp}`);
                 
                 // Trigger enchant on 3rd combo
@@ -522,12 +568,14 @@ class Player {
                     if (ench) {
                         this.debugInfo.push(`Enchant: ${ench.name}!`);
                         if (ench.type === 'add_dmg') {
-                            let edmg = ench.value(this.level);
+                            let edmg = Math.floor(ench.value(this.level));
                             target.hp -= edmg;
+                            addFloatingText(target.x, target.y - 40, edmg, 'white');
                             console.log(`Enchant Damage! +${edmg}`);
                         } else if (ench.type === 'drain') {
                             let heal = Math.floor(target.hp * ench.drainPercent);
                             this.hp = Math.min(this.maxHp, this.hp + heal);
+                            addFloatingText(this.x, this.y - 20, heal, '#33ff33');
                             console.log(`Drain! Healed: ${heal}`);
                         }
                     }
@@ -536,15 +584,42 @@ class Player {
 
         } else if (action.type === 'item') {
             if (action.healHp) {
-                this.hp = Math.min(this.maxHp, this.hp + action.healHp);
+                let heal = Math.min(this.maxHp - this.hp, action.healHp);
+                this.hp += heal;
+                addFloatingText(this.x, this.y - 20, heal, '#33ff33');
                 if (action.stack > 0) action.stack--;
                 if (action.stack <= 0) {
-                    // Remove from palette and inventory
                     this.palette[this.paletteIndex] = null;
                     this.inventory = this.inventory.filter(i => i !== action);
+                    renderMenu(this.id);
                 }
-                console.log(`Player ${this.id+1} uses item! HP: ${this.hp}`);
             }
+            if (action.healMp) {
+                let heal = Math.min(this.maxMp - this.mp, action.healMp);
+                this.mp += heal;
+                addFloatingText(this.x, this.y - 20, heal, '#33ff33');
+                if (action.stack > 0) action.stack--;
+                if (action.stack <= 0) {
+                    this.palette[this.paletteIndex] = null;
+                    this.inventory = this.inventory.filter(i => i !== action);
+                    renderMenu(this.id);
+                }
+            }
+            this.state = 'idle'; // Prevent item spam
+            
+        } else if (action.type === 'disk') {
+            if (action.magic === 'resta') {
+                let cost = 10;
+                if (this.mp >= cost) {
+                    this.mp -= cost;
+                    let heal = Math.min(this.maxHp - this.hp, 50 * action.lv);
+                    this.hp += heal;
+                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
+                } else {
+                    this.debugInfo.push("Not enough MP");
+                }
+            }
+            this.state = 'idle';
         }
     }
 }
@@ -558,11 +633,21 @@ class Enemy {
         this.hp = 50;
         this.maxHp = 50;
         this.atk = 5;
-        this.spd = 40;
+        this.baseSpd = 30; // Reduced default speed
+        this.spd = this.baseSpd; // Can be modified by difficulty later
+        this.stunTimer = 0;
+        this.dirX = 0;
+        this.dirY = 1;
     }
 
     update(dt) {
         if (this.hp <= 0) return;
+        
+        if (this.stunTimer > 0) {
+            this.stunTimer -= dt;
+            return;
+        }
+        
         // Simple follow 1P
         let target = GAME.players[0];
         if (!target || target.state === 'dead') return;
@@ -572,8 +657,10 @@ class Enemy {
         let dist = Math.hypot(dx, dy);
         
         if (dist > 20) {
-            this.x += (dx / dist) * this.spd * dt;
-            this.y += (dy / dist) * this.spd * dt;
+            this.dirX = dx / dist;
+            this.dirY = dy / dist;
+            this.x += this.dirX * this.spd * dt;
+            this.y += this.dirY * this.spd * dt;
         }
     }
 
@@ -831,7 +918,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         }
         
         // Render Units in Inventory
-        let units = p.inventory.filter(i => i.type === 'unit');
+        let units = p.inventory.filter(i => i !== null && i.type === 'unit');
         units.forEach(u => {
             let div = document.createElement('div');
             div.className = 'menu-item';
@@ -903,6 +990,83 @@ let dndState = {
     longPressTimer: null
 };
 
+// --- Floating Text System ---
+let floatingTexts = [];
+function addFloatingText(x, y, text, color, isLevelUp = false) {
+    floatingTexts.push({
+        x: x, y: y, text: text, color: color, life: 1.5, maxLife: 1.5, isLevelUp: isLevelUp
+    });
+}
+function updateFloatingTexts(dt) {
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        let ft = floatingTexts[i];
+        ft.life -= dt;
+        if (!ft.isLevelUp) ft.y -= 20 * dt; // float up
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+}
+function drawFloatingTexts(ctx) {
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.lineWidth = 3;
+    floatingTexts.forEach(ft => {
+        if (ft.isLevelUp) return; // Drawn separately in UI
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle = ft.color;
+        let alpha = Math.max(0, ft.life / ft.maxLife);
+        ctx.globalAlpha = alpha;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillText(ft.text, ft.x, ft.y);
+    });
+    ctx.globalAlpha = 1.0;
+}
+function drawLevelUpUI(ctx) {
+    let lvUp = floatingTexts.find(ft => ft.isLevelUp);
+    if (!lvUp) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform for screen space
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'black';
+    ctx.fillStyle = lvUp.color;
+    let lines = lvUp.text.split('\n');
+    let alpha = Math.max(0, Math.min(1, lvUp.life)); // fade out at end
+    ctx.globalAlpha = alpha;
+    let startY = SCREEN_H / 2 - (lines.length * 20) / 2;
+    lines.forEach((line, i) => {
+        ctx.strokeText(line, 20, startY + i * 22);
+        ctx.fillText(line, 20, startY + i * 22);
+    });
+    ctx.restore();
+}
+
+function gainExp(p, amount) {
+    p.exp += amount;
+    addFloatingText(p.x, p.y - 40, `+${amount} EXP`, '#e066ff');
+    if (p.exp >= p.nextExp) {
+        p.exp -= p.nextExp;
+        p.level++;
+        p.nextExp = 100; // Flat for now
+        
+        p.baseStats.maxHp += 10;
+        p.baseStats.maxMp += 5;
+        p.baseStats.atk += 2;
+        p.baseStats.def += 2;
+        p.baseStats.dex += 1;
+        p.baseStats.mind += 1;
+        p.baseStats.luck += 1;
+        
+        p.hp = p.baseStats.maxHp;
+        p.mp = p.baseStats.maxMp;
+        p.recalculateStats();
+        
+        let msg = `LEVEL UP!\nLv ${p.level}\nHP +10\nMP +5\nPOW +2\nDEF +2\nDEX +1\nMIND +1\nLUCK +1`;
+        addFloatingText(0, 0, msg, '#ffcc00', true);
+    }
+}
+// -----------------------------
+
 function renderMenu(pid) {
     let p = GAME.players[pid];
     if (!p.magic) p.magic = [];
@@ -973,13 +1137,49 @@ function renderMenu(pid) {
         palEl.appendChild(pdiv);
     }
     
-    let listSource = isMagic ? p.magic : p.inventory;
+    let listSource = isMagic ? p.magic : p.inventory.filter(i => i !== null);
+    
+    if (!isMagic) {
+        let typeOrder = { 'weapon': 1, 'armor': 2, 'unit': 3, 'item': 4, 'disk': 5 };
+        listSource.sort((a, b) => {
+            let aEquip = (p.equip.armor === a || p.palette.includes(a)) ? 0 : 1;
+            let bEquip = (p.equip.armor === b || p.palette.includes(b)) ? 0 : 1;
+            if (aEquip !== bEquip) return aEquip - bEquip;
+            
+            let aT = typeOrder[a.type] || 99;
+            let bT = typeOrder[b.type] || 99;
+            if (aT !== bT) return aT - bT;
+            
+            return a.id.localeCompare(b.id);
+        });
+    }
+    
     listSource.forEach((item, idx) => {
         let div = document.createElement('div');
         div.className = 'menu-item';
-        div.innerHTML = `<span>${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        
+        let isEquipable = true;
+        let prefix = '';
+        if (!isMagic) {
+            let isEquipped = p.equip.armor === item;
+            let isPalette = p.palette.includes(item);
+            
+            if (item.type === 'weapon') {
+                if (item.reqClass && p.classId !== item.reqClass) isEquipable = false;
+                if (item.reqDex && p.dex < item.reqDex) isEquipable = false;
+            }
+            if (!isEquipable) {
+                div.style.borderColor = '#444';
+                div.style.color = '#777';
+            }
+            if (isEquipped) prefix = '[E] ';
+            if (isPalette) prefix = '[P] ';
+        }
+
+        div.innerHTML = `<span>${prefix}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
+            if (!isEquipable) return; // Prevent drag
             e.preventDefault();
             div.setPointerCapture(e.pointerId);
             dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1 };
@@ -1123,6 +1323,64 @@ function updatePaletteUI(pid) {
     document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,2) : '';
 }
 
+function hitPlayer(p, e) {
+    if (p.invincibleTimer > 0 || p.state === 'dead') return;
+    p.hp -= e.atk;
+    p.invincibleTimer = 1.0; // 1s invincibility
+    addFloatingText(p.x, p.y - 20, e.atk, '#ff3333');
+    if (p.menuOpen) {
+        p.menuOpen = false;
+        let menuEl = document.getElementById(`menu-${p.id + 1}p`);
+        if (menuEl) menuEl.classList.remove('open');
+    }
+}
+
+function resolveCollisions(dt) {
+    let entities = [...GAME.players.filter(p => p.state !== 'dead'), ...GAME.enemies.filter(e => e.hp > 0)];
+    for (let i = 0; i < entities.length; i++) {
+        for (let j = i + 1; j < entities.length; j++) {
+            let a = entities[i];
+            let b = entities[j];
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            let dist = Math.hypot(dx, dy);
+            let minDist = 20; // 10 radius + 10 radius
+            
+            if (dist < minDist - 3) { // 3px overlap allowed
+                let overlap = (minDist - 3) - dist;
+                let nx = dx / (dist || 1);
+                let ny = dy / (dist || 1);
+                
+                let pushA = (a instanceof Player) ? 0.2 : 0.5;
+                let pushB = (b instanceof Player) ? 0.2 : 0.5;
+                
+                a.x -= nx * overlap * pushA;
+                a.y -= ny * overlap * pushA;
+                b.x += nx * overlap * pushB;
+                b.y += ny * overlap * pushB;
+                
+                // Circling logic for enemies if blocked: center is 1 character length (20px) behind enemy
+                if (a instanceof Enemy) {
+                    let dTheta = (a.spd * dt) / 20; // angular velocity v/r
+                    // Tangent vector to the circle centered at (x - fx*20, y - fy*20)
+                    // The tangent vector simplifies to moving perpendicular to facing dir
+                    a.x += -a.dirY * 20 * dTheta;
+                    a.y += a.dirX * 20 * dTheta;
+                }
+                if (b instanceof Enemy) {
+                    let dTheta = (b.spd * dt) / 20;
+                    b.x += b.dirY * 20 * dTheta; // arbitrary rotate direction
+                    b.y += -b.dirX * 20 * dTheta;
+                }
+                
+                // Damage player
+                if (a instanceof Enemy && b instanceof Player) hitPlayer(b, a);
+                if (b instanceof Enemy && a instanceof Player) hitPlayer(a, b);
+            }
+        }
+    }
+}
+
 // Game Loop
 function update() {
     let now = performance.now();
@@ -1137,8 +1395,24 @@ function update() {
 
         GAME.players.forEach(p => p.update(dt));
         
-        GAME.enemies.forEach(e => e.update(dt));
+        GAME.enemies.forEach(e => {
+            e.update(dt);
+            if (e.hp <= 0 && !e.deadProcessed) {
+                e.deadProcessed = true;
+                gainExp(GAME.players[0], 10);
+            }
+        });
         GAME.enemies = GAME.enemies.filter(e => e.hp > 0);
+        
+        // Repopulate enemies up to 8
+        if (GAME.mode === 'map' && GAME.enemies.length < 8) {
+            let spawnX = GAME.players[0].x + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
+            let spawnY = GAME.players[0].y + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
+            GAME.enemies.push(new Enemy('booma', spawnX, spawnY));
+        }
+        
+        resolveCollisions(dt);
+        updateFloatingTexts(dt);
 
         // Map transition (Removed auto-transition, now using Teleporter)
         
@@ -1185,7 +1459,11 @@ function draw() {
 
     GAME.players.forEach(p => p.draw(ctx));
 
+    drawFloatingTexts(ctx);
+
     ctx.restore();
+    
+    drawLevelUpUI(ctx);
 }
 
 function loop() {
