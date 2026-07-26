@@ -229,6 +229,9 @@ class Player {
             { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
             { id: 'u_hp', name: 'HP＋ユニット', type: 'unit', hp: 20 },
             { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
+            { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 },
+            { id: 'm_gifoie_1', name: 'ギファイアLv1ディスク', type: 'disk', magic: 'gifoie', lv: 1 },
+            { id: 'm_rafoie_1', name: 'ラファイアLv1ディスク', type: 'disk', magic: 'rafoie', lv: 1 },
             { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
             { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
         ].filter(i => i !== null);
@@ -248,6 +251,10 @@ class Player {
         this.attackMoveStartY = 0;
         this.attackMoveTargetX = 0;
         this.attackMoveTargetY = 0;
+        
+        this.magicCooldown = 0;
+        this.mainTarget = null;
+        this.radius = 10;
         
         this.invincibleTimer = 0;
 
@@ -301,10 +308,54 @@ class Player {
     }
 
     update(dt) {
+        if (this.magicCooldown > 0) this.magicCooldown -= dt;
         if (this.hp <= 0) {
            if (this.state === 'dead') return;
         }
         if (this.invincibleTimer > 0) this.invincibleTimer -= dt;
+        
+        // Passive targeting
+        let actItem = this.palette[this.paletteIndex];
+        if (this.state !== 'attack' && actItem && (actItem.type === 'weapon' || actItem.type === 'disk' || actItem.type === 'magic')) {
+            let pAngle = Math.atan2(this.dirY, this.dirX);
+            let range = 150;
+            let isCone = false;
+            
+            if (actItem.type === 'weapon') {
+                let wType = WEAPON_TYPES[actItem.weaponType];
+                if (wType) {
+                    range = wType.range || actItem.range;
+                    if (wType.shape === 'fan30' || wType.shape === 'fan45') isCone = true;
+                }
+            } else if (actItem.magic === 'fire' || actItem.magic === 'rafoie') {
+                isCone = true;
+                if (actItem.magic === 'rafoie') range = 75;
+            }
+            
+            let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+            if (isCone) {
+                let validTargets = inRange.filter(e => {
+                    let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
+                    if(diff>Math.PI) diff = Math.PI*2-diff;
+                    return diff<=(Math.PI/12); // strict angle like attack logic (30 degrees total)
+                });
+                validTargets.sort((a,b) => {
+                    let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
+                    if(diffA>Math.PI) diffA = Math.PI*2-diffA;
+                    let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
+                    if(diffB>Math.PI) diffB = Math.PI*2-diffB;
+                    return diffA - diffB;
+                });
+                inRange = validTargets;
+            } else {
+                inRange.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y));
+            }
+            
+            if (!this.mainTarget || this.mainTarget.hp <= 0 || !inRange.includes(this.mainTarget)) {
+                this.mainTarget = inRange.length > 0 ? inRange[0] : null;
+            }
+        }
+
         
         let input = INPUTS[this.id];
         
@@ -423,7 +474,32 @@ class Player {
             }
         }
         
-        // Combo Timing UI
+        // Draw target indicator if action is weapon or magic
+        let actItem = this.palette[this.paletteIndex];
+        if (actItem && (actItem.type === 'weapon' || actItem.type === 'disk' || actItem.type === 'magic') && this.mainTarget && this.mainTarget.hp > 0) {
+            ctx.save();
+            ctx.translate(this.mainTarget.x, this.mainTarget.y);
+            // Rotate slowly
+            ctx.rotate(performance.now() / 1000);
+            ctx.strokeStyle = 'black';
+            ctx.fillStyle = 'white';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.save();
+                ctx.rotate(i * Math.PI * 2 / 3); // 120 degrees
+                ctx.beginPath();
+                ctx.moveTo(0, -25);
+                ctx.lineTo(8, -35);
+                ctx.lineTo(-8, -35);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+
+        // Action Combo Timing UI
         if (this.state === 'attack' && this.comboCount > 0 && this.comboCount <= 2) {
             let action = this.palette[this.paletteIndex];
             if (action && action.weaponType) {
@@ -634,9 +710,16 @@ class Player {
             }
 
             targets.forEach(target => {
-                let dmg = this.atk * (1 + this.comboCount * 0.2);
-                if (action.attrs && action.attrs.native) dmg *= 1.2;
-                dmg = Math.floor(dmg);
+                let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
+                let isCrit = (Math.random() * 100) < (this.baseStats.luck / 5);
+                let critMult = isCrit ? 1.5 : 1.0;
+                let defenderDef = target.def || 5;
+                let baseDmg = (this.atk - (defenderDef / 5)) * critMult;
+                if (baseDmg < 1) baseDmg = 1;
+                let dmg = Math.floor(baseDmg * comboMult);
+                
+                if (action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                
                 target.hp -= dmg;
                 target.stunTimer = 1.0; // Stun for 1.0s on hit
                 addFloatingText(target.x, target.y - 20, dmg, 'white');
@@ -699,8 +782,109 @@ class Player {
                 } else {
                     this.debugInfo.push("Not enough MP");
                 }
+            } else if (action.magic === 'fire') {
+                let lv = action.lv || 1;
+                let cost = 3 + lv;
+                if (this.mp >= cost) {
+                    this.mp -= cost;
+                    this.magicCooldown = 1.0;
+                    this.state = 'attack';
+                    this.comboTimer = 0;
+                    this.comboCount = 0;
+                    
+                    let pAngle = Math.atan2(this.dirY, this.dirX);
+                    let range = 150;
+                    let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+                    let validTargets = inRange.filter(e => {
+                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
+                        if(diff>Math.PI) diff = Math.PI*2-diff;
+                        return diff<=(Math.PI/12);
+                    });
+                    validTargets.sort((a,b) => {
+                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
+                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
+                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
+                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
+                        return diffA - diffB;
+                    });
+                    let target = validTargets.length > 0 ? validTargets[0] : null;
+                    this.mainTarget = target;
+                    
+                    let dmg = Math.floor(this.baseStats.mind + 10 + (lv * 2));
+                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
+                    let projVx = this.dirX * 200;
+                    let projVy = this.dirY * 200;
+                    if (target) {
+                        let ang = Math.atan2(target.y - this.y, target.x - this.x);
+                        projVx = Math.cos(ang)*200;
+                        projVy = Math.sin(ang)*200;
+                    }
+                    PROJECTILES.push({ type: 'fire', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
+                } else {
+                    this.debugInfo.push("Not enough MP");
+                }
+            } else if (action.magic === 'gifoie') {
+                let lv = action.lv || 1;
+                let cost = 8 + lv;
+                if (this.mp >= cost) {
+                    this.mp -= cost;
+                    this.magicCooldown = 4.0;
+                    this.state = 'attack';
+                    this.comboTimer = 0;
+                    this.comboCount = 0;
+                    
+                    let dmg = Math.floor((this.baseStats.mind * 2/3) + 10 + (lv * 2));
+                    let numBullets = Math.floor(2 + (lv / 10));
+                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
+                    for (let i = 0; i < numBullets; i++) {
+                        let startAng = (i / numBullets) * Math.PI * 2;
+                        PROJECTILES.push({ type: 'gifoie', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                    }
+                } else {
+                    this.debugInfo.push("Not enough MP");
+                }
+            } else if (action.magic === 'rafoie') {
+                let lv = action.lv || 1;
+                let cost = 15 + lv;
+                if (this.mp >= cost) {
+                    this.mp -= cost;
+                    this.magicCooldown = 2.5;
+                    this.state = 'attack';
+                    this.comboTimer = 0;
+                    this.comboCount = 0;
+                    
+                    let pAngle = Math.atan2(this.dirY, this.dirX);
+                    let range = 75; // Half of handgun
+                    let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+                    let validTargets = inRange.filter(e => {
+                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
+                        if(diff>Math.PI) diff = Math.PI*2-diff;
+                        return diff<=(Math.PI/12);
+                    });
+                    validTargets.sort((a,b) => {
+                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
+                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
+                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
+                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
+                        return diffA - diffB;
+                    });
+                    let target = validTargets.length > 0 ? validTargets[0] : null;
+                    this.mainTarget = target;
+                    
+                    let cx = target ? target.x : this.x + this.dirX * range;
+                    let cy = target ? target.y : this.y + this.dirY * range;
+                    
+                    let dmg = Math.floor((this.baseStats.mind * 3/4) + 5 + (lv * 2));
+                    PROJECTILES.push({ type: 'rafoie', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
+                } else {
+                    this.debugInfo.push("Not enough MP");
+                }
             }
-            this.state = 'idle';
+            if (action.magic !== 'resta') {
+                // If it was not resta, it handled cooldown and state above
+            } else {
+                this.state = 'idle';
+            }
         }
     }
 }
@@ -711,14 +895,39 @@ class Enemy {
         this.type = type;
         this.x = x;
         this.y = y;
-        this.hp = 50;
-        this.maxHp = 50;
-        this.atk = 5;
-        this.baseSpd = 30; // Reduced default speed
-        this.spd = this.baseSpd; // Can be modified by difficulty later
+        let ang = Math.random() * Math.PI * 2;
+        this.dirX = Math.cos(ang);
+        this.dirY = Math.sin(ang);
         this.stunTimer = 0;
-        this.dirX = 0;
-        this.dirY = 1;
+        this.invincible = false;
+        this.state = 'idle';
+        
+        if (type === 'hildebear') {
+            this.hp = 180;
+            this.maxHp = 180;
+            this.atk = 140;
+            this.def = 30;
+            this.dex = 80;
+            this.evi = 22;
+            this.luck = 10;
+            this.exp = 10;
+            this.radius = 30;
+            this.baseSpd = 8;
+            this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
+        } else {
+            this.hp = 50;
+            this.maxHp = 50;
+            this.atk = 5;
+            this.def = 0;
+            this.dex = 10;
+            this.evi = 10;
+            this.luck = 5;
+            this.exp = 10;
+            this.radius = 10;
+            this.baseSpd = 30;
+            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+        }
+        this.spd = this.baseSpd;
     }
 
     update(dt) {
@@ -729,7 +938,6 @@ class Enemy {
             return;
         }
         
-        // Simple follow 1P
         let target = GAME.players[0];
         if (!target || target.state === 'dead') return;
 
@@ -737,24 +945,61 @@ class Enemy {
         let dy = target.y - this.y;
         let dist = Math.hypot(dx, dy);
         
-        if (dist > 20) {
-            this.dirX = dx / dist;
-            this.dirY = dy / dist;
-            this.x += this.dirX * this.spd * dt;
-            this.y += this.dirY * this.spd * dt;
+        if (this.type === 'hildebear') {
+            if (this.state === 'idle') {
+                if (dist <= 150) {
+                    this.state = 'jump';
+                    this.invincible = true;
+                    this.spd = 40;
+                }
+            } else if (this.state === 'jump') {
+                if (dist <= this.radius + target.radius + 3) {
+                    this.state = 'chase';
+                    this.invincible = false;
+                    this.spd = 8;
+                } else {
+                    this.dirX = dx / dist;
+                    this.dirY = dy / dist;
+                    this.x += this.dirX * this.spd * dt;
+                    this.y += this.dirY * this.spd * dt;
+                }
+            } else if (this.state === 'chase') {
+                if (dist > this.radius + target.radius) {
+                    this.dirX = dx / dist;
+                    this.dirY = dy / dist;
+                    this.x += this.dirX * this.spd * dt;
+                    this.y += this.dirY * this.spd * dt;
+                }
+            }
+        } else {
+            if (this.state === 'idle') {
+                if (dist <= 150) this.state = 'chase';
+            } else if (this.state === 'chase') {
+                if (dist > this.radius + target.radius) {
+                    this.dirX = dx / dist;
+                    this.dirY = dy / dist;
+                    this.x += this.dirX * this.spd * dt;
+                    this.y += this.dirY * this.spd * dt;
+                }
+            }
         }
     }
 
     draw(ctx) {
         if (this.hp <= 0) return;
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
         
-        // HP Bar
+        if (this.type === 'hildebear') {
+            ctx.fillStyle = 'purple';
+            ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+        } else {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        }
+        
         ctx.fillStyle = 'black';
-        ctx.fillRect(this.x - 10, this.y - 15, 20, 4);
+        ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, this.radius * 2, 4);
         ctx.fillStyle = 'red';
-        ctx.fillRect(this.x - 10, this.y - 15, 20 * (this.hp / this.maxHp), 4);
+        ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, (this.radius * 2) * (this.hp / this.maxHp), 4);
     }
 }
 
@@ -875,12 +1120,12 @@ function handleActions() {
     GAME.players.forEach(p => {
         let input = INPUTS[p.id];
         
-        if (input.palLeft) {
+        if (input.palLeft && p.state !== 'attack') {
             p.paletteIndex--;
             if (p.paletteIndex < 0) p.paletteIndex = 5;
             updatePaletteUI(p.id);
         }
-        if (input.palRight) {
+        if (input.palRight && p.state !== 'attack') {
             p.paletteIndex++;
             if (p.paletteIndex > 5) p.paletteIndex = 0;
             updatePaletteUI(p.id);
@@ -1122,6 +1367,78 @@ function drawLevelUpUI(ctx) {
     ctx.restore();
 }
 
+// --- Projectile System ---
+let PROJECTILES = [];
+function updateProjectiles(dt) {
+    for (let i = PROJECTILES.length - 1; i >= 0; i--) {
+        let proj = PROJECTILES[i];
+        proj.life -= dt;
+        if (proj.type === 'fire') {
+            proj.x += proj.vx * dt;
+            proj.y += proj.vy * dt;
+            let colors = ['#ff3300', '#ffcc00'];
+            if (proj.lv >= 21) colors = ['#0033ff', '#00ffff'];
+            else if (proj.lv >= 11) colors = ['#ff00ff', '#ffaaaa'];
+            addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
+            
+            let hit = false;
+            for (let e of GAME.enemies.filter(e=>e.hp>0)) {
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= e.radius + proj.r) {
+                    hitEnemyWithMagic(e, proj);
+                    hit = true; break;
+                }
+            }
+            if (hit || proj.life <= 0) PROJECTILES.splice(i, 1);
+        } else if (proj.type === 'gifoie') {
+            proj.angle += 3 * dt;
+            let currentRadius = (5.0 - proj.life) * proj.speed;
+            proj.x = proj.cx + Math.cos(proj.angle) * currentRadius;
+            proj.y = proj.cy + Math.sin(proj.angle) * currentRadius;
+            
+            let colors = ['#ff3300', '#ffcc00'];
+            if (proj.lv >= 21) colors = ['#0033ff', '#00ffff'];
+            else if (proj.lv >= 11) colors = ['#ff00ff', '#ffaaaa'];
+            addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
+            
+            for (let e of GAME.enemies.filter(e=>e.hp>0)) {
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= e.radius + proj.r) {
+                    if (!proj.hitTargets.has(e)) {
+                        proj.hitTargets.add(e);
+                        hitEnemyWithMagic(e, proj);
+                    }
+                }
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
+        } else if (proj.type === 'rafoie') {
+            if (proj.life <= 0) {
+                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 12, lv: proj.lv });
+                for (let e of GAME.enemies.filter(e=>e.hp>0)) {
+                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= e.radius + 12) {
+                        hitEnemyWithMagic(e, proj);
+                    }
+                }
+                PROJECTILES.splice(i, 1);
+            }
+        }
+    }
+}
+function hitEnemyWithMagic(target, proj) {
+    target.hp -= proj.dmg;
+    target.stunTimer = 1.0;
+    addFloatingText(target.x, target.y - 20, proj.dmg, '#ffaa00');
+    console.log(`Magic hit! Enemy HP: ${target.hp}`);
+}
+function drawProjectiles(ctx) {
+    PROJECTILES.forEach(proj => {
+        if (proj.type === 'fire' || proj.type === 'gifoie') {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, proj.r, 0, Math.PI*2);
+            ctx.fill();
+        }
+    });
+}
+
 // --- Effects System ---
 let EFFECTS = [];
 function addEffect(type, data) {
@@ -1162,9 +1479,29 @@ function drawEffects(ctx) {
             let cx = ef.data.x1 + (ef.data.x2 - ef.data.x1) * (1-p);
             let cy = ef.data.y1 + (ef.data.y2 - ef.data.y1) * (1-p);
             ctx.lineTo(cx, cy);
-            ctx.strokeStyle = ef.data.color;
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            ctx.arc(ef.data.x1, ef.data.y1, 2, 0, Math.PI*2);
+            ctx.fillStyle = ef.data.color;
+            ctx.fill();
+        } else if (ef.type === 'particle') {
+            ctx.beginPath();
+            ctx.arc(ef.data.x, ef.data.y, ef.data.r * p, 0, Math.PI*2);
+            ctx.fillStyle = ef.data.color;
+            ctx.fill();
+        } else if (ef.type === 'explosion') {
+            ctx.beginPath();
+            ctx.arc(ef.data.x, ef.data.y, ef.data.r, 0, Math.PI*2);
+            ctx.fillStyle = 'orange';
+            ctx.fill();
+            if (ef.data.lv >= 11) {
+                for (let i=0; i<3; i++) {
+                    let ang = Math.random() * Math.PI * 2;
+                    let ex = ef.data.x + Math.cos(ang)*ef.data.r;
+                    let ey = ef.data.y + Math.sin(ang)*ef.data.r;
+                    ctx.beginPath();
+                    ctx.arc(ex, ey, ef.data.r/2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
         }
     });
     ctx.restore();
@@ -1454,9 +1791,17 @@ function updatePaletteUI(pid) {
 
 function hitPlayer(p, e) {
     if (p.invincibleTimer > 0 || p.state === 'dead') return;
-    p.hp -= e.atk;
+    
+    let isCrit = (Math.random() * 100) < (10 / 5); // Enemy luck is 10
+    let critMult = isCrit ? 1.5 : 1.0;
+    let defenderDef = p.def;
+    let baseDmg = (e.atk - (defenderDef / 5)) * critMult;
+    if (baseDmg < 1) baseDmg = 1;
+    let dmg = Math.floor(baseDmg);
+    
+    p.hp -= dmg;
     p.invincibleTimer = 1.0; // 1s invincibility
-    addFloatingText(p.x, p.y - 20, e.atk, '#ff3333');
+    addFloatingText(p.x, p.y - 20, dmg, '#ff3333');
     if (p.menuOpen) {
         p.menuOpen = false;
         let menuEl = document.getElementById(`menu-${p.id + 1}p`);
@@ -1473,10 +1818,11 @@ function resolveCollisions(dt) {
             let dx = b.x - a.x;
             let dy = b.y - a.y;
             let dist = Math.hypot(dx, dy);
-            let minDist = 20; // 10 radius + 10 radius
+            let minDist = (a.radius || 10) + (b.radius || 10);
+            let requiredDist = minDist + 3; // Must be at least 3px apart
             
-            if (dist < minDist - 3) { // 3px overlap allowed
-                let overlap = (minDist - 3) - dist;
+            if (dist < requiredDist) {
+                let overlap = requiredDist - dist;
                 let nx = dx / (dist || 1);
                 let ny = dy / (dist || 1);
                 
@@ -1505,6 +1851,27 @@ function resolveCollisions(dt) {
                 // Damage player
                 if (a instanceof Enemy && b instanceof Player) hitPlayer(b, a);
                 if (b instanceof Enemy && a instanceof Player) hitPlayer(a, b);
+            }
+        }
+    }
+    
+    // Wall collisions
+    if (GAME.walls) {
+        for (let a of entities) {
+            for (let w of GAME.walls) {
+                let cx = Math.max(w.x, Math.min(a.x, w.x + w.w));
+                let cy = Math.max(w.y, Math.min(a.y, w.y + w.h));
+                let dx = a.x - cx;
+                let dy = a.y - cy;
+                let dist = Math.hypot(dx, dy);
+                if (dist < a.radius) {
+                    let overlap = a.radius - dist;
+                    let nx = dx / (dist || 1);
+                    let ny = dy / (dist || 1);
+                    if (dist === 0) { nx = 1; ny = 0; }
+                    a.x += nx * overlap;
+                    a.y += ny * overlap;
+                }
             }
         }
     }
@@ -1537,10 +1904,12 @@ function update() {
         if (GAME.mode === 'map' && GAME.enemies.length < 8) {
             let spawnX = GAME.players[0].x + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
             let spawnY = GAME.players[0].y + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
-            GAME.enemies.push(new Enemy('booma', spawnX, spawnY));
+            let type = Math.random() < 0.2 ? 'hildebear' : 'booma'; // 20% chance for hildebear
+            GAME.enemies.push(new Enemy(type, spawnX, spawnY));
         }
         
         resolveCollisions(dt);
+        updateProjectiles(dt);
         updateFloatingTexts(dt);
         updateEffects(dt);
 
@@ -1565,11 +1934,20 @@ function draw() {
 
     // Draw Map grid (Placeholder)
     ctx.strokeStyle = '#333';
-    for (let x = 0; x < 2000; x+=100) {
+    for (let x = 0; x < 2000; x+=50) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 2000); ctx.stroke();
     }
-    for (let y = 0; y < 2000; y+=100) {
+    for (let y = 0; y < 2000; y+=50) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2000, y); ctx.stroke();
+    }
+
+    if (GAME.mode === 'map' && GAME.walls) {
+        ctx.fillStyle = '#444';
+        ctx.strokeStyle = '#888';
+        GAME.walls.forEach(w => {
+            ctx.fillRect(w.x, w.y, w.w, w.h);
+            ctx.strokeRect(w.x, w.y, w.w, w.h);
+        });
     }
 
     if (GAME.mode === 'town') {
@@ -1589,6 +1967,7 @@ function draw() {
 
     GAME.players.forEach(p => p.draw(ctx));
 
+    drawProjectiles(ctx);
     drawEffects(ctx);
     drawFloatingTexts(ctx);
 
@@ -1606,6 +1985,10 @@ function loop() {
 // Init
 window.onload = async () => {
     await loadMapData();
+    GAME.walls = [
+        {x: 200, y: 150, w: 100, h: 50},
+        {x: 400, y: 300, w: 50, h: 100}
+    ];
 
     // DOM bindings
     document.getElementById('btn-start-1p').onclick = () => {

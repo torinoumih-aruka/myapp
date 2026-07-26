@@ -63,10 +63,9 @@
         
         .menu-title { font-size: 18px; color: #ffcc00; margin-bottom: 10px; border-bottom: 1px solid #ffcc00; padding-bottom: 5px; }
         .menu-list { flex: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 5px; touch-action: pan-y manipulation; padding-right: 5px; }
-        .menu-list::-webkit-scrollbar { width: 16px; display: block; }
-        .menu-list::-webkit-scrollbar-track { background: #222; border-radius: 8px; }
-        .menu-list::-webkit-scrollbar-thumb { background: #666; border-radius: 8px; border: 2px solid #222; }
-        .menu-list::-webkit-scrollbar-thumb:hover { background: #888; }
+        .menu-list { flex: 1; overflow-y: hidden; display: flex; flex-direction: column; gap: 5px; touch-action: none; padding-right: 5px; }
+        .scroll-btn { background: #333; border: 1px solid #555; color: #ffcc00; padding: 5px; text-align: center; cursor: pointer; border-radius: 4px; font-size: 12px; margin: 2px 0; touch-action: manipulation; }
+        .scroll-btn:active { background: #555; }
         
         .menu-item { background: #222; border: 1px solid #555; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; cursor: pointer; touch-action: none; user-select: none; }
         .menu-item:hover { background: #444; border-color: #fff; }
@@ -164,11 +163,13 @@
         
         <!-- Inventory Tab -->
         <div id="tab-inv" style="display:flex; flex-direction: row; gap: 10px; flex: 1; min-height: 0;">
-            <div style="flex: 1; display: flex; flex-direction: column;">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">アイテム</div>
+                <div class="scroll-btn" onclick="document.getElementById('menu-list-1p').scrollTop = 0">▲ 一番上へ</div>
                 <div class="menu-list" id="menu-list-1p" style="font-size:12px;"></div>
+                <div class="scroll-btn" onclick="let el=document.getElementById('menu-list-1p'); el.scrollTop = el.scrollHeight">▼ 一番下へ</div>
             </div>
-            <div style="flex: 1; display: flex; flex-direction: column;">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">パレット</div>
                 <div class="menu-list" id="menu-palette-1p"></div>
                 <div class="trash-bin" id="trash-inv">ゴミ箱（外す）</div>
@@ -177,11 +178,13 @@
         
         <!-- Magic Tab -->
         <div id="tab-magic" style="display:none; flex-direction: row; gap: 10px; flex: 1; min-height: 0;">
-            <div style="flex: 1; display: flex; flex-direction: column;">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">まほう</div>
+                <div class="scroll-btn" onclick="document.getElementById('menu-magic-1p').scrollTop = 0">▲ 一番上へ</div>
                 <div class="menu-list" id="menu-magic-1p" style="font-size:12px;"></div>
+                <div class="scroll-btn" onclick="let el=document.getElementById('menu-magic-1p'); el.scrollTop = el.scrollHeight">▼ 一番下へ</div>
             </div>
-            <div style="flex: 1; display: flex; flex-direction: column;">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">パレット</div>
                 <div class="menu-list" id="menu-palette-magic-1p"></div>
                 <div class="trash-bin" id="trash-magic">ゴミ箱（外す）</div>
