@@ -615,6 +615,19 @@ class Player {
             }
         }
 
+        if (GAME.mode === 'map' && GAME.currentMapPattern) {
+            let start = GAME.currentMapPattern.start;
+            let dist = Math.hypot(start.x - this.x, start.y - this.y);
+            if (dist < 40) {
+                if (confirm('タウンに戻りますか？')) {
+                    GAME.mode = 'town';
+                    this.x = MAP_DATA.town.start.x;
+                    this.y = MAP_DATA.town.start.y;
+                }
+                return;
+            }
+        }
+
         let action = this.palette[this.paletteIndex];
         if (!action) return;
 
@@ -2208,10 +2221,39 @@ function update() {
                 if (Math.random() < 0.2) {
                     let rand = Math.random();
                     let dropItem = null;
-                    if (rand < 0.25) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-                    else if (rand < 0.5) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.75) dropItem = { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] };
-                    else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+                    if (rand < 0.2) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+                    else if (rand < 0.4) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+                    else if (rand < 0.6) dropItem = { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] };
+                    else if (rand < 0.8) dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+                    else {
+                        // Drop Weapon
+                        let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
+                        let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
+                        
+                        let enchant = null;
+                        if (Math.random() < 0.3) { // 30% chance for enchant
+                            let enchants = ['heat', 'shock', 'ice', 'panic', 'draw'];
+                            enchant = enchants[Math.floor(Math.random() * enchants.length)];
+                        }
+                        
+                        let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
+                        if (Math.random() < 0.4) { // 40% chance for attributes
+                            let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+                            let remaining = 30; // max total points
+                            // Pick 1 to 3 attributes
+                            let numAttrs = Math.floor(Math.random() * 3) + 1; 
+                            for(let i=0; i<numAttrs; i++) {
+                                let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
+                                let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5); // 5 to 20 per attr
+                                val = Math.ceil(val / 5) * 5; // round to nearest 5
+                                if (val > remaining) val = remaining;
+                                attrs[attr] = (attrs[attr] || 0) + val;
+                                remaining -= val;
+                                if (remaining <= 0) break;
+                            }
+                        }
+                        dropItem = generateWeapon(baseId, 0, enchant, attrs);
+                    }
                     
                     if (dropItem) {
                         GAME.drops.push({
@@ -2289,6 +2331,21 @@ function draw() {
             ctx.fillRect(w.x, w.y, w.w, w.h);
             ctx.strokeRect(w.x, w.y, w.w, w.h);
         });
+    }
+
+    if (GAME.mode === 'map' && GAME.currentMapPattern) {
+        let start = GAME.currentMapPattern.start;
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        ctx.strokeStyle = 'cyan';
+        ctx.beginPath();
+        ctx.arc(start.x, start.y, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Town', start.x, start.y + 5);
     }
 
     if (GAME.mode === 'town') {
