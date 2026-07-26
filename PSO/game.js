@@ -18,6 +18,7 @@ let GAME = {
     enemies: [],
     projectiles: [],
     particles: [],
+    drops: [],
     is2P: false,
     cameraX: 0,
     cameraY: 0,
@@ -101,6 +102,17 @@ const WEAPON_TYPES = {
         maxCombo: 3,
         timing: [0.7, 0.7],
         classMod: { swordman: 0.4, ranger: 0.4, sorcerer: 0.0 }
+    },
+    slicer: {
+        attackType: 'ranged',
+        motions: [5, 5, 5],
+        targetType: 'slicer',
+        targetNum: 5,
+        shape: 'fan30', // base shape for initial target
+        icon: 'icon_weapon_slicer',
+        maxCombo: 3,
+        timing: [1.0, 1.0],
+        classMod: { swordman: 0.0, ranger: 0.3, sorcerer: 0.3 }
     }
 };
 
@@ -113,6 +125,7 @@ const BASE_WEAPONS = {
     'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
     'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 20, baseDex: 18, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
     'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 50, baseDex: 19, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
+    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 45, baseDex: 20, maxEnhance: 3, range: 200, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
 
 const ENCHANTS = [
@@ -209,6 +222,8 @@ class Player {
         
         this.exp = 0;
         this.nextExp = 100;
+        this.coins = 0;
+        this.targetDrop = null;
         
         this.equip = { armor: null };
         
@@ -227,7 +242,7 @@ class Player {
             generateWeapon('w_mace', 1, 'drain'),
             { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] },
             { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
-            { id: 'u_hp', name: 'HP＋ユニット', type: 'unit', hp: 20 },
+            generateWeapon('w_slicer'),
             { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
             { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 },
             { id: 'm_gifoie_1', name: 'ギファイアLv1ディスク', type: 'disk', magic: 'gifoie', lv: 1 },
@@ -533,6 +548,45 @@ class Player {
     doAction() {
         if (this.state === 'dead') return;
 
+        // Pickup drop
+        if (this.targetDrop) {
+            let drop = this.targetDrop.item;
+            if (drop.type === 'coin') {
+                this.coins += drop.amount;
+                addFloatingText(this.x, this.y - 20, `${drop.amount} コイン`, 'yellow');
+                GAME.drops = GAME.drops.filter(d => d !== this.targetDrop);
+                this.targetDrop = null;
+                return;
+            } else {
+                let isStackable = (drop.id === 'i_monomate' || drop.id === 'i_monofluid');
+                if (isStackable) {
+                    let existing = this.inventory.find(i => i.id === drop.id);
+                    if (existing && existing.stack < 10) {
+                        existing.stack++;
+                        addFloatingText(this.x, this.y - 20, `${drop.name} を拾った`, 'green');
+                        GAME.drops = GAME.drops.filter(d => d !== this.targetDrop);
+                        this.targetDrop = null;
+                        return;
+                    } else if (existing && existing.stack >= 10) {
+                        addFloatingText(this.x, this.y - 20, `これ以上持てません`, 'red');
+                        return;
+                    }
+                }
+                
+                if (this.inventory.length < 20) {
+                    if (isStackable && !drop.stack) drop.stack = 1;
+                    this.inventory.push(drop);
+                    addFloatingText(this.x, this.y - 20, `${drop.name} を拾った`, 'green');
+                    GAME.drops = GAME.drops.filter(d => d !== this.targetDrop);
+                    this.targetDrop = null;
+                    return;
+                } else {
+                    addFloatingText(this.x, this.y - 20, `インベントリが一杯です`, 'red');
+                    return;
+                }
+            }
+        }
+
         if (GAME.mode === 'town') {
             // Check NPC distance
             let closestNPC = null;
@@ -652,13 +706,7 @@ class Player {
             
             // Apply target limits
             if (wType.shape === 'fan30' || wType.shape === 'fan45') {
-                targets.sort((a,b) => {
-                    let diffA = Math.abs(Math.atan2(a.y - this.y, a.x - this.x) - pAngle);
-                    if (diffA > Math.PI) diffA = Math.PI * 2 - diffA;
-                    let diffB = Math.abs(Math.atan2(b.y - this.y, b.x - this.x) - pAngle);
-                    if (diffB > Math.PI) diffB = Math.PI * 2 - diffB;
-                    return diffA - diffB;
-                });
+                targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
             } else {
                 targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
             }
@@ -678,6 +726,36 @@ class Player {
                 targets.sort(() => Math.random() - 0.5);
                 finalTargets = finalTargets.concat(targets.slice(0, wType.targetNum - finalTargets.length));
                 targets = finalTargets;
+            } else if (wType.targetType === 'slicer') {
+                let firstTarget = this.mainTarget;
+                targets = [];
+                if (firstTarget) {
+                    let hitWall = checkLineOfSight(this.x, this.y, firstTarget.x, firstTarget.y, GAME.walls);
+                    if (hitWall) {
+                        addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#00ffff' });
+                    } else {
+                        let chained = [firstTarget];
+                        let current = firstTarget;
+                        for (let i = 0; i < wType.targetNum - 1; i++) {
+                            let candidates = GAME.enemies.filter(e => e.hp > 0 && !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 40);
+                            if (candidates.length === 0) break;
+                            let next = candidates[Math.floor(Math.random() * candidates.length)];
+                            chained.push(next);
+                            current = next;
+                        }
+                        PROJECTILES.push({
+                            type: 'slicer',
+                            owner: this,
+                            comboCount: this.comboCount,
+                            targets: chained,
+                            currentIndex: 0,
+                            delayTimer: 0.0,
+                            x: this.x,
+                            y: this.y,
+                            life: 10.0
+                        });
+                    }
+                }
             }
 
             // Visual Effects (Particles / Trails)
@@ -705,11 +783,45 @@ class Player {
                 }
             } else if (action.weaponType === 'handgun' || action.weaponType === 'shotgun') {
                 targets.forEach(t => {
-                    addEffect('bullet', { x1: this.x, y1: this.y, x2: t.x, y2: t.y, color: '#ffcc00' });
+                    let hitWall = checkLineOfSight(this.x, this.y, t.x, t.y, GAME.walls);
+                    if (hitWall) {
+                        addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#ffcc00' });
+                        t.blockedByWall = true;
+                    } else {
+                        addEffect('bullet', { x1: this.x, y1: this.y, x2: t.x, y2: t.y, color: '#ffcc00' });
+                        t.blockedByWall = false;
+                    }
                 });
+                targets = targets.filter(t => !t.blockedByWall);
             }
 
             targets.forEach(target => {
+                let wType = WEAPON_TYPES[action.weaponType];
+                
+                // Accuracy check
+                let myDex = this.baseStats.dex;
+                if (this.equip.weapon && this.equip.weapon.dex) myDex += this.equip.weapon.dex;
+                if (this.equip.armor) {
+                    if (this.equip.armor.dex) myDex += this.equip.armor.dex;
+                    if (this.equip.armor.slottedUnits) {
+                        this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
+                    }
+                }
+                let targetEvi = target.evi || 10;
+                let hitRate = myDex - (targetEvi * 0.2);
+                let distPenalty = 0;
+                
+                if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
+                    let dist = Math.hypot(target.x - this.x, target.y - this.y);
+                    distPenalty = (dist / 10) * 2;
+                }
+                hitRate -= distPenalty;
+                
+                if (Math.random() * 100 > hitRate) {
+                    addFloatingText(target.x, target.y - 20, "miss", 'white');
+                    return; // Missed
+                }
+                
                 let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
                 let isCrit = (Math.random() * 100) < (this.baseStats.luck / 5);
                 let critMult = isCrit ? 1.5 : 1.0;
@@ -947,10 +1059,10 @@ class Enemy {
         
         if (this.type === 'hildebear') {
             if (this.state === 'idle') {
-                if (dist <= 150) {
+                if (dist <= 250) {
                     this.state = 'jump';
                     this.invincible = true;
-                    this.spd = 40;
+                    this.spd = 120;
                 }
             } else if (this.state === 'jump') {
                 if (dist <= this.radius + target.radius + 3) {
@@ -973,7 +1085,7 @@ class Enemy {
             }
         } else {
             if (this.state === 'idle') {
-                if (dist <= 150) this.state = 'chase';
+                if (dist <= 300) this.state = 'chase';
             } else if (this.state === 'chase') {
                 if (dist > this.radius + target.radius) {
                     this.dirX = dx / dist;
@@ -1050,6 +1162,7 @@ function startGame(is2P, class1, class2) {
     // Touch controls
     document.getElementById('vpad-1p').style.display = 'block';
     document.getElementById('btns-1p').style.display = 'block';
+    document.getElementById('palette-1p').style.display = 'flex';
 
     updateUI();
 }
@@ -1203,8 +1316,50 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     
     let btnUse = document.getElementById('btn-modal-use');
     let btnEquip = document.getElementById('btn-modal-equip');
+    let btnDrop = document.getElementById('btn-modal-drop');
     btnUse.style.display = 'none';
     btnEquip.style.display = 'none';
+    btnDrop.style.display = 'none';
+    
+    // Check if item is droppable (not equipped or in palette)
+    let isEquipped = (p.equip.armor === item);
+    let isPalette = p.palette.includes(item);
+    if (!isEquipped && !isPalette && source !== 'magic' && source !== 'modal-slot' && source !== 'modal-inv') {
+        btnDrop.style.display = 'inline-block';
+        btnDrop.onclick = () => {
+            if (confirm(item.name + ' を捨てますか？')) {
+                // Return slotted units to inventory if it's an armor
+                if (item.type === 'armor' && item.slottedUnits) {
+                    for (let i = 0; i < item.slottedUnits.length; i++) {
+                        let u = item.slottedUnits[i];
+                        if (u) {
+                            if (p.inventory.length < 20) {
+                                p.inventory.push(u);
+                            } else {
+                                // If inventory is full, drop the unit as well
+                                GAME.drops.push({ x: p.x, y: p.y, item: u });
+                            }
+                            item.slottedUnits[i] = null;
+                        }
+                    }
+                }
+                
+                // Remove from inventory
+                if (item.stack && item.stack > 1) {
+                    item.stack--;
+                    let dropItem = Object.assign({}, item);
+                    dropItem.stack = 1;
+                    GAME.drops.push({ x: p.x, y: p.y, item: dropItem });
+                } else {
+                    p.inventory = p.inventory.filter(i => i !== item);
+                    GAME.drops.push({ x: p.x, y: p.y, item: item });
+                }
+                
+                modal.style.display = 'none';
+                renderMenu(pid);
+            }
+        };
+    }
     
     let slotsEl = document.getElementById('modal-item-slots');
     let invEl = document.getElementById('modal-item-inventory');
@@ -1419,6 +1574,81 @@ function updateProjectiles(dt) {
                 }
                 PROJECTILES.splice(i, 1);
             }
+        } else if (proj.type === 'slicer') {
+            proj.delayTimer -= dt;
+            if (proj.delayTimer <= 0) {
+                let target = proj.targets[proj.currentIndex];
+                let p = proj.owner;
+                
+                if (target && target.hp > 0) {
+                    let myDex = p.baseStats.dex;
+                    if (p.equip.weapon && p.equip.weapon.dex) myDex += p.equip.weapon.dex;
+                    if (p.equip.armor) {
+                        if (p.equip.armor.dex) myDex += p.equip.armor.dex;
+                        if (p.equip.armor.slottedUnits) {
+                            p.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
+                        }
+                    }
+                    let targetEvi = target.evi || 10;
+                    let hitRate = myDex - (targetEvi * 0.2);
+                    
+                    let distFromPlayer = Math.hypot(target.x - p.x, target.y - p.y);
+                    hitRate -= (distFromPlayer / 10) * 2;
+                    
+                    addEffect('bullet', { x1: proj.x, y1: proj.y, x2: target.x, y2: target.y, color: '#00ffff' });
+                    // Additional particle effects for slicer to make it obvious
+                    for(let k = 0; k < 8; k++) {
+                        addEffect('particle', { x: target.x, y: target.y, color: '#00ffff', r: 3 });
+                    }
+                    
+                    if (Math.random() * 100 > hitRate) {
+                        addFloatingText(target.x, target.y - 20, "miss", 'white');
+                    } else {
+                        let comboMult = [0.9, 1.7, 2.5][proj.comboCount - 1] || 1.0;
+                        let isCrit = (Math.random() * 100) < (p.baseStats.luck / 5);
+                        let critMult = isCrit ? 1.5 : 1.0;
+                        let defenderDef = target.def || 5;
+                        let baseDmg = (p.atk - (defenderDef / 5)) * critMult;
+                        if (baseDmg < 1) baseDmg = 1;
+                        let dmg = Math.floor(baseDmg * comboMult);
+                        
+                        let action = p.palette[p.paletteIndex];
+                        if (action && action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                        
+                        target.hp -= dmg;
+                        target.stunTimer = 1.0;
+                        addFloatingText(target.x, target.y - 20, dmg, 'white');
+                        console.log(`Slicer hit! Enemy HP: ${target.hp}`);
+                        
+                        if (proj.comboCount === 3 && action && action.enchant) {
+                            let ench = ENCHANTS.find(e => e.id === action.enchant);
+                            if (ench) {
+                                p.debugInfo.push(`Enchant: ${ench.name}!`);
+                                if (ench.type === 'add_dmg') {
+                                    let edmg = Math.floor(ench.value(p.level));
+                                    target.hp -= edmg;
+                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
+                                } else if (ench.type === 'drain') {
+                                    let heal = Math.floor(target.hp * ench.drainPercent);
+                                    p.hp = Math.min(p.maxHp, p.hp + heal);
+                                    addFloatingText(p.x, p.y - 20, heal, '#33ff33');
+                                }
+                            }
+                        }
+                    }
+                    
+                    proj.x = target.x;
+                    proj.y = target.y;
+                }
+                
+                proj.currentIndex++;
+                if (proj.currentIndex >= proj.targets.length) {
+                    proj.life = 0;
+                } else {
+                    proj.delayTimer = 0.05;
+                }
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
         }
     }
 }
@@ -1551,6 +1781,7 @@ function renderMenu(pid) {
                 MIND: 40 <br>
                 EIV: 30 <br>
                 LUCK: 10 <br>
+                所持コイン: ${p.coins} <br>
             `;
         }
         let equipList = document.getElementById('equip-list');
@@ -1652,6 +1883,22 @@ function renderMenu(pid) {
         });
 
         invEl.appendChild(div);
+
+        if (!isMagic && item.type === 'armor' && item.slottedUnits) {
+            item.slottedUnits.forEach((u, i) => {
+                let uDiv = document.createElement('div');
+                uDiv.className = 'menu-item';
+                uDiv.style.marginLeft = '10px';
+                uDiv.style.width = 'calc(100% - 14px)';
+                uDiv.style.backgroundColor = '#333';
+                uDiv.style.color = '#888';
+                uDiv.style.borderColor = '#555';
+                uDiv.style.minHeight = '24px';
+                uDiv.style.padding = '5px';
+                uDiv.innerHTML = `<span>┗ [Slot ${i+1}] ${u ? u.name : '空'}</span>`;
+                invEl.appendChild(uDiv);
+            });
+        }
     });
 }
 
@@ -1784,15 +2031,29 @@ function updatePaletteUI(pid) {
     let leftIdx = (p.paletteIndex - 1 + 6) % 6;
     let rightIdx = (p.paletteIndex + 1) % 6;
     
-    document.querySelector(`#pal-${idstr}-left .slot-name`).innerText = p.palette[leftIdx] ? p.palette[leftIdx].name.substring(0,2) : '';
-    document.querySelector(`#pal-${idstr}-center .slot-name`).innerText = p.palette[p.paletteIndex] ? p.palette[p.paletteIndex].name.substring(0,4) : '空';
-    document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,2) : '';
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerText = p.palette[leftIdx] ? p.palette[leftIdx].name.substring(0,8) : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerText = p.palette[p.paletteIndex] ? p.palette[p.paletteIndex].name.substring(0,12) : '空';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,8) : '';
 }
 
 function hitPlayer(p, e) {
     if (p.invincibleTimer > 0 || p.state === 'dead') return;
     
-    let isCrit = (Math.random() * 100) < (10 / 5); // Enemy luck is 10
+    let targetEvi = p.baseStats.evi;
+    if (p.equip.armor) {
+        if (p.equip.armor.evi) targetEvi += p.equip.armor.evi;
+        if (p.equip.armor.slottedUnits) {
+            p.equip.armor.slottedUnits.forEach(u => { if (u && u.evi) targetEvi += u.evi; });
+        }
+    }
+    
+    let hitRate = (e.dex || 10) - (targetEvi * 0.2);
+    if (Math.random() * 100 > hitRate) {
+        addFloatingText(p.x, p.y - 20, "miss", 'white');
+        return;
+    }
+    
+    let isCrit = (Math.random() * 100) < ((e.luck || 10) / 5); // Enemy luck is 10
     let critMult = isCrit ? 1.5 : 1.0;
     let defenderDef = p.def;
     let baseDmg = (e.atk - (defenderDef / 5)) * critMult;
@@ -1807,6 +2068,52 @@ function hitPlayer(p, e) {
         let menuEl = document.getElementById(`menu-${p.id + 1}p`);
         if (menuEl) menuEl.classList.remove('open');
     }
+}
+
+// Helper: line intersection with AABB walls
+function checkLineOfSight(x1, y1, x2, y2, walls) {
+    if (!walls) return null;
+    let closestIntersection = null;
+    let minDist = Infinity;
+    
+    let checkLineRect = (x1, y1, x2, y2, rx, ry, rw, rh) => {
+        let left = rx, right = rx + rw, top = ry, bottom = ry + rh;
+        let pts = [];
+        // Helper to intersect segments
+        let intersect = (x1, y1, x2, y2, x3, y3, x4, y4) => {
+            let denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1);
+            if (denom === 0) return null;
+            let ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3))/denom;
+            let ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3))/denom;
+            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
+                return { x: x1 + ua*(x2-x1), y: y1 + ua*(y2-y1) };
+            }
+            return null;
+        };
+        pts.push(intersect(x1, y1, x2, y2, left, top, right, top));
+        pts.push(intersect(x1, y1, x2, y2, right, top, right, bottom));
+        pts.push(intersect(x1, y1, x2, y2, right, bottom, left, bottom));
+        pts.push(intersect(x1, y1, x2, y2, left, bottom, left, top));
+        
+        let minPt = null;
+        let md = Infinity;
+        for (let pt of pts) {
+            if (pt) {
+                let d = Math.hypot(pt.x - x1, pt.y - y1);
+                if (d < md) { md = d; minPt = pt; }
+            }
+        }
+        return minPt;
+    };
+    
+    for (let w of walls) {
+        let pt = checkLineRect(x1, y1, x2, y2, w.x, w.y, w.w, w.h);
+        if (pt) {
+            let d = Math.hypot(pt.x - x1, pt.y - y1);
+            if (d < minDist) { minDist = d; closestIntersection = pt; }
+        }
+    }
+    return closestIntersection;
 }
 
 function resolveCollisions(dt) {
@@ -1896,6 +2203,24 @@ function update() {
             if (e.hp <= 0 && !e.deadProcessed) {
                 e.deadProcessed = true;
                 gainExp(GAME.players[0], 10);
+                
+                // Drop logic
+                if (Math.random() < 0.2) {
+                    let rand = Math.random();
+                    let dropItem = null;
+                    if (rand < 0.25) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+                    else if (rand < 0.5) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+                    else if (rand < 0.75) dropItem = { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] };
+                    else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+                    
+                    if (dropItem) {
+                        GAME.drops.push({
+                            x: e.x,
+                            y: e.y,
+                            item: dropItem
+                        });
+                    }
+                }
             }
         });
         GAME.enemies = GAME.enemies.filter(e => e.hp > 0);
@@ -1909,6 +2234,22 @@ function update() {
         }
         
         resolveCollisions(dt);
+        
+        // Target Drop
+        GAME.players.forEach(p => {
+            p.targetDrop = null;
+            let closestDrop = null;
+            let minDist = 25;
+            GAME.drops.forEach(d => {
+                let dist = Math.hypot(d.x - p.x, d.y - p.y);
+                if (dist <= minDist) {
+                    minDist = dist;
+                    closestDrop = d;
+                }
+            });
+            p.targetDrop = closestDrop;
+        });
+
         updateProjectiles(dt);
         updateFloatingTexts(dt);
         updateEffects(dt);
@@ -1963,15 +2304,48 @@ function draw() {
 
     if (GAME.mode === 'map') {
         GAME.enemies.forEach(e => e.draw(ctx));
+        GAME.particles.forEach(p => p.draw(ctx));
+        drawProjectiles(ctx);
+        drawEffects(ctx);
+        
+        // Draw Drops
+        GAME.drops.forEach(d => {
+            ctx.save();
+            ctx.translate(d.x, d.y);
+            ctx.rotate(Math.PI / 4); // diamond
+            let size = 8;
+            if (d.item.type === 'item' || d.item.type === 'disk') ctx.fillStyle = '#00ff00';
+            else if (d.item.type === 'armor' || d.item.type === 'unit') ctx.fillStyle = '#00ffff';
+            else if (d.item.type === 'weapon') ctx.fillStyle = '#ffa500';
+            else if (d.item.type === 'coin') { ctx.fillStyle = '#ffff00'; size = 5; }
+            else ctx.fillStyle = '#ffffff';
+            
+            ctx.fillRect(-size/2, -size/2, size, size);
+            ctx.restore();
+        });
+
+        drawFloatingTexts(ctx);
+        drawLevelUpUI(ctx);
     }
 
     GAME.players.forEach(p => p.draw(ctx));
 
-    drawProjectiles(ctx);
-    drawEffects(ctx);
-    drawFloatingTexts(ctx);
-
     ctx.restore();
+    
+    // Draw target drop UI
+    let p1 = GAME.players[0];
+    if (p1 && p1.targetDrop) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 20, 160, 40);
+        ctx.fillStyle = 'white';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'right';
+        let name = p1.targetDrop.item.name;
+        if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
+        ctx.fillText(name, SCREEN_W - 10, SCREEN_H / 2 + 6);
+        ctx.restore();
+    }
     
     drawLevelUpUI(ctx);
 }
@@ -1996,6 +2370,30 @@ window.onload = async () => {
         document.getElementById('screen-class').style.display = 'flex';
         GAME.is2P = false;
     };
+    
+    // Continuous Scrolling Logic
+    let scrollInterval = null;
+    function setupScrollBtn(id, targetId, direction) {
+        let btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            let el = document.getElementById(targetId);
+            if (!el) return;
+            if (scrollInterval) clearInterval(scrollInterval);
+            scrollInterval = setInterval(() => {
+                el.scrollTop += direction * 15;
+            }, 30);
+        });
+        btn.addEventListener('pointerup', () => { if (scrollInterval) clearInterval(scrollInterval); });
+        btn.addEventListener('pointerleave', () => { if (scrollInterval) clearInterval(scrollInterval); });
+        btn.addEventListener('pointercancel', () => { if (scrollInterval) clearInterval(scrollInterval); });
+    }
+    
+    setupScrollBtn('scroll-inv-up', 'menu-list-1p', -1);
+    setupScrollBtn('scroll-inv-down', 'menu-list-1p', 1);
+    setupScrollBtn('scroll-mag-up', 'menu-magic-1p', -1);
+    setupScrollBtn('scroll-mag-down', 'menu-magic-1p', 1);
     
     document.getElementById('btn-start-2p').onclick = () => {
         document.getElementById('screen-title').style.display = 'none';

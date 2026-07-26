@@ -71,6 +71,22 @@
         .menu-item:hover { background: #444; border-color: #fff; }
         .menu-item.selected { border-color: #ffcc00; background: #332200; }
         
+        /* Palette UI - Center Bottom */
+        #palette-1p, #palette-2p { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; gap: 5px; align-items: flex-start; }
+        .palette-slot { background: rgba(0,0,0,0.5); border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; border-radius: 5px; text-align: center; padding: 2px 5px; height: 25px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pal-l { width: 120px; }
+        .pal-act { width: 180px; margin-left: 30px; height: 40px; font-size: 16px; border-color: #ffcc00; background: rgba(255, 204, 0, 0.3); }
+        .pal-r { width: 120px; margin-left: 60px; }
+
+        /* Right Side Action Buttons */
+        #btns-1p, #btns-2p { position: absolute; bottom: 20px; right: 20px; width: 160px; height: 160px; display: none; }
+        .abtn { position: absolute; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 2px solid #555; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; user-select: none; }
+        .abtn:active { background: rgba(255,255,255,0.3); }
+        .abtn-up { top: 0; left: 50px; width: 65px; height: 65px; font-size: 16px; border-color: #ffcc00; }
+        .abtn-left { top: 75px; left: 0; }
+        .abtn-right { top: 75px; left: 115px; }
+        .abtn-down { top: 115px; left: 57px; }
+
         /* Modal */
         #item-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 50; }
         .modal-content { background: #1a1a3a; border: 2px solid #55f; border-radius: 8px; width: 300px; max-width: 90%; display: flex; flex-direction: column; padding: 15px; color: #fff; box-shadow: 0 0 10px #000; max-height: 90%; }
@@ -130,16 +146,13 @@
         </div>
 
         <!-- 1P Palette -->
-        <div class="palette-container" id="palette-1p">
-            <div class="palette-slot" id="pal-1p-left" data-offset="-1"><span class="palette-key">L</span><div class="slot-name"></div></div>
-            <div class="palette-slot active" id="pal-1p-center" data-offset="0"><span class="palette-key">ACT</span><div class="slot-name"></div></div>
-            <div class="palette-slot" id="pal-1p-right" data-offset="1"><span class="palette-key">R</span><div class="slot-name"></div></div>
+        <div id="palette-1p">
+            <div class="palette-slot pal-l" id="pal-1p-left"><div class="slot-name"></div></div>
+            <div class="palette-slot pal-act" id="pal-1p-center"><div class="slot-name"></div></div>
+            <div class="palette-slot pal-r" id="pal-1p-right"><div class="slot-name"></div></div>
         </div>
 
         <!-- 2P Palette -->
-        <div class="palette-container" id="palette-2p">
-            <div class="palette-slot" id="pal-2p-left" data-offset="-1"><span class="palette-key">L</span><div class="slot-name"></div></div>
-            <div class="palette-slot active" id="pal-2p-center" data-offset="0"><span class="palette-key">ACT</span><div class="slot-name"></div></div>
             <div class="palette-slot" id="pal-2p-right" data-offset="1"><span class="palette-key">R</span><div class="slot-name"></div></div>
         </div>
     </div>
@@ -165,9 +178,9 @@
         <div id="tab-inv" style="display:flex; flex-direction: row; gap: 10px; flex: 1; min-height: 0;">
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">アイテム</div>
-                <div class="scroll-btn" onclick="document.getElementById('menu-list-1p').scrollTop = 0">▲ 一番上へ</div>
+                <div class="scroll-btn" id="scroll-inv-up">▲ 一番上へ</div>
                 <div class="menu-list" id="menu-list-1p" style="font-size:12px;"></div>
-                <div class="scroll-btn" onclick="let el=document.getElementById('menu-list-1p'); el.scrollTop = el.scrollHeight">▼ 一番下へ</div>
+                <div class="scroll-btn" id="scroll-inv-down">▼ 一番下へ</div>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">パレット</div>
@@ -180,9 +193,9 @@
         <div id="tab-magic" style="display:none; flex-direction: row; gap: 10px; flex: 1; min-height: 0;">
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">まほう</div>
-                <div class="scroll-btn" onclick="document.getElementById('menu-magic-1p').scrollTop = 0">▲ 一番上へ</div>
+                <div class="scroll-btn" id="scroll-mag-up">▲ 一番上へ</div>
                 <div class="menu-list" id="menu-magic-1p" style="font-size:12px;"></div>
-                <div class="scroll-btn" onclick="let el=document.getElementById('menu-magic-1p'); el.scrollTop = el.scrollHeight">▼ 一番下へ</div>
+                <div class="scroll-btn" id="scroll-mag-down">▼ 一番下へ</div>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div class="menu-title">パレット</div>
@@ -253,6 +266,7 @@
             <div class="modal-actions">
                 <div class="btn" id="btn-modal-use" style="width:auto; padding:5px 15px; margin:0; display:none;">使用</div>
                 <div class="btn" id="btn-modal-equip" style="width:auto; padding:5px 15px; margin:0; display:none;">装備</div>
+                <div class="btn" id="btn-modal-drop" style="width:auto; padding:5px 15px; margin:0; display:none; background:#ff4444; border-color:#880000; color:#fff;">置く</div>
                 <div class="btn" id="btn-modal-close" style="width:auto; padding:5px 15px; margin:0;">閉じる</div>
             </div>
         </div>
