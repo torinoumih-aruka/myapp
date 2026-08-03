@@ -19,6 +19,13 @@ let GAME = {
     projectiles: [],
     particles: [],
     drops: [],
+    grid: null,
+    rooms: [],
+    doors: [],
+    switches: [],
+    boxes: [],
+    events: [],
+    teleporters: [],
     is2P: false,
     cameraX: 0,
     cameraY: 0,
@@ -36,9 +43,9 @@ let INPUTS = [
 
 // Classes
 const CLASS_DATA = {
-    swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, sprite: 'hero_knight_down_1', type: 'melee' },
-    ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, sprite: 'hero_wiz_down_1', type: 'ranged' },
-    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, sprite: 'hero_week_down_1', type: 'magic' }
+    swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, dex: 68, sprite: 'hero_knight_down_1', type: 'melee' },
+    ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, dex: 72, sprite: 'hero_wiz_down_1', type: 'ranged' },
+    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, dex: 63, sprite: 'hero_week_down_1', type: 'magic' }
 };
 
 const WEAPON_TYPES = {
@@ -119,13 +126,13 @@ const WEAPON_TYPES = {
 const BASE_WEAPONS = {
     'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
     'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
-    'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 25, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
-    'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 60, baseDex: 18, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
-    'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 120, baseDex: 19, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
+    'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 55, baseDex: 30, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 100, baseDex: 33, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
-    'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 20, baseDex: 18, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
-    'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 50, baseDex: 19, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
-    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 45, baseDex: 20, maxEnhance: 3, range: 200, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 30, baseDex: 30, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
+    'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 60, baseDex: 32, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
+    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 200, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
 
 const ENCHANTS = [
@@ -208,14 +215,14 @@ class Player {
         this.def = cdata.def;
         this.spd = cdata.spd;
         
-        this.dex = 50;
+        this.dex = cdata.dex || 50;
         this.baseStats = {
             maxHp: cdata.hp,
             maxMp: cdata.mp,
             atk: cdata.atk,
             def: cdata.def,
             spd: cdata.spd,
-            dex: 50,
+            dex: cdata.dex || 50,
             mind: 40,
             luck: 10
         };
@@ -347,7 +354,10 @@ class Player {
                 if (actItem.magic === 'rafoie') range = 75;
             }
             
-            let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+            let inRangeEnemies = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x-this.x, b.y-this.y)<=range);
+            let inRange = [...inRangeEnemies, ...inRangeBoxes];
+            
             if (isCone) {
                 let validTargets = inRange.filter(e => {
                     let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
@@ -355,6 +365,10 @@ class Player {
                     return diff<=(Math.PI/12); // strict angle like attack logic (30 degrees total)
                 });
                 validTargets.sort((a,b) => {
+                    let aIsBox = a.hp === undefined;
+                    let bIsBox = b.hp === undefined;
+                    if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
+                    
                     let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
                     if(diffA>Math.PI) diffA = Math.PI*2-diffA;
                     let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
@@ -363,10 +377,16 @@ class Player {
                 });
                 inRange = validTargets;
             } else {
-                inRange.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y));
+                inRange.sort((a,b) => {
+                    let aIsBox = a.hp === undefined;
+                    let bIsBox = b.hp === undefined;
+                    if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
+                    return Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y);
+                });
             }
             
-            if (!this.mainTarget || this.mainTarget.hp <= 0 || !inRange.includes(this.mainTarget)) {
+            let currentIsBox = (this.mainTarget && this.mainTarget.hp === undefined);
+            if (!this.mainTarget || (!currentIsBox && this.mainTarget.hp <= 0) || !inRange.includes(this.mainTarget)) {
                 this.mainTarget = inRange.length > 0 ? inRange[0] : null;
             }
         }
@@ -491,7 +511,8 @@ class Player {
         
         // Draw target indicator if action is weapon or magic
         let actItem = this.palette[this.paletteIndex];
-        if (actItem && (actItem.type === 'weapon' || actItem.type === 'disk' || actItem.type === 'magic') && this.mainTarget && this.mainTarget.hp > 0) {
+        let isBoxTarget = (this.mainTarget && this.mainTarget.hp === undefined && GAME.boxes && GAME.boxes.includes(this.mainTarget));
+        if (actItem && (actItem.type === 'weapon' || actItem.type === 'disk' || actItem.type === 'magic') && this.mainTarget && (this.mainTarget.hp > 0 || isBoxTarget)) {
             ctx.save();
             ctx.translate(this.mainTarget.x, this.mainTarget.y);
             // Rotate slowly
@@ -608,7 +629,7 @@ class Player {
                 } else if (closestNPC.type === 'teleporter') {
                     if (confirm('ステージ1へ転送しますか？')) {
                         GAME.mode = 'map';
-                        loadArea(MAP_DATA.stages[0].areas[0].patterns[0]);
+                        loadArea(MAP_DATA.stages[0].areas[0]);
                     }
                 }
                 return;
@@ -617,14 +638,46 @@ class Player {
 
         if (GAME.mode === 'map' && GAME.currentMapPattern) {
             let start = GAME.currentMapPattern.start;
-            let dist = Math.hypot(start.x - this.x, start.y - this.y);
+            let dist = Math.hypot(start.x * 50 + 25 - this.x, start.y * 50 + 25 - this.y);
             if (dist < 40) {
                 if (confirm('タウンに戻りますか？')) {
                     GAME.mode = 'town';
                     this.x = MAP_DATA.town.start.x;
                     this.y = MAP_DATA.town.start.y;
+                    GAME.eventFlags = {}; // Reset event flags
                 }
                 return;
+            }
+            
+            // Check Action events
+            if (GAME.events) {
+                let triggeredEvent = false;
+                GAME.events.forEach(ev => {
+                    if (ev.type === 'action') {
+                        let dx = Math.abs(this.x - (ev.x * 50 + 25));
+                        let dy = Math.abs(this.y - (ev.y * 50 + 25));
+                        if (dx < 30 && dy < 30) {
+                            alert(ev.message);
+                            triggeredEvent = true;
+                        }
+                    }
+                });
+                if (triggeredEvent) return; // skip attack
+            }
+            
+            // Check Next Area
+            if (GAME.teleporters) {
+                let nextTp = GAME.teleporters.find(t => t.type === 'next');
+                if (nextTp) {
+                    let dx = Math.abs(this.x - (nextTp.x * 50 + 25));
+                    let dy = Math.abs(this.y - (nextTp.y * 50 + 25));
+                    if (dx < 40 && dy < 40) {
+                        if (confirm('次のエリアに進みますか？')) {
+                            alert('次のエリアは準備中です。');
+                        }
+                        return;
+                    }
+                }
             }
         }
 
@@ -662,8 +715,15 @@ class Player {
                 this.attackMoveTime = 0;
                 this.attackMoveStartX = this.x;
                 this.attackMoveStartY = this.y;
-                this.attackMoveTargetX = this.x + nX * motion * 5;
-                this.attackMoveTargetY = this.y + nY * motion * 5;
+                let tx = this.x + nX * motion * 5;
+                let ty = this.y + nY * motion * 5;
+                if (checkLineOfSight(this.x, this.y, tx, ty)) {
+                    this.attackMoveTargetX = this.x;
+                    this.attackMoveTargetY = this.y;
+                } else {
+                    this.attackMoveTargetX = tx;
+                    this.attackMoveTargetY = ty;
+                }
                 this.debugInfo.push(`Move Target: ${motion*5}px`);
             } else {
                 this.attackMoveTotal = 0;
@@ -673,7 +733,9 @@ class Player {
             
             // Target logic
             let targets = [];
-            let inRange = GAME.enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
+            let inRangeEnemies = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
+            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x - this.x, b.y - this.y) <= action.range);
+            let inRange = [...inRangeEnemies, ...inRangeBoxes];
             
             let pAngle = Math.atan2(this.dirY, this.dirX);
             
@@ -682,7 +744,12 @@ class Player {
             if (wType.shape === 'none') {
                 // Just get the closest one
                 if (inRange.length > 0) {
-                    inRange.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
+                    inRange.sort((a,b) => {
+                        let aIsBox = a.hp === undefined;
+                        let bIsBox = b.hp === undefined;
+                        if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
+                        return Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y);
+                    });
                     targets.push(inRange[0]);
                 }
             } else if (wType.shape === 'fan45') {
@@ -718,13 +785,15 @@ class Player {
             }
             
             // Apply target limits
-            if (wType.shape === 'fan30' || wType.shape === 'fan45') {
-                targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
-            } else {
-                targets.sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y));
-            }
+            targets.sort((a,b) => {
+                let aIsBox = a.hp === undefined;
+                let bIsBox = b.hp === undefined;
+                if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
+                return Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y);
+            });
 
-            if (this.comboCount === 1 || !this.mainTarget || this.mainTarget.hp <= 0 || !targets.includes(this.mainTarget)) {
+            let currentIsBox = (this.mainTarget && this.mainTarget.hp === undefined);
+            if (this.comboCount === 1 || !this.mainTarget || (!currentIsBox && this.mainTarget.hp <= 0) || !targets.includes(this.mainTarget)) {
                 this.mainTarget = targets.length > 0 ? targets[0] : null;
             }
 
@@ -743,20 +812,21 @@ class Player {
                 let firstTarget = this.mainTarget;
                 targets = [];
                 if (firstTarget) {
-                    let hitWall = checkLineOfSight(this.x, this.y, firstTarget.x, firstTarget.y, GAME.walls);
+                    let hitWall = checkLineOfSight(this.x, this.y, firstTarget.x, firstTarget.y);
                     if (hitWall) {
                         addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#00ffff' });
                     } else {
                         let chained = [firstTarget];
                         let current = firstTarget;
                         for (let i = 0; i < wType.targetNum - 1; i++) {
-                            let candidates = GAME.enemies.filter(e => e.hp > 0 && !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 40);
+                            let candidates = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 40);
                             if (candidates.length === 0) break;
                             let next = candidates[Math.floor(Math.random() * candidates.length)];
                             chained.push(next);
                             current = next;
                         }
                         PROJECTILES.push({
+                            roomId: this.roomId,
                             type: 'slicer',
                             owner: this,
                             comboCount: this.comboCount,
@@ -765,12 +835,20 @@ class Player {
                             delayTimer: 0.0,
                             x: this.x,
                             y: this.y,
-                            life: 10.0
+                            life: 10.0,
+                            applyHit: (t, comboDmg, isCrit) => {
+                                if (t instanceof Enemy) hitEnemy(t, this, comboDmg, isCrit);
+                                else {
+                                    t.hp -= 1;
+                                    if (t.hp <= 0) breakBox(t);
+                                }
+                            }
                         });
                     }
                 }
             }
-
+            
+            // Hit enemies
             // Visual Effects (Particles / Trails)
             if (action.weaponType === 'saber' || action.weaponType === 'cane') {
                 let isLeftToRight = (this.comboCount !== 2); // 1 and 3 are L->R
@@ -796,7 +874,7 @@ class Player {
                 }
             } else if (action.weaponType === 'handgun' || action.weaponType === 'shotgun') {
                 targets.forEach(t => {
-                    let hitWall = checkLineOfSight(this.x, this.y, t.x, t.y, GAME.walls);
+                    let hitWall = checkLineOfSight(this.x, this.y, t.x, t.y);
                     if (hitWall) {
                         addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#ffcc00' });
                         t.blockedByWall = true;
@@ -808,66 +886,95 @@ class Player {
                 targets = targets.filter(t => !t.blockedByWall);
             }
 
-            targets.forEach(target => {
-                let wType = WEAPON_TYPES[action.weaponType];
-                
-                // Accuracy check
-                let myDex = this.baseStats.dex;
-                if (this.equip.weapon && this.equip.weapon.dex) myDex += this.equip.weapon.dex;
-                if (this.equip.armor) {
-                    if (this.equip.armor.dex) myDex += this.equip.armor.dex;
-                    if (this.equip.armor.slottedUnits) {
-                        this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
-                    }
-                }
-                let targetEvi = target.evi || 10;
-                let hitRate = myDex - (targetEvi * 0.2);
-                let distPenalty = 0;
-                
-                if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
-                    let dist = Math.hypot(target.x - this.x, target.y - this.y);
-                    distPenalty = (dist / 10) * 2;
-                }
-                hitRate -= distPenalty;
-                
-                if (Math.random() * 100 > hitRate) {
-                    addFloatingText(target.x, target.y - 20, "miss", 'white');
-                    return; // Missed
-                }
-                
-                let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
-                let isCrit = (Math.random() * 100) < (this.baseStats.luck / 5);
-                let critMult = isCrit ? 1.5 : 1.0;
-                let defenderDef = target.def || 5;
-                let baseDmg = (this.atk - (defenderDef / 5)) * critMult;
-                if (baseDmg < 1) baseDmg = 1;
-                let dmg = Math.floor(baseDmg * comboMult);
-                
-                if (action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
-                
-                target.hp -= dmg;
-                target.stunTimer = 1.0; // Stun for 1.0s on hit
-                addFloatingText(target.x, target.y - 20, dmg, 'white');
-                console.log(`Hit enemy! Enemy HP: ${target.hp}`);
-                
-                // Trigger enchant on 3rd combo
-                if (this.comboCount === 3 && action.enchant) {
-                    let ench = ENCHANTS.find(e => e.id === action.enchant);
-                    if (ench) {
-                        this.debugInfo.push(`Enchant: ${ench.name}!`);
-                        if (ench.type === 'add_dmg') {
-                            let edmg = Math.floor(ench.value(this.level));
-                            target.hp -= edmg;
-                            addFloatingText(target.x, target.y - 40, edmg, 'white');
-                            console.log(`Enchant Damage! +${edmg}`);
-                        } else if (ench.type === 'drain') {
-                            let heal = Math.floor(target.hp * ench.drainPercent);
-                            this.hp = Math.min(this.maxHp, this.hp + heal);
-                            addFloatingText(this.x, this.y - 20, heal, '#33ff33');
-                            console.log(`Drain! Healed: ${heal}`);
+            let allTargets = targets;
+            allTargets.forEach((target, i) => {
+                let delay = wType.hitDelay || 0;
+                if (Array.isArray(delay)) delay = delay[Math.min(this.comboCount - 1, delay.length - 1)];
+                setTimeout(() => {
+                    // Accuracy check
+                    let myDex = this.baseStats.dex;
+                    if (this.equip.weapon && this.equip.weapon.dex) myDex += this.equip.weapon.dex;
+                    if (this.equip.armor) {
+                        if (this.equip.armor.dex) myDex += this.equip.armor.dex;
+                        if (this.equip.armor.slottedUnits) {
+                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
                         }
                     }
-                }
+                    let isBox = (target.hp === undefined && GAME.boxes && GAME.boxes.includes(target));
+                    let targetEvi = isBox ? 0 : (target.evi || 10);
+                    
+                    let hitRate = myDex - (targetEvi * 0.2);
+                    let distPenalty = 0;
+                    
+                    if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
+                        let dist = Math.hypot(target.x - this.x, target.y - this.y);
+                        distPenalty = (dist / 10) * 2;
+                    }
+                    hitRate -= distPenalty;
+                    
+                    if (!isBox && Math.random() * 100 > hitRate) {
+                        addFloatingText(target.x, target.y - 20, "miss", 'white');
+                        return; // Missed
+                    }
+                    
+                    let myLuck = this.baseStats.luck;
+                    if (this.equip.weapon && this.equip.weapon.luck) myLuck += this.equip.weapon.luck;
+                    if (this.equip.armor) {
+                        if (this.equip.armor.luck) myLuck += this.equip.armor.luck;
+                        if (this.equip.armor.slottedUnits) {
+                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.luck) myLuck += u.luck; });
+                        }
+                    }
+                    
+                    let myAtk = this.baseStats.atk;
+                    if (this.equip.weapon && this.equip.weapon.atk) myAtk += this.equip.weapon.atk;
+                    if (this.equip.armor) {
+                        if (this.equip.armor.atk) myAtk += this.equip.armor.atk;
+                        if (this.equip.armor.slottedUnits) {
+                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.atk) myAtk += u.atk; });
+                        }
+                    }
+                    
+                    let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
+                    let isCrit = (Math.random() * 100) < (myLuck / 5);
+                    let critMult = isCrit ? 1.5 : 1.0;
+                    let defenderDef = isBox ? 0 : (target.def || 5);
+                    
+                    let baseDmg = (myAtk - (defenderDef / 5)) * critMult;
+                    if (baseDmg < 1) baseDmg = 1;
+                    let dmg = Math.floor(baseDmg * comboMult);
+                    
+                    if (action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                    
+                    if (target instanceof Enemy) {
+                        target.hp -= dmg;
+                        target.stunTimer = 1.0; // Stun for 1.0s on hit
+                        addFloatingText(target.x, target.y - 20, dmg, isCrit ? 'yellow' : 'white');
+                        console.log(`Hit enemy! Enemy HP: ${target.hp}`);
+                        
+                        // Trigger enchant on 3rd combo
+                        if (this.comboCount === 3 && action.enchant) {
+                            let ench = ENCHANTS.find(e => e.id === action.enchant);
+                            if (ench) {
+                                this.debugInfo.push(`Enchant: ${ench.name}!`);
+                                if (ench.type === 'add_dmg') {
+                                    let edmg = Math.floor(ench.value(this.level));
+                                    target.hp -= edmg;
+                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
+                                    console.log(`Enchant Damage! +${edmg}`);
+                                } else if (ench.type === 'drain') {
+                                    let heal = Math.floor(target.hp * ench.drainPercent);
+                                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
+                                    console.log(`Drain! Healed: ${heal}`);
+                                }
+                            }
+                        }
+                    } else {
+                        target.hp -= 1;
+                        if (target.hp <= 0) breakBox(target);
+                    }
+                }, delay * 1000);
             });
 
         } else if (action.type === 'item') {
@@ -919,7 +1026,7 @@ class Player {
                     
                     let pAngle = Math.atan2(this.dirY, this.dirX);
                     let range = 150;
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
                     let validTargets = inRange.filter(e => {
                         let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
                         if(diff>Math.PI) diff = Math.PI*2-diff;
@@ -944,7 +1051,7 @@ class Player {
                         projVx = Math.cos(ang)*200;
                         projVy = Math.sin(ang)*200;
                     }
-                    PROJECTILES.push({ type: 'fire', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
+                    PROJECTILES.push({ roomId: this.roomId, type: 'fire', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
                 } else {
                     this.debugInfo.push("Not enough MP");
                 }
@@ -963,7 +1070,7 @@ class Player {
                     let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
                     for (let i = 0; i < numBullets; i++) {
                         let startAng = (i / numBullets) * Math.PI * 2;
-                        PROJECTILES.push({ type: 'gifoie', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                        PROJECTILES.push({ roomId: this.roomId, type: 'gifoie', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
                     }
                 } else {
                     this.debugInfo.push("Not enough MP");
@@ -980,7 +1087,7 @@ class Player {
                     
                     let pAngle = Math.atan2(this.dirY, this.dirX);
                     let range = 75; // Half of handgun
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && Math.hypot(e.x-this.x, e.y-this.y)<=range);
+                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
                     let validTargets = inRange.filter(e => {
                         let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
                         if(diff>Math.PI) diff = Math.PI*2-diff;
@@ -1000,7 +1107,7 @@ class Player {
                     let cy = target ? target.y : this.y + this.dirY * range;
                     
                     let dmg = Math.floor((this.baseStats.mind * 3/4) + 5 + (lv * 2));
-                    PROJECTILES.push({ type: 'rafoie', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
+                    PROJECTILES.push({ roomId: this.roomId, type: 'rafoie', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
                 } else {
                     this.debugInfo.push("Not enough MP");
                 }
@@ -1141,16 +1248,52 @@ async function loadMapData() {
 function loadArea(areaPattern) {
     GAME.currentMapPattern = areaPattern;
     GAME.enemies = [];
-    if (areaPattern.enemies) {
-        areaPattern.enemies.forEach(ed => {
-            GAME.enemies.push(new Enemy(ed.type, ed.x, ed.y));
-        });
+    GAME.drops = [];
+    GAME.grid = areaPattern.grid ? JSON.parse(JSON.stringify(areaPattern.grid)) : null;
+    
+    GAME.rooms = (areaPattern.rooms || []).map(r => ({
+        ...r,
+        currentWave: -1,
+        active: false,
+        cleared: false
+    }));
+    
+    GAME.doors = [];
+    GAME.rooms.forEach(r => {
+        if (r.doors) r.doors.forEach(d => GAME.doors.push({...d, open: false, roomDef: r.id}));
+    });
+    if (areaPattern.standaloneDoors) {
+        areaPattern.standaloneDoors.forEach(d => GAME.doors.push({...d, open: false, roomDef: null}));
     }
+    
+    // Write closed doors to grid
+    GAME.doors.forEach(d => {
+        if (!GAME.grid) return;
+        for (let dy = 0; dy < d.h; dy++) {
+            for (let dx = 0; dx < d.w; dx++) {
+                if (GAME.grid[d.y + dy] && GAME.grid[d.y + dy][d.x + dx] !== undefined) {
+                    GAME.grid[d.y + dy][d.x + dx] = 0; // Wall
+                }
+            }
+        }
+    });
+    
+    GAME.switches = JSON.parse(JSON.stringify(areaPattern.switches || []));
+    GAME.boxes = (areaPattern.boxes || []).map(b => ({
+        x: b.x * 50 + 25,
+        y: b.y * 50 + 25,
+        hp: 1,
+        radius: 20
+    }));
+    GAME.events = JSON.parse(JSON.stringify(areaPattern.events || []));
+    GAME.teleporters = JSON.parse(JSON.stringify(areaPattern.teleporters || []));
     
     // Set players to start
     GAME.players.forEach(p => {
-        p.x = areaPattern.start.x;
-        p.y = areaPattern.start.y;
+        if (areaPattern.start) {
+            p.x = areaPattern.start.x * 50 + 25; // center of tile
+            p.y = areaPattern.start.y * 50 + 25;
+        }
     });
 }
 
@@ -1550,9 +1693,12 @@ function updateProjectiles(dt) {
             addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
             
             let hit = false;
-            for (let e of GAME.enemies.filter(e=>e.hp>0)) {
-                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= e.radius + proj.r) {
-                    hitEnemyWithMagic(e, proj);
+            let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
+            for (let e of targets) {
+                let eRadius = e.radius || 15;
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= eRadius + proj.r) {
+                    if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
+                    else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     hit = true; break;
                 }
             }
@@ -1568,11 +1714,14 @@ function updateProjectiles(dt) {
             else if (proj.lv >= 11) colors = ['#ff00ff', '#ffaaaa'];
             addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
             
-            for (let e of GAME.enemies.filter(e=>e.hp>0)) {
-                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= e.radius + proj.r) {
+            let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
+            for (let e of targets) {
+                let eRadius = e.radius || 15;
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= eRadius + proj.r) {
                     if (!proj.hitTargets.has(e)) {
                         proj.hitTargets.add(e);
-                        hitEnemyWithMagic(e, proj);
+                        if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
+                        else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     }
                 }
             }
@@ -1580,9 +1729,12 @@ function updateProjectiles(dt) {
         } else if (proj.type === 'rafoie') {
             if (proj.life <= 0) {
                 addEffect('explosion', { x: proj.cx, y: proj.cy, r: 12, lv: proj.lv });
-                for (let e of GAME.enemies.filter(e=>e.hp>0)) {
-                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= e.radius + 12) {
-                        hitEnemyWithMagic(e, proj);
+                let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
+                for (let e of targets) {
+                    let eRadius = e.radius || 15;
+                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 12) {
+                        if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
+                        else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     }
                 }
                 PROJECTILES.splice(i, 1);
@@ -2031,7 +2183,20 @@ function updateUI() {
         document.getElementById(`mp-val-${idstr}`).innerText = `${Math.floor(p.mp)}/${p.maxMp}`;
         
         let cdata = CLASS_DATA[p.classId];
-        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}`;
+        let waveStr = "";
+        if (GAME.mode === 'map' && p.roomId && GAME.rooms) {
+            let r = GAME.rooms.find(rm => rm.id === p.roomId);
+            if (r && r.waves && r.waves.length > 0 && !r.cleared) {
+                let symbols = [];
+                for (let i = 0; i < r.waves.length; i++) {
+                    if (i < r.currentWave) symbols.push("◉");
+                    else symbols.push("◎");
+                }
+                waveStr = "  " + symbols.join("-");
+            }
+        }
+        
+        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}${waveStr}`;
         
         updatePaletteUI(p.id);
     });
@@ -2083,50 +2248,33 @@ function hitPlayer(p, e) {
     }
 }
 
-// Helper: line intersection with AABB walls
-function checkLineOfSight(x1, y1, x2, y2, walls) {
-    if (!walls) return null;
-    let closestIntersection = null;
-    let minDist = Infinity;
+// Helper: line intersection with grid walls
+function checkLineOfSight(x1, y1, x2, y2) {
+    if (GAME.mode !== 'map' || !GAME.grid) return null;
+    let ts = 50;
+    let h = GAME.grid.length;
+    let w = GAME.grid[0].length;
     
-    let checkLineRect = (x1, y1, x2, y2, rx, ry, rw, rh) => {
-        let left = rx, right = rx + rw, top = ry, bottom = ry + rh;
-        let pts = [];
-        // Helper to intersect segments
-        let intersect = (x1, y1, x2, y2, x3, y3, x4, y4) => {
-            let denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1);
-            if (denom === 0) return null;
-            let ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3))/denom;
-            let ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3))/denom;
-            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
-                return { x: x1 + ua*(x2-x1), y: y1 + ua*(y2-y1) };
-            }
-            return null;
-        };
-        pts.push(intersect(x1, y1, x2, y2, left, top, right, top));
-        pts.push(intersect(x1, y1, x2, y2, right, top, right, bottom));
-        pts.push(intersect(x1, y1, x2, y2, right, bottom, left, bottom));
-        pts.push(intersect(x1, y1, x2, y2, left, bottom, left, top));
-        
-        let minPt = null;
-        let md = Infinity;
-        for (let pt of pts) {
-            if (pt) {
-                let d = Math.hypot(pt.x - x1, pt.y - y1);
-                if (d < md) { md = d; minPt = pt; }
+    let dist = Math.hypot(x2 - x1, y2 - y1);
+    if (dist === 0) return null;
+    let steps = Math.ceil(dist / (ts / 4));
+    let dx = (x2 - x1) / steps;
+    let dy = (y2 - y1) / steps;
+    
+    let cx = x1;
+    let cy = y1;
+    for (let i = 0; i <= steps; i++) {
+        let r = Math.floor(cy / ts);
+        let c = Math.floor(cx / ts);
+        if (r >= 0 && r < h && c >= 0 && c < w) {
+            if (GAME.grid[r][c] === 0) {
+                return { x: cx, y: cy };
             }
         }
-        return minPt;
-    };
-    
-    for (let w of walls) {
-        let pt = checkLineRect(x1, y1, x2, y2, w.x, w.y, w.w, w.h);
-        if (pt) {
-            let d = Math.hypot(pt.x - x1, pt.y - y1);
-            if (d < minDist) { minDist = d; closestIntersection = pt; }
-        }
+        cx += dx;
+        cy += dy;
     }
-    return closestIntersection;
+    return null;
 }
 
 function resolveCollisions(dt) {
@@ -2174,25 +2322,181 @@ function resolveCollisions(dt) {
             }
         }
     }
-    
-    // Wall collisions
-    if (GAME.walls) {
+    // Grid Wall collisions
+    if (GAME.mode === 'map' && GAME.grid) {
+        let ts = 50;
+        let h = GAME.grid.length;
+        let w = GAME.grid[0].length;
         for (let a of entities) {
-            for (let w of GAME.walls) {
-                let cx = Math.max(w.x, Math.min(a.x, w.x + w.w));
-                let cy = Math.max(w.y, Math.min(a.y, w.y + w.h));
-                let dx = a.x - cx;
-                let dy = a.y - cy;
-                let dist = Math.hypot(dx, dy);
-                if (dist < a.radius) {
-                    let overlap = a.radius - dist;
-                    let nx = dx / (dist || 1);
-                    let ny = dy / (dist || 1);
-                    if (dist === 0) { nx = 1; ny = 0; }
-                    a.x += nx * overlap;
-                    a.y += ny * overlap;
+            let leftCol = Math.floor((a.x - a.radius) / ts);
+            let rightCol = Math.floor((a.x + a.radius) / ts);
+            let topRow = Math.floor((a.y - a.radius) / ts);
+            let bottomRow = Math.floor((a.y + a.radius) / ts);
+            
+            for (let r = topRow; r <= bottomRow; r++) {
+                for (let c = leftCol; c <= rightCol; c++) {
+                    if (r < 0 || r >= h || c < 0 || c >= w) continue;
+                    let tile = GAME.grid[r][c];
+                    let solid = (tile === 0);
+                    if (tile === 2 && a instanceof Player) solid = true; // holes block players
+                    if (tile === 2 && a instanceof Enemy) solid = true; // holes block current enemies
+                    
+                    if (solid) {
+                        let rx = c * ts;
+                        let ry = r * ts;
+                        let cx = Math.max(rx, Math.min(a.x, rx + ts));
+                        let cy = Math.max(ry, Math.min(a.y, ry + ts));
+                        let dx = a.x - cx;
+                        let dy = a.y - cy;
+                        let dist = Math.hypot(dx, dy);
+                        if (dist < a.radius) {
+                            let overlap = a.radius - dist;
+                            let nx = dx / (dist || 1);
+                            let ny = dy / (dist || 1);
+                            if (dist === 0) { nx = 1; ny = 0; }
+                            a.x += nx * overlap;
+                            a.y += ny * overlap;
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+function updateRooms(dt) {
+    if (GAME.mode !== 'map' || !GAME.rooms) return;
+    
+    let p = GAME.players[0];
+    if (!p || p.state === 'dead') return;
+    
+    let ts = 50;
+    let gridX = Math.floor(p.x / ts);
+    let gridY = Math.floor(p.y / ts);
+    
+    let insideAny = false;
+    GAME.rooms.forEach(r => {
+        let inside = (gridX >= r.x && gridX < r.x + r.w && gridY >= r.y && gridY < r.y + r.h);
+        
+        if (inside) {
+            insideAny = true;
+            p.roomId = r.id;
+        }
+        
+        if (inside && !r.active && !r.cleared) {
+            r.active = true;
+            if (r.currentWave === -1) r.currentWave = 0;
+            spawnWave(r);
+        } else if (!inside && r.active) {
+            r.active = false;
+            // Despawn enemies
+            GAME.enemies = GAME.enemies.filter(e => e.roomId !== r.id);
+        }
+        
+        if (r.active && !r.cleared) {
+            // Check if current wave enemies are dead
+            let aliveEnemies = GAME.enemies.filter(e => e.roomId === r.id && e.hp > 0);
+            // We need to know if the wave was actually spawned to prevent instant clear if wave was empty
+            // But wave.enemies is populated.
+            if (aliveEnemies.length === 0) {
+                r.currentWave++;
+                if (r.currentWave >= r.waves.length) {
+                    r.cleared = true;
+                    if (r.doors) {
+                        r.doors.forEach(dDef => {
+                            let door = GAME.doors.find(d => d.id === dDef.id);
+                            if (door) {
+                                door.open = true;
+                                for (let dy = 0; dy < door.h; dy++) {
+                                    for (let dx = 0; dx < door.w; dx++) {
+                                        if (GAME.grid[door.y + dy]) GAME.grid[door.y + dy][door.x + dx] = 1;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    addFloatingText(p.x, p.y - 50, 'ROOM CLEARED!', 'cyan');
+                } else {
+                    spawnWave(r);
+                }
+            }
+        }
+    });
+    if (!insideAny) p.roomId = null;
+}
+
+function updateGimmicks(dt) {
+    if (GAME.mode !== 'map') return;
+    let p = GAME.players[0];
+    if (!p || p.state === 'dead') return;
+    
+    // Switches
+    if (GAME.switches) {
+        GAME.switches.forEach(sw => {
+            if (!sw.pressed) {
+                let dx = Math.abs(p.x - (sw.x * 50 + 25));
+                let dy = Math.abs(p.y - (sw.y * 50 + 25));
+                if (dx < 20 && dy < 20) {
+                    sw.pressed = true;
+                    // Open target doors
+                    if (sw.targetDoors) {
+                        sw.targetDoors.forEach(tid => {
+                            let d = GAME.doors.find(d => d.id === tid);
+                            if (d && !d.open) {
+                                d.open = true;
+                                for (let dY = 0; dY < d.h; dY++) {
+                                    for (let dX = 0; dX < d.w; dX++) {
+                                        if (GAME.grid[d.y + dY]) GAME.grid[d.y + dY][d.x + dX] = 1;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+    
+    // Auto Events
+    if (GAME.events) {
+        if (!GAME.eventFlags) GAME.eventFlags = {};
+        GAME.events.forEach(ev => {
+            if (ev.type === 'auto' && !GAME.eventFlags[ev.id]) {
+                let dx = Math.abs(p.x - (ev.x * 50 + 25));
+                let dy = Math.abs(p.y - (ev.y * 50 + 25));
+                if (dx < 25 && dy < 25) {
+                    GAME.eventFlags[ev.id] = true;
+                    alert(ev.message);
+                }
+            }
+        });
+    }
+}
+
+function spawnWave(r) {
+    if (r.currentWave >= r.waves.length) return;
+    let wave = r.waves[r.currentWave];
+    GAME.enemies = GAME.enemies.filter(e => e.roomId !== r.id);
+    if (wave.enemies) {
+        wave.enemies.forEach(ed => {
+            let e = new Enemy(ed.type, ed.x * 50 + 25, ed.y * 50 + 25);
+            e.roomId = r.id;
+            GAME.enemies.push(e);
+        });
+    }
+}
+
+function breakBox(b) {
+    if (GAME.boxes) {
+        GAME.boxes = GAME.boxes.filter(box => box !== b);
+        addEffect('explosion', { x: b.x, y: b.y, r: 20 });
+        if (Math.random() < 0.5) {
+            let rand = Math.random();
+            let dropItem = null;
+            if (rand < 0.3) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+            else if (rand < 0.6) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+            else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+            if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
         }
     }
 }
@@ -2266,15 +2570,10 @@ function update() {
             }
         });
         GAME.enemies = GAME.enemies.filter(e => e.hp > 0);
+        GAME.enemies = GAME.enemies.filter(e => e.hp > 0);
         
-        // Repopulate enemies up to 8
-        if (GAME.mode === 'map' && GAME.enemies.length < 8) {
-            let spawnX = GAME.players[0].x + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
-            let spawnY = GAME.players[0].y + (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 100);
-            let type = Math.random() < 0.2 ? 'hildebear' : 'booma'; // 20% chance for hildebear
-            GAME.enemies.push(new Enemy(type, spawnX, spawnY));
-        }
-        
+        updateRooms(dt);
+        updateGimmicks(dt);
         resolveCollisions(dt);
         
         // Target Drop
@@ -2315,38 +2614,96 @@ function draw() {
     ctx.save();
     ctx.translate(-GAME.cameraX, -GAME.cameraY);
 
-    // Draw Map grid (Placeholder)
-    ctx.strokeStyle = '#333';
-    for (let x = 0; x < 2000; x+=50) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 2000); ctx.stroke();
-    }
-    for (let y = 0; y < 2000; y+=50) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2000, y); ctx.stroke();
-    }
+    // Draw Map grid
+    if (GAME.mode === 'map' && GAME.grid) {
+        let ts = 50;
+        let h = GAME.grid.length;
+        let w = GAME.grid[0].length;
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                let px = x * ts;
+                let py = y * ts;
+                // Culling
+                if (px + ts < GAME.cameraX || px > GAME.cameraX + SCREEN_W || py + ts < GAME.cameraY || py > GAME.cameraY + SCREEN_H) continue;
+                
+                let tile = GAME.grid[y][x];
+                if (tile === 0) {
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(px, py, ts, ts);
+                    ctx.strokeStyle = '#111';
+                    ctx.strokeRect(px, py, ts, ts);
+                } else if (tile === 1) {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(px, py, ts, ts);
+                    ctx.strokeStyle = '#222';
+                    ctx.strokeRect(px, py, ts, ts);
+                } else if (tile === 2) {
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(px, py, ts, ts);
+                }
+            }
+        }
+        
+        // Draw Doors as sprites if needed (for now grid 0 handles wall)
+        GAME.doors.forEach(d => {
+            if (!d.open) {
+                ctx.fillStyle = '#663300';
+                ctx.fillRect(d.x * 50, d.y * 50, d.w * 50, d.h * 50);
+                ctx.strokeStyle = '#ff9900';
+                ctx.strokeRect(d.x * 50, d.y * 50, d.w * 50, d.h * 50);
+            }
+        });
+        
+        // Draw Switches
+        if (GAME.switches) {
+            GAME.switches.forEach(sw => {
+                ctx.fillStyle = sw.pressed ? '#88cc88' : '#cc8888';
+                ctx.beginPath();
+                ctx.arc(sw.x * 50 + 25, sw.y * 50 + 25, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+            });
+        }
+        
+        // Draw Events
+        if (GAME.events) {
+            GAME.events.forEach(ev => {
+                ctx.fillStyle = ev.type === 'action' ? 'rgba(255, 255, 0, 0.4)' : 'rgba(0, 255, 0, 0.4)';
+                ctx.fillRect(ev.x * 50 + 10, ev.y * 50 + 10, 30, 30);
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('EV', ev.x * 50 + 25, ev.y * 50 + 28);
+            });
+        }
 
-    if (GAME.mode === 'map' && GAME.walls) {
-        ctx.fillStyle = '#444';
-        ctx.strokeStyle = '#888';
-        GAME.walls.forEach(w => {
-            ctx.fillRect(w.x, w.y, w.w, w.h);
-            ctx.strokeRect(w.x, w.y, w.w, w.h);
+        // Draw Boxes
+        if (GAME.boxes) {
+            GAME.boxes.forEach(b => {
+                ctx.fillStyle = '#8b5a2b';
+                ctx.fillRect(b.x - 15, b.y - 15, 30, 30);
+                ctx.strokeStyle = '#5c3a21';
+                ctx.strokeRect(b.x - 15, b.y - 15, 30, 30);
+            });
+        }
+        
+        // Draw Teleporters
+        GAME.teleporters.forEach(t => {
+            ctx.fillStyle = t.type === 'town' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)';
+            ctx.strokeStyle = t.type === 'town' ? 'cyan' : 'magenta';
+            ctx.beginPath();
+            ctx.arc(t.x * 50 + 25, t.y * 50 + 25, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(t.type === 'town' ? 'Town' : 'Next', t.x * 50 + 25, t.y * 50 + 30);
         });
     }
 
-    if (GAME.mode === 'map' && GAME.currentMapPattern) {
-        let start = GAME.currentMapPattern.start;
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-        ctx.strokeStyle = 'cyan';
-        ctx.beginPath();
-        ctx.arc(start.x, start.y, 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.fillStyle = 'white';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Town', start.x, start.y + 5);
-    }
+
 
     if (GAME.mode === 'town') {
         ctx.fillStyle = 'white';
