@@ -6,7 +6,11 @@ const SCREEN_H = 360;
 let FPS = 60;
 
 // Data
-let MAP_DATA = null;
+let MAP_DATA = { town: null };
+const MAP_PATTERNS = {
+    forest1: 1,
+    forest2: 1
+};
 let PALETTE = {};
 let SPRITES = {};
 let PRE_RENDERED = {};
@@ -73,11 +77,11 @@ const WEAPON_TYPES = {
     },
     saber: {
         attackType: 'melee',
-        motions: [5, 5, 8],
+        motions: [2.5, 2.5, 4],
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [60, 60, 80],
+        ranges: [68, 68, 88],
         offsets: [{angle: -20, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 40}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -90,7 +94,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [60, 60, 50],
+        ranges: [64, 64, 50],
         offsets: [{angle: 0, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -99,11 +103,11 @@ const WEAPON_TYPES = {
     },
     cane: {
         attackType: 'melee',
-        motions: [3, 3, 5],
+        motions: [1.5, 1.5, 2.5],
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1',
-        ranges: [40, 40, 50],
+        ranges: [44, 45, 57],
         offsets: [{angle: 0, dist: 20}, {angle: 0, dist: 20}, {angle: 0, dist: 25}],
         icon: 'icon_weapon_cane',
         maxCombo: 3,
@@ -365,8 +369,8 @@ class Player {
                     return diff<=(Math.PI/12); // strict angle like attack logic (30 degrees total)
                 });
                 validTargets.sort((a,b) => {
-                    let aIsBox = a.hp === undefined;
-                    let bIsBox = b.hp === undefined;
+                    let aIsBox = !!(GAME.boxes && GAME.boxes.includes(a));
+                    let bIsBox = !!(GAME.boxes && GAME.boxes.includes(b));
                     if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
                     
                     let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
@@ -378,14 +382,14 @@ class Player {
                 inRange = validTargets;
             } else {
                 inRange.sort((a,b) => {
-                    let aIsBox = a.hp === undefined;
-                    let bIsBox = b.hp === undefined;
+                    let aIsBox = !!(GAME.boxes && GAME.boxes.includes(a));
+                    let bIsBox = !!(GAME.boxes && GAME.boxes.includes(b));
                     if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
                     return Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y);
                 });
             }
             
-            let currentIsBox = (this.mainTarget && this.mainTarget.hp === undefined);
+            let currentIsBox = !!(this.mainTarget && GAME.boxes && GAME.boxes.includes(this.mainTarget));
             if (!this.mainTarget || (!currentIsBox && this.mainTarget.hp <= 0) || !inRange.includes(this.mainTarget)) {
                 this.mainTarget = inRange.length > 0 ? inRange[0] : null;
             }
@@ -511,7 +515,7 @@ class Player {
         
         // Draw target indicator if action is weapon or magic
         let actItem = this.palette[this.paletteIndex];
-        let isBoxTarget = (this.mainTarget && this.mainTarget.hp === undefined && GAME.boxes && GAME.boxes.includes(this.mainTarget));
+        let isBoxTarget = !!(this.mainTarget && GAME.boxes && GAME.boxes.includes(this.mainTarget));
         if (actItem && (actItem.type === 'weapon' || actItem.type === 'disk' || actItem.type === 'magic') && this.mainTarget && (this.mainTarget.hp > 0 || isBoxTarget)) {
             ctx.save();
             ctx.translate(this.mainTarget.x, this.mainTarget.y);
@@ -629,7 +633,8 @@ class Player {
                 } else if (closestNPC.type === 'teleporter') {
                     if (confirm('ステージ1へ転送しますか？')) {
                         GAME.mode = 'map';
-                        loadArea(MAP_DATA.stages[0].areas[0]);
+                        let n = Math.floor(Math.random() * MAP_PATTERNS.forest1) + 1;
+                        loadAreaFromFile(`forest1_${n}.json`);
                     }
                 }
                 return;
@@ -673,7 +678,23 @@ class Player {
                     let dy = Math.abs(this.y - (nextTp.y * 50 + 25));
                     if (dx < 40 && dy < 40) {
                         if (confirm('次のエリアに進みますか？')) {
-                            alert('次のエリアは準備中です。');
+                            let n = Math.floor(Math.random() * MAP_PATTERNS.forest2) + 1;
+                            loadAreaFromFile(`forest2_${n}.json`);
+                        }
+                        return;
+                    }
+                }
+                
+                let townTp = GAME.teleporters.find(t => t.type === 'town');
+                if (townTp) {
+                    let dx = Math.abs(this.x - (townTp.x * 50 + 25));
+                    let dy = Math.abs(this.y - (townTp.y * 50 + 25));
+                    if (dx < 40 && dy < 40) {
+                        if (confirm('タウンに戻りますか？')) {
+                            GAME.mode = 'town';
+                            this.x = MAP_DATA.town.start.x;
+                            this.y = MAP_DATA.town.start.y;
+                            GAME.eventFlags = {}; // Reset event flags
                         }
                         return;
                     }
@@ -682,7 +703,6 @@ class Player {
         }
 
         let action = this.palette[this.paletteIndex];
-        if (!action) return;
 
         if (action.type === 'weapon') {
             let wType = WEAPON_TYPES[action.weaponType];
@@ -717,7 +737,7 @@ class Player {
                 this.attackMoveStartY = this.y;
                 let tx = this.x + nX * motion * 5;
                 let ty = this.y + nY * motion * 5;
-                if (checkLineOfSight(this.x, this.y, tx, ty)) {
+                if (checkLineOfSight(this.x, this.y, tx, ty, true)) {
                     this.attackMoveTargetX = this.x;
                     this.attackMoveTargetY = this.y;
                 } else {
@@ -745,8 +765,8 @@ class Player {
                 // Just get the closest one
                 if (inRange.length > 0) {
                     inRange.sort((a,b) => {
-                        let aIsBox = a.hp === undefined;
-                        let bIsBox = b.hp === undefined;
+                        let aIsBox = !!(GAME.boxes && GAME.boxes.includes(a));
+                        let bIsBox = !!(GAME.boxes && GAME.boxes.includes(b));
                         if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
                         return Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y);
                     });
@@ -786,13 +806,13 @@ class Player {
             
             // Apply target limits
             targets.sort((a,b) => {
-                let aIsBox = a.hp === undefined;
-                let bIsBox = b.hp === undefined;
+                let aIsBox = !!(GAME.boxes && GAME.boxes.includes(a));
+                let bIsBox = !!(GAME.boxes && GAME.boxes.includes(b));
                 if (aIsBox !== bIsBox) return aIsBox ? 1 : -1;
                 return Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y);
             });
 
-            let currentIsBox = (this.mainTarget && this.mainTarget.hp === undefined);
+            let currentIsBox = !!(this.mainTarget && GAME.boxes && GAME.boxes.includes(this.mainTarget));
             if (this.comboCount === 1 || !this.mainTarget || (!currentIsBox && this.mainTarget.hp <= 0) || !targets.includes(this.mainTarget)) {
                 this.mainTarget = targets.length > 0 ? targets[0] : null;
             }
@@ -900,7 +920,7 @@ class Player {
                             this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
                         }
                     }
-                    let isBox = (target.hp === undefined && GAME.boxes && GAME.boxes.includes(target));
+                    let isBox = !!(GAME.boxes && GAME.boxes.includes(target));
                     let targetEvi = isBox ? 0 : (target.evi || 10);
                     
                     let hitRate = myDex - (targetEvi * 0.2);
@@ -1238,10 +1258,20 @@ class Enemy {
 // Map Loading
 async function loadMapData() {
     try {
-        const res = await fetch('maps.json');
-        MAP_DATA = await res.json();
+        const res = await fetch('town.json');
+        MAP_DATA.town = await res.json();
     } catch(e) {
-        console.error('Failed to load maps.json', e);
+        console.error('Failed to load town.json', e);
+    }
+}
+
+async function loadAreaFromFile(filename) {
+    try {
+        const res = await fetch(filename);
+        let areaPattern = await res.json();
+        loadArea(areaPattern);
+    } catch(e) {
+        console.error('Failed to load ' + filename, e);
     }
 }
 
@@ -2249,7 +2279,7 @@ function hitPlayer(p, e) {
 }
 
 // Helper: line intersection with grid walls
-function checkLineOfSight(x1, y1, x2, y2) {
+function checkLineOfSight(x1, y1, x2, y2, blockHoles = false) {
     if (GAME.mode !== 'map' || !GAME.grid) return null;
     let ts = 50;
     let h = GAME.grid.length;
@@ -2267,7 +2297,8 @@ function checkLineOfSight(x1, y1, x2, y2) {
         let r = Math.floor(cy / ts);
         let c = Math.floor(cx / ts);
         if (r >= 0 && r < h && c >= 0 && c < w) {
-            if (GAME.grid[r][c] === 0) {
+            let tile = GAME.grid[r][c];
+            if (tile === 0 || (blockHoles && tile === 2)) {
                 return { x: cx, y: cy };
             }
         }
