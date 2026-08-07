@@ -47,9 +47,9 @@ let INPUTS = [
 
 // Classes
 const CLASS_DATA = {
-    swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, dex: 68, sprite: 'hero_knight_down_1', type: 'melee' },
-    ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, dex: 72, sprite: 'hero_wiz_down_1', type: 'ranged' },
-    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, dex: 63, sprite: 'hero_week_down_1', type: 'magic' }
+    swordman: { name: 'ソードマン', hp: 40, mp: 30, atk: 45, def: 17, spd: 100, dex: 68, mind: 29, luck: 10, sprite: 'hero_knight_down_1', type: 'melee', levelUp: { hp: 10, mp: 5, atk: 6, def: 1, dex: 1, mind: 1, luck: 0, spd: 0 } },
+    ranger: { name: 'レンジャー', hp: 30, mp: 20, atk: 23, def: 13, spd: 100, dex: 72, mind: 20, luck: 10, sprite: 'hero_wiz_down_1', type: 'ranged', levelUp: { hp: 6, mp: 4, atk: 5, def: 1, dex: 2, mind: 2, luck: 0, spd: 0 } },
+    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 53, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
 };
 
 const WEAPON_TYPES = {
@@ -232,7 +232,7 @@ class Player {
         };
         
         this.exp = 0;
-        this.nextExp = 100;
+        this.nextExp = 50;
         this.coins = 0;
         this.targetDrop = null;
         
@@ -1157,9 +1157,9 @@ class Enemy {
         if (type === 'hildebear') {
             this.hp = 180;
             this.maxHp = 180;
-            this.atk = 140;
-            this.def = 30;
-            this.dex = 80;
+            this.atk = 35;
+            this.def = 20;
+            this.dex = 70;
             this.evi = 22;
             this.luck = 10;
             this.exp = 10;
@@ -1167,12 +1167,12 @@ class Enemy {
             this.baseSpd = 8;
             this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
         } else {
-            this.hp = 50;
-            this.maxHp = 50;
-            this.atk = 5;
+            this.hp = 60;
+            this.maxHp = 60;
+            this.atk = 15;
             this.def = 0;
             this.dex = 10;
-            this.evi = 10;
+            this.evi = 60;
             this.luck = 5;
             this.exp = 10;
             this.radius = 10;
@@ -1203,17 +1203,29 @@ class Enemy {
                     this.state = 'jump';
                     this.invincible = true;
                     this.spd = 120;
+                    this.jumpTargetX = target.x;
+                    this.jumpTargetY = target.y;
+                    let jdx = this.jumpTargetX - this.x;
+                    let jdy = this.jumpTargetY - this.y;
+                    let jdist = Math.hypot(jdx, jdy);
+                    this.dirX = jdist > 0 ? jdx / jdist : 0;
+                    this.dirY = jdist > 0 ? jdy / jdist : 0;
                 }
             } else if (this.state === 'jump') {
-                if (dist <= this.radius + target.radius + 3) {
+                let jdx = this.jumpTargetX - this.x;
+                let jdy = this.jumpTargetY - this.y;
+                let jdist = Math.hypot(jdx, jdy);
+                let moveDist = this.spd * dt;
+                
+                if (jdist <= moveDist) { // Reached destination
+                    this.x = this.jumpTargetX;
+                    this.y = this.jumpTargetY;
                     this.state = 'chase';
                     this.invincible = false;
-                    this.spd = 8;
+                    this.spd = this.baseSpd;
                 } else {
-                    this.dirX = dx / dist;
-                    this.dirY = dy / dist;
-                    this.x += this.dirX * this.spd * dt;
-                    this.y += this.dirY * this.spd * dt;
+                    this.x += this.dirX * moveDist;
+                    this.y += this.dirY * moveDist;
                 }
             } else if (this.state === 'chase') {
                 if (dist > this.radius + target.radius) {
@@ -1938,21 +1950,24 @@ function gainExp(p, amount) {
     if (p.exp >= p.nextExp) {
         p.exp -= p.nextExp;
         p.level++;
-        p.nextExp = 100; // Flat for now
+        p.nextExp = Math.floor(((p.level - 1) * 100) + 50 + (Math.pow(p.level, 3) / 15));
         
-        p.baseStats.maxHp += 10;
-        p.baseStats.maxMp += 5;
-        p.baseStats.atk += 2;
-        p.baseStats.def += 2;
-        p.baseStats.dex += 1;
-        p.baseStats.mind += 1;
-        p.baseStats.luck += 1;
+        let cdata = CLASS_DATA[p.classId];
+        let lu = cdata.levelUp;
+        p.baseStats.maxHp += lu.hp;
+        p.baseStats.maxMp += lu.mp;
+        p.baseStats.atk += lu.atk;
+        p.baseStats.def += lu.def;
+        p.baseStats.dex += lu.dex;
+        p.baseStats.mind += lu.mind;
+        p.baseStats.luck += lu.luck;
+        p.baseStats.spd += lu.spd;
         
         p.hp = p.baseStats.maxHp;
         p.mp = p.baseStats.maxMp;
         p.recalculateStats();
         
-        let msg = `LEVEL UP!\nLv ${p.level}\nHP +10\nMP +5\nPOW +2\nDEF +2\nDEX +1\nMIND +1\nLUCK +1`;
+        let msg = `LEVEL UP!\nLv ${p.level}\nHP +${lu.hp}\nMP +${lu.mp}\nPOW +${lu.atk}\nDEF +${lu.def}\nDEX +${lu.dex}\nMIND +${lu.mind}`;
         addFloatingText(0, 0, msg, '#ffcc00', true);
     }
 }
@@ -1967,7 +1982,7 @@ function renderMenu(pid) {
         if (st) {
             st.innerHTML = `
                 LV: ${p.level} <br>
-                EXP: 0 / 100 <br>
+                EXP: ${p.exp} / ${p.nextExp} <br>
                 HP: ${Math.floor(p.hp)} / ${p.maxHp} <br>
                 MP: ${Math.floor(p.mp)} / ${p.maxMp} <br>
                 POW: ${p.atk} <br>
