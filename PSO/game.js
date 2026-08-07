@@ -537,34 +537,6 @@ class Player {
                 ctx.restore();
             }
             ctx.restore();
-            
-            // Draw Target Infobox
-            ctx.save();
-            ctx.translate(this.mainTarget.x, this.mainTarget.y - (this.mainTarget.radius || 20) - 40);
-            ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
-            ctx.fillRect(-60, 0, 120, 36);
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(-60, 0, 120, 36);
-            ctx.fillStyle = 'white';
-            ctx.font = '10px sans-serif';
-            ctx.textAlign = 'left';
-            
-            if (isBoxTarget) {
-                ctx.fillText("アイテムボックス", -55, 14);
-            } else {
-                let t = this.mainTarget;
-                let name = t.type;
-                if (t.type === 'booma') name = "ブーマ";
-                else if (t.type === 'gobooma') name = "ゴブーマ";
-                else if (t.type === 'jigobooma') name = "ジゴブーマ";
-                else if (t.type === 'hildebear') name = "ヒルデベア";
-                
-                ctx.fillText(name, -55, 12);
-                let attrStr = "Native"; // placeholder for all currently
-                ctx.fillText(`属性: ${attrStr}`, 5, 12);
-                ctx.fillText(`HP: ${t.hp} / ${t.maxHp}`, -55, 28);
-            }
             ctx.restore();
         }
 
@@ -788,7 +760,8 @@ class Player {
             
             let pAngle = Math.atan2(this.dirY, this.dirX);
             
-            this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: 20 };
+            let rad = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] : 20;
+            this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: rad };
             
             if (wType.shape === 'none') {
                 // Just get the closest one
@@ -819,7 +792,7 @@ class Player {
                 let offset = wType.offsets[this.comboCount - 1];
                 let cx = this.x;
                 let cy = this.y;
-                let radius = 20; // 1 -> 20px scaled radius
+                let radius = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] : 20;
                 if (offset) {
                     let hitAngle = pAngle + (offset.angle * Math.PI / 180);
                     cx += Math.cos(hitAngle) * offset.dist;
@@ -1311,6 +1284,10 @@ class Enemy {
                     this.dirY = dy / dist;
                     this.x += this.dirX * this.spd * dt;
                     this.y += this.dirY * this.spd * dt;
+                }
+            }
+        }
+        
         let room = GAME.rooms.find(r => r.id === this.roomId);
         if (room) {
             let ts = 50;
@@ -1612,37 +1589,35 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (!isEquipped && !isPalette && source !== 'magic' && source !== 'modal-slot' && source !== 'modal-inv') {
         btnDrop.style.display = 'inline-block';
         btnDrop.onclick = () => {
-            if (confirm(item.name + ' を捨てますか？')) {
-                // Return slotted units to inventory if it's an armor
-                if (item.type === 'armor' && item.slottedUnits) {
-                    for (let i = 0; i < item.slottedUnits.length; i++) {
-                        let u = item.slottedUnits[i];
-                        if (u) {
-                            if (p.inventory.length < 20) {
-                                p.inventory.push(u);
-                            } else {
-                                // If inventory is full, drop the unit as well
-                                GAME.drops.push({ x: p.x, y: p.y, item: u });
-                            }
-                            item.slottedUnits[i] = null;
+            // Return slotted units to inventory if it's an armor
+            if (item.type === 'armor' && item.slottedUnits) {
+                for (let i = 0; i < item.slottedUnits.length; i++) {
+                    let u = item.slottedUnits[i];
+                    if (u) {
+                        if (p.inventory.length < 20) {
+                            p.inventory.push(u);
+                        } else {
+                            // If inventory is full, drop the unit as well
+                            GAME.drops.push({ x: p.x, y: p.y, item: u });
                         }
+                        item.slottedUnits[i] = null;
                     }
                 }
-                
-                // Remove from inventory
-                if (item.stack && item.stack > 1) {
-                    item.stack--;
-                    let dropItem = Object.assign({}, item);
-                    dropItem.stack = 1;
-                    GAME.drops.push({ x: p.x, y: p.y, item: dropItem });
-                } else {
-                    p.inventory = p.inventory.filter(i => i !== item);
-                    GAME.drops.push({ x: p.x, y: p.y, item: item });
-                }
-                
-                modal.style.display = 'none';
-                renderMenu(pid);
             }
+            
+            // Remove from inventory
+            if (item.stack && item.stack > 1) {
+                item.stack--;
+                let dropItem = Object.assign({}, item);
+                dropItem.stack = 1;
+                GAME.drops.push({ x: p.x, y: p.y, item: dropItem });
+            } else {
+                p.inventory = p.inventory.filter(i => i !== item);
+                GAME.drops.push({ x: p.x, y: p.y, item: item });
+            }
+            
+            modal.style.display = 'none';
+            renderMenu(pid);
         };
     }
     
@@ -2900,28 +2875,47 @@ function draw() {
 
     ctx.restore();
     
-    // Draw target drop UI
+    // Draw target drop / enemy UI on right side
     let p1 = GAME.players[0];
-    if (p1 && p1.targetDrop) {
-        ctx.save();
-        let dx = p1.targetDrop.x;
-        let dy = p1.targetDrop.y;
-        
-        ctx.translate(dx, dy - 30);
-        let name = p1.targetDrop.item.name;
-        if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(-50, -15, 100, 20);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-50, -15, 100, 20);
-        
-        ctx.fillStyle = 'white';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(name, 0, 0);
-        ctx.restore();
+    if (p1) {
+        let drawInfoBox = (title, lines) => {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
+            ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            
+            ctx.fillText(title, SCREEN_W - 150, SCREEN_H / 2 - 12);
+            lines.forEach((line, i) => {
+                ctx.fillText(line, SCREEN_W - 150, SCREEN_H / 2 + 5 + (i * 15));
+            });
+            ctx.restore();
+        };
+
+        if (p1.targetDrop) {
+            let name = p1.targetDrop.item.name;
+            if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
+            drawInfoBox(name, ["(ドロップアイテム)"]);
+        } else if (p1.mainTarget) {
+            let t = p1.mainTarget;
+            let isBoxTarget = !!(GAME.boxes && GAME.boxes.includes(t));
+            if (isBoxTarget) {
+                drawInfoBox("アイテムボックス", []);
+            } else if (t.hp > 0) {
+                let name = t.type;
+                if (t.type === 'booma') name = "ブーマ";
+                else if (t.type === 'gobooma') name = "ゴブーマ";
+                else if (t.type === 'jigobooma') name = "ジゴブーマ";
+                else if (t.type === 'hildebear') name = "ヒルデベア";
+                
+                drawInfoBox(name, [`属性: Native`, `HP: ${t.hp} / ${t.maxHp}`]);
+            }
+        }
     }
     
     drawLevelUpUI(ctx);
@@ -2973,6 +2967,10 @@ window.onload = async () => {
     setupScrollBtn('scroll-mag-down', 'menu-magic-1p', 1);
     setupScrollBtn('scroll-modal-up', 'modal-item-inventory', -1);
     setupScrollBtn('scroll-modal-down', 'modal-item-inventory', 1);
+    setupScrollBtn('scroll-pal-inv-up', 'menu-palette-1p', -1);
+    setupScrollBtn('scroll-pal-inv-down', 'menu-palette-1p', 1);
+    setupScrollBtn('scroll-pal-mag-up', 'menu-palette-magic-1p', -1);
+    setupScrollBtn('scroll-pal-mag-down', 'menu-palette-magic-1p', 1);
     
     document.getElementById('btn-start-2p').onclick = () => {
         document.getElementById('screen-title').style.display = 'none';
