@@ -81,8 +81,8 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [68, 68, 88],
-        offsets: [{angle: -20, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 40}], // 1st front-left
+        ranges: [108, 108, 128],
+        offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
         timing: [0.8, 0.8],
@@ -94,8 +94,8 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [64, 64, 50],
-        offsets: [{angle: 0, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 0}], // 3rd around player
+        ranges: [104, 104, 100],
+        offsets: [{angle: 0, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
         timing: [0.7, 0.7],
@@ -107,8 +107,8 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1',
-        ranges: [44, 45, 57],
-        offsets: [{angle: 0, dist: 20}, {angle: 0, dist: 20}, {angle: 0, dist: 25}],
+        ranges: [84, 85, 97],
+        offsets: [{angle: 0, dist: 70}, {angle: 0, dist: 70}, {angle: 0, dist: 75}],
         icon: 'icon_weapon_cane',
         maxCombo: 3,
         timing: [0.7, 0.7],
@@ -128,15 +128,15 @@ const WEAPON_TYPES = {
 };
 
 const BASE_WEAPONS = {
-    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
-    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
+    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
+    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
     'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
     'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 55, baseDex: 30, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 100, baseDex: 33, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
     'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 30, baseDex: 30, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
     'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 60, baseDex: 32, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
-    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 200, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 250, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
 
 const ENCHANTS = [
@@ -537,6 +537,35 @@ class Player {
                 ctx.restore();
             }
             ctx.restore();
+            
+            // Draw Target Infobox
+            ctx.save();
+            ctx.translate(this.mainTarget.x, this.mainTarget.y - (this.mainTarget.radius || 20) - 40);
+            ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
+            ctx.fillRect(-60, 0, 120, 36);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-60, 0, 120, 36);
+            ctx.fillStyle = 'white';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            
+            if (isBoxTarget) {
+                ctx.fillText("アイテムボックス", -55, 14);
+            } else {
+                let t = this.mainTarget;
+                let name = t.type;
+                if (t.type === 'booma') name = "ブーマ";
+                else if (t.type === 'gobooma') name = "ゴブーマ";
+                else if (t.type === 'jigobooma') name = "ジゴブーマ";
+                else if (t.type === 'hildebear') name = "ヒルデベア";
+                
+                ctx.fillText(name, -55, 12);
+                let attrStr = "Native"; // placeholder for all currently
+                ctx.fillText(`属性: ${attrStr}`, 5, 12);
+                ctx.fillText(`HP: ${t.hp} / ${t.maxHp}`, -55, 28);
+            }
+            ctx.restore();
         }
 
         // Action Combo Timing UI
@@ -928,7 +957,7 @@ class Player {
                     
                     if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
                         let dist = Math.hypot(target.x - this.x, target.y - this.y);
-                        distPenalty = (dist / 10) * 2;
+                        distPenalty = (dist / 10);
                     }
                     hitRate -= distPenalty;
                     
@@ -1153,6 +1182,7 @@ class Enemy {
         this.stunTimer = 0;
         this.invincible = false;
         this.state = 'idle';
+        this.spawnTimer = 1.0;
         
         if (type === 'hildebear') {
             this.hp = 180;
@@ -1162,11 +1192,36 @@ class Enemy {
             this.dex = 70;
             this.evi = 22;
             this.luck = 10;
-            this.exp = 10;
+            this.exp = 15;
             this.radius = 30;
             this.baseSpd = 8;
             this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
+        } else if (type === 'gobooma') {
+            this.hp = 85;
+            this.maxHp = 85;
+            this.atk = 17;
+            this.def = 0;
+            this.dex = 10;
+            this.evi = 60;
+            this.luck = 5;
+            this.exp = 6;
+            this.radius = 10;
+            this.baseSpd = 12;
+            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+        } else if (type === 'jigobooma') {
+            this.hp = 110;
+            this.maxHp = 110;
+            this.atk = 20;
+            this.def = 0;
+            this.dex = 10;
+            this.evi = 60;
+            this.luck = 5;
+            this.exp = 7;
+            this.radius = 10;
+            this.baseSpd = 12;
+            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         } else {
+            // booma (default)
             this.hp = 60;
             this.maxHp = 60;
             this.atk = 15;
@@ -1174,9 +1229,9 @@ class Enemy {
             this.dex = 10;
             this.evi = 60;
             this.luck = 5;
-            this.exp = 10;
+            this.exp = 6;
             this.radius = 10;
-            this.baseSpd = 30;
+            this.baseSpd = 12;
             this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         }
         this.spd = this.baseSpd;
@@ -1185,6 +1240,11 @@ class Enemy {
     update(dt) {
         if (this.hp <= 0) return;
         
+        if (this.spawnTimer > 0) {
+            this.spawnTimer -= dt;
+            return;
+        }
+
         if (this.stunTimer > 0) {
             this.stunTimer -= dt;
             return;
@@ -1217,15 +1277,22 @@ class Enemy {
                 let jdist = Math.hypot(jdx, jdy);
                 let moveDist = this.spd * dt;
                 
-                if (jdist <= moveDist) { // Reached destination
-                    this.x = this.jumpTargetX;
-                    this.y = this.jumpTargetY;
+                let nextX = this.x + this.dirX * moveDist;
+                let nextY = this.y + this.dirY * moveDist;
+                let blocked = checkLineOfSight(this.x, this.y, nextX, nextY, true);
+                let dot = jdx * this.dirX + jdy * this.dirY;
+                
+                if (dot <= 0 || jdist <= moveDist || blocked) { // Reached destination or blocked
+                    if (!blocked && dot > 0) {
+                        this.x = this.jumpTargetX;
+                        this.y = this.jumpTargetY;
+                    }
                     this.state = 'chase';
                     this.invincible = false;
                     this.spd = this.baseSpd;
                 } else {
-                    this.x += this.dirX * moveDist;
-                    this.y += this.dirY * moveDist;
+                    this.x = nextX;
+                    this.y = nextY;
                 }
             } else if (this.state === 'chase') {
                 if (dist > this.radius + target.radius) {
@@ -1244,17 +1311,35 @@ class Enemy {
                     this.dirY = dy / dist;
                     this.x += this.dirX * this.spd * dt;
                     this.y += this.dirY * this.spd * dt;
-                }
-            }
+        let room = GAME.rooms.find(r => r.id === this.roomId);
+        if (room) {
+            let ts = 50;
+            let minX = room.x * ts + this.radius;
+            let maxX = (room.x + room.w) * ts - this.radius;
+            let minY = room.y * ts + this.radius;
+            let maxY = (room.y + room.h) * ts - this.radius;
+            this.x = Math.max(minX, Math.min(this.x, maxX));
+            this.y = Math.max(minY, Math.min(this.y, maxY));
         }
     }
 
     draw(ctx) {
         if (this.hp <= 0) return;
         
+        ctx.save();
+        if (this.spawnTimer > 0) {
+            ctx.globalAlpha = Math.max(0, 1.0 - this.spawnTimer);
+        }
+
         if (this.type === 'hildebear') {
             ctx.fillStyle = 'purple';
             ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+        } else if (this.type === 'gobooma') {
+            ctx.fillStyle = '#ff6600'; // orange
+            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        } else if (this.type === 'jigobooma') {
+            ctx.fillStyle = '#cc0000'; // dark red
+            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
         } else {
             ctx.fillStyle = 'red';
             ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
@@ -1264,6 +1349,8 @@ class Enemy {
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, this.radius * 2, 4);
         ctx.fillStyle = 'red';
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, (this.radius * 2) * (this.hp / this.maxHp), 4);
+        
+        ctx.restore();
     }
 }
 
@@ -1610,7 +1697,17 @@ function openItemModal(item, pid, source, slotIdx = -1) {
             invEl.appendChild(div);
         });
         
-        btnEquip.style.display = 'inline-block';
+        let isEquipable = true;
+        if (item.type === 'weapon') {
+            if (item.reqClass && p.classId !== item.reqClass) isEquipable = false;
+            if (item.reqDex && p.dex < item.reqDex) isEquipable = false;
+        }
+
+        if (isEquipable) {
+            btnEquip.style.display = 'inline-block';
+        } else {
+            btnEquip.style.display = 'none';
+        }
         if (p.equip.armor === item) {
             btnEquip.innerText = '外す';
             btnEquip.onclick = () => {
@@ -1800,7 +1897,7 @@ function updateProjectiles(dt) {
                     let hitRate = myDex - (targetEvi * 0.2);
                     
                     let distFromPlayer = Math.hypot(target.x - p.x, target.y - p.y);
-                    hitRate -= (distFromPlayer / 10) * 2;
+                    hitRate -= (distFromPlayer / 10);
                     
                     addEffect('bullet', { x1: proj.x, y1: proj.y, x2: target.x, y2: target.y, color: '#00ffff' });
                     // Additional particle effects for slicer to make it obvious
@@ -2086,10 +2183,9 @@ function renderMenu(pid) {
         div.innerHTML = `<span>${prefix}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
-            if (!isEquipable) return; // Prevent drag
             e.preventDefault();
             div.setPointerCapture(e.pointerId);
-            dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1 };
+            dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1, isEquipable: isEquipable };
         });
 
         invEl.appendChild(div);
@@ -2119,7 +2215,7 @@ window.addEventListener('pointermove', (e) => {
         let dy = e.clientY - dndState.startY;
         if (Math.hypot(dx, dy) > 10) {
             clearTimeout(dndState.longPressTimer);
-            if (!dndState.clone) {
+            if (!dndState.clone && dndState.isEquipable !== false) {
                 let div = document.createElement('div');
                 div.className = 'menu-item';
                 div.style.background = '#ffcc00';
@@ -2132,8 +2228,10 @@ window.addEventListener('pointermove', (e) => {
                 dndState.clone.style.pointerEvents = 'none';
                 document.body.appendChild(dndState.clone);
             }
-            dndState.clone.style.left = e.clientX - 50 + 'px';
-            dndState.clone.style.top = e.clientY - 20 + 'px';
+            if (dndState.clone) {
+                dndState.clone.style.left = e.clientX - 50 + 'px';
+                dndState.clone.style.top = e.clientY - 20 + 'px';
+            }
         }
     }
 });
@@ -2524,9 +2622,12 @@ function spawnWave(r) {
     let wave = r.waves[r.currentWave];
     GAME.enemies = GAME.enemies.filter(e => e.roomId !== r.id);
     if (wave.enemies) {
-        wave.enemies.forEach(ed => {
+        wave.enemies.forEach((ed, idx) => {
+            if (ed.dead) return;
             let e = new Enemy(ed.type, ed.x * 50 + 25, ed.y * 50 + 25);
             e.roomId = r.id;
+            e.waveIdx = r.currentWave;
+            e.enemyIdx = idx;
             GAME.enemies.push(e);
         });
     }
@@ -2565,7 +2666,14 @@ function update() {
             e.update(dt);
             if (e.hp <= 0 && !e.deadProcessed) {
                 e.deadProcessed = true;
-                gainExp(GAME.players[0], 10);
+                gainExp(GAME.players[0], e.exp || 10);
+                
+                let room = GAME.rooms.find(r => r.id === e.roomId);
+                if (room && e.waveIdx !== undefined && e.enemyIdx !== undefined) {
+                    if (room.waves[e.waveIdx] && room.waves[e.waveIdx].enemies[e.enemyIdx]) {
+                        room.waves[e.waveIdx].enemies[e.enemyIdx].dead = true;
+                    }
+                }
                 
                 // Drop logic
                 if (Math.random() < 0.2) {
@@ -2796,14 +2904,23 @@ function draw() {
     let p1 = GAME.players[0];
     if (p1 && p1.targetDrop) {
         ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 20, 160, 40);
-        ctx.fillStyle = 'white';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'right';
+        let dx = p1.targetDrop.x;
+        let dy = p1.targetDrop.y;
+        
+        ctx.translate(dx, dy - 30);
         let name = p1.targetDrop.item.name;
         if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
-        ctx.fillText(name, SCREEN_W - 10, SCREEN_H / 2 + 6);
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(-50, -15, 100, 20);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-50, -15, 100, 20);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(name, 0, 0);
         ctx.restore();
     }
     
@@ -2854,6 +2971,8 @@ window.onload = async () => {
     setupScrollBtn('scroll-inv-down', 'menu-list-1p', 1);
     setupScrollBtn('scroll-mag-up', 'menu-magic-1p', -1);
     setupScrollBtn('scroll-mag-down', 'menu-magic-1p', 1);
+    setupScrollBtn('scroll-modal-up', 'modal-item-inventory', -1);
+    setupScrollBtn('scroll-modal-down', 'modal-item-inventory', 1);
     
     document.getElementById('btn-start-2p').onclick = () => {
         document.getElementById('screen-title').style.display = 'none';

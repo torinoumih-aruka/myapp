@@ -256,11 +256,13 @@
                 <div class="modal-trash" id="modal-trash">ゴミ箱（ユニットを外す）</div>
             </div>
             
-            <div class="modal-col" id="modal-col-right" style="display:none; border-left: 1px solid #555; padding-left:15px; margin-left:15px;">
-                <div style="font-size:14px; color:#ffcc00; margin-bottom:5px;">所持ユニット</div>
-                <div class="modal-inv" id="modal-item-inventory">
+            <div class="modal-col" id="modal-col-right" style="display:none; border-left: 1px solid #555; padding-left:15px; margin-left:15px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+                <div style="font-size:14px; color:#ffcc00; margin-bottom:5px;">ユニット</div>
+                <div class="scroll-btn" id="scroll-modal-up">▲ 上へ</div>
+                <div class="modal-inv" id="modal-item-inventory" style="overflow-y: hidden;">
                     <!-- Units will be injected here -->
                 </div>
+                <div class="scroll-btn" id="scroll-modal-down">▼ 下へ</div>
             </div>
             
             <div class="modal-actions">
