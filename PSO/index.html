@@ -24,6 +24,7 @@
         #status-2p { right: 20px; display: none; }
 
         .player-info { font-size: 14px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; margin-left: 2px; }
+        .wave-info { font-size: 20px; font-weight: bold; color: #ffcc00; text-shadow: 2px 2px 2px #000; }
         
         .bar-wrap { width: 160px; height: 18px; background: #333; border: 2px solid #fff; border-radius: 5px; position: relative; overflow: hidden; }
         .hp-fill { width: 100%; height: 100%; background: #ff3333; transition: width 0.2s; }
@@ -73,9 +74,9 @@
         
         /* Palette UI - Center Bottom */
         #palette-1p, #palette-2p { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; gap: 5px; align-items: flex-start; }
-        .palette-slot { background: rgba(0,0,0,0.5); border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; border-radius: 5px; text-align: center; padding: 2px 5px; height: 25px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .palette-slot { background: rgba(0,0,0,0.8); border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: white; border-radius: 5px; text-align: center; padding: 2px 5px; height: 25px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pal-l { width: 120px; }
-        .pal-act { width: 180px; margin-left: 30px; height: 40px; font-size: 16px; border-color: #ffcc00; background: rgba(255, 204, 0, 0.3); }
+        .pal-act { width: 180px; margin-left: 30px; height: 40px; font-size: 18px; font-weight: bold; border-color: #ffcc00; background: rgba(180, 130, 0, 0.8); }
         .pal-r { width: 120px; margin-left: 60px; }
 
         /* Right Side Action Buttons */
@@ -118,10 +119,13 @@
         <!-- 1P Status -->
         <div class="status-container" id="status-1p">
             <div class="player-info" id="info-1p">Lv.1 ソードマン</div>
-            <div class="bar-wrap">
-                <div class="bar-label">HP</div>
-                <div class="bar-value" id="hp-val-1p">100/100</div>
-                <div class="hp-fill" id="hp-1p" style="width: 100%;"></div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="bar-wrap">
+                    <div class="bar-label">HP</div>
+                    <div class="bar-value" id="hp-val-1p">100/100</div>
+                    <div class="hp-fill" id="hp-1p" style="width: 100%;"></div>
+                </div>
+                <div class="wave-info" id="wave-1p"></div>
             </div>
             <div class="bar-wrap">
                 <div class="bar-label">MP</div>
@@ -133,10 +137,13 @@
         <!-- 2P Status -->
         <div class="status-container" id="status-2p">
             <div class="player-info" id="info-2p">Lv.1 レンジャー</div>
-            <div class="bar-wrap">
-                <div class="bar-label">HP</div>
-                <div class="bar-value" id="hp-val-2p">100/100</div>
-                <div class="hp-fill" id="hp-2p" style="width: 100%;"></div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="bar-wrap">
+                    <div class="bar-label">HP</div>
+                    <div class="bar-value" id="hp-val-2p">100/100</div>
+                    <div class="hp-fill" id="hp-2p" style="width: 100%;"></div>
+                </div>
+                <div class="wave-info" id="wave-2p"></div>
             </div>
             <div class="bar-wrap">
                 <div class="bar-label">MP</div>

@@ -70,6 +70,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 5,
         shape: 'fan45',
+        ranges: [195, 195, 195], // 180 + 15
         icon: 'icon_weapon_gun',
         maxCombo: 3,
         timing: [1.2, 1.2],
@@ -81,7 +82,7 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [108, 108, 128],
+        ranges: [93, 88, 103], // [108-15, 108-20, 128-25]
         offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -94,7 +95,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [104, 104, 100],
+        ranges: [89, 84, 110], // [104-15, 104-20, 100+10]
         offsets: [{angle: 0, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -107,7 +108,7 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1',
-        ranges: [84, 85, 97],
+        ranges: [69, 65, 72], // [84-15, 85-20, 97-25]
         offsets: [{angle: 0, dist: 70}, {angle: 0, dist: 70}, {angle: 0, dist: 75}],
         icon: 'icon_weapon_cane',
         maxCombo: 3,
@@ -251,13 +252,10 @@ class Player {
             generateWeapon('w_dagger'),
             generateWeapon('w_cane', 0, 'draw'),
             generateWeapon('w_mace', 1, 'drain'),
-            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] },
+            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
             { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
             generateWeapon('w_slicer'),
-            { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
             { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 },
-            { id: 'm_gifoie_1', name: 'ギファイアLv1ディスク', type: 'disk', magic: 'gifoie', lv: 1 },
-            { id: 'm_rafoie_1', name: 'ラファイアLv1ディスク', type: 'disk', magic: 'rafoie', lv: 1 },
             { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
             { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
         ].filter(i => i !== null);
@@ -486,15 +484,39 @@ class Player {
 
     draw(ctx) {
         if (this.state === 'dead') return;
-        ctx.fillStyle = this.id === 0 ? 'blue' : 'green';
-        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
         
-        // Draw Direction Indicator
-        ctx.strokeStyle = 'white';
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
-        ctx.stroke();
+        let dirStr = 'down';
+        if (Math.abs(this.dirX) > Math.abs(this.dirY)) {
+            dirStr = this.dirX > 0 ? 'right' : 'left';
+        } else {
+            if (this.dirY < 0) dirStr = 'up';
+            else if (this.dirY > 0) dirStr = 'down';
+        }
+        
+        let animStep = 1;
+        if (this.vx !== 0 || this.vy !== 0) {
+            animStep = Math.floor(performance.now() / 200) % 2 === 0 ? 1 : 2;
+        }
+        
+        let baseSprite = 'hero_knight'; // Could depend on class in future
+        if (this.classId === 'ranger') baseSprite = 'hero_wiz';
+        if (this.classId === 'sorcerer') baseSprite = 'hero_week';
+        
+        let spriteName = `${baseSprite}_${dirStr}_${animStep}`;
+        
+        if (PRE_RENDERED[spriteName]) {
+            ctx.drawImage(PRE_RENDERED[spriteName], this.x - 16, this.y - 16, 32, 32);
+        } else {
+            ctx.fillStyle = this.id === 0 ? 'blue' : 'green';
+            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            
+            // Draw Direction Indicator
+            ctx.strokeStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
+            ctx.stroke();
+        }
 
         // Draw attack bounding box (Visualizer)
         if (this.state === 'attack' && this.lastAttackShape) {
@@ -552,11 +574,26 @@ class Player {
                     if (this.comboTimer <= targetTime + 0.15) {
                         let diff = centerTime - this.comboTimer;
                         let ringRadius = 10 + Math.max(0, (diff / 0.075)) * 5; // Max 15px, shrinks to 10px
+                        
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
-                        ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#fff';
-                        ctx.lineWidth = 1;
+                        
+                        // Check if in perfect timing window (e.g. within 0.03s of center)
+                        let isJust = Math.abs(this.comboTimer - centerTime) <= 0.03;
+                        
+                        if (isJust) {
+                            ctx.strokeStyle = '#fff';
+                            ctx.lineWidth = 2;
+                            ctx.shadowBlur = 10;
+                            ctx.shadowColor = '#fff';
+                        } else {
+                            ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#ccc';
+                            ctx.lineWidth = 1;
+                            ctx.shadowBlur = 0;
+                        }
+                        
                         ctx.stroke();
+                        ctx.shadowBlur = 0; // reset
                     }
                 }
             }
@@ -1312,18 +1349,28 @@ class Enemy {
             ctx.globalAlpha = Math.max(0, 1.0 - this.spawnTimer);
         }
 
-        if (this.type === 'hildebear') {
-            ctx.fillStyle = 'purple';
-            ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
-        } else if (this.type === 'gobooma') {
-            ctx.fillStyle = '#ff6600'; // orange
-            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
-        } else if (this.type === 'jigobooma') {
-            ctx.fillStyle = '#cc0000'; // dark red
-            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        let spriteName = 'snakey_left';
+        if (this.type === 'gobooma') spriteName = 'medusa_awake';
+        else if (this.type === 'jigobooma') spriteName = 'gol_down_awake';
+        else if (this.type === 'hildebear') spriteName = 'don_medosa_1';
+
+        if (PRE_RENDERED[spriteName]) {
+            let size = this.radius * 2.5; // Slightly larger than hitbox
+            ctx.drawImage(PRE_RENDERED[spriteName], this.x - size/2, this.y - size/2, size, size);
         } else {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            if (this.type === 'hildebear') {
+                ctx.fillStyle = 'purple';
+                ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+            } else if (this.type === 'gobooma') {
+                ctx.fillStyle = '#ff6600'; // orange
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            } else if (this.type === 'jigobooma') {
+                ctx.fillStyle = '#cc0000'; // dark red
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            } else {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            }
         }
         
         ctx.fillStyle = 'black';
@@ -1332,6 +1379,39 @@ class Enemy {
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, (this.radius * 2) * (this.hp / this.maxHp), 4);
         
         ctx.restore();
+    }
+}
+
+// Asset Loading
+async function loadAssets() {
+    try {
+        const res = await fetch('assets.json');
+        const data = await res.json();
+        PALETTE = data.palette;
+        SPRITES = data.sprites;
+        preRenderSprites();
+    } catch(e) {
+        console.error('Failed to load assets.json', e);
+    }
+}
+
+function preRenderSprites() {
+    const dotSize = 4;
+    for (let key in SPRITES) {
+        const cvs = document.createElement('canvas');
+        cvs.width = 32; cvs.height = 32;
+        const cCtx = cvs.getContext('2d');
+        const spriteData = SPRITES[key];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const colorCode = spriteData[r][c];
+                if (PALETTE[colorCode]) {
+                    cCtx.fillStyle = PALETTE[colorCode];
+                    cCtx.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+                }
+            }
+        }
+        PRE_RENDERED[key] = cvs;
     }
 }
 
@@ -2318,7 +2398,10 @@ function updateUI() {
             }
         }
         
-        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}${waveStr}`;
+        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}`;
+        
+        let waveElem = document.getElementById(`wave-${idstr}`);
+        if (waveElem) waveElem.innerText = waveStr.trim() !== "" ? waveStr.trim() : "";
         
         updatePaletteUI(p.id);
     });
@@ -2619,8 +2702,14 @@ function breakBox(b) {
         if (Math.random() < 0.5) {
             let rand = Math.random();
             let dropItem = null;
-            if (rand < 0.3) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-            else if (rand < 0.6) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+            if (rand < 0.25) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+            else if (rand < 0.5) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+            else if (rand < 0.7) {
+                 let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
+                 let chosen = magics[Math.floor(Math.random() * magics.length)];
+                 let lv = Math.floor(Math.random() * 3) + 1; // 1-3
+                 dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
+            }
             else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
             if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
         }
@@ -2658,9 +2747,21 @@ function update() {
                 if (Math.random() < 0.2) {
                     let rand = Math.random();
                     let dropItem = null;
-                    if (rand < 0.2) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-                    else if (rand < 0.4) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.6) dropItem = { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] };
+                    if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+                    else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+                    else if (rand < 0.45) { // Armor
+                        let extra = Math.floor(Math.random() * 3); // 0, 1, 2
+                        let slots = Math.floor(Math.random() * 3); // 0, 1, 2
+                        let arr = []; for(let i=0; i<slots; i++) arr.push(null);
+                        let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
+                        dropItem = { id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
+                    }
+                    else if (rand < 0.60) { // Disk
+                        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
+                        let chosen = magics[Math.floor(Math.random() * magics.length)];
+                        let lv = Math.floor(Math.random() * 3) + 1; // 1-3
+                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
+                    }
                     else if (rand < 0.8) dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
                     else {
                         // Drop Weapon
@@ -2760,19 +2861,25 @@ function draw() {
                 if (px + ts < GAME.cameraX || px > GAME.cameraX + SCREEN_W || py + ts < GAME.cameraY || py > GAME.cameraY + SCREEN_H) continue;
                 
                 let tile = GAME.grid[y][x];
-                if (tile === 0) {
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(px, py, ts, ts);
-                    ctx.strokeStyle = '#111';
-                    ctx.strokeRect(px, py, ts, ts);
-                } else if (tile === 1) {
-                    ctx.fillStyle = '#1a1a1a';
-                    ctx.fillRect(px, py, ts, ts);
-                    ctx.strokeStyle = '#222';
-                    ctx.strokeRect(px, py, ts, ts);
-                } else if (tile === 2) {
-                    ctx.fillStyle = '#000';
-                    ctx.fillRect(px, py, ts, ts);
+                let spriteName = tile === 0 ? 'wall_1' : (tile === 2 ? 'tree' : 'grasses');
+                
+                if (PRE_RENDERED[spriteName]) {
+                    ctx.drawImage(PRE_RENDERED[spriteName], px, py, ts, ts);
+                } else {
+                    if (tile === 0) {
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(px, py, ts, ts);
+                        ctx.strokeStyle = '#111';
+                        ctx.strokeRect(px, py, ts, ts);
+                    } else if (tile === 1) {
+                        ctx.fillStyle = '#1a1a1a';
+                        ctx.fillRect(px, py, ts, ts);
+                        ctx.strokeStyle = '#222';
+                        ctx.strokeRect(px, py, ts, ts);
+                    } else if (tile === 2) {
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(px, py, ts, ts);
+                    }
                 }
             }
         }
@@ -2933,6 +3040,7 @@ function loop() {
 
 // Init
 window.onload = async () => {
+    await loadAssets();
     await loadMapData();
     GAME.walls = [
         {x: 200, y: 150, w: 100, h: 50},
