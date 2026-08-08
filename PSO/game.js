@@ -355,7 +355,7 @@ class Player {
                 }
             } else if (actItem.magic === 'fire' || actItem.magic === 'rafoie') {
                 isCone = true;
-                if (actItem.magic === 'rafoie') range = 75;
+                if (actItem.magic === 'rafoie') range = 150;
             }
             
             let inRangeEnemies = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
@@ -537,7 +537,6 @@ class Player {
                 ctx.restore();
             }
             ctx.restore();
-            ctx.restore();
         }
 
         // Action Combo Timing UI
@@ -556,7 +555,7 @@ class Player {
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
                         ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#fff';
-                        ctx.lineWidth = 2;
+                        ctx.lineWidth = 1;
                         ctx.stroke();
                     }
                 }
@@ -677,7 +676,7 @@ class Player {
                 if (nextTp) {
                     let dx = Math.abs(this.x - (nextTp.x * 50 + 25));
                     let dy = Math.abs(this.y - (nextTp.y * 50 + 25));
-                    if (dx < 40 && dy < 40) {
+                    if (dx < 25 && dy < 25) {
                         if (confirm('次のエリアに進みますか？')) {
                             let n = Math.floor(Math.random() * MAP_PATTERNS.forest2) + 1;
                             loadAreaFromFile(`forest2_${n}.json`);
@@ -690,7 +689,7 @@ class Player {
                 if (townTp) {
                     let dx = Math.abs(this.x - (townTp.x * 50 + 25));
                     let dy = Math.abs(this.y - (townTp.y * 50 + 25));
-                    if (dx < 40 && dy < 40) {
+                    if (dx < 25 && dy < 25) {
                         if (confirm('タウンに戻りますか？')) {
                             GAME.mode = 'town';
                             this.x = MAP_DATA.town.start.x;
@@ -754,13 +753,18 @@ class Player {
             
             // Target logic
             let targets = [];
-            let inRangeEnemies = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
-            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x - this.x, b.y - this.y) <= action.range);
+            let checkRange = action.range;
+            if (wType.shape === 'circle1') {
+                let offset = wType.offsets[this.comboCount - 1];
+                if (offset) checkRange += offset.dist;
+            }
+            let inRangeEnemies = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= checkRange);
+            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x - this.x, b.y - this.y) <= checkRange);
             let inRange = [...inRangeEnemies, ...inRangeBoxes];
             
             let pAngle = Math.atan2(this.dirY, this.dirX);
             
-            let rad = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] : 20;
+            let rad = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] - 20 : 20;
             this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: rad };
             
             if (wType.shape === 'none') {
@@ -792,12 +796,12 @@ class Player {
                 let offset = wType.offsets[this.comboCount - 1];
                 let cx = this.x;
                 let cy = this.y;
-                let radius = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] : 20;
+                let radius = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] - 20 : 20;
                 if (offset) {
                     let hitAngle = pAngle + (offset.angle * Math.PI / 180);
                     cx += Math.cos(hitAngle) * offset.dist;
                     cy += Math.sin(hitAngle) * offset.dist;
-                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range; 
+                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range - 20; 
                 }
                 this.lastAttackShape.cx = cx;
                 this.lastAttackShape.cy = cy;
@@ -1108,7 +1112,7 @@ class Player {
                     this.comboCount = 0;
                     
                     let pAngle = Math.atan2(this.dirY, this.dirX);
-                    let range = 75; // Half of handgun
+                    let range = 150;
                     let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
                     let validTargets = inRange.filter(e => {
                         let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
@@ -1842,11 +1846,11 @@ function updateProjectiles(dt) {
             if (proj.life <= 0) PROJECTILES.splice(i, 1);
         } else if (proj.type === 'rafoie') {
             if (proj.life <= 0) {
-                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 12, lv: proj.lv });
+                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 35, lv: proj.lv });
                 let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
                 for (let e of targets) {
                     let eRadius = e.radius || 15;
-                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 12) {
+                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 35) {
                         if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
                         else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     }
@@ -2900,7 +2904,7 @@ function draw() {
         if (p1.targetDrop) {
             let name = p1.targetDrop.item.name;
             if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
-            drawInfoBox(name, ["(ドロップアイテム)"]);
+            drawInfoBox(name, []);
         } else if (p1.mainTarget) {
             let t = p1.mainTarget;
             let isBoxTarget = !!(GAME.boxes && GAME.boxes.includes(t));
