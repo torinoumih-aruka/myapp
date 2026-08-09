@@ -82,7 +82,7 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [93, 88, 103], // [108-15, 108-20, 128-25]
+        ranges: [68, 63, 78], // Saber -25
         offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -95,7 +95,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [89, 84, 110], // [104-15, 104-20, 100+10]
+        ranges: [64, 59, 125], // Dagger -25, -25, +15
         offsets: [{angle: 0, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -275,11 +275,9 @@ class Player {
                 generateWeapon('w_cane'),
                 { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
-                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 }
-            ];
-            this.magic = [
-                { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'magic', magic: 'resta', lv: 1 },
-                { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'magic', magic: 'fire', lv: 1 }
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
+                { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
+                { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 }
             ];
         } else {
             this.inventory = [];
@@ -537,6 +535,19 @@ class Player {
     draw(ctx) {
         if (this.state === 'dead') return;
         
+        // Draw facing direction indicator
+        let pAngle = Math.atan2(this.dirY, this.dirX);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(pAngle);
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+        ctx.beginPath();
+        ctx.moveTo(this.radius + 15, 0); // pointing forward
+        ctx.lineTo(this.radius + 5, -8);
+        ctx.lineTo(this.radius + 5, 8);
+        ctx.fill();
+        ctx.restore();
+
         let dirStr = 'down';
         if (Math.abs(this.dirX) > Math.abs(this.dirY)) {
             dirStr = this.dirX > 0 ? 'right' : 'left';
@@ -1265,44 +1276,44 @@ class Enemy {
             this.luck = 10;
             this.exp = 15;
             this.radius = 30;
-            this.baseSpd = 8;
+            this.baseSpd = 10;
             this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
         } else if (type === 'gobooma') {
             this.hp = 85;
             this.maxHp = 85;
             this.atk = 17;
-            this.def = 0;
-            this.dex = 10;
-            this.evi = 60;
+            this.def = 5;
+            this.dex = 15;
+            this.evi = 12;
             this.luck = 5;
             this.exp = 6;
             this.radius = 10;
-            this.baseSpd = 12;
+            this.baseSpd = 15;
             this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         } else if (type === 'jigobooma') {
             this.hp = 110;
             this.maxHp = 110;
             this.atk = 20;
-            this.def = 0;
-            this.dex = 10;
-            this.evi = 60;
+            this.def = 8;
+            this.dex = 20;
+            this.evi = 15;
             this.luck = 5;
             this.exp = 7;
             this.radius = 10;
-            this.baseSpd = 12;
+            this.baseSpd = 15;
             this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         } else {
             // booma (default)
             this.hp = 60;
             this.maxHp = 60;
             this.atk = 15;
-            this.def = 0;
-            this.dex = 10;
-            this.evi = 60;
+            this.def = 5;
+            this.dex = 12;
+            this.evi = 10;
             this.luck = 5;
             this.exp = 6;
             this.radius = 10;
-            this.baseSpd = 12;
+            this.baseSpd = 15;
             this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         }
         this.spd = this.baseSpd;
@@ -1747,18 +1758,13 @@ function performAppraisal(p, item) {
     
     document.getElementById('appraiser-result-name').innerText = newName;
     let stats = "";
-    let attrStr = [];
-    if (attrs.native) attrStr.push(`原生生物 ${attrs.native}%`);
-    if (attrs.mutant) attrStr.push(`突然変異 ${attrs.mutant}%`);
-    if (attrs.machine) attrStr.push(`機械 ${attrs.machine}%`);
-    if (attrs.dark) attrStr.push(`闇 ${attrs.dark}%`);
-    if (attrs.hit) attrStr.push(`Hit ${attrs.hit}%`);
-    
-    if (attrStr.length > 0) {
-        stats += `<span style="color: #ffaa00; font-size:14px;">属性: ${attrStr.join(', ')}</span>`;
-    } else {
-        stats += `<span style="color: #aaa; font-size:14px;">属性なし</span>`;
-    }
+    stats += `<div style="color: #ffaa00; font-size:14px; line-height: 1.4;">`;
+    stats += `原生生物 ${attrs.native}%<br>`;
+    stats += `突然変異 ${attrs.mutant}%<br>`;
+    stats += `機械 ${attrs.machine}%<br>`;
+    stats += `闇 ${attrs.dark}%<br>`;
+    stats += `Hit ${attrs.hit}%`;
+    stats += `</div>`;
     document.getElementById('appraiser-result-stats').innerHTML = stats;
     
     document.getElementById('appraiser-result-modal').style.display = 'flex';
@@ -1814,15 +1820,13 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
     
     if (item.attrs) {
-        let attrStr = [];
-        if (item.attrs.native) attrStr.push(`原生生物 ${item.attrs.native}%`);
-        if (item.attrs.mutant) attrStr.push(`突然変異 ${item.attrs.mutant}%`);
-        if (item.attrs.machine) attrStr.push(`機械 ${item.attrs.machine}%`);
-        if (item.attrs.dark) attrStr.push(`闇 ${item.attrs.dark}%`);
-        if (item.attrs.hit) attrStr.push(`Hit ${item.attrs.hit}%`);
-        if (attrStr.length > 0) {
-            stats += `<br><span style="color: #ffaa00; font-size:12px;">属性: ${attrStr.join(', ')}</span>`;
-        }
+        stats += `<div style="color: #ffaa00; font-size:12px; line-height: 1.4; margin-top: 5px;">`;
+        stats += `原生生物 ${item.attrs.native || 0}%<br>`;
+        stats += `突然変異 ${item.attrs.mutant || 0}%<br>`;
+        stats += `機械 ${item.attrs.machine || 0}%<br>`;
+        stats += `闇 ${item.attrs.dark || 0}%<br>`;
+        stats += `Hit ${item.attrs.hit || 0}%`;
+        stats += `</div>`;
     }
     
     document.getElementById('modal-item-stats').innerHTML = stats;
@@ -2247,12 +2251,18 @@ function drawEffects(ctx) {
             ctx.stroke();
             ctx.setLineDash([]);
         } else if (ef.type === 'bullet') {
+            ctx.globalAlpha = Math.max(0.6, p); // Decrease transparency
             ctx.beginPath();
             ctx.moveTo(ef.data.x1, ef.data.y1);
             let cx = ef.data.x1 + (ef.data.x2 - ef.data.x1) * (1-p);
             let cy = ef.data.y1 + (ef.data.y2 - ef.data.y1) * (1-p);
             ctx.lineTo(cx, cy);
-            ctx.arc(ef.data.x1, ef.data.y1, 2, 0, Math.PI*2);
+            ctx.strokeStyle = ef.data.color;
+            ctx.lineWidth = 4; // Increase width by 2px
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, Math.PI*2);
             ctx.fillStyle = ef.data.color;
             ctx.fill();
         } else if (ef.type === 'particle') {
@@ -2742,6 +2752,12 @@ function resolveCollisions(dt) {
                             if (dist === 0) { nx = 1; ny = 0; }
                             a.x += nx * overlap;
                             a.y += ny * overlap;
+                            
+                            if (a instanceof Enemy && a.type === 'hildebear' && a.state === 'jump') {
+                                a.state = 'chase';
+                                a.invincible = false;
+                                a.spd = a.baseSpd;
+                            }
                         }
                     }
                 }
