@@ -931,7 +931,10 @@ class Player {
                     finalTargets.push(this.mainTarget);
                     targets = targets.filter(t => t !== this.mainTarget);
                 }
-                targets.sort(() => Math.random() - 0.5);
+                for (let i = targets.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [targets[i], targets[j]] = [targets[j], targets[i]];
+                }
                 finalTargets = finalTargets.concat(targets.slice(0, wType.targetNum - finalTargets.length));
                 targets = finalTargets;
             } else if (wType.targetType === 'slicer') {
