@@ -158,6 +158,11 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
     if (!base) return null;
     let wType = WEAPON_TYPES[base.weaponType];
     
+    // Random enhance 0-3 if not forced and is a dropped weapon
+    if (forcedEnhance === 0 && Math.random() < 0.5) { // Assuming some chance to get enhanced drop
+        forcedEnhance = Math.floor(Math.random() * 4); // 0, 1, 2, 3
+    }
+    
     let w = {
         uid: 'w_' + Date.now() + Math.floor(Math.random() * 1000), // Unique ID
         id: baseId,
@@ -177,7 +182,8 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
         maxEnhance: base.maxEnhance,
         enhance: forcedEnhance,
         enchant: forcedEnchant,
-        attrs: forcedAttrs || { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 }
+        attrs: forcedAttrs || { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 },
+        isUnidentified: forcedEnchant !== null // If it drops with an enchant, it's unidentified initially
     };
     
     // Calculate final stats
@@ -188,7 +194,11 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
     // Construct display name
     let prefix = w.enchant ? ENCHANTS.find(e => e.id === w.enchant).name + ' ' : '';
     let suffix = w.enhance > 0 ? ' +' + w.enhance : '';
-    w.name = prefix + w.baseName + suffix;
+    if (w.isUnidentified) {
+        w.name = '？？？？' + w.baseName + suffix;
+    } else {
+        w.name = prefix + w.baseName + suffix;
+    }
     
     return w;
 }
@@ -241,24 +251,40 @@ class Player {
         
         this.palette = [null, null, null, null, null, null];
         this.paletteIndex = 1; // 0=L, 1=ACT, 2=R
+        this.coins = 500;
+        this.magicCooldowns = { resta: 0, fire: 0, gifoie: 0, rafoie: 0 };
+        this.magic = [];
         
         // Add requested default items
-        this.inventory = [
-            generateWeapon('w_saber', 0, 'heat', {native: 15, mutant: 0, machine: 0, dark: 5, hit: 5}),
-            generateWeapon('w_handgun'),
-            generateWeapon('w_shotgun', 2, 'ice'),
-            generateWeapon('w_buster', 3, 'fire'),
-            generateWeapon('w_railgun'),
-            generateWeapon('w_dagger'),
-            generateWeapon('w_cane', 0, 'draw'),
-            generateWeapon('w_mace', 1, 'drain'),
-            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
-            { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
-            generateWeapon('w_slicer'),
-            { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 },
-            { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
-            { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
-        ].filter(i => i !== null);
+        if (this.classId === 'swordman') {
+            this.inventory = [
+                generateWeapon('w_saber'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
+            ];
+        } else if (this.classId === 'ranger') {
+            this.inventory = [
+                generateWeapon('w_handgun'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
+            ];
+        } else if (this.classId === 'sorcerer') {
+            this.inventory = [
+                generateWeapon('w_cane'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 }
+            ];
+            this.magic = [
+                { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'magic', magic: 'resta', lv: 1 },
+                { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'magic', magic: 'fire', lv: 1 }
+            ];
+        } else {
+            this.inventory = [];
+        }
+
 
         // Combo system
         this.comboCount = 0;
@@ -282,9 +308,11 @@ class Player {
         
         this.invincibleTimer = 0;
 
-        // Default weapon for testing
-        this.palette[0] = this.inventory[0];
-        this.palette[1] = this.inventory[1];
+        // Default equip and palette setup
+        this.palette[1] = this.inventory[0]; // Weapon (ACT)
+        this.equip.armor = this.inventory[1]; // Armor
+        this.palette[0] = this.inventory[2]; // Monomate (L)
+        this.palette[2] = this.inventory[3]; // Monofluid (R)
     }
     
     recalculateStats() {
@@ -332,7 +360,11 @@ class Player {
     }
 
     update(dt) {
-        if (this.magicCooldown > 0) this.magicCooldown -= dt;
+        if (this.magicCooldowns) {
+            for (let k in this.magicCooldowns) {
+                if (this.magicCooldowns[k] > 0) this.magicCooldowns[k] -= dt;
+            }
+        }
         if (this.hp <= 0) {
            if (this.state === 'dead') return;
         }
@@ -478,6 +510,26 @@ class Player {
                 if (this.x > p1.x + halfW - 16) this.x = p1.x + halfW - 16;
                 if (this.y < p1.y - halfH + 16) this.y = p1.y - halfH + 16;
                 if (this.y > p1.y + halfH - 16) this.y = p1.y + halfH - 16;
+            }
+            
+            // Town wall collision
+            if (GAME.mode === 'town' && MAP_DATA.town && MAP_DATA.town.walls) {
+                MAP_DATA.town.walls.forEach(w => {
+                    let closestX = Math.max(w.x, Math.min(this.x, w.x + w.width));
+                    let closestY = Math.max(w.y, Math.min(this.y, w.y + w.height));
+                    let dx = this.x - closestX;
+                    let dy = this.y - closestY;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist < this.radius) {
+                        if (dist === 0) {
+                            this.y -= this.radius; // push up if exactly inside
+                        } else {
+                            let push = this.radius - dist;
+                            this.x += (dx / dist) * push;
+                            this.y += (dy / dist) * push;
+                        }
+                    }
+                });
             }
         }
     }
@@ -664,7 +716,7 @@ class Player {
                         alert('HPとMPが回復しました！');
                     }
                 } else if (closestNPC.type === 'appraiser') {
-                    alert('未鑑定アイテムはありません。');
+                    openAppraiserModal(this);
                 } else if (closestNPC.type === 'shop') {
                     alert('ショップ機能は準備中です。');
                 } else if (closestNPC.type === 'teleporter') {
@@ -1016,7 +1068,7 @@ class Player {
                         console.log(`Hit enemy! Enemy HP: ${target.hp}`);
                         
                         // Trigger enchant on 3rd combo
-                        if (this.comboCount === 3 && action.enchant) {
+                        if (this.comboCount === 3 && action.enchant && !action.isUnidentified) {
                             let ench = ENCHANTS.find(e => e.id === action.enchant);
                             if (ench) {
                                 this.debugInfo.push(`Enchant: ${ench.name}!`);
@@ -1067,9 +1119,11 @@ class Player {
             
         } else if (action.type === 'disk' || action.type === 'magic') {
             if (action.magic === 'resta') {
+                if (this.magicCooldowns.resta > 0) return;
                 let cost = 10;
                 if (this.mp >= cost) {
                     this.mp -= cost;
+                    this.magicCooldowns.resta = 3.0;
                     let lv = action.lv || 1;
                     let heal = Math.min(this.maxHp - this.hp, 50 * lv);
                     this.hp += heal;
@@ -1078,11 +1132,12 @@ class Player {
                     this.debugInfo.push("Not enough MP");
                 }
             } else if (action.magic === 'fire') {
+                if (this.magicCooldowns.fire > 0) return;
                 let lv = action.lv || 1;
                 let cost = 3 + lv;
                 if (this.mp >= cost) {
                     this.mp -= cost;
-                    this.magicCooldown = 1.0;
+                    this.magicCooldowns.fire = 3.0;
                     this.state = 'attack';
                     this.comboTimer = 0;
                     this.comboCount = 0;
@@ -1119,11 +1174,12 @@ class Player {
                     this.debugInfo.push("Not enough MP");
                 }
             } else if (action.magic === 'gifoie') {
+                if (this.magicCooldowns.gifoie > 0) return;
                 let lv = action.lv || 1;
                 let cost = 8 + lv;
                 if (this.mp >= cost) {
                     this.mp -= cost;
-                    this.magicCooldown = 4.0;
+                    this.magicCooldowns.gifoie = 3.0;
                     this.state = 'attack';
                     this.comboTimer = 0;
                     this.comboCount = 0;
@@ -1139,11 +1195,12 @@ class Player {
                     this.debugInfo.push("Not enough MP");
                 }
             } else if (action.magic === 'rafoie') {
+                if (this.magicCooldowns.rafoie > 0) return;
                 let lv = action.lv || 1;
                 let cost = 15 + lv;
                 if (this.mp >= cost) {
                     this.mp -= cost;
-                    this.magicCooldown = 2.5;
+                    this.magicCooldowns.rafoie = 4.0;
                     this.state = 'attack';
                     this.comboTimer = 0;
                     this.comboCount = 0;
@@ -1329,15 +1386,17 @@ class Enemy {
             }
         }
         
-        let room = GAME.rooms.find(r => r.id === this.roomId);
-        if (room) {
-            let ts = 50;
-            let minX = room.x * ts + this.radius;
-            let maxX = (room.x + room.w) * ts - this.radius;
-            let minY = room.y * ts + this.radius;
-            let maxY = (room.y + room.h) * ts - this.radius;
-            this.x = Math.max(minX, Math.min(this.x, maxX));
-            this.y = Math.max(minY, Math.min(this.y, maxY));
+        if (GAME.mode === 'map') {
+            let room = GAME.rooms.find(r => r.id === this.roomId);
+            if (room) {
+                let ts = 50;
+                let minX = room.x * ts + this.radius;
+                let maxX = (room.x + room.w) * ts - this.radius;
+                let minY = room.y * ts + this.radius;
+                let maxY = (room.y + room.h) * ts - this.radius;
+                this.x = Math.max(minX, Math.min(this.x, maxX));
+                this.y = Math.max(minY, Math.min(this.y, maxY));
+            }
         }
     }
 
@@ -1611,6 +1670,114 @@ let currentMenuTab = 'inv';
 let currentModalItem = null;
 let currentModalPid = 0;
 
+let currentAppraisalItem = null;
+let currentAppraisalPlayer = null;
+let appraisalResult = null;
+
+function openAppraiserModal(p) {
+    let unids = p.inventory.filter(i => i && i.type === 'weapon' && i.isUnidentified);
+    let listEl = document.getElementById('appraiser-list');
+    listEl.innerHTML = '';
+    
+    if (unids.length === 0) {
+        listEl.innerHTML = '<div style="color:#aaa;">未鑑定のアイテムがありません。</div>';
+    } else {
+        unids.forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerText = item.name;
+            div.onclick = () => {
+                if (p.coins >= 100) {
+                    p.coins -= 100;
+                    document.getElementById('appraiser-modal').style.display = 'none';
+                    performAppraisal(p, item);
+                } else {
+                    alert("コインが足りません！");
+                }
+            };
+            listEl.appendChild(div);
+        });
+    }
+    
+    document.getElementById('btn-appraiser-close').onclick = () => {
+        document.getElementById('appraiser-modal').style.display = 'none';
+    };
+    
+    document.getElementById('appraiser-modal').style.display = 'flex';
+}
+
+function performAppraisal(p, item) {
+    currentAppraisalItem = item;
+    currentAppraisalPlayer = p;
+    
+    // Determine new enchant
+    let enchId = item.enchant;
+    let upChances = {
+        'heat': 'fire',
+        'ice': 'freeze',
+        'shock': 'bind',
+        'confuse': 'panic', // Or riot, but we use panic for now
+        'draw': 'drain'
+    };
+    let newEnchId = enchId;
+    if (enchId && upChances[enchId] && Math.random() < 0.1) {
+        newEnchId = upChances[enchId];
+    }
+    
+    // Determine attributes 5-30% across Native, Mutant, Machine, Dark, Hit
+    let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
+    let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+    let numAttrs = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < numAttrs; i++) {
+        let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
+        attrs[attr] += (Math.floor(Math.random() * 6) + 1) * 5; // 5,10,15,20,25,30
+    }
+    
+    // Build display result
+    let base = BASE_WEAPONS[item.id];
+    let prefix = newEnchId ? ENCHANTS.find(e => e.id === newEnchId).name + ' ' : '';
+    let suffix = item.enhance > 0 ? ' +' + item.enhance : '';
+    let newName = prefix + item.baseName + suffix;
+    
+    appraisalResult = {
+        enchant: newEnchId,
+        attrs: attrs,
+        name: newName
+    };
+    
+    document.getElementById('appraiser-result-name').innerText = newName;
+    let stats = "";
+    let attrStr = [];
+    if (attrs.native) attrStr.push(`原生生物 ${attrs.native}%`);
+    if (attrs.mutant) attrStr.push(`突然変異 ${attrs.mutant}%`);
+    if (attrs.machine) attrStr.push(`機械 ${attrs.machine}%`);
+    if (attrs.dark) attrStr.push(`闇 ${attrs.dark}%`);
+    if (attrs.hit) attrStr.push(`Hit ${attrs.hit}%`);
+    
+    if (attrStr.length > 0) {
+        stats += `<span style="color: #ffaa00; font-size:14px;">属性: ${attrStr.join(', ')}</span>`;
+    } else {
+        stats += `<span style="color: #aaa; font-size:14px;">属性なし</span>`;
+    }
+    document.getElementById('appraiser-result-stats').innerHTML = stats;
+    
+    document.getElementById('appraiser-result-modal').style.display = 'flex';
+    
+    document.getElementById('btn-appraiser-accept').onclick = () => {
+        item.isUnidentified = false;
+        item.enchant = appraisalResult.enchant;
+        item.attrs = appraisalResult.attrs;
+        item.name = appraisalResult.name;
+        document.getElementById('appraiser-result-modal').style.display = 'none';
+        renderMenu(p.id);
+    };
+    
+    document.getElementById('btn-appraiser-cancel').onclick = () => {
+        // Return to appraiser list, coin is already consumed
+        document.getElementById('appraiser-result-modal').style.display = 'none';
+        openAppraiserModal(p);
+    };
+}
 function openItemModal(item, pid, source, slotIdx = -1) {
     let p = GAME.players[pid];
     let modal = document.getElementById('item-modal');
@@ -1717,7 +1884,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     slotsEl.innerHTML = '';
     invEl.innerHTML = '';
     
-    if (item.type === 'armor' && item.slotCount) {
+    if (item.type === 'armor' && item.slotCount !== undefined) {
         modalContent.classList.add('two-col');
         slotsEl.style.display = 'flex';
         trashEl.style.display = 'block';
@@ -1796,8 +1963,21 @@ function openItemModal(item, pid, source, slotIdx = -1) {
                 if (item.stack <= 0) p.inventory = p.inventory.filter(i => i !== item);
             } else if (item.type === 'disk') {
                 if (!p.magic) p.magic = [];
-                p.magic.push({ id: item.id, name: item.name.replace('ディスク',''), type: 'magic', magic: item.magic, lv: item.lv });
-                p.inventory = p.inventory.filter(i => i !== item);
+                let existing = p.magic.find(m => m.magic === item.magic);
+                if (existing) {
+                    if (item.lv > existing.lv) {
+                        existing.lv = item.lv;
+                        existing.id = item.id;
+                        existing.name = item.name.replace('ディスク','');
+                        p.inventory = p.inventory.filter(i => i !== item);
+                    } else {
+                        // Level too low, do nothing or show msg
+                        p.inventory = p.inventory.filter(i => i !== item); // Consume anyway? Let's consume it.
+                    }
+                } else {
+                    p.magic.push({ id: item.id, name: item.name.replace('ディスク',''), type: 'magic', magic: item.magic, lv: item.lv });
+                    p.inventory = p.inventory.filter(i => i !== item);
+                }
             }
             modal.style.display = 'none';
             renderMenu(pid);
@@ -1983,7 +2163,7 @@ function updateProjectiles(dt) {
                         addFloatingText(target.x, target.y - 20, dmg, 'white');
                         console.log(`Slicer hit! Enemy HP: ${target.hp}`);
                         
-                        if (proj.comboCount === 3 && action && action.enchant) {
+                        if (proj.comboCount === 3 && action && action.enchant && !action.isUnidentified) {
                             let ench = ENCHANTS.find(e => e.id === action.enchant);
                             if (ench) {
                                 p.debugInfo.push(`Enchant: ${ench.name}!`);
@@ -2702,13 +2882,20 @@ function breakBox(b) {
         if (Math.random() < 0.5) {
             let rand = Math.random();
             let dropItem = null;
-            if (rand < 0.25) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-            else if (rand < 0.5) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-            else if (rand < 0.7) {
+            if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+            else if (rand < 0.3) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+            else if (rand < 0.5) {
                  let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
                  let chosen = magics[Math.floor(Math.random() * magics.length)];
                  let lv = Math.floor(Math.random() * 3) + 1; // 1-3
                  dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
+            }
+            else if (rand < 0.7) {
+                let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
+                let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
+                let enchant = null;
+                if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
+                dropItem = generateWeapon(baseId, 0, enchant);
             }
             else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
             if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
@@ -2749,22 +2936,20 @@ function update() {
                     let dropItem = null;
                     if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
                     else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.45) { // Armor
+                    else if (rand < 0.50) { // Armor
                         let extra = Math.floor(Math.random() * 3); // 0, 1, 2
                         let slots = Math.floor(Math.random() * 3); // 0, 1, 2
                         let arr = []; for(let i=0; i<slots; i++) arr.push(null);
                         let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
                         dropItem = { id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
                     }
-                    else if (rand < 0.60) { // Disk
+                    else if (rand < 0.70) { // Disk
                         let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
                         let chosen = magics[Math.floor(Math.random() * magics.length)];
                         let lv = Math.floor(Math.random() * 3) + 1; // 1-3
                         dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
                     }
-                    else if (rand < 0.8) dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
-                    else {
-                        // Drop Weapon
+                    else if (rand < 0.90) { // Weapon
                         let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
                         let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
                         
@@ -2946,6 +3131,16 @@ function draw() {
 
 
     if (GAME.mode === 'town') {
+        if (MAP_DATA.town.walls) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            MAP_DATA.town.walls.forEach(w => {
+                ctx.fillRect(w.x, w.y, w.width, w.height);
+                ctx.strokeRect(w.x, w.y, w.width, w.height);
+            });
+        }
+        
         ctx.fillStyle = 'white';
         ctx.font = '20px sans-serif';
         MAP_DATA.town.npcs.forEach(npc => {
