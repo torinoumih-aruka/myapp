@@ -163,6 +163,20 @@ const ENCHANT_PRICES = {
     'draw': 100, 'drain': 400
 };
 
+const MAGICS_DATA = [
+    { id: 'm_resta', name: 'レスタ', m: 'resta', sortId: '001', basePrice: 100 },
+    { id: 'm_anti', name: 'アンティ', m: 'anti', sortId: '002', basePrice: 300, maxLv: 1 },
+    { id: 'm_shifta', name: 'シフタ', m: 'shifta', sortId: '005', basePrice: 300 },
+    { id: 'm_deband', name: 'デバンド', m: 'deband', sortId: '006', basePrice: 300 },
+    { id: 'm_freme', name: 'フレム', m: 'freme', sortId: '101', basePrice: 100 },
+    { id: 'm_gifreme', name: 'ギフレム', m: 'gifreme', sortId: '102', basePrice: 200 },
+    { id: 'm_rafreme', name: 'ラフレム', m: 'rafreme', sortId: '103', basePrice: 300 },
+    { id: 'm_ice', name: 'アイス', m: 'ice', sortId: '104', basePrice: 100 },
+    { id: 'm_sanda', name: 'サンダ', m: 'sanda', sortId: '107', basePrice: 100 },
+    { id: 'm_jellen', name: 'ジェルン', m: 'jellen', sortId: '201', basePrice: 300 },
+    { id: 'm_zalure', name: 'ザルア', m: 'zalure', sortId: '202', basePrice: 300 }
+];
+
 function getItemPrice(item) {
     if (!item) return 0;
     
@@ -188,9 +202,8 @@ function getItemPrice(item) {
         let slotBonus = item.slotCount ? Math.floor(base * 0.2 * item.slotCount) : 0;
         return base + statBonus + slotBonus;
     } else if (item.type === 'disk') {
-        let base = 100;
-        if (item.magic === 'gifoie') base = 200;
-        else if (item.magic === 'rafoie') base = 300;
+        let magicDef = MAGICS_DATA.find(m => m.m === item.magic);
+        let base = magicDef ? magicDef.basePrice : 100;
         return base + Math.floor(base * 0.5 * (item.lv || 1));
     } else if (item.type === 'unit') {
         let base = 1000;
@@ -271,7 +284,7 @@ function generateShopLineup() {
     GAME.shopItems.push({ uid: 'shop_' + Date.now() + '2', id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 });
     
     let weapons = ['w_saber', 'w_handgun', 'w_cane'];
-    let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギフォイエ', m:'gifoie'}, {id:'m_rafoie', name:'ラフォイエ', m:'rafoie'}];
+    let magics = MAGICS_DATA;
     
     // 8 random items based on progress
     for (let i = 0; i < 8; i++) {
@@ -303,7 +316,8 @@ function generateShopLineup() {
             // Disk (Lv 1-3)
             let chosen = magics[Math.floor(Math.random() * magics.length)];
             let lv = 1 + Math.floor(Math.random() * 3);
-            GAME.shopItems.push({ uid: 'shop_' + Date.now() + '_' + i, id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv });
+            if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+            GAME.shopItems.push({ uid: 'shop_' + Date.now() + '_' + i, id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId });
         }
     }
 }
@@ -318,6 +332,7 @@ class Player {
         this.maxHp = cdata.hp;
         this.hp = this.maxHp;
         this.maxMp = cdata.mp;
+        this.status = { poisonTimer: 0, poisonDamageTimer: 0, poisonMnd: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaTimer: 0, shiftaLv: 0, debandTimer: 0, debandLv: 0, jellenTimer: 0, jellenLv: 0, zalureTimer: 0, zalureLv: 0 };
         this.mp = this.maxMp;
         this.atk = cdata.atk;
         this.def = cdata.def;
@@ -463,6 +478,37 @@ class Player {
     }
 
     update(dt) {
+        updateStatusEffects(this, dt, true);
+            // Check Traps
+            if (GAME.traps) {
+                GAME.traps.forEach(t => {
+                    let tx = t.x * 50 + 25;
+                    let ty = t.y * 50 + 25;
+                    if (Math.hypot(this.x - tx, this.y - ty) < 25) {
+                        if (!t.triggered || Date.now() - t.triggered > 5000) {
+                            t.triggered = Date.now();
+                            let lv = t.lv || 1;
+                            if (t.type === 'shifta') { this.status.shiftaLv = lv; this.status.shiftaTimer = 60; }
+                            if (t.type === 'deband') { this.status.debandLv = lv; this.status.debandTimer = 60; }
+                            if (t.type === 'jellen') { this.status.jellenLv = lv; this.status.jellenTimer = 60; }
+                            if (t.type === 'zalure') { this.status.zalureLv = lv; this.status.zalureTimer = 60; }
+                            if (t.type === 'poison') applyStatus(this, 'poison', 30, 20);
+                            if (t.type === 'confuse') applyStatus(this, 'confuse', 20);
+                            if (t.type === 'shock') applyStatus(this, 'shock', 999);
+                            if (t.type === 'freeze') applyStatus(this, 'freeze', 20);
+                            addEffect('particle', { x: this.x, y: this.y, color: '#ffffff', r: 20 });
+                        }
+                    }
+                });
+            }
+
+            
+        if (this.status && this.status.freezeTimer > 0) return; // Frozen
+        if (this.status && this.status.shockTimer > 0) {
+            // Cannot use weapon/magic, but can move/use items. Wait, user said:
+            // "武器とまほうが使えなくなる。"
+            // We'll block attack/magic in processInputs.
+        }
         if (this.magicCooldowns) {
             for (let k in this.magicCooldowns) {
                 if (this.magicCooldowns[k] > 0) this.magicCooldowns[k] -= dt;
@@ -638,6 +684,12 @@ class Player {
     }
 
     draw(ctx) {
+        if (this.status && this.status.freezeTimer > 0) {
+            ctx.filter = 'sepia(1) hue-rotate(180deg) saturate(3)';
+        }
+        if (this.status && this.status.freezeTimer > 0) {
+            ctx.filter = 'sepia(1) hue-rotate(180deg) saturate(3)'; // Blueish
+        }
         if (this.state === 'dead') return;
         
         // Draw facing direction indicator
@@ -876,7 +928,8 @@ class Player {
                 if (triggeredEvent) return; // skip attack
             }
             
-            // Check Next Area
+            
+// Check Next Area
             if (GAME.teleporters) {
                 let nextTp = GAME.teleporters.find(t => t.type === 'next');
                 if (nextTp) {
@@ -1238,126 +1291,118 @@ class Player {
             }
             this.state = 'idle'; // Prevent item spam
             
+        
         } else if (action.type === 'disk' || action.type === 'magic') {
-            if (action.magic === 'resta') {
-                if (this.magicCooldowns.resta > 0) return;
-                let cost = 10;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldowns.resta = 3.0;
-                    let lv = action.lv || 1;
-                    let heal = Math.min(this.maxHp - this.hp, 50 * lv);
-                    this.hp += heal;
-                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'fire') {
-                if (this.magicCooldowns.fire > 0) return;
-                let lv = action.lv || 1;
-                let cost = 3 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldowns.fire = 3.0;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let pAngle = Math.atan2(this.dirY, this.dirX);
-                    let range = 150;
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
-                    let validTargets = inRange.filter(e => {
-                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
-                        if(diff>Math.PI) diff = Math.PI*2-diff;
-                        return diff<=(Math.PI/12);
-                    });
-                    validTargets.sort((a,b) => {
-                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
-                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
-                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
-                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
-                        return diffA - diffB;
-                    });
-                    let target = validTargets.length > 0 ? validTargets[0] : null;
-                    this.mainTarget = target;
-                    
-                    let dmg = Math.floor(this.baseStats.mind + 10 + (lv * 2));
-                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
-                    let projVx = this.dirX * 200;
-                    let projVy = this.dirY * 200;
-                    if (target) {
-                        let ang = Math.atan2(target.y - this.y, target.x - this.x);
-                        projVx = Math.cos(ang)*200;
-                        projVy = Math.sin(ang)*200;
-                    }
-                    PROJECTILES.push({ roomId: this.roomId, type: 'fire', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'gifoie') {
-                if (this.magicCooldowns.gifoie > 0) return;
-                let lv = action.lv || 1;
-                let cost = 8 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldowns.gifoie = 3.0;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let dmg = Math.floor((this.baseStats.mind * 2/3) + 10 + (lv * 2));
-                    let numBullets = Math.floor(2 + (lv / 10));
-                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
-                    for (let i = 0; i < numBullets; i++) {
-                        let startAng = (i / numBullets) * Math.PI * 2;
-                        PROJECTILES.push({ roomId: this.roomId, type: 'gifoie', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
-                    }
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'rafoie') {
-                if (this.magicCooldowns.rafoie > 0) return;
-                let lv = action.lv || 1;
-                let cost = 15 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldowns.rafoie = 4.0;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let pAngle = Math.atan2(this.dirY, this.dirX);
-                    let range = 150;
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
-                    let validTargets = inRange.filter(e => {
-                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
-                        if(diff>Math.PI) diff = Math.PI*2-diff;
-                        return diff<=(Math.PI/12);
-                    });
-                    validTargets.sort((a,b) => {
-                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
-                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
-                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
-                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
-                        return diffA - diffB;
-                    });
-                    let target = validTargets.length > 0 ? validTargets[0] : null;
-                    this.mainTarget = target;
-                    
-                    let cx = target ? target.x : this.x + this.dirX * range;
-                    let cy = target ? target.y : this.y + this.dirY * range;
-                    
-                    let dmg = Math.floor((this.baseStats.mind * 3/4) + 5 + (lv * 2));
-                    PROJECTILES.push({ roomId: this.roomId, type: 'rafoie', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
+            let m = action.magic;
+            let lv = action.lv || 1;
+            
+            // Check shock
+            if (this.status.shockTimer > 0) {
+                this.debugInfo.push("Shocked! Cannot cast.");
+                return;
             }
-            if (action.magic !== 'resta') {
-                // If it was not resta, it handled cooldown and state above
+            
+            let costs = { resta: 10, anti: 8, shifta: 15, deband: 15, freme: 10, gifreme: 15, rafreme: 20, ice: 12, sanda: 15, jellen: 15, zalure: 15 };
+            let cost = costs[m] || 10;
+            
+            // Handle Jellen/Zalure class restrictions
+            if ((m === 'jellen' || m === 'zalure') && this.classId !== 'ranger' && this.classId !== 'sorcerer') {
+                this.debugInfo.push("Cannot use this magic");
+                return;
+            }
+            
+            if (!this.magicCooldowns) this.magicCooldowns = {};
+            if (this.magicCooldowns[m] > 0) return;
+            
+            if (this.mp >= cost) {
+                this.mp -= cost;
+                this.magicCooldowns[m] = 1.0;
+                this.state = 'magic';
+                this.stateTimer = 0.5;
+                addEffect('particle', { x: this.x, y: this.y, color: '#00ffff', r: 20 });
+                
+                let targetType = 'none';
+                if (m === 'resta') {
+                    let heal = 20 + lv * 10;
+                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                    addFloatingText(this.x, this.y - 20, heal, '#00ff00');
+                    addEffect('heal', { x: this.x, y: this.y });
+                } else if (m === 'anti') {
+                    this.status.poisonTimer = 0;
+                    this.status.confuseTimer = 0;
+                    addEffect('heal', { x: this.x, y: this.y }); // temp effect
+                } else if (m === 'shifta') {
+                    if (this.status.shiftaLv <= lv || this.status.shiftaTimer <= 0) {
+                        this.status.shiftaLv = lv;
+                        this.status.shiftaTimer = 60.0;
+                    } else if (this.status.shiftaLv === lv) {
+                        this.status.shiftaTimer += 60.0;
+                    }
+                } else if (m === 'deband') {
+                    if (this.status.debandLv <= lv || this.status.debandTimer <= 0) {
+                        this.status.debandLv = lv;
+                        this.status.debandTimer = 60.0;
+                    } else if (this.status.debandLv === lv) {
+                        this.status.debandTimer += 60.0;
+                    }
+                } else if (m === 'jellen' || m === 'zalure') {
+                    let targets = GAME.enemies.filter(e => e.hp > 0 && Math.hypot(e.x - this.x, e.y - this.y) <= 50);
+                    for (let e of targets) {
+                        if (m === 'jellen') {
+                            if (e.status.jellenLv <= lv || e.status.jellenTimer <= 0) { e.status.jellenLv = lv; e.status.jellenTimer = 60.0; }
+                            else if (e.status.jellenLv === lv) e.status.jellenTimer += 60.0;
+                        } else {
+                            if (e.status.zalureLv <= lv || e.status.zalureTimer <= 0) { e.status.zalureLv = lv; e.status.zalureTimer = 60.0; }
+                            else if (e.status.zalureLv === lv) e.status.zalureTimer += 60.0;
+                        }
+                    }
+                    addEffect('explosion', { x: this.x, y: this.y, r: 50, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
+                } else if (m === 'freme') {
+                    let dmg = 10 + lv * 5;
+                    let projVx = Math.cos(this.angle) * 300;
+                    let projVy = Math.sin(this.angle) * 300;
+                    let r = 5 + lv;
+                    PROJECTILES.push({ roomId: this.roomId, type: 'freme', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
+                } else if (m === 'gifreme') {
+                    let dmg = 8 + lv * 4;
+                    let r = 10 + lv;
+                    for (let i = 0; i < 3; i++) {
+                        let startAng = this.angle + (i - 1) * Math.PI / 4;
+                        PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                    }
+                } else if (m === 'rafreme') {
+                    let dmg = 15 + lv * 6;
+                    let dist = 100;
+                    let cx = this.x + Math.cos(this.angle) * dist;
+                    let cy = this.y + Math.sin(this.angle) * dist;
+                    PROJECTILES.push({ roomId: this.roomId, type: 'rafreme', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
+                } else if (m === 'ice') {
+                    let dmg = 10 + lv * 5;
+                    let dist = 50;
+                    let r = 7.5; // width 15
+                    let projVx = Math.cos(this.angle) * 300; // Fast line
+                    let projVy = Math.sin(this.angle) * 300;
+                    // Projectile handles piercing
+                    PROJECTILES.push({ roomId: this.roomId, type: 'ice', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: dist/300, hitTargets: new Set() });
+                } else if (m === 'sanda') {
+                    let dmg = 10 + lv * 5;
+                    let closest = null;
+                    let minDist = 200;
+                    for (let e of GAME.enemies) {
+                        if (e.hp > 0 && e.roomId === this.roomId) {
+                            let d = Math.hypot(e.x - this.x, e.y - this.y);
+                            if (d < minDist) { minDist = d; closest = e; }
+                        }
+                    }
+                    if (closest) {
+                        hitEnemyWithMagic(closest, { type: 'sanda', dmg: dmg });
+                        addEffect('particle', { x: closest.x, y: closest.y, color: '#ffff00', r: 30 }); // Thunder effect
+                    }
+                }
             } else {
-                this.state = 'idle';
+                this.debugInfo.push("Not enough MP");
             }
+
         }
     }
 }
@@ -1559,6 +1604,8 @@ class Enemy {
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, (this.radius * 2) * (this.hp / this.maxHp), 4);
         
         ctx.restore();
+        ctx.filter = 'none';
+        drawStatusEffects(ctx, this);
     }
 }
 
@@ -1656,6 +1703,7 @@ function loadArea(areaPattern) {
         radius: 20
     }));
     GAME.events = JSON.parse(JSON.stringify(areaPattern.events || []));
+    GAME.traps = JSON.parse(JSON.stringify(areaPattern.traps || []));
     GAME.teleporters = JSON.parse(JSON.stringify(areaPattern.teleporters || []));
     
     // Set players to start
@@ -2178,7 +2226,7 @@ function updateProjectiles(dt) {
     for (let i = PROJECTILES.length - 1; i >= 0; i--) {
         let proj = PROJECTILES[i];
         proj.life -= dt;
-        if (proj.type === 'fire') {
+        if (proj.type === 'freme') {
             proj.x += proj.vx * dt;
             proj.y += proj.vy * dt;
             let colors = ['#ff3300', '#ffcc00'];
@@ -2197,7 +2245,7 @@ function updateProjectiles(dt) {
                 }
             }
             if (hit || proj.life <= 0) PROJECTILES.splice(i, 1);
-        } else if (proj.type === 'gifoie') {
+        } else if (proj.type === 'gifreme') {
             proj.angle += 3 * dt;
             let currentRadius = (5.0 - proj.life) * proj.speed;
             proj.x = proj.cx + Math.cos(proj.angle) * currentRadius;
@@ -2220,19 +2268,38 @@ function updateProjectiles(dt) {
                 }
             }
             if (proj.life <= 0) PROJECTILES.splice(i, 1);
-        } else if (proj.type === 'rafoie') {
+        } else if (proj.type === 'rafreme') {
             if (proj.life <= 0) {
-                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 35, lv: proj.lv });
+                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 65, lv: proj.lv });
                 let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
                 for (let e of targets) {
                     let eRadius = e.radius || 15;
-                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 35) {
+                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 65) {
                         if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
                         else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     }
                 }
                 PROJECTILES.splice(i, 1);
             }
+        
+        } else if (proj.type === 'ice') {
+            proj.x += proj.vx * dt;
+            proj.y += proj.vy * dt;
+            proj.life -= dt;
+            
+            let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
+            for (let e of targets) {
+                let eRadius = e.radius || 15;
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= eRadius + proj.r) {
+                    if (!proj.hitTargets.has(e)) {
+                        proj.hitTargets.add(e);
+                        if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
+                        else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
+                    }
+                }
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
+
         } else if (proj.type === 'slicer') {
             proj.delayTimer -= dt;
             if (proj.delayTimer <= 0) {
@@ -2312,20 +2379,157 @@ function updateProjectiles(dt) {
     }
 }
 function hitEnemyWithMagic(target, proj) {
+    if (target.hp <= 0) return;
     target.hp -= proj.dmg;
-    target.stunTimer = 1.0;
-    addFloatingText(target.x, target.y - 20, proj.dmg, '#ffaa00');
-    console.log(`Magic hit! Enemy HP: ${target.hp}`);
+    
+    let color = '#ffaa00';
+    if (proj.type === 'ice') {
+        color = '#00ffff';
+        if (Math.random() < 0.2) applyStatus(target, 'freeze', 15);
+    } else if (proj.type === 'sanda') {
+        color = '#ffff00';
+        if (Math.random() < 0.2) applyStatus(target, 'shock', 999);
+    }
+    
+    addFloatingText(target.x, target.y - 20, proj.dmg, color);
+    
+    if (!target.status || (target.status.shockTimer <= 0 && target.status.freezeTimer <= 0)) {
+        target.stunTimer = 1.0;
+    } else if (target.status && (target.status.shockTimer > 0 || target.status.freezeTimer > 0)) {
+        if (target.status.shockTimer > 0) target.status.shockTimer = 0;
+        if (target.status.freezeTimer > 0) target.status.freezeTimer = 0;
+        target.stunTimer = 1.0;
+    }
 }
 function drawProjectiles(ctx) {
     PROJECTILES.forEach(proj => {
-        if (proj.type === 'fire' || proj.type === 'gifoie') {
+        if (proj.type === 'freme' || proj.type === 'gifreme') {
             ctx.fillStyle = 'red';
             ctx.beginPath();
             ctx.arc(proj.x, proj.y, proj.r, 0, Math.PI*2);
             ctx.fill();
         }
     });
+}
+
+
+function updateStatusEffects(obj, dt, isPlayer) {
+    if (!obj.status) return;
+    if (obj.hp <= 0 && obj.state === 'dead') return;
+    
+    if (obj.status.poisonTimer > 0) {
+        obj.status.poisonTimer -= dt;
+        obj.status.poisonDamageTimer -= dt;
+        if (obj.status.poisonDamageTimer <= 0) {
+            obj.status.poisonDamageTimer = 3.0;
+            let dmg = Math.floor(obj.status.poisonMnd / 5 + obj.maxHp * 0.02);
+            if (dmg < 1) dmg = 1;
+            obj.hp -= dmg;
+            addFloatingText(obj.x, obj.y - 20, dmg, '#00ff00');
+            if (obj.hp <= 0) {
+                obj.hp = 0;
+                if (isPlayer) obj.state = 'dead';
+                else obj.state = 'dead'; // Enemy death
+            }
+        }
+    }
+    
+    if (obj.status.confuseTimer > 0) obj.status.confuseTimer -= dt;
+    if (obj.status.shockTimer > 0) obj.status.shockTimer -= dt;
+    if (obj.status.freezeTimer > 0) obj.status.freezeTimer -= dt;
+    
+    if (obj.status.shiftaTimer > 0) obj.status.shiftaTimer -= dt;
+    if (obj.status.debandTimer > 0) obj.status.debandTimer -= dt;
+    if (obj.status.jellenTimer > 0) obj.status.jellenTimer -= dt;
+    if (obj.status.zalureTimer > 0) obj.status.zalureTimer -= dt;
+}
+
+function drawStatusEffects(ctx, obj) {
+    if (!obj.status) return;
+    
+    if (obj.status.poisonTimer > 0) {
+        // Green bubbles (simple approximation)
+        let phase = (Date.now() % 1000) / 1000;
+        ctx.fillStyle = `rgba(0, 255, 0, ${1 - phase})`;
+        ctx.beginPath(); ctx.arc(obj.x + Math.sin(phase*10)*10, obj.y - phase*30, 4, 0, Math.PI*2); ctx.fill();
+    }
+    if (obj.status.confuseTimer > 0) {
+        // Purple swirl
+        let angle = Date.now() / 200;
+        ctx.strokeStyle = 'purple';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<3; i++) {
+            let a = angle + i * Math.PI*2/3;
+            ctx.moveTo(obj.x + Math.cos(a)*10, obj.y - 20 + Math.sin(a)*10);
+            ctx.lineTo(obj.x + Math.cos(a+1)*15, obj.y - 20 + Math.sin(a+1)*15);
+        }
+        ctx.stroke();
+    }
+    if (obj.status.shockTimer > 0) {
+        // Yellow zigzags
+        ctx.strokeStyle = 'yellow';
+        ctx.lineWidth = 2;
+        let phase = Date.now() / 100;
+        ctx.beginPath();
+        ctx.moveTo(obj.x - 10, obj.y - 10 + Math.sin(phase)*5);
+        ctx.lineTo(obj.x, obj.y - 15 - Math.sin(phase)*5);
+        ctx.lineTo(obj.x + 10, obj.y - 10 + Math.sin(phase)*5);
+        ctx.stroke();
+    }
+    if (obj.status.freezeTimer > 0) {
+        // Sparkles and blue overlay handled in drawing normally, but we can add sparkles here
+        ctx.fillStyle = (Date.now() % 500 < 250) ? '#ffffff' : '#00ffff';
+        ctx.fillRect(obj.x - 15, obj.y - 20, 2, 2);
+        ctx.fillRect(obj.x + 10, obj.y - 10, 2, 2);
+        ctx.fillRect(obj.x, obj.y - 30, 2, 2);
+    }
+    
+    // Hexagons for buffs/debuffs
+    let drawHex = (color, scale) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            let a = i * Math.PI / 3;
+            let px = obj.x + Math.cos(a) * 20 * scale;
+            let py = obj.y + Math.sin(a) * 20 * scale;
+            if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    };
+    
+    let phase = (Date.now() % 1500) / 1500; // 0 to 1
+    
+    if (obj.status.shiftaTimer > 0) {
+        // Shrinking red
+        let scale = 1.5 - phase * 0.5; // 1.5 to 1.0
+        ctx.globalAlpha = 1 - phase;
+        drawHex('red', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.debandTimer > 0) {
+        // Shrinking blue
+        let scale = 1.5 - phase * 0.5; // 1.5 to 1.0
+        ctx.globalAlpha = 1 - phase;
+        drawHex('blue', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.jellenTimer > 0) {
+        // Expanding red
+        let scale = 1.0 + phase * 0.5; // 1.0 to 1.5
+        ctx.globalAlpha = 1 - phase;
+        drawHex('red', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.zalureTimer > 0) {
+        // Expanding blue
+        let scale = 1.0 + phase * 0.5; // 1.0 to 1.5
+        ctx.globalAlpha = 1 - phase;
+        drawHex('blue', scale);
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 // --- Effects System ---
@@ -2515,7 +2719,16 @@ function renderMenu(pid) {
             let bT = typeOrder[b.type] || 99;
             if (aT !== bT) return aT - bT;
             
-            return a.id.localeCompare(b.id);
+            return (a.id || '').localeCompare(b.id || '');
+        });
+    } else {
+        listSource.sort((a, b) => {
+            let sA = a.sortId || '999';
+            let sB = b.sortId || '999';
+            if (sA !== sB) return sA.localeCompare(sB);
+            let lvA = a.lv || 1;
+            let lvB = b.lv || 1;
+            return lvA - lvB;
         });
     }
     
@@ -3016,7 +3229,8 @@ function breakBox(b) {
                  let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
                  let chosen = magics[Math.floor(Math.random() * magics.length)];
                  let lv = Math.floor(Math.random() * 3) + 1; // 1-3
-                 dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
+                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
             }
             else if (rand < 0.7) {
                 let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
@@ -3075,7 +3289,8 @@ function update() {
                         let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
                         let chosen = magics[Math.floor(Math.random() * magics.length)];
                         let lv = Math.floor(Math.random() * 3) + 1; // 1-3
-                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv };
+                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
                     }
                     else if (rand < 0.90) { // Weapon
                         let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
@@ -3241,6 +3456,19 @@ function draw() {
             });
         }
         
+        
+        // Draw Traps
+        if (GAME.traps) {
+            GAME.traps.forEach(t => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(t.x * 50 + 5, t.y * 50 + 5, 40, 40);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.type, t.x * 50 + 25, t.y * 50 + 25);
+            });
+        }
+
         // Draw Teleporters
         GAME.teleporters.forEach(t => {
             ctx.fillStyle = t.type === 'town' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)';
@@ -3284,7 +3512,8 @@ function draw() {
         GAME.particles.forEach(p => p.draw(ctx));
         drawProjectiles(ctx);
         drawEffects(ctx);
-        
+        updateDebugUI();
+
         // Draw Drops
         GAME.drops.forEach(d => {
             ctx.save();
@@ -3406,6 +3635,8 @@ window.onload = async () => {
     setupScrollBtn('scroll-pal-inv-down', 'menu-palette-1p', 1);
     setupScrollBtn('scroll-pal-mag-up', 'menu-palette-magic-1p', -1);
     setupScrollBtn('scroll-pal-mag-down', 'menu-palette-magic-1p', 1);
+    setupScrollBtn('scroll-shop-up', 'shop-item-list', -1);
+    setupScrollBtn('scroll-shop-down', 'shop-item-list', 1);
     
     document.getElementById('btn-start-2p').onclick = () => {
         document.getElementById('screen-title').style.display = 'none';
@@ -3670,4 +3901,49 @@ function showShopSubwindow(item) {
             renderShopList();
         }
     };
+}
+
+
+function applyStatus(obj, type, val, mnd=0) {
+    if (!obj.status) return;
+    if (type === 'poison') {
+        obj.status.poisonTimer = val;
+        obj.status.poisonDamageTimer = 3.0;
+        obj.status.poisonMnd = mnd;
+    } else if (type === 'confuse') {
+        obj.status.confuseTimer = val;
+    } else if (type === 'shock') {
+        obj.status.shockTimer = val;
+    } else if (type === 'freeze') {
+        obj.status.freezeTimer = val;
+    }
+}
+
+
+function updateDebugUI() {
+    for (let i = 0; i < GAME.players.length; i++) {
+        let p = GAME.players[i];
+        let el = document.getElementById(i === 0 ? 'info-1p' : 'info-2p');
+        if (el && p) {
+            let clsName = CLASS_DATA[p.classId].name;
+            let text = `Lv.${p.level} ${clsName}`;
+            
+            if (p.status) {
+                let buffs = [];
+                if (p.status.shiftaTimer > 0) buffs.push('シフタ');
+                if (p.status.debandTimer > 0) buffs.push('デバンド');
+                if (p.status.jellenTimer > 0) buffs.push('ジェルン');
+                if (p.status.zalureTimer > 0) buffs.push('ザルア');
+                if (p.status.poisonTimer > 0) buffs.push('毒');
+                if (p.status.confuseTimer > 0) buffs.push('混乱');
+                if (p.status.shockTimer > 0) buffs.push('ショック');
+                if (p.status.freezeTimer > 0) buffs.push('凍結');
+                
+                if (buffs.length > 0) {
+                    text += ` <span style="color:#ffcc00; font-size: 10px;">[${buffs.join(', ')}]</span>`;
+                }
+            }
+            el.innerHTML = text;
+        }
+    }
 }
