@@ -18,6 +18,8 @@ let PRE_RENDERED = {};
 // Game State
 let GAME = {
     mode: 'title', // title, town, map, gameover
+    progress: 1, // Store progress (unlocks etc)
+    shopItems: [], // Current items available in shop
     players: [],
     enemies: [],
     projectiles: [],
@@ -153,6 +155,56 @@ const ENCHANTS = [
     { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog' }
 ];
 
+const ENCHANT_PRICES = {
+    'heat': 100, 'fire': 400,
+    'shock': 100, 'thunder': 400,
+    'ice': 100, 'frost': 400,
+    'panic': 100, 'riot': 400,
+    'draw': 100, 'drain': 400
+};
+
+function getItemPrice(item) {
+    if (!item) return 0;
+    
+    if (item.type === 'weapon') {
+        if (item.isUnidentified) return 10;
+        let baseDef = BASE_WEAPONS[item.id];
+        let base = baseDef ? baseDef.price : 100;
+        
+        let enhanceBonus = item.enhance ? Math.floor(base * 0.1 * item.enhance) : 0;
+        let enchantBonus = item.enchant ? (ENCHANT_PRICES[item.enchant] || 0) : 0;
+        
+        let attrBonus = 0;
+        if (item.attrs) {
+            let totalAttr = 0;
+            for (let k in item.attrs) totalAttr += item.attrs[k];
+            attrBonus = totalAttr * 5;
+        }
+        
+        return base + enhanceBonus + enchantBonus + attrBonus;
+    } else if (item.type === 'armor') {
+        let base = 500; // Base armor price
+        let statBonus = ((item.def || 0) + (item.dex || 0) + (item.atk || 0) + (item.mind || 0)) * 1;
+        let slotBonus = item.slotCount ? Math.floor(base * 0.2 * item.slotCount) : 0;
+        return base + statBonus + slotBonus;
+    } else if (item.type === 'disk') {
+        let base = 100;
+        if (item.magic === 'gifoie') base = 200;
+        else if (item.magic === 'rafoie') base = 300;
+        return base + Math.floor(base * 0.5 * (item.lv || 1));
+    } else if (item.type === 'unit') {
+        let base = 1000;
+        let enhanceBonus = item.enhance ? Math.floor(base * 0.1 * item.enhance) : 0;
+        return base + enhanceBonus;
+    } else if (item.type === 'item') {
+        if (item.id === 'monomate') return 50;
+        if (item.id === 'monofluid') return 100;
+        return 100;
+    }
+    return 10;
+}
+
+
 function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedAttrs = null) {
     let base = BASE_WEAPONS[baseId];
     if (!base) return null;
@@ -201,6 +253,59 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
     }
     
     return w;
+}
+
+function generateArmor(forceSlots = -1, forceExtra = -1) {
+    let extra = forceExtra >= 0 ? forceExtra : Math.floor(Math.random() * 3); // 0, 1, 2
+    let slots = forceSlots >= 0 ? forceSlots : Math.floor(Math.random() * 3); // 0, 1, 2
+    let arr = []; for(let i=0; i<slots; i++) arr.push(null);
+    let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
+    return { uid: 'a_' + Date.now() + Math.floor(Math.random() * 1000), id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
+}
+
+function generateShopLineup() {
+    GAME.shopItems = [];
+    
+    // Guaranteed items
+    GAME.shopItems.push({ uid: 'shop_' + Date.now() + '1', id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 });
+    GAME.shopItems.push({ uid: 'shop_' + Date.now() + '2', id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 });
+    
+    let weapons = ['w_saber', 'w_handgun', 'w_cane'];
+    let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギフォイエ', m:'gifoie'}, {id:'m_rafoie', name:'ラフォイエ', m:'rafoie'}];
+    
+    // 8 random items based on progress
+    for (let i = 0; i < 8; i++) {
+        let rand = Math.random();
+        if (rand < 0.4) {
+            // Weapon
+            let wId = weapons[Math.floor(Math.random() * weapons.length)];
+            let enchant = null;
+            if (Math.random() < 0.5) enchant = ENCHANTS[Math.floor(Math.random() * 2)].id; // low rank
+            if (enchant === 'heat') enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
+            
+            let attrs = null;
+            if (Math.random() < 0.5) {
+                let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+                attrs = {};
+                attrs[attrNames[Math.floor(Math.random() * attrNames.length)]] = 5 + Math.floor(Math.random() * 2) * 5; // 5 or 10
+            }
+            
+            let w = generateWeapon(wId, 0, enchant, attrs);
+            if (w) {
+                w.isUnidentified = false; // Shop weapons are always identified
+                w.name = w.name.replace('？？？？', ''); // Remove unidentified prefix if any
+                GAME.shopItems.push(w);
+            }
+        } else if (rand < 0.7) {
+            // Armor
+            GAME.shopItems.push(generateArmor());
+        } else {
+            // Disk (Lv 1-3)
+            let chosen = magics[Math.floor(Math.random() * magics.length)];
+            let lv = 1 + Math.floor(Math.random() * 3);
+            GAME.shopItems.push({ uid: 'shop_' + Date.now() + '_' + i, id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv });
+        }
+    }
 }
 
 // Player Entity
@@ -440,9 +545,9 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    this.debugInfo.push(`Window: ${targetTime.toFixed(2)} - ${(targetTime+0.15).toFixed(2)}`);
+                    this.debugInfo.push(`Window: ${(targetTime - 0.05).toFixed(2)} - ${(targetTime + 0.25).toFixed(2)}`);
                     
-                    if (this.comboTimer > targetTime + 0.15) {
+                    if (this.comboTimer > targetTime + 0.25) {
                         this.state = 'idle';
                         this.comboCount = 0;
                         this.lastAttackShape = null;
@@ -632,11 +737,11 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    let centerTime = targetTime + 0.075;
+                    let centerTime = targetTime + 0.10;
                     
-                    if (this.comboTimer <= targetTime + 0.15) {
+                    if (this.comboTimer <= targetTime + 0.25) {
                         let diff = centerTime - this.comboTimer;
-                        let ringRadius = 10 + Math.max(0, (diff / 0.075)) * 5; // Max 15px, shrinks to 10px
+                        let ringRadius = 10 + Math.max(0, (diff / 0.15)) * 5; // Max 15px, shrinks to 10px
                         
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
@@ -729,7 +834,7 @@ class Player {
                 } else if (closestNPC.type === 'appraiser') {
                     openAppraiserModal(this);
                 } else if (closestNPC.type === 'shop') {
-                    alert('ショップ機能は準備中です。');
+                    openShopModal(this);
                 } else if (closestNPC.type === 'teleporter') {
                     if (confirm('ステージ1へ転送しますか？')) {
                         GAME.mode = 'map';
@@ -747,6 +852,7 @@ class Player {
             if (dist < 40) {
                 if (confirm('タウンに戻りますか？')) {
                     GAME.mode = 'town';
+                    generateShopLineup();
                     this.x = MAP_DATA.town.start.x;
                     this.y = MAP_DATA.town.start.y;
                     GAME.eventFlags = {}; // Reset event flags
@@ -792,6 +898,7 @@ class Player {
                     if (dx < 25 && dy < 25) {
                         if (confirm('タウンに戻りますか？')) {
                             GAME.mode = 'town';
+                            generateShopLineup();
                             this.x = MAP_DATA.town.start.x;
                             this.y = MAP_DATA.town.start.y;
                             GAME.eventFlags = {}; // Reset event flags
@@ -812,7 +919,7 @@ class Player {
                 if (this.comboCount >= wType.maxCombo) return;
                 
                 let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                if (this.comboTimer >= targetTime && this.comboTimer <= targetTime + 0.15) {
+                if (this.comboTimer >= targetTime - 0.05 && this.comboTimer <= targetTime + 0.25) {
                     this.comboCount++;
                 } else {
                     return; // Ignore if pressed outside window
@@ -1562,6 +1669,8 @@ function loadArea(areaPattern) {
 
 function startGame(is2P, class1, class2) {
     GAME.mode = 'town';
+    GAME.progress = 1;
+    generateShopLineup();
     GAME.is2P = is2P;
     GAME.players = [];
     GAME.players.push(new Player(0, class1, MAP_DATA.town.start.x, MAP_DATA.town.start.y));
@@ -3406,3 +3515,159 @@ window.onload = async () => {
 
     requestAnimationFrame(loop);
 };
+
+let currentShopPlayer = null;
+let currentShopTab = 'buy';
+let currentShopItem = null;
+
+function openShopModal(p) {
+    currentShopPlayer = p;
+    currentShopTab = 'buy';
+    document.getElementById('shop-modal').style.display = 'flex';
+    document.getElementById('shop-subwindow').style.display = 'none';
+    
+    document.getElementById('btn-shop-close').onclick = () => {
+        document.getElementById('shop-modal').style.display = 'none';
+    };
+    
+    document.getElementById('tab-shop-buy').onclick = () => {
+        currentShopTab = 'buy';
+        document.getElementById('tab-shop-buy').classList.add('active');
+        document.getElementById('tab-shop-buy').style.borderColor = '#ffcc00';
+        document.getElementById('tab-shop-sell').classList.remove('active');
+        document.getElementById('tab-shop-sell').style.borderColor = 'transparent';
+        document.getElementById('shop-subwindow').style.display = 'none';
+        renderShopList();
+    };
+    
+    document.getElementById('tab-shop-sell').onclick = () => {
+        currentShopTab = 'sell';
+        document.getElementById('tab-shop-sell').classList.add('active');
+        document.getElementById('tab-shop-sell').style.borderColor = '#ffcc00';
+        document.getElementById('tab-shop-buy').classList.remove('active');
+        document.getElementById('tab-shop-buy').style.borderColor = 'transparent';
+        document.getElementById('shop-subwindow').style.display = 'none';
+        renderShopList();
+    };
+    
+    renderShopList();
+}
+
+function renderShopList() {
+    let listEl = document.getElementById('shop-item-list');
+    listEl.innerHTML = '';
+    document.getElementById('shop-meseta').innerText = currentShopPlayer.meseta || 0;
+    
+    let items = [];
+    if (currentShopTab === 'buy') {
+        items = GAME.shopItems;
+    } else {
+        items = currentShopPlayer.inventory.filter(i => i !== null);
+        let typeOrder = { 'weapon': 1, 'armor': 2, 'unit': 3, 'item': 4, 'disk': 5 };
+        items.sort((a, b) => {
+            let aEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === a || currentShopPlayer.palette.includes(a)) ? 0 : 1;
+            let bEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === b || currentShopPlayer.palette.includes(b)) ? 0 : 1;
+            if (aEquip !== bEquip) return aEquip - bEquip;
+            let aT = typeOrder[a.type] || 99;
+            let bT = typeOrder[b.type] || 99;
+            if (aT !== bT) return aT - bT;
+            return (a.id || '').localeCompare(b.id || '');
+        });
+    }
+    
+    if (items.length === 0) {
+        listEl.innerHTML = '<div style="color:#aaa; padding:10px;">アイテムがありません</div>';
+        return;
+    }
+    
+    items.forEach(item => {
+        let div = document.createElement('div');
+        div.className = 'menu-item';
+        
+        let isEquipped = currentShopPlayer.equip && currentShopPlayer.equip.armor === item;
+        let isPalette = currentShopPlayer.palette.includes(item);
+        
+        let prefix = '';
+        if (isEquipped || isPalette) prefix = '<span style="color:#00ff00;">E </span>';
+        else if (item.isUnidentified) prefix = '<span style="color:#ff0000;">? </span>';
+        
+        div.innerHTML = prefix + item.name;
+        
+        // Indicate if selling is blocked because equipped
+        if (currentShopTab === 'sell' && (isEquipped || isPalette)) {
+            div.style.opacity = '0.5';
+        }
+        
+        div.onclick = () => {
+            if (currentShopTab === 'sell' && (isEquipped || isPalette)) return;
+            showShopSubwindow(item);
+        };
+        listEl.appendChild(div);
+    });
+}
+
+function showShopSubwindow(item) {
+    currentShopItem = item;
+    let sub = document.getElementById('shop-subwindow');
+    sub.style.display = 'flex';
+    
+    document.getElementById('shop-sub-name').innerText = item.name;
+    document.getElementById('shop-sub-desc').innerText = item.desc || (item.name + ' のアイテム');
+    
+    let stats = '';
+    if (item.type === 'weapon') {
+        stats = `POW: ${item.basePow || 0}`;
+        if (item.enhance) stats += ` (+${item.enhance})`;
+        stats += `<br>DEX: ${item.baseDex || 0}`;
+        if (item.attrs) {
+            let attrNames = { native: '原生生物', mutant: '突然変異', machine: '機械', dark: 'ダーク', hit: 'Hit' };
+            for (let k in item.attrs) {
+                if (item.attrs[k] > 0) stats += `<br>${attrNames[k]}: ${item.attrs[k]}%`;
+            }
+        }
+    } else if (item.type === 'armor') {
+        stats = `DEF: ${item.def || 0}<br>スロット: ${item.slotCount || 0}`;
+    }
+    document.getElementById('shop-sub-stats').innerHTML = stats;
+    
+    let price = getItemPrice(item);
+    if (currentShopTab === 'sell') {
+        price = Math.floor(price * 0.5);
+    }
+    document.getElementById('shop-sub-price').innerText = price + ' コイン';
+    
+    let btn = document.getElementById('btn-shop-action');
+    btn.innerText = currentShopTab === 'buy' ? '購入' : '売却';
+    
+    if (currentShopTab === 'buy' && (currentShopPlayer.meseta || 0) < price) {
+        btn.style.background = '#555';
+        btn.style.pointerEvents = 'none';
+    } else {
+        btn.style.background = currentShopTab === 'buy' ? '#0066cc' : '#ff4444';
+        btn.style.pointerEvents = 'auto';
+    }
+    
+    btn.onclick = () => {
+        if (currentShopTab === 'buy') {
+            if ((currentShopPlayer.meseta || 0) >= price) {
+                if (currentShopPlayer.inventory.filter(i => i !== null).length >= 30) {
+                    alert('インベントリがいっぱいです！');
+                    return;
+                }
+                currentShopPlayer.meseta -= price;
+                let itemCopy = JSON.parse(JSON.stringify(item));
+                itemCopy.uid = 'i_' + Date.now() + Math.floor(Math.random()*1000); 
+                currentShopPlayer.inventory.push(itemCopy);
+                
+                document.getElementById('shop-subwindow').style.display = 'none';
+                renderShopList();
+            }
+        } else {
+            // Sell
+            currentShopPlayer.meseta = (currentShopPlayer.meseta || 0) + price;
+            currentShopPlayer.inventory = currentShopPlayer.inventory.filter(i => i !== item);
+            document.getElementById('shop-subwindow').style.display = 'none';
+            renderShopList();
+        }
+    };
+}

@@ -278,6 +278,41 @@
         </div>
     </div>
 
+    <!-- Shop Modal -->
+    <div id="shop-modal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:900; align-items:center; justify-content:center; font-family: monospace;">
+        <div class="modal-content" style="width: 500px; height: 400px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div class="modal-title" style="margin: 0;">ショップ - 所持金: <span id="shop-meseta">0</span></div>
+                <div class="menu-btn" id="btn-shop-close" style="width: auto; padding: 5px 10px;">閉じる</div>
+            </div>
+            
+            <div class="menu-tabs" style="display:flex; gap:5px; margin-bottom: 10px;">
+                <div class="btn tab-btn active" id="tab-shop-buy" style="width:auto; padding:5px 10px; font-size:12px; margin:0; border-color: #ffcc00;">購入</div>
+                <div class="btn tab-btn" id="tab-shop-sell" style="width:auto; padding:5px 10px; font-size:12px; margin:0;">売却</div>
+            </div>
+            
+            <div style="display: flex; flex: 1; overflow: hidden; gap: 10px;">
+                <!-- Item List -->
+                <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="scroll-btn" id="scroll-shop-up">▲ 上へ</div>
+                    <div class="menu-list" id="shop-item-list" style="flex: 1; font-size: 12px; overflow-y: hidden;"></div>
+                    <div class="scroll-btn" id="scroll-shop-down">▼ 下へ</div>
+                </div>
+                <!-- Subwindow for Item Details -->
+                <div style="flex: 1; flex-direction: column; overflow: hidden; border-left: 1px solid #555; padding-left: 10px; display: none;" id="shop-subwindow">
+                    <div class="modal-title" id="shop-sub-name" style="font-size: 14px;">アイテム名</div>
+                    <div class="modal-desc" id="shop-sub-desc">説明</div>
+                    <div class="modal-stats" id="shop-sub-stats">ステータス</div>
+                    <div class="modal-slots" id="shop-sub-slots" style="margin-top: 5px;"></div>
+                    <div style="margin-top: auto; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: bold; color: #ffcc00;" id="shop-sub-price">100 コイン</div>
+                        <div class="btn" id="btn-shop-action" style="width: auto; padding: 5px 15px; margin: 0; background: #0066cc;">購入</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Item Details -->
     <div id="item-modal">
         <div class="modal-content" id="modal-content">
