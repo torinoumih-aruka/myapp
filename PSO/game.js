@@ -142,15 +142,67 @@ const BASE_WEAPONS = {
     'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 250, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
 
+
+const DEBUG_ENCHANT_100_ON_COMBO_3 = true;
+
+function applyEnchant(p, target, action, comboCount) {
+    if (!action || !action.enchant || action.isUnidentified) return;
+    let ench = ENCHANTS.find(e => e.id === action.enchant);
+    if (!ench) return;
+    
+    let isAoE = (action.weaponType === 'slicer' || action.weaponType === 'shotgun');
+    let effectMult = isAoE ? (1/3) : 1.0;
+    
+    let triggered = false;
+    if (ench.type === 'add_dmg') {
+        triggered = Math.random() < 0.3; 
+    } else if (ench.type === 'status') {
+        triggered = Math.random() < (ench.prob * effectMult);
+    } else if (ench.type === 'drain') {
+        triggered = Math.random() < 0.3; 
+    }
+    
+    if (DEBUG_ENCHANT_100_ON_COMBO_3 && comboCount === 3) {
+        triggered = true;
+    }
+    
+    if (triggered) {
+        p.debugInfo.push(`Enchant: ${ench.name}!`);
+        if (ench.effect === 'fire') addEffect('particle', { x: target.x, y: target.y, color: '#ff3300', r: 25 });
+        else if (ench.effect === 'thunder') addEffect('particle', { x: target.x, y: target.y, color: '#ffff00', r: 25 });
+        else if (ench.effect === 'ice') addEffect('particle', { x: target.x, y: target.y, color: '#00ffff', r: 25 });
+        else if (ench.effect === 'purple_fog') addEffect('particle', { x: target.x, y: target.y, color: '#800080', r: 25 });
+        else if (ench.effect === 'shock') addEffect('particle', { x: target.x, y: target.y, color: '#ffff00', r: 25 });
+        else if (ench.effect === 'green_fog') addEffect('particle', { x: target.x, y: target.y, color: '#00ff00', r: 25 });
+        
+        if (ench.type === 'add_dmg') {
+            let edmg = Math.floor(ench.value(p.level));
+            target.hp -= edmg;
+            addFloatingText(target.x, target.y - 40, edmg, 'white');
+            console.log(`Enchant Damage! +${edmg}`);
+        } else if (ench.type === 'status') {
+            applyStatus(target, ench.status, ench.duration || 15);
+        } else if (ench.type === 'drain') {
+            let heal = Math.floor(Math.max(1, target.hp) * (ench.drainPercent * effectMult));
+            if (heal < 1) heal = 1;
+            p.hp = Math.min(p.maxHp, p.hp + heal);
+            addFloatingText(p.x, p.y - 20, heal, '#33ff33');
+            addEffect('particle', { x: p.x, y: p.y, color: '#00ff00', r: 20 });
+        }
+    }
+}
+
 const ENCHANTS = [
     { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire' },
     { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire' },
     { id: 'shock', name: 'ショック', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'thunder' },
     { id: 'thunder', name: 'サンダー', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'thunder' },
-    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', effect: 'ice' },
-    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', effect: 'ice' },
-    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'confuse', effect: 'purple_fog' },
-    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'confuse', effect: 'purple_fog' },
+    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', duration: 15, effect: 'ice' },
+    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', duration: 15, effect: 'ice' },
+    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'panic', duration: 15, effect: 'purple_fog' },
+    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'panic', duration: 15, effect: 'purple_fog' },
+    { id: 'bind', name: 'バインド', type: 'status', prob: 0.03, status: 'shock', duration: 15, effect: 'shock' },
+    { id: 'hold', name: 'ホールド', type: 'status', prob: 0.06, status: 'shock', duration: 15, effect: 'shock' },
     { id: 'draw', name: 'ドロー', type: 'drain', drainPercent: 0.05, effect: 'green_fog' },
     { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog' }
 ];
@@ -925,9 +977,15 @@ class Player {
                     generateShopLineup();
                     this.x = MAP_DATA.town.start.x;
                     this.y = MAP_DATA.town.start.y;
-                    GAME.eventFlags = {}; // Reset event flags
-                }
-                return;
+                                                GAME.eventFlags = {}; // Reset event flags
+                            GAME.enemies = [];
+                            PROJECTILES = [];
+                            EFFECTS = [];
+                            if (this.status) {
+                                this.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
+                            }
+                        }
+                        return;
             }
             
             // Check Action events
@@ -973,6 +1031,12 @@ class Player {
                             this.x = MAP_DATA.town.start.x;
                             this.y = MAP_DATA.town.start.y;
                             GAME.eventFlags = {}; // Reset event flags
+                            GAME.enemies = [];
+                            PROJECTILES = [];
+                            EFFECTS = [];
+                            if (this.status) {
+                                this.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
+                            }
                         }
                         return;
                     }
@@ -1273,22 +1337,8 @@ class Player {
                         console.log(`Hit enemy! Enemy HP: ${target.hp}`);
                         
                         // Trigger enchant on 3rd combo
-                        if (this.comboCount === 3 && action.enchant && !action.isUnidentified) {
-                            let ench = ENCHANTS.find(e => e.id === action.enchant);
-                            if (ench) {
-                                this.debugInfo.push(`Enchant: ${ench.name}!`);
-                                if (ench.type === 'add_dmg') {
-                                    let edmg = Math.floor(ench.value(this.level));
-                                    target.hp -= edmg;
-                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
-                                    console.log(`Enchant Damage! +${edmg}`);
-                                } else if (ench.type === 'drain') {
-                                    let heal = Math.floor(target.hp * ench.drainPercent);
-                                    this.hp = Math.min(this.maxHp, this.hp + heal);
-                                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
-                                    console.log(`Drain! Healed: ${heal}`);
-                                }
-                            }
+                                                if (action.enchant && !action.isUnidentified) {
+                            applyEnchant(this, target, action, this.comboCount);
                         }
                     } else {
                         target.hp -= 1;
@@ -1381,9 +1431,10 @@ class Player {
                     } else if (this.status.debandLv === lv) {
                         this.status.debandTimer += 60.0;
                     }
-                } else if (m === 'jellen' || m === 'zalure') {
-                    let targets = GAME.enemies.filter(e => e.hp > 0 && Math.hypot(e.x - this.x, e.y - this.y) <= 50);
+                                } else if (m === 'jellen' || m === 'zalure') {
+                    let targets = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= 75);
                     for (let e of targets) {
+                        if (!e.status) e.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
                         if (m === 'jellen') {
                             if (e.status.jellenLv <= lv || e.status.jellenTimer <= 0) { e.status.jellenLv = lv; e.status.jellenTimer = 60.0; }
                             else if (e.status.jellenLv === lv) e.status.jellenTimer += 60.0;
@@ -1392,7 +1443,7 @@ class Player {
                             else if (e.status.zalureLv === lv) e.status.zalureTimer += 60.0;
                         }
                     }
-                    addEffect('explosion', { x: this.x, y: this.y, r: 50, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
+                    addEffect('explosion', { x: this.x, y: this.y, r: 75, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
                 } else if (m === 'freme') {
                     let dmg = 10 + lv * 5;
                     let projVx = Math.cos(castAngle) * 300;
@@ -1402,10 +1453,9 @@ class Player {
                 } else if (m === 'gifreme') {
                     let dmg = 8 + lv * 4;
                     let r = 10 + lv;
-                    for (let i = 0; i < 3; i++) {
-                        let startAng = castAngle + (i - 1) * Math.PI / 4;
-                        PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
-                    }
+                    // 2 fireballs: front and back
+                    PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                    PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle + Math.PI, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
                 } else if (m === 'rafreme') {
                     let dmg = 15 + lv * 6;
                     let dist = 100;
@@ -1521,6 +1571,7 @@ class Enemy {
 
     update(dt) {
         if (this.hp <= 0) return;
+        if (typeof drawStatusEffects === 'function') drawStatusEffects(this, false);
         
         if (this.spawnTimer > 0) {
             this.spawnTimer -= dt;
@@ -2391,24 +2442,16 @@ function updateProjectiles(dt) {
                         if (action && action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
                         
                         target.hp -= dmg;
-                        target.stunTimer = 1.0;
-                        addFloatingText(target.x, target.y - 20, dmg, 'white');
-                        console.log(`Slicer hit! Enemy HP: ${target.hp}`);
+                        if (target.atk !== undefined) {
+                            target.stunTimer = 1.0;
+                            addFloatingText(target.x, target.y - 20, dmg, 'white');
+                            console.log(`Slicer hit! Enemy HP: ${target.hp}`);
+                        } else {
+                            if (target.hp <= 0 && typeof breakBox === 'function') breakBox(target);
+                        }
                         
-                        if (proj.comboCount === 3 && action && action.enchant && !action.isUnidentified) {
-                            let ench = ENCHANTS.find(e => e.id === action.enchant);
-                            if (ench) {
-                                p.debugInfo.push(`Enchant: ${ench.name}!`);
-                                if (ench.type === 'add_dmg') {
-                                    let edmg = Math.floor(ench.value(p.level));
-                                    target.hp -= edmg;
-                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
-                                } else if (ench.type === 'drain') {
-                                    let heal = Math.floor(target.hp * ench.drainPercent);
-                                    p.hp = Math.min(p.maxHp, p.hp + heal);
-                                    addFloatingText(p.x, p.y - 20, heal, '#33ff33');
-                                }
-                            }
+                        if (action && action.enchant && !action.isUnidentified) {
+                            applyEnchant(p, target, action, proj.comboCount);
                         }
                     }
                     
@@ -3634,13 +3677,24 @@ function draw() {
             if (isBoxTarget) {
                 drawInfoBox("アイテムボックス", []);
             } else if (t.hp > 0) {
-                let name = t.type;
+                                let name = t.type;
                 if (t.type === 'booma') name = "ブーマ";
                 else if (t.type === 'gobooma') name = "ゴブーマ";
                 else if (t.type === 'jigobooma') name = "ジゴブーマ";
                 else if (t.type === 'hildebear') name = "ヒルデベア";
                 
-                drawInfoBox(name, [`属性: Native`, `HP: ${t.hp} / ${t.maxHp}`]);
+                let debuffs = [];
+                if (t.status) {
+                    if (t.status.jellenTimer > 0) debuffs.push(`Jellen(Lv${t.status.jellenLv})`);
+                    if (t.status.zalureTimer > 0) debuffs.push(`Zalure(Lv${t.status.zalureLv})`);
+                    if (t.status.poisonTimer > 0) debuffs.push(`Poison`);
+                    if (t.status.confuseTimer > 0) debuffs.push(`Panic`);
+                    if (t.status.shockTimer > 0) debuffs.push(`Shock`);
+                    if (t.status.freezeTimer > 0) debuffs.push(`Freeze`);
+                }
+                let statusText = debuffs.length > 0 ? ` [${debuffs.join(', ')}]` : '';
+                
+                drawInfoBox(name + statusText, [`種族: Native`, `HP: ${t.hp} / ${t.maxHp}`]);
             }
         }
     }
@@ -3969,7 +4023,7 @@ function showShopSubwindow(item) {
 
 
 function applyStatus(obj, type, val, mnd=0) {
-    if (!obj.status) return;
+    if (!obj.status) obj.status = { poisonTimer: 0, poisonDamageTimer: 0, poisonMnd: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaTimer: 0, shiftaLv: 0, debandTimer: 0, debandLv: 0, jellenTimer: 0, jellenLv: 0, zalureTimer: 0, zalureLv: 0 };
     if (type === 'poison') {
         obj.status.poisonTimer = val;
         obj.status.poisonDamageTimer = 3.0;
