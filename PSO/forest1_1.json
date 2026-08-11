@@ -984,7 +984,7 @@
               "y": 6
             },
             {
-              "type": "booma",
+              "type": "jigobooma",
               "x": 8,
               "y": 6
             }
@@ -1038,16 +1038,7 @@
           ]
         }
       ],
-      "doors": [
-        {
-          "id": "door_r2",
-          "x": 19,
-          "y": 6,
-          "w": 1,
-          "h": 2,
-          "isHorizontal": false
-        }
-      ]
+      "doors": []
     }
   ],
   "switches": [
@@ -1057,12 +1048,27 @@
       "targetDoors": [
         "door_sw1"
       ]
+    },
+    {
+      "x": 18,
+      "y": 6,
+      "targetDoors": [
+        "door_sw2"
+      ]
     }
   ],
   "standaloneDoors": [
     {
       "id": "door_sw1",
       "x": 17,
+      "y": 6,
+      "w": 1,
+      "h": 2,
+      "isHorizontal": false
+    },
+    {
+      "id": "door_sw2",
+      "x": 19,
       "y": 6,
       "w": 1,
       "h": 2,

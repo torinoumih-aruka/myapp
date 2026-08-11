@@ -372,7 +372,7 @@ class Player {
         this.palette = [null, null, null, null, null, null];
         this.paletteIndex = 1; // 0=L, 1=ACT, 2=R
         this.coins = 500;
-        this.magicCooldowns = { resta: 0, fire: 0, gifoie: 0, rafoie: 0 };
+        this.magicCooldowns = {};
         this.magic = [];
         
         // Add requested default items
@@ -397,7 +397,7 @@ class Player {
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
                 { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
-                { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 }
+                { id: 'm_freme_1', name: 'フレムLv1ディスク', type: 'disk', magic: 'freme', lv: 1 }
             ];
         } else {
             this.inventory = [];
@@ -481,13 +481,15 @@ class Player {
         updateStatusEffects(this, dt, true);
             // Check Traps
             if (GAME.traps) {
+                let isOnTrap = false;
                 GAME.traps.forEach(t => {
                     let tx = t.x * 50 + 25;
                     let ty = t.y * 50 + 25;
                     if (Math.hypot(this.x - tx, this.y - ty) < 25) {
-                        if (!t.triggered || Date.now() - t.triggered > 5000) {
-                            t.triggered = Date.now();
-                            let lv = t.lv || 1;
+                        isOnTrap = true;
+                        if (this.lastTrap !== t) {
+                            this.lastTrap = t;
+                            let lv = 5; // force level 5
                             if (t.type === 'shifta') { this.status.shiftaLv = lv; this.status.shiftaTimer = 60; }
                             if (t.type === 'deband') { this.status.debandLv = lv; this.status.debandTimer = 60; }
                             if (t.type === 'jellen') { this.status.jellenLv = lv; this.status.jellenTimer = 60; }
@@ -532,9 +534,13 @@ class Player {
                     range = wType.range || actItem.range;
                     if (wType.shape === 'fan30' || wType.shape === 'fan45') isCone = true;
                 }
-            } else if (actItem.magic === 'fire' || actItem.magic === 'rafoie') {
+            } else if (actItem.magic === 'freme' || actItem.magic === 'rafreme' || actItem.magic === 'ice') {
                 isCone = true;
-                if (actItem.magic === 'rafoie') range = 150;
+                if (actItem.magic === 'rafreme') range = 150;
+            } else if (actItem.magic === 'sanda') {
+                range = 200;
+            } else if (actItem.magic === 'gifreme') {
+                range = 100;
             }
             
             let inRangeEnemies = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
@@ -636,10 +642,20 @@ class Player {
             this.lastAttackShape = null;
             // Movement
             if (input.vx !== 0 || input.vy !== 0) {
-                this.vx = input.vx * this.spd;
-                this.vy = input.vy * this.spd;
-                this.dirX = input.vx;
-                this.dirY = input.vy;
+                let actualVx = input.vx;
+                let actualVy = input.vy;
+                if (this.status && this.status.confuseTimer > 0) {
+                    let phase = performance.now() / 1000;
+                    let angleOffset = Math.sin(phase * 3) * Math.PI / 2; // oscillates back and forth
+                    let len = Math.hypot(actualVx, actualVy);
+                    let angle = Math.atan2(actualVy, actualVx) + angleOffset;
+                    actualVx = Math.cos(angle) * len;
+                    actualVy = Math.sin(angle) * len;
+                }
+                this.vx = actualVx * this.spd;
+                this.vy = actualVy * this.spd;
+                this.dirX = actualVx;
+                this.dirY = actualVy;
                 this.state = 'move';
             } else {
                 this.vx = 0;
@@ -819,6 +835,8 @@ class Player {
             }
         }
         
+        drawStatusEffects(ctx, this);
+        
         // Debug Text
         ctx.fillStyle = 'white';
         ctx.font = '12px sans-serif';
@@ -963,8 +981,13 @@ class Player {
         }
 
         let action = this.palette[this.paletteIndex];
+        if (!action) return;
 
         if (action.type === 'weapon') {
+            if (this.status && this.status.shockTimer > 0) {
+                this.debugInfo.push("Shocked! Cannot attack.");
+                return;
+            }
             let wType = WEAPON_TYPES[action.weaponType];
             let classMod = wType.classMod[this.classId] || 0;
             
@@ -1223,11 +1246,19 @@ class Player {
                             this.equip.armor.slottedUnits.forEach(u => { if (u && u.atk) myAtk += u.atk; });
                         }
                     }
+                    if (this.status) {
+                        if (this.status.shiftaTimer > 0) myAtk += Math.floor(myAtk * (this.status.shiftaLv || 1) * 0.05);
+                        if (this.status.jellenTimer > 0) myAtk -= Math.floor(myAtk * (this.status.jellenLv || 1) * 0.05);
+                    }
                     
                     let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
                     let isCrit = (Math.random() * 100) < (myLuck / 5);
                     let critMult = isCrit ? 1.5 : 1.0;
                     let defenderDef = isBox ? 0 : (target.def || 5);
+                    if (target.status) {
+                        if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) * 0.05);
+                        if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) * 0.05);
+                    }
                     
                     let baseDmg = (myAtk - (defenderDef / 5)) * critMult;
                     if (baseDmg < 1) baseDmg = 1;
@@ -1321,6 +1352,11 @@ class Player {
                 this.stateTimer = 0.5;
                 addEffect('particle', { x: this.x, y: this.y, color: '#00ffff', r: 20 });
                 
+                let castAngle = Math.atan2(this.dirY, this.dirX);
+                if (this.mainTarget && this.mainTarget.hp > 0) {
+                    castAngle = Math.atan2(this.mainTarget.y - this.y, this.mainTarget.x - this.x);
+                }
+                
                 let targetType = 'none';
                 if (m === 'resta') {
                     let heal = 20 + lv * 10;
@@ -1359,29 +1395,29 @@ class Player {
                     addEffect('explosion', { x: this.x, y: this.y, r: 50, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
                 } else if (m === 'freme') {
                     let dmg = 10 + lv * 5;
-                    let projVx = Math.cos(this.angle) * 300;
-                    let projVy = Math.sin(this.angle) * 300;
+                    let projVx = Math.cos(castAngle) * 300;
+                    let projVy = Math.sin(castAngle) * 300;
                     let r = 5 + lv;
                     PROJECTILES.push({ roomId: this.roomId, type: 'freme', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
                 } else if (m === 'gifreme') {
                     let dmg = 8 + lv * 4;
                     let r = 10 + lv;
                     for (let i = 0; i < 3; i++) {
-                        let startAng = this.angle + (i - 1) * Math.PI / 4;
+                        let startAng = castAngle + (i - 1) * Math.PI / 4;
                         PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
                     }
                 } else if (m === 'rafreme') {
                     let dmg = 15 + lv * 6;
                     let dist = 100;
-                    let cx = this.x + Math.cos(this.angle) * dist;
-                    let cy = this.y + Math.sin(this.angle) * dist;
+                    let cx = this.x + Math.cos(castAngle) * dist;
+                    let cy = this.y + Math.sin(castAngle) * dist;
                     PROJECTILES.push({ roomId: this.roomId, type: 'rafreme', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
                 } else if (m === 'ice') {
                     let dmg = 10 + lv * 5;
                     let dist = 50;
                     let r = 7.5; // width 15
-                    let projVx = Math.cos(this.angle) * 300; // Fast line
-                    let projVy = Math.sin(this.angle) * 300;
+                    let projVx = Math.cos(castAngle) * 300; // Fast line
+                    let projVy = Math.sin(castAngle) * 300;
                     // Projectile handles piercing
                     PROJECTILES.push({ roomId: this.roomId, type: 'ice', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: dist/300, hitTargets: new Set() });
                 } else if (m === 'sanda') {
@@ -1396,7 +1432,16 @@ class Player {
                     }
                     if (closest) {
                         hitEnemyWithMagic(closest, { type: 'sanda', dmg: dmg });
-                        addEffect('particle', { x: closest.x, y: closest.y, color: '#ffff00', r: 30 }); // Thunder effect
+                        // Lightning strike particles
+                        let dx = closest.x - this.x;
+                        let dy = closest.y - this.y;
+                        let distToTarget = Math.hypot(dx, dy);
+                        let steps = Math.max(5, Math.floor(distToTarget / 15));
+                        for (let i = 0; i <= steps; i++) {
+                            let px = this.x + (dx * (i / steps)) + (Math.random() - 0.5) * 20;
+                            let py = this.y + (dy * (i / steps)) + (Math.random() - 0.5) * 20;
+                            addEffect('particle', { x: px, y: py, color: '#ffff00', r: 10 + Math.random() * 10 });
+                        }
                     }
                 }
             } else {
@@ -2287,6 +2332,10 @@ function updateProjectiles(dt) {
             proj.y += proj.vy * dt;
             proj.life -= dt;
             
+            // Add particles for ice
+            let colors = ['#aaffff', '#ffffff'];
+            addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
+            
             let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
             for (let e of targets) {
                 let eRadius = e.radius || 15;
@@ -2478,7 +2527,10 @@ function drawStatusEffects(ctx, obj) {
         ctx.stroke();
     }
     if (obj.status.freezeTimer > 0) {
-        // Sparkles and blue overlay handled in drawing normally, but we can add sparkles here
+        // Freeze block overlay for better visibility on mobile
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.4)';
+        ctx.fillRect(obj.x - 16, obj.y - 30, 32, 40);
+        // Sparkles
         ctx.fillStyle = (Date.now() % 500 < 250) ? '#ffffff' : '#00ffff';
         ctx.fillRect(obj.x - 15, obj.y - 20, 2, 2);
         ctx.fillRect(obj.x + 10, obj.y - 10, 2, 2);
@@ -2953,8 +3005,20 @@ function hitPlayer(p, e) {
     
     let isCrit = (Math.random() * 100) < ((e.luck || 10) / 5); // Enemy luck is 10
     let critMult = isCrit ? 1.5 : 1.0;
+    
+    let attackerAtk = e.atk;
+    if (e.status) {
+        if (e.status.shiftaTimer > 0) attackerAtk += Math.floor(attackerAtk * (e.status.shiftaLv || 1) * 0.05);
+        if (e.status.jellenTimer > 0) attackerAtk -= Math.floor(attackerAtk * (e.status.jellenLv || 1) * 0.05);
+    }
+    
     let defenderDef = p.def;
-    let baseDmg = (e.atk - (defenderDef / 5)) * critMult;
+    if (p.status) {
+        if (p.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (p.status.debandLv || 1) * 0.05);
+        if (p.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (p.status.zalureLv || 1) * 0.05);
+    }
+    
+    let baseDmg = (attackerAtk - (defenderDef / 5)) * critMult;
     if (baseDmg < 1) baseDmg = 1;
     let dmg = Math.floor(baseDmg);
     
@@ -3226,7 +3290,7 @@ function breakBox(b) {
             if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
             else if (rand < 0.3) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
             else if (rand < 0.5) {
-                 let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
+                 let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
                  let chosen = magics[Math.floor(Math.random() * magics.length)];
                  let lv = Math.floor(Math.random() * 3) + 1; // 1-3
                         if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
@@ -3286,7 +3350,7 @@ function update() {
                         dropItem = { id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
                     }
                     else if (rand < 0.70) { // Disk
-                        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_fire', name:'ファイア', m:'fire'}, {id:'m_gifoie', name:'ギファイア', m:'gifoie'}, {id:'m_rafoie', name:'ラファイア', m:'rafoie'}];
+                        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
                         let chosen = magics[Math.floor(Math.random() * magics.length)];
                         let lv = Math.floor(Math.random() * 3) + 1; // 1-3
                         if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
