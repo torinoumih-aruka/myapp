@@ -18,7 +18,7 @@ let PRE_RENDERED = {};
 // Game State
 let GAME = {
     mode: 'title', // title, town, map, gameover
-    progress: 1, // Store progress (unlocks etc)
+    progress: { currentDifficulty: 0, currentStage: 0, 0: 0, 1: -1, 2: -1 },
     shopItems: [], // Current items available in shop
     players: [],
     enemies: [],
@@ -338,6 +338,11 @@ function generateShopLineup() {
     let weapons = ['w_saber', 'w_handgun', 'w_cane'];
     let magics = MAGICS_DATA;
     
+    // Calculate max magic level based on progress
+    let maxDifficulty = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
+    let maxStageUnlocked = Math.max(0, GAME.progress[maxDifficulty]);
+    let maxLevelCap = (maxDifficulty * 9) + (maxStageUnlocked * 3) + 3;
+    
     // 8 random items based on progress
     for (let i = 0; i < 8; i++) {
         let rand = Math.random();
@@ -531,6 +536,23 @@ class Player {
 
     update(dt) {
         updateStatusEffects(this, dt, true);
+        
+        // Out of Bounds warp
+        if (GAME.mode === 'map' && GAME.grid) {
+            let maxW = GAME.grid[0].length * 50;
+            let maxH = GAME.grid.length * 50;
+            if (this.x < 0 || this.x > maxW || this.y < 0 || this.y > maxH) {
+                this.x = MAP_DATA.town.start.x;
+                this.y = MAP_DATA.town.start.y;
+                GAME.mode = 'town';
+                GAME.eventFlags = {};
+                GAME.enemies = [];
+                GAME.boxes = [];
+                PROJECTILES = [];
+                EFFECTS = [];
+                return;
+            }
+        }
             // Check Traps
             if (GAME.traps) {
                 let isOnTrap = false;
@@ -957,12 +979,8 @@ class Player {
                     openAppraiserModal(this);
                 } else if (closestNPC.type === 'shop') {
                     openShopModal(this);
-                } else if (closestNPC.type === 'teleporter') {
-                    if (confirm('ステージ1へ転送しますか？')) {
-                        GAME.mode = 'map';
-                        let n = Math.floor(Math.random() * MAP_PATTERNS.forest1) + 1;
-                        loadAreaFromFile(`forest1_${n}.json`);
-                    }
+                                } else if (closestNPC.type === 'teleporter') {
+                    openTeleporterMenu(this);
                 }
                 return;
             }
@@ -979,6 +997,7 @@ class Player {
                     this.y = MAP_DATA.town.start.y;
                                                 GAME.eventFlags = {}; // Reset event flags
                             GAME.enemies = [];
+                            GAME.boxes = [];
                             PROJECTILES = [];
                             EFFECTS = [];
                             if (this.status) {
@@ -1013,8 +1032,13 @@ class Player {
                     let dy = Math.abs(this.y - (nextTp.y * 50 + 25));
                     if (dx < 25 && dy < 25) {
                         if (confirm('次のエリアに進みますか？')) {
-                            let n = Math.floor(Math.random() * MAP_PATTERNS.forest2) + 1;
-                            loadAreaFromFile(`forest2_${n}.json`);
+                            let stageFiles = ['forest', 'cave', 'ruins'];
+                            let prefix = stageFiles[GAME.progress.currentStage || 0];
+                            if (GAME.currentMapPattern && GAME.currentMapPattern.filename && GAME.currentMapPattern.filename.includes('2_')) {
+                                loadAreaFromFile(`${prefix}_boss.json`);
+                            } else {
+                                loadAreaFromFile(`${prefix}2_1.json`);
+                            }
                         }
                         return;
                     }
@@ -1032,6 +1056,7 @@ class Player {
                             this.y = MAP_DATA.town.start.y;
                             GAME.eventFlags = {}; // Reset event flags
                             GAME.enemies = [];
+                            GAME.boxes = [];
                             PROJECTILES = [];
                             EFFECTS = [];
                             if (this.status) {
@@ -1195,7 +1220,7 @@ class Player {
                         let chained = [firstTarget];
                         let current = firstTarget;
                         for (let i = 0; i < wType.targetNum - 1; i++) {
-                            let candidates = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 40);
+                            let candidates = [...GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId), ...(GAME.boxes || [])].filter(e => !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 55);
                             if (candidates.length === 0) break;
                             let next = candidates[Math.floor(Math.random() * candidates.length)];
                             chained.push(next);
@@ -1464,7 +1489,7 @@ class Player {
                     PROJECTILES.push({ roomId: this.roomId, type: 'rafreme', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
                 } else if (m === 'ice') {
                     let dmg = 10 + lv * 5;
-                    let dist = 50;
+                    let dist = 150;
                     let r = 7.5; // width 15
                     let projVx = Math.cos(castAngle) * 300; // Fast line
                     let projVy = Math.sin(castAngle) * 300;
@@ -1516,11 +1541,16 @@ class Enemy {
         this.state = 'idle';
         this.spawnTimer = 1.0;
         
+        let diffMult = 1;
+        if (GAME.progress && GAME.progress.currentDifficulty === 1) diffMult = 2;
+        else if (GAME.progress && GAME.progress.currentDifficulty === 2) diffMult = 3;
+
+        
         if (type === 'hildebear') {
-            this.hp = 180;
-            this.maxHp = 180;
-            this.atk = 35;
-            this.def = 20;
+            this.hp = 180 * diffMult;
+            this.maxHp = 180 * diffMult;
+            this.atk = 35 * diffMult;
+            this.def = 20 * diffMult;
             this.dex = 70;
             this.evi = 22;
             this.luck = 10;
@@ -1529,10 +1559,10 @@ class Enemy {
             this.baseSpd = 10;
             this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
         } else if (type === 'gobooma') {
-            this.hp = 85;
-            this.maxHp = 85;
-            this.atk = 17;
-            this.def = 5;
+            this.hp = 85 * diffMult;
+            this.maxHp = 85 * diffMult;
+            this.atk = 17 * diffMult;
+            this.def = 5 * diffMult;
             this.dex = 15;
             this.evi = 12;
             this.luck = 5;
@@ -1541,10 +1571,10 @@ class Enemy {
             this.baseSpd = 15;
             this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
         } else if (type === 'jigobooma') {
-            this.hp = 110;
-            this.maxHp = 110;
-            this.atk = 20;
-            this.def = 8;
+            this.hp = 110 * diffMult;
+            this.maxHp = 110 * diffMult;
+            this.atk = 20 * diffMult;
+            this.def = 8 * diffMult;
             this.dex = 20;
             this.evi = 15;
             this.luck = 5;
@@ -1752,6 +1782,7 @@ async function loadAreaFromFile(filename) {
     try {
         const res = await fetch(filename);
         let areaPattern = await res.json();
+        areaPattern.filename = filename;
         loadArea(areaPattern);
     } catch(e) {
         console.error('Failed to load ' + filename, e);
@@ -1813,7 +1844,7 @@ function loadArea(areaPattern) {
 
 function startGame(is2P, class1, class2) {
     GAME.mode = 'town';
-    GAME.progress = 1;
+    GAME.progress = { currentDifficulty: 0, currentStage: 0, 0: 0, 1: -1, 2: -1 };
     generateShopLineup();
     GAME.is2P = is2P;
     GAME.players = [];
@@ -2385,7 +2416,7 @@ function updateProjectiles(dt) {
             
             // Add particles for ice
             let colors = ['#aaffff', '#ffffff'];
-            addEffect('particle', { x: proj.x, y: proj.y, color: colors[Math.floor(Math.random()*2)], r: proj.r });
+            addEffect('particle', { x: proj.x + (Math.random()-0.5)*10, y: proj.y + (Math.random()-0.5)*10, color: colors[Math.floor(Math.random()*2)], r: proj.r, life: 0.8 });
             
             let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
             for (let e of targets) {
@@ -2427,7 +2458,8 @@ function updateProjectiles(dt) {
                         addEffect('particle', { x: target.x, y: target.y, color: '#00ffff', r: 3 });
                     }
                     
-                    if (Math.random() * 100 > hitRate) {
+                    let isBox = !!(GAME.boxes && GAME.boxes.includes(target));
+                    if (!isBox && Math.random() * 100 > hitRate) {
                         addFloatingText(target.x, target.y - 20, "miss", 'white');
                     } else {
                         let comboMult = [0.9, 1.7, 2.5][proj.comboCount - 1] || 1.0;
@@ -3236,6 +3268,25 @@ function updateRooms(dt) {
                 r.currentWave++;
                 if (r.currentWave >= r.waves.length) {
                     r.cleared = true;
+                    if (r.isBossRoom) {
+                        // Boss defeated unlock logic
+                        let d = GAME.progress.currentDifficulty;
+                        let s = GAME.progress.currentStage;
+                        if (GAME.progress[d] === s) {
+                            if (s < 2) {
+                                GAME.progress[d] = s + 1; // Unlock next stage
+                            } else {
+                                if (d < 2) GAME.progress[d + 1] = 0; // Unlock next difficulty
+                            }
+                        }
+                        // Spawn town teleporter
+                        GAME.teleporters.push({
+                            type: 'town',
+                            x: r.x + Math.floor(r.w / 2),
+                            y: r.y + Math.floor(r.h / 2)
+                        });
+                        console.log("Boss defeated! Stage/Difficulty unlocked.");
+                    }
                     if (r.doors) {
                         r.doors.forEach(dDef => {
                             let door = GAME.doors.find(d => d.id === dDef.id);
@@ -3346,7 +3397,12 @@ function breakBox(b) {
                 if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
                 dropItem = generateWeapon(baseId, 0, enchant);
             }
-            else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+            else {
+                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
+                let progMult = 1 + (maxDiff * 3) + maxStage;
+                dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: (Math.floor(Math.random() * 50) + 10) * progMult };
+            }
             if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
         }
     }
@@ -3420,7 +3476,10 @@ function update() {
                                 let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5); // 5 to 20 per attr
                                 val = Math.ceil(val / 5) * 5; // round to nearest 5
                                 if (val > remaining) val = remaining;
-                                attrs[attr] = (attrs[attr] || 0) + val;
+                                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+                                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
+                                let boost = (maxDiff * 15) + (maxStage * 5);
+                                attrs[attr] = (attrs[attr] || 0) + val + boost;
                                 remaining -= val;
                                 if (remaining <= 0) break;
                             }
@@ -3905,7 +3964,12 @@ function openShopModal(p) {
 function renderShopList() {
     let listEl = document.getElementById('shop-item-list');
     listEl.innerHTML = '';
-    document.getElementById('shop-meseta').innerText = currentShopPlayer.meseta || 0;
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    let stageNames = ['表層', '洞窟', '地下遺跡'];
+    let maxDiff = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
+    let maxStage = Math.max(0, GAME.progress[maxDiff]);
+    let progStr = `[進捗: ${diffNames[maxDiff]}/${stageNames[maxStage]}]`;
+    document.getElementById('shop-meseta').innerText = (currentShopPlayer.meseta || 0) + ' ' + progStr;
     
     let items = [];
     if (currentShopTab === 'buy') {
@@ -4065,3 +4129,75 @@ function updateDebugUI() {
         }
     }
 }
+
+
+window.openTeleporterMenu = function(player) {
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    
+    let modal = document.getElementById('teleporterModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teleporterModal';
+        modal.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:900; align-items:center; justify-content:center; display:flex; font-family: monospace;';
+        document.body.appendChild(modal);
+    }
+    
+    let html = `
+    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+            <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">難易度を選択</div>
+            <div class="menu-btn" onclick="closeTeleporterModal()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">とじる</div>
+        </div>
+        <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+    `;
+    
+    for(let d = 0; d < 3; d++) {
+        if (GAME.progress[d] >= 0) {
+            html += `<button class="menu-btn" style="width:100%; padding: 15px; margin-bottom: 5px; background: #1a1a3a; color: white; border: 1px solid #55f; border-radius: 4px; cursor: pointer; font-size: 16px;" onclick="teleporterSelectStage(${d})">${diffNames[d]}</button>`;
+        }
+    }
+    
+    html += `</div></div>`;
+    modal.innerHTML = html;
+};
+
+window.teleporterSelectStage = function(diff) {
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    let stageNames = ['表層', '洞窟', '地下遺跡'];
+    
+    let modal = document.getElementById('teleporterModal');
+    let html = `
+    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+            <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">ステージを選択 (${diffNames[diff]})</div>
+            <div class="menu-btn" onclick="openTeleporterMenu()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">戻る</div>
+        </div>
+        <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+    `;
+    
+    for(let s = 0; s <= GAME.progress[diff]; s++) {
+        if (s > 2) continue;
+        html += `<button class="menu-btn" style="width:100%; padding: 15px; margin-bottom: 5px; background: #1a1a3a; color: white; border: 1px solid #55f; border-radius: 4px; cursor: pointer; font-size: 16px;" onclick="selectTeleportTarget(${diff}, ${s})">${stageNames[s]}</button>`;
+    }
+    
+    html += `</div></div>`;
+    modal.innerHTML = html;
+};
+
+window.selectTeleportTarget = function(diff, stage) {
+    GAME.progress.currentDifficulty = diff;
+    GAME.progress.currentStage = stage;
+    GAME.mode = 'map';
+    
+    let stageFiles = ['forest', 'cave', 'ruins'];
+    let prefix = stageFiles[stage];
+    // Start at area 1
+    loadAreaFromFile(`${prefix}1_1.json`);
+    
+    closeTeleporterModal();
+};
+
+window.closeTeleporterModal = function() {
+    let el = document.getElementById('teleporterModal');
+    if (el) el.remove();
+};
