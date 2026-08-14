@@ -1327,33 +1327,34 @@ class Player {
                         }
                     }
                     
-                    let myAtk = this.baseStats.atk;
-                    if (this.equip.weapon && this.equip.weapon.atk) myAtk += this.equip.weapon.atk;
-                    if (this.equip.armor) {
-                        if (this.equip.armor.atk) myAtk += this.equip.armor.atk;
-                        if (this.equip.armor.slottedUnits) {
-                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.atk) myAtk += u.atk; });
-                        }
-                    }
+
+                    
+                    let charPow = this.atk;
                     if (this.status) {
-                        if (this.status.shiftaTimer > 0) myAtk += Math.floor(myAtk * (this.status.shiftaLv || 1) * 0.05);
-                        if (this.status.jellenTimer > 0) myAtk -= Math.floor(myAtk * (this.status.jellenLv || 1) * 0.05);
+                        if (this.status.shiftaTimer > 0) charPow += Math.floor(charPow * (this.status.shiftaLv || 1) / 20);
+                        if (this.status.jellenTimer > 0) charPow -= Math.floor(charPow * (this.status.jellenLv || 1) / 20);
+                    }
+                    
+                    let weaponPow = this.equip.weapon ? (this.equip.weapon.atk || 0) : 0;
+                    let attrMult = 1.0;
+                    if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
+                        attrMult += (action.attrs.native / 100);
+                    }
+                    weaponPow = Math.floor(weaponPow * attrMult);
+                    
+                    let defenderDef = target.def || 5;
+                    if (target.status) {
+                        if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
+                        if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
                     }
                     
                     let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
-                    let isCrit = (Math.random() * 100) < (myLuck / 5);
+                    let isCrit = (Math.random() * 100) < ((this.luck || this.baseStats.luck || 5) / 5);
                     let critMult = isCrit ? 1.5 : 1.0;
-                    let defenderDef = isBox ? 0 : (target.def || 5);
-                    if (target.status) {
-                        if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) * 0.05);
-                        if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) * 0.05);
-                    }
                     
-                    let baseDmg = (myAtk - (defenderDef / 5)) * critMult;
+                    let baseDmg = (charPow + weaponPow - defenderDef) / 5;
                     if (baseDmg < 1) baseDmg = 1;
-                    let dmg = Math.floor(baseDmg * comboMult);
-                    
-                    if (action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                    let dmg = Math.floor(baseDmg * comboMult * critMult);
                     
                     if (target instanceof Enemy) {
                         target.hp -= dmg;
@@ -1470,25 +1471,25 @@ class Player {
                     }
                     addEffect('explosion', { x: this.x, y: this.y, r: 75, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
                 } else if (m === 'freme') {
-                    let dmg = 10 + lv * 5;
+                    let dmg = this.baseStats.mind + 39 * (lv / 10);
                     let projVx = Math.cos(castAngle) * 300;
                     let projVy = Math.sin(castAngle) * 300;
                     let r = 5 + lv;
                     PROJECTILES.push({ roomId: this.roomId, type: 'freme', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
                 } else if (m === 'gifreme') {
-                    let dmg = 8 + lv * 4;
+                    let dmg = this.baseStats.mind + 45 * (lv / 10);
                     let r = 10 + lv;
                     // 2 fireballs: front and back
                     PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
                     PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle + Math.PI, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
                 } else if (m === 'rafreme') {
-                    let dmg = 15 + lv * 6;
+                    let dmg = this.baseStats.mind + 55 * (lv / 10);
                     let dist = 100;
                     let cx = this.x + Math.cos(castAngle) * dist;
                     let cy = this.y + Math.sin(castAngle) * dist;
                     PROJECTILES.push({ roomId: this.roomId, type: 'rafreme', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
                 } else if (m === 'ice') {
-                    let dmg = 10 + lv * 5;
+                    let dmg = this.baseStats.mind + 28 * (lv / 10);
                     let dist = 150;
                     let r = 7.5; // width 15
                     let projVx = Math.cos(castAngle) * 300; // Fast line
@@ -1496,7 +1497,7 @@ class Player {
                     // Projectile handles piercing
                     PROJECTILES.push({ roomId: this.roomId, type: 'ice', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: dist/300, hitTargets: new Set() });
                 } else if (m === 'sanda') {
-                    let dmg = 10 + lv * 5;
+                    let dmg = this.baseStats.mind + 39 * (lv / 10);
                     let closest = null;
                     let minDist = 200;
                     for (let e of GAME.enemies) {
@@ -2463,15 +2464,32 @@ function updateProjectiles(dt) {
                         addFloatingText(target.x, target.y - 20, "miss", 'white');
                     } else {
                         let comboMult = [0.9, 1.7, 2.5][proj.comboCount - 1] || 1.0;
-                        let isCrit = (Math.random() * 100) < (p.baseStats.luck / 5);
-                        let critMult = isCrit ? 1.5 : 1.0;
-                        let defenderDef = target.def || 5;
-                        let baseDmg = (p.atk - (defenderDef / 5)) * critMult;
-                        if (baseDmg < 1) baseDmg = 1;
-                        let dmg = Math.floor(baseDmg * comboMult);
+                        let charPow = p.atk;
+                        if (p.status) {
+                            if (p.status.shiftaTimer > 0) charPow += Math.floor(charPow * (p.status.shiftaLv || 1) / 20);
+                            if (p.status.jellenTimer > 0) charPow -= Math.floor(charPow * (p.status.jellenLv || 1) / 20);
+                        }
                         
+                        let weaponPow = p.equip.weapon ? (p.equip.weapon.atk || 0) : 0;
+                        let attrMult = 1.0;
                         let action = p.palette[p.paletteIndex];
-                        if (action && action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                        if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
+                            attrMult += (action.attrs.native / 100);
+                        }
+                        weaponPow = Math.floor(weaponPow * attrMult);
+                        
+                        let defenderDef = target.def || 5;
+                        if (target.status) {
+                            if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
+                            if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
+                        }
+                        
+                        let isCrit = (Math.random() * 100) < ((p.luck || p.baseStats.luck || 5) / 5);
+                        let critMult = isCrit ? 1.5 : 1.0;
+                        
+                        let baseDmg = (charPow + weaponPow - defenderDef) / 5;
+                        if (baseDmg < 1) baseDmg = 1;
+                        let dmg = Math.floor(baseDmg * comboMult * critMult);
                         
                         target.hp -= dmg;
                         if (target.atk !== undefined) {
@@ -2504,7 +2522,17 @@ function updateProjectiles(dt) {
 }
 function hitEnemyWithMagic(target, proj) {
     if (target.hp <= 0) return;
-    target.hp -= proj.dmg;
+    
+    let resist = 0;
+    if (target.resists) {
+        if (proj.type.includes('freme')) resist = target.resists.fire || 0;
+        else if (proj.type.includes('ice')) resist = target.resists.ice || 0;
+        else if (proj.type.includes('sanda')) resist = target.resists.thunder || 0;
+    }
+    
+    let finalDmg = Math.floor(proj.dmg * (1 - resist / 100));
+    if (finalDmg < 1) finalDmg = 1;
+    target.hp -= finalDmg;
     
     let color = '#ffaa00';
     if (proj.type === 'ice') {
@@ -2515,7 +2543,7 @@ function hitEnemyWithMagic(target, proj) {
         if (Math.random() < 0.2) applyStatus(target, 'shock', 999);
     }
     
-    addFloatingText(target.x, target.y - 20, proj.dmg, color);
+    addFloatingText(target.x, target.y - 20, finalDmg, color);
     
     if (!target.status || (target.status.shockTimer <= 0 && target.status.freezeTimer <= 0)) {
         target.stunTimer = 1.0;
@@ -3081,21 +3109,21 @@ function hitPlayer(p, e) {
     let isCrit = (Math.random() * 100) < ((e.luck || 10) / 5); // Enemy luck is 10
     let critMult = isCrit ? 1.5 : 1.0;
     
-    let attackerAtk = e.atk;
+    let charPow = e.atk;
     if (e.status) {
-        if (e.status.shiftaTimer > 0) attackerAtk += Math.floor(attackerAtk * (e.status.shiftaLv || 1) * 0.05);
-        if (e.status.jellenTimer > 0) attackerAtk -= Math.floor(attackerAtk * (e.status.jellenLv || 1) * 0.05);
+        if (e.status.shiftaTimer > 0) charPow += Math.floor(charPow * (e.status.shiftaLv || 1) / 20);
+        if (e.status.jellenTimer > 0) charPow -= Math.floor(charPow * (e.status.jellenLv || 1) / 20);
     }
     
-    let defenderDef = p.def;
+    let defenderDef = p.def; // p.def already includes armor and units
     if (p.status) {
-        if (p.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (p.status.debandLv || 1) * 0.05);
-        if (p.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (p.status.zalureLv || 1) * 0.05);
+        if (p.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (p.status.debandLv || 1) / 20);
+        if (p.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (p.status.zalureLv || 1) / 20);
     }
     
-    let baseDmg = (attackerAtk - (defenderDef / 5)) * critMult;
+    let baseDmg = (charPow - defenderDef) / 5;
     if (baseDmg < 1) baseDmg = 1;
-    let dmg = Math.floor(baseDmg);
+    let dmg = Math.floor(baseDmg * critMult);
     
     p.hp -= dmg;
     p.invincibleTimer = 1.0; // 1s invincibility
