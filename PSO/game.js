@@ -1294,7 +1294,7 @@ class Player {
                 setTimeout(() => {
                     // Accuracy check
                     let myDex = this.baseStats.dex;
-                    if (this.equip.weapon && this.equip.weapon.dex) myDex += this.equip.weapon.dex;
+                    if (action && action.dex) myDex += action.dex;
                     if (this.equip.armor) {
                         if (this.equip.armor.dex) myDex += this.equip.armor.dex;
                         if (this.equip.armor.slottedUnits) {
@@ -1319,7 +1319,7 @@ class Player {
                     }
                     
                     let myLuck = this.baseStats.luck;
-                    if (this.equip.weapon && this.equip.weapon.luck) myLuck += this.equip.weapon.luck;
+                    if (action && action.luck) myLuck += action.luck;
                     if (this.equip.armor) {
                         if (this.equip.armor.luck) myLuck += this.equip.armor.luck;
                         if (this.equip.armor.slottedUnits) {
@@ -1335,7 +1335,7 @@ class Player {
                         if (this.status.jellenTimer > 0) charPow -= Math.floor(charPow * (this.status.jellenLv || 1) / 20);
                     }
                     
-                    let weaponPow = this.equip.weapon ? (this.equip.weapon.atk || 0) : 0;
+                    let weaponPow = action ? (action.atk || 0) : 0;
                     let attrMult = 1.0;
                     if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
                         attrMult += (action.attrs.native / 100);
@@ -1550,8 +1550,8 @@ class Enemy {
         if (type === 'hildebear') {
             this.hp = 180 * diffMult;
             this.maxHp = 180 * diffMult;
-            this.atk = 35 * diffMult;
-            this.def = 20 * diffMult;
+            this.atk = 140 * diffMult;
+            this.def = 30 * diffMult;
             this.dex = 70;
             this.evi = 22;
             this.luck = 10;
@@ -1562,7 +1562,7 @@ class Enemy {
         } else if (type === 'gobooma') {
             this.hp = 85 * diffMult;
             this.maxHp = 85 * diffMult;
-            this.atk = 17 * diffMult;
+            this.atk = 85 * diffMult;
             this.def = 5 * diffMult;
             this.dex = 15;
             this.evi = 12;
@@ -1570,32 +1570,32 @@ class Enemy {
             this.exp = 6;
             this.radius = 10;
             this.baseSpd = 15;
-            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+            this.resists = { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 };
         } else if (type === 'jigobooma') {
             this.hp = 110 * diffMult;
             this.maxHp = 110 * diffMult;
-            this.atk = 20 * diffMult;
-            this.def = 8 * diffMult;
+            this.atk = 90 * diffMult;
+            this.def = 30 * diffMult;
             this.dex = 20;
             this.evi = 15;
             this.luck = 5;
             this.exp = 7;
             this.radius = 10;
             this.baseSpd = 15;
-            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+            this.resists = { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 };
         } else {
             // booma (default)
             this.hp = 60;
             this.maxHp = 60;
-            this.atk = 15;
-            this.def = 5;
+            this.atk = 80;
+            this.def = 0;
             this.dex = 12;
             this.evi = 10;
             this.luck = 5;
             this.exp = 6;
             this.radius = 10;
             this.baseSpd = 15;
-            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+            this.resists = { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 };
         }
         this.spd = this.baseSpd;
     }
@@ -2440,7 +2440,8 @@ function updateProjectiles(dt) {
                 
                 if (target && target.hp > 0) {
                     let myDex = p.baseStats.dex;
-                    if (p.equip.weapon && p.equip.weapon.dex) myDex += p.equip.weapon.dex;
+                    let action = p.palette[p.paletteIndex];
+                    if (action && action.dex) myDex += action.dex;
                     if (p.equip.armor) {
                         if (p.equip.armor.dex) myDex += p.equip.armor.dex;
                         if (p.equip.armor.slottedUnits) {
@@ -2470,9 +2471,9 @@ function updateProjectiles(dt) {
                             if (p.status.jellenTimer > 0) charPow -= Math.floor(charPow * (p.status.jellenLv || 1) / 20);
                         }
                         
-                        let weaponPow = p.equip.weapon ? (p.equip.weapon.atk || 0) : 0;
-                        let attrMult = 1.0;
                         let action = p.palette[p.paletteIndex];
+                        let weaponPow = action ? (action.atk || 0) : 0;
+                        let attrMult = 1.0;
                         if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
                             attrMult += (action.attrs.native / 100);
                         }
