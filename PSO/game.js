@@ -1984,7 +1984,7 @@ function openAppraiserModal(p) {
         unids.forEach(item => {
             let div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerText = item.name;
+            div.innerHTML = '<span>' + getItemIconHtml(item) + item.name + '</span>';
             div.onclick = () => {
                 if (p.coins >= 100) {
                     p.coins -= 100;
@@ -2044,7 +2044,7 @@ function performAppraisal(p, item) {
         name: newName
     };
     
-    document.getElementById('appraiser-result-name').innerText = newName;
+    document.getElementById('appraiser-result-name').innerHTML = getItemIconHtml(item) + newName;
     let stats = "";
     stats += `<div style="color: #ffaa00; font-size:14px; line-height: 1.4;">`;
     stats += `原生生物 ${attrs.native}%<br>`;
@@ -2078,7 +2078,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     currentModalItem = item;
     currentModalPid = pid;
     
-    document.getElementById('modal-item-name').innerText = item.name;
+    document.getElementById('modal-item-name').innerHTML = getItemIconHtml(item) + item.name;
     
     let descTxt = item.desc || (item.name + " の説明文がここに入ります。");
     if (item.rarity) {
@@ -2206,7 +2206,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         units.forEach(u => {
             let div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerText = u.name;
+            div.innerHTML = getItemIconHtml(u) + u.name;
             div.addEventListener('pointerdown', e => {
                 e.preventDefault();
                 div.setPointerCapture(e.pointerId);
@@ -2843,7 +2843,7 @@ function renderMenu(pid) {
         pdiv.setAttribute('data-slot-idx', i);
         pdiv.style.minHeight = '30px';
         let item = p.palette[i];
-        pdiv.innerHTML = `<span>[${i+1}] ${item ? item.name : '空'}</span>`;
+        pdiv.innerHTML = `<span>[${i+1}] ${item ? getItemIconHtml(item) + item.name : '空'}</span>`;
         
         if (item) {
             pdiv.addEventListener('pointerdown', e => {
@@ -2910,7 +2910,7 @@ function renderMenu(pid) {
             if (isPalette) prefix = '[P] ';
         }
 
-        div.innerHTML = `<span>${prefix}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        div.innerHTML = `<span>${prefix}${getItemIconHtml(item)}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
             e.preventDefault();
@@ -3085,9 +3085,9 @@ function updatePaletteUI(pid) {
     let leftIdx = (p.paletteIndex - 1 + 6) % 6;
     let rightIdx = (p.paletteIndex + 1) % 6;
     
-    document.querySelector(`#pal-${idstr}-left .slot-name`).innerText = p.palette[leftIdx] ? p.palette[leftIdx].name.substring(0,8) : '';
-    document.querySelector(`#pal-${idstr}-center .slot-name`).innerText = p.palette[p.paletteIndex] ? p.palette[p.paletteIndex].name.substring(0,12) : '空';
-    document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,8) : '';
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getItemIconHtml(p.palette[leftIdx]) + p.palette[leftIdx].name.substring(0,8) : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getItemIconHtml(p.palette[p.paletteIndex]) + p.palette[p.paletteIndex].name.substring(0,12) : 'ACT';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getItemIconHtml(p.palette[rightIdx]) + p.palette[rightIdx].name.substring(0,8) : '';
 }
 
 function hitPlayer(p, e) {
@@ -3736,7 +3736,7 @@ function draw() {
     // Draw target drop / enemy UI on right side
     let p1 = GAME.players[0];
     if (p1) {
-        let drawInfoBox = (title, lines) => {
+        let drawInfoBox = (title, lines, itemObj = null) => {
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
             ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
@@ -3748,7 +3748,16 @@ function draw() {
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
             
-            ctx.fillText(title, SCREEN_W - 150, SCREEN_H / 2 - 12);
+            let offsetX = 0;
+            if (itemObj) {
+                let spriteName = getItemSpriteName(itemObj);
+                if (spriteName && PRE_RENDERED[spriteName]) {
+                    ctx.drawImage(PRE_RENDERED[spriteName], SCREEN_W - 150, SCREEN_H / 2 - 24, 16, 16);
+                    offsetX = 20;
+                }
+            }
+            
+            ctx.fillText(title, SCREEN_W - 150 + offsetX, SCREEN_H / 2 - 12);
             lines.forEach((line, i) => {
                 ctx.fillText(line, SCREEN_W - 150, SCREEN_H / 2 + 5 + (i * 15));
             });
@@ -3758,7 +3767,7 @@ function draw() {
         if (p1.targetDrop) {
             let name = p1.targetDrop.item.name;
             if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
-            drawInfoBox(name, []);
+            drawInfoBox(name, [], p1.targetDrop.item);
         } else if (p1.mainTarget) {
             let t = p1.mainTarget;
             let isBoxTarget = !!(GAME.boxes && GAME.boxes.includes(t));
@@ -4033,7 +4042,7 @@ function renderShopList() {
         if (isEquipped || isPalette) prefix = '<span style="color:#00ff00;">E </span>';
         else if (item.isUnidentified) prefix = '<span style="color:#ff0000;">? </span>';
         
-        div.innerHTML = prefix + item.name;
+        div.innerHTML = '<span>' + prefix + getItemIconHtml(item) + item.name + '</span>';
         
         // Indicate if selling is blocked because equipped
         if (currentShopTab === 'sell' && (isEquipped || isPalette)) {
@@ -4053,7 +4062,7 @@ function showShopSubwindow(item) {
     let sub = document.getElementById('shop-subwindow');
     sub.style.display = 'flex';
     
-    document.getElementById('shop-sub-name').innerText = item.name;
+    document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + item.name;
     document.getElementById('shop-sub-desc').innerText = item.desc || (item.name + ' のアイテム');
     
     let stats = '';
@@ -4230,3 +4239,27 @@ window.closeTeleporterModal = function() {
     let el = document.getElementById('teleporterModal');
     if (el) el.remove();
 };
+
+
+function getItemSpriteName(item) {
+    if (!item) return '';
+    if (item.type === 'weapon') {
+        if (item.weaponType === 'saber' || item.weaponType === 'slicer' || item.weaponType === 'dagger') return 'item_wepon_sword';
+        if (item.weaponType === 'handgun' || item.weaponType === 'shotgun') return 'item_wepon_gun';
+        if (item.weaponType === 'cane') return 'item_wepon_cane';
+        return 'item_wepon_sword';
+    } else if (item.type === 'armor') return 'item_armor';
+    else if (item.type === 'unit') return 'item_unit';
+    else if (item.type === 'item') return 'item_consuma_drink';
+    else if (item.type === 'disk') return 'item_consuma_disc';
+    return '';
+}
+
+function getItemIconHtml(item) {
+    let spriteName = getItemSpriteName(item);
+    if (spriteName && PRE_RENDERED[spriteName]) {
+        let dataUrl = PRE_RENDERED[spriteName].toDataURL();
+        return '<img src="' + dataUrl + '" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; image-rendering: pixelated;">';
+    }
+    return '';
+}
