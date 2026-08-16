@@ -2910,7 +2910,8 @@ function renderMenu(pid) {
             if (isPalette) prefix = '[P] ';
         }
 
-        div.innerHTML = `<span>${prefix}${getItemIconHtml(item)}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        let iconHtml = isMagic ? getMagicIconHtml(item.magic) : getItemIconHtml(item);
+        div.innerHTML = `<span>${prefix}${iconHtml}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
             e.preventDefault();
@@ -3085,9 +3086,11 @@ function updatePaletteUI(pid) {
     let leftIdx = (p.paletteIndex - 1 + 6) % 6;
     let rightIdx = (p.paletteIndex + 1) % 6;
     
-    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getItemIconHtml(p.palette[leftIdx]) + p.palette[leftIdx].name.substring(0,8) : '';
-    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getItemIconHtml(p.palette[p.paletteIndex]) + p.palette[p.paletteIndex].name.substring(0,12) : 'ACT';
-    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getItemIconHtml(p.palette[rightIdx]) + p.palette[rightIdx].name.substring(0,8) : '';
+    let getIcon = (item) => item ? (item.type === 'magic' ? getMagicIconHtml(item.magic) : getItemIconHtml(item)) : '';
+    
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getIcon(p.palette[leftIdx]) + p.palette[leftIdx].name.substring(0,8) : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getIcon(p.palette[p.paletteIndex]) + p.palette[p.paletteIndex].name.substring(0,12) : 'ACT';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getIcon(p.palette[rightIdx]) + p.palette[rightIdx].name.substring(0,8) : '';
 }
 
 function hitPlayer(p, e) {
@@ -3736,7 +3739,7 @@ function draw() {
     // Draw target drop / enemy UI on right side
     let p1 = GAME.players[0];
     if (p1) {
-        let drawInfoBox = (title, lines, itemObj = null) => {
+        let drawInfoBox = (title, lines, itemObj = null, debuffIcons = null) => {
             ctx.save();
             ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
             ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
@@ -3758,6 +3761,18 @@ function draw() {
             }
             
             ctx.fillText(title, SCREEN_W - 150 + offsetX, SCREEN_H / 2 - 12);
+            
+            // Draw status icons for enemy
+            if (debuffIcons && debuffIcons.length > 0) {
+                let iconX = SCREEN_W - 150 + offsetX + ctx.measureText(title).width + 5;
+                debuffIcons.forEach(iconName => {
+                    if (iconName && PRE_RENDERED[iconName]) {
+                        ctx.drawImage(PRE_RENDERED[iconName], iconX, SCREEN_H / 2 - 24, 16, 16);
+                        iconX += 18;
+                    }
+                });
+            }
+
             lines.forEach((line, i) => {
                 ctx.fillText(line, SCREEN_W - 150, SCREEN_H / 2 + 5 + (i * 15));
             });
@@ -3780,18 +3795,18 @@ function draw() {
                 else if (t.type === 'jigobooma') name = "ジゴブーマ";
                 else if (t.type === 'hildebear') name = "ヒルデベア";
                 
-                let debuffs = [];
+                let debuffIcons = [];
                 if (t.status) {
-                    if (t.status.jellenTimer > 0) debuffs.push(`Jellen(Lv${t.status.jellenLv})`);
-                    if (t.status.zalureTimer > 0) debuffs.push(`Zalure(Lv${t.status.zalureLv})`);
-                    if (t.status.poisonTimer > 0) debuffs.push(`Poison`);
-                    if (t.status.confuseTimer > 0) debuffs.push(`Panic`);
-                    if (t.status.shockTimer > 0) debuffs.push(`Shock`);
-                    if (t.status.freezeTimer > 0) debuffs.push(`Freeze`);
+                    if (t.status.jellenTimer > 0) debuffIcons.push(getStatusSpriteName('jellen'));
+                    if (t.status.zalureTimer > 0) debuffIcons.push(getStatusSpriteName('zalure'));
+                    if (t.status.poisonTimer > 0) debuffIcons.push(getStatusSpriteName('poison'));
+                    if (t.status.confuseTimer > 0) debuffIcons.push(getStatusSpriteName('confuse'));
+                    if (t.status.shockTimer > 0) debuffIcons.push(getStatusSpriteName('shock'));
+                    if (t.status.freezeTimer > 0) debuffIcons.push(getStatusSpriteName('freeze'));
                 }
-                let statusText = debuffs.length > 0 ? ` [${debuffs.join(', ')}]` : '';
                 
-                drawInfoBox(name + statusText, [`種族: Native`, `HP: ${t.hp} / ${t.maxHp}`]);
+                // Draw info box for enemy
+                drawInfoBox(name, [`種族: Native`, `HP: ${t.hp} / ${t.maxHp}`], null, debuffIcons);
             }
         }
     }
@@ -4144,26 +4159,31 @@ function updateDebugUI() {
     for (let i = 0; i < GAME.players.length; i++) {
         let p = GAME.players[i];
         let el = document.getElementById(i === 0 ? 'info-1p' : 'info-2p');
+        let buffContainer = document.getElementById(i === 0 ? 'buffs-1p' : 'buffs-2p');
         if (el && p) {
             let clsName = CLASS_DATA[p.classId].name;
-            let text = `Lv.${p.level} ${clsName}`;
+            el.innerHTML = `Lv.${p.level} ${clsName}`;
             
             if (p.status) {
                 let buffs = [];
-                if (p.status.shiftaTimer > 0) buffs.push('シフタ');
-                if (p.status.debandTimer > 0) buffs.push('デバンド');
-                if (p.status.jellenTimer > 0) buffs.push('ジェルン');
-                if (p.status.zalureTimer > 0) buffs.push('ザルア');
-                if (p.status.poisonTimer > 0) buffs.push('毒');
-                if (p.status.confuseTimer > 0) buffs.push('混乱');
-                if (p.status.shockTimer > 0) buffs.push('ショック');
-                if (p.status.freezeTimer > 0) buffs.push('凍結');
+                if (p.status.shiftaTimer > 0) buffs.push('shifta');
+                if (p.status.debandTimer > 0) buffs.push('deband');
+                if (p.status.jellenTimer > 0) buffs.push('jellen');
+                if (p.status.zalureTimer > 0) buffs.push('zalure');
+                if (p.status.poisonTimer > 0) buffs.push('poison');
+                if (p.status.confuseTimer > 0) buffs.push('confuse');
+                if (p.status.shockTimer > 0) buffs.push('shock');
+                if (p.status.freezeTimer > 0) buffs.push('freeze');
                 
-                if (buffs.length > 0) {
-                    text += ` <span style="color:#ffcc00; font-size: 10px;">[${buffs.join(', ')}]</span>`;
-                }
+                let buffHtml = '';
+                buffs.forEach(b => {
+                    let spriteName = getStatusSpriteName(b);
+                    if (spriteName && PRE_RENDERED[spriteName]) {
+                        buffHtml += `<img src="${PRE_RENDERED[spriteName].toDataURL()}" style="width:16px; height:16px; image-rendering:pixelated;">`;
+                    }
+                });
+                if (buffContainer) buffContainer.innerHTML = buffHtml;
             }
-            el.innerHTML = text;
         }
     }
 }
@@ -4262,4 +4282,51 @@ function getItemIconHtml(item) {
         return '<img src="' + dataUrl + '" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; image-rendering: pixelated;">';
     }
     return '';
+}
+
+
+function getMagicSpriteName(magicId) {
+    if (!magicId) return '';
+    let map = {
+        'resta': 'magic_lesta',
+        'anti': 'magic_anti',
+        'shifta': 'magic_shifta',
+        'deband': 'magic_deband',
+        'jellen': 'magic_jellen',
+        'zalure': 'magic_zalure',
+        'freme': 'magic_flem',
+        'gifreme': 'magic_giflem',
+        'rafreme': 'magic_laflem',
+        'ice': 'magic_ice',
+        'giice': 'magic_giice',
+        'laice': 'magic_laice',
+        'sanda': 'magic_thanda',
+        'gisanda': 'magic_githanda',
+        'lasanda': 'magic_lathanda'
+    };
+    return map[magicId] || '';
+}
+
+function getMagicIconHtml(magicId) {
+    let spriteName = getMagicSpriteName(magicId);
+    if (spriteName && PRE_RENDERED[spriteName]) {
+        let dataUrl = PRE_RENDERED[spriteName].toDataURL();
+        return '<img src="' + dataUrl + '" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; image-rendering: pixelated;">';
+    }
+    return '';
+}
+
+function getStatusSpriteName(statusName) {
+    // using English fallback names as well in case of mojibake
+    let map = {
+        'シフタ': 'magic_shifta', 'shifta': 'magic_shifta',
+        'デバンド': 'magic_deband', 'deband': 'magic_deband',
+        'ジェルン': 'magic_jellen', 'jellen': 'magic_jellen',
+        'ザルア': 'magic_zalure', 'zalure': 'magic_zalure',
+        '毒': 'stt_poison', 'poison': 'stt_poison',
+        '混乱': 'stt_confuse', 'confuse': 'stt_confuse', 'panic': 'stt_confuse',
+        'ショック': 'stt_shock', 'shock': 'stt_shock',
+        '凍結': 'stt_freeze', 'freeze': 'stt_freeze'
+    };
+    return map[statusName] || '';
 }

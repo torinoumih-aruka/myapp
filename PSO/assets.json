@@ -1009,8 +1009,8 @@
       "33I33I33",
       "3I3II3I3",
       "333II333",
-      "3I3333I3",
-      "3II33II3",
+      "33I33I33",
+      "3IIIIII3",
       ".333333."
     ],
     "magic_deband": [
@@ -1019,14 +1019,14 @@
       "EEIEEIEE",
       "EIEIIEIE",
       "EEEIIEEE",
-      "EIEEEEIE",
-      "EIIEEIIE",
+      "EEIEEIEE",
+      "EIIIIIIE",
       ".EEEEEE."
     ],
     "magic_jellen": [
       ".333333.",
-      "3II33II3",
-      "3I3333I3",
+      "3IIIIII3",
+      "33I33I33",
       "333II333",
       "3I3II3I3",
       "33I33I33",
@@ -1035,8 +1035,8 @@
     ],
     "magic_zalure": [
       ".EEEEEE.",
-      "EIIEEIIE",
-      "EIEEEEIE",
+      "EIIIIIIE",
+      "EEIEEIEE",
       "EEEIIEEE",
       "EIEIIEIE",
       "EEIEEIEE",
@@ -1143,7 +1143,7 @@
       "AAAIIAAA",
       ".AAAAAA."
     ],
-    "maic_anti": [
+    "magic_anti": [
       ".AAAAAA.",
       "AAIIIIAA",
       "AIAAAAIA",
@@ -1171,6 +1171,46 @@
       "7IIIIII7",
       "777II777",
       "777II777",
+      ".777777."
+    ],
+    "stt_poison": [
+      ".777777.",
+      "77I77967",
+      "7I6I7667",
+      "77I7II77",
+      "777I98I7",
+      "777I88I7",
+      "7777II77",
+      ".777777."
+    ],
+    "stt_confuse": [
+      ".777777.",
+      "78III687",
+      "76877867",
+      "7I7II7I7",
+      "7I7II7I7",
+      "768767I7",
+      "78668767",
+      ".777777."
+    ],
+    "stt_shock": [
+      ".777777.",
+      "7I87I877",
+      "77I87I87",
+      "7I87I877",
+      "77I87I87",
+      "7I87I877",
+      "77I87I87",
+      ".777777."
+    ],
+    "stt_freeze": [
+      ".777777.",
+      "77796777",
+      "77996677",
+      "79996667",
+      "7666III7",
+      "7766II77",
+      "7776I777",
       ".777777."
     ]
   }
