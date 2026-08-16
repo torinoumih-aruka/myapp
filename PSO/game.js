@@ -51,7 +51,7 @@ let INPUTS = [
 const CLASS_DATA = {
     swordman: { name: 'ソードマン', hp: 40, mp: 30, atk: 45, def: 17, spd: 100, dex: 68, mind: 29, luck: 10, sprite: 'hero_knight_down_1', type: 'melee', levelUp: { hp: 10, mp: 5, atk: 6, def: 1, dex: 1, mind: 1, luck: 0, spd: 0 } },
     ranger: { name: 'レンジャー', hp: 30, mp: 20, atk: 23, def: 13, spd: 100, dex: 72, mind: 20, luck: 10, sprite: 'hero_wiz_down_1', type: 'ranged', levelUp: { hp: 6, mp: 4, atk: 5, def: 1, dex: 2, mind: 2, luck: 0, spd: 0 } },
-    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 53, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
+    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 63, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
 };
 
 const WEAPON_TYPES = {
@@ -415,8 +415,8 @@ class Player {
             def: cdata.def,
             spd: cdata.spd,
             dex: cdata.dex || 50,
-            mind: 40,
-            luck: 10
+            mind: (typeof cdata.mind === 'number' && !isNaN(cdata.mind)) ? cdata.mind : 40,
+            luck: cdata.luck || 10
         };
         
         this.exp = 0;
@@ -453,7 +453,7 @@ class Player {
                 { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
-                { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
+                { id: 'm_zalure_1', name: 'ザルアLv1ディスク', type: 'disk', magic: 'zalure', lv: 1 },
                 { id: 'm_freme_1', name: 'フレムLv1ディスク', type: 'disk', magic: 'freme', lv: 1 }
             ];
         } else {
@@ -500,7 +500,7 @@ class Player {
         this.def = this.baseStats.def;
         this.spd = this.baseStats.spd;
         this.dex = this.baseStats.dex;
-        this.mind = this.baseStats.mind || 0;
+        this.mind = (typeof this.baseStats.mind === 'number' && !isNaN(this.baseStats.mind)) ? this.baseStats.mind : (CLASS_DATA[this.classId] ? CLASS_DATA[this.classId].mind || 40 : 40);
         
         if (this.equip.armor) {
             if (this.equip.armor.def) this.def += this.equip.armor.def;
@@ -664,8 +664,7 @@ class Player {
             let action = this.palette[this.paletteIndex];
             
             this.debugInfo = [
-                `Combo: ${this.comboCount}`,
-                `Timer: ${this.comboTimer.toFixed(2)}`
+                `Combo: ${this.comboCount}`
             ];
             
             if (action && action.weaponType) {
@@ -673,7 +672,7 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    this.debugInfo.push(`Window: ${(targetTime - 0.05).toFixed(2)} - ${(targetTime + 0.25).toFixed(2)}`);
+                    // window debug info removed
                     
                     if (this.comboTimer > targetTime + 0.25) {
                         this.state = 'idle';
@@ -2263,7 +2262,8 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         let canUse = true;
         if (item.type === 'disk') {
             let reqMind = getMagicReqMind(item.magic, item.lv);
-            if (p.mind < reqMind) canUse = false;
+            let pMind = Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40));
+            if (pMind < reqMind) canUse = false;
             if (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure')) canUse = false;
         }
         
@@ -2832,7 +2832,7 @@ function renderMenu(pid) {
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
-                MIND: 40 <br>
+                MIND: ${Math.floor(p.mind)} <br>
                 EIV: 30 <br>
                 LUCK: 10 <br>
                 所持コイン: ${p.coins} <br>
@@ -4361,21 +4361,22 @@ function getStatusSpriteName(statusName) {
 
 
 function getMagicReqMind(magicId, lv) {
+    let l = Number(lv) || 1;
     switch (magicId) {
-        case 'freme': return 20 + (lv * 20);
-        case 'gifreme': return 75 + (lv * 25);
-        case 'rafreme': return 108 + (lv * 28);
-        case 'ice': return 10 + (lv * 25);
-        case 'giice': return 76 + (lv * 24);
-        case 'laice': return 76 + (lv * 30);
-        case 'sanda': return 20 + (lv * 24);
-        case 'gisanda': return 75 + (lv * 25);
-        case 'lasanda': return 104 + (lv * 30);
-        case 'resta': return 20 + (lv * 30);
+        case 'freme': return 20 + (l * 20);
+        case 'gifreme': return 75 + (l * 25);
+        case 'rafreme': return 108 + (l * 28);
+        case 'ice': return 10 + (l * 25);
+        case 'giice': return 76 + (l * 24);
+        case 'laice': return 76 + (l * 30);
+        case 'sanda': return 20 + (l * 24);
+        case 'gisanda': return 75 + (l * 25);
+        case 'lasanda': return 104 + (l * 30);
+        case 'resta': return 20 + (l * 30);
         case 'shifta':
         case 'deband':
         case 'jellen':
-        case 'zalure': return 32 + (lv * 28);
+        case 'zalure': return 32 + (l * 28);
         case 'anti': return 100;
         default: return 999;
     }

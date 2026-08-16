@@ -56,7 +56,7 @@
         .abtn-right { top: 40px; right: 0; } /* Next Palette */
 
         /* Menus */
-        .game-menu { position: absolute; top: 0; width: 300px; height: 100%; background: repeating-linear-gradient(0deg, #383838, #383838 1px, #093a2e 1px, #093a2e 7px); z-index: 20; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; pointer-events: auto; border-left: 2px solid #55f; border-right: 2px solid #55f;}
+        .game-menu { position: absolute; top: 0; width: 300px; height: 100%; background-image: repeating-linear-gradient(0deg, #484848, #484848 1px, #093a2e 1px, #093a2e 7px); background-color: #093a2e; z-index: 20; transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; pointer-events: auto; border-left: 2px solid #ffffff; border-right: 2px solid #ffffff;}
         #menu-1p { left: 0; transform: translateX(-100%); }
         #menu-1p.open { transform: translateX(0); }
         #menu-2p { right: 0; transform: translateX(100%); display: none; }
@@ -90,7 +90,7 @@
 
         /* Modal */
         #item-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background: repeating-linear-gradient(0deg, #383838, #383838 1px, #093a2e 1px, #093a2e 7px); border: 2px solid #55f; border-radius: 5px; width: 300px; max-width: 90%; display: flex; flex-direction: column; padding: 15px; color: #fff; box-shadow: 0 0 10px #000; max-height: 90%; }
+        .modal-content { background-image: repeating-linear-gradient(0deg, #484848, #484848 1px, #093a2e 1px, #093a2e 7px); background-color: #093a2e; border: 2px solid #ffffff; border-radius: 8px; width: 300px; max-width: 90%; display: flex; flex-direction: column; padding: 15px; color: #fff; box-shadow: 0 0 10px #000; max-height: 90%; }
         .modal-content.two-col { width: 500px; flex-direction: row; flex-wrap: wrap; }
         .modal-col { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
         .modal-title { font-size: 18px; font-weight: bold; color: #ffcc00; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px; }
@@ -118,7 +118,7 @@
     <div id="hud">
         <!-- 1P Status -->
         <div class="status-container" id="status-1p">
-            <div class="player-info" id="info-1p">Lv.1 ソードマン</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;"><div class="player-info" id="info-1p">Lv.1 ソードマン</div></div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="bar-wrap">
                     <div class="bar-label">HP</div>
@@ -132,12 +132,12 @@
                 <div class="bar-value" id="mp-val-1p">50/50</div>
                 <div class="mp-fill" id="mp-1p" style="width: 100%;"></div>
             </div>
-            <div id="buffs-1p" style="display: flex; gap: 5px; margin-top: 5px; height: 16px;"></div>
+            <div id="buffs-1p" style="display: flex; gap: 2px; margin-top: 2px;"></div>
         </div>
         
         <!-- 2P Status -->
         <div class="status-container" id="status-2p">
-            <div class="player-info" id="info-2p">Lv.1 レンジャー</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;"><div class="player-info" id="info-2p">Lv.1 レンジャー</div></div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="bar-wrap">
                     <div class="bar-label">HP</div>
@@ -151,7 +151,7 @@
                 <div class="bar-value" id="mp-val-2p">50/50</div>
                 <div class="mp-fill" id="mp-2p" style="width: 100%;"></div>
             </div>
-            <div id="buffs-2p" style="display: flex; gap: 5px; margin-top: 5px; height: 16px; justify-content: flex-end;"></div>
+            <div id="buffs-2p" style="display: flex; gap: 2px; margin-top: 2px;"></div>
         </div>
 
         <!-- 1P Palette -->
@@ -301,7 +301,7 @@
                     <div class="scroll-btn" id="scroll-shop-down">▼ 下へ</div>
                 </div>
                 <!-- Subwindow for Item Details -->
-                <div style="flex: 1; flex-direction: column; overflow: hidden; border-left: 1px solid #555; padding-left: 10px; display: none; background-image: repeating-linear-gradient(0deg, #383838, #383838 1px, #093a2e 1px, #093a2e 7px); border-radius: 5px;" id="shop-subwindow">
+                <div style="flex: 1; flex-direction: column; overflow: hidden; border-left: 1px solid #555; padding-left: 10px; display: none;" id="shop-subwindow">
                     <div class="modal-title" id="shop-sub-name" style="font-size: 14px;">アイテム名</div>
                     <div class="modal-desc" id="shop-sub-desc">説明</div>
                     <div class="modal-stats" id="shop-sub-stats">ステータス</div>
@@ -354,3 +354,4 @@
 <script src="game.js"></script>
 </body>
 </html>
+
