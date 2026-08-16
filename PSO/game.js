@@ -1985,7 +1985,7 @@ function openAppraiserModal(p) {
         unids.forEach(item => {
             let div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerHTML = '<span>' + getItemIconHtml(item) + item.name + '</span>';
+            div.innerHTML = '<span>' + getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span></span>';
             div.onclick = () => {
                 if (p.coins >= 100) {
                     p.coins -= 100;
@@ -2045,7 +2045,7 @@ function performAppraisal(p, item) {
         name: newName
     };
     
-    document.getElementById('appraiser-result-name').innerHTML = getItemIconHtml(item) + newName;
+    document.getElementById('appraiser-result-name').innerHTML = getItemIconHtml(item) + '<span style="color:#00ffdd">' + newName + '</span>';
     let stats = "";
     stats += `<div style="color: #ffaa00; font-size:14px; line-height: 1.4;">`;
     stats += `原生生物 ${attrs.native}%<br>`;
@@ -2079,7 +2079,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     currentModalItem = item;
     currentModalPid = pid;
     
-    document.getElementById('modal-item-name').innerHTML = getItemIconHtml(item) + item.name;
+    document.getElementById('modal-item-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
     
     let descTxt = item.desc || (item.name + " の説明文がここに入ります。");
     if (item.rarity) {
@@ -2870,7 +2870,7 @@ function renderMenu(pid) {
         pdiv.style.minHeight = '30px';
         let item = p.palette[i];
         let getIcon = (itm) => itm ? (itm.type === 'magic' ? getMagicIconHtml(itm.magic) : getItemIconHtml(itm)) : '';
-        pdiv.innerHTML = `<span>[${i+1}] ${item ? getIcon(item) + item.name : '空'}</span>`;
+        pdiv.innerHTML = `<span>[${i+1}] ${item ? getIcon(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>' : '空'}</span>`;
         
         if (item) {
             pdiv.addEventListener('pointerdown', e => {
@@ -2938,7 +2938,7 @@ function renderMenu(pid) {
         }
 
         let iconHtml = isMagic ? getMagicIconHtml(item.magic) : getItemIconHtml(item);
-        div.innerHTML = `<span>${prefix}${iconHtml}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        div.innerHTML = `<span>${prefix}${iconHtml}<span style="color:${getItemColor(item)}">${item.name}</span> ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
             e.preventDefault();
@@ -3115,9 +3115,9 @@ function updatePaletteUI(pid) {
     
     let getIcon = (item) => item ? (item.type === 'magic' ? getMagicIconHtml(item.magic) : getItemIconHtml(item)) : '';
     
-    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getIcon(p.palette[leftIdx]) + p.palette[leftIdx].name.substring(0,8) : '';
-    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getIcon(p.palette[p.paletteIndex]) + p.palette[p.paletteIndex].name.substring(0,12) : 'ACT';
-    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getIcon(p.palette[rightIdx]) + p.palette[rightIdx].name.substring(0,8) : '';
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getIcon(p.palette[leftIdx]) + '<span style="color:' + getItemColor(p.palette[leftIdx]) + '">' + p.palette[leftIdx].name.substring(0,8) + '</span>' : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getIcon(p.palette[p.paletteIndex]) + '<span style="color:' + getItemColor(p.palette[p.paletteIndex]) + '">' + p.palette[p.paletteIndex].name.substring(0,12) + '</span>' : 'ACT';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getIcon(p.palette[rightIdx]) + '<span style="color:' + getItemColor(p.palette[rightIdx]) + '">' + p.palette[rightIdx].name.substring(0,8) + '</span>' : '';
 }
 
 function hitPlayer(p, e) {
@@ -3774,7 +3774,6 @@ function draw() {
             ctx.lineWidth = 1;
             ctx.strokeRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
             
-            ctx.fillStyle = 'white';
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
             
@@ -3787,7 +3786,9 @@ function draw() {
                 }
             }
             
+            ctx.fillStyle = itemObj ? getItemColor(itemObj) : 'white';
             ctx.fillText(title, SCREEN_W - 150 + offsetX, SCREEN_H / 2 - 12);
+            ctx.fillStyle = 'white';
             
             // Draw status icons for enemy
             if (debuffIcons && debuffIcons.length > 0) {
@@ -4084,7 +4085,7 @@ function renderShopList() {
         if (isEquipped || isPalette) prefix = '<span style="color:#00ff00;">E </span>';
         else if (item.isUnidentified) prefix = '<span style="color:#ff0000;">? </span>';
         
-        div.innerHTML = '<span>' + prefix + getItemIconHtml(item) + item.name + '</span>';
+        div.innerHTML = '<span>' + prefix + getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span></span>';
         
         // Indicate if selling is blocked because equipped
         if (currentShopTab === 'sell' && (isEquipped || isPalette)) {
@@ -4104,7 +4105,7 @@ function showShopSubwindow(item) {
     let sub = document.getElementById('shop-subwindow');
     sub.style.display = 'flex';
     
-    document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + item.name;
+    document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
     document.getElementById('shop-sub-desc').innerText = item.desc || (item.name + ' のアイテム');
     
     let stats = '';
@@ -4400,4 +4401,25 @@ function getMagicMpCost(magicId, lv) {
         case 'anti': return 20 + halfLv;
         default: return 10;
     }
+}
+
+
+function getItemColor(item) {
+    if (!item) return '#ffffff';
+    let color = '#ffffff';
+    let lightBlue = '#00ffdd';
+    
+    if (item.type === 'weapon') {
+        if (item.isUnidentified) color = lightBlue;
+        else if (item.enchant !== null && item.enchant !== undefined) color = lightBlue;
+        else if (item.attrs && (item.attrs.native > 0 || item.attrs.mutant > 0 || item.attrs.machine > 0 || item.attrs.dark > 0 || item.attrs.hit > 0)) color = lightBlue;
+    } else if (item.type === 'armor') {
+        if (item.slotCount && item.slotCount > 0) color = lightBlue;
+        else if (item.def > 10 && item.name && !item.name.includes('+')) color = lightBlue;
+        else if (item.isBonusStats) color = lightBlue;
+    } else if (item.type === 'unit') {
+        if (item.name && !item.name.includes('+')) color = lightBlue;
+        else if (item.isBonusStats) color = lightBlue;
+    }
+    return color;
 }
