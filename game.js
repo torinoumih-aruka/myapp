@@ -18,6 +18,8 @@ let PRE_RENDERED = {};
 // Game State
 let GAME = {
     mode: 'title', // title, town, map, gameover
+    progress: { currentDifficulty: 0, currentStage: 0, 0: 0, 1: -1, 2: -1 },
+    shopItems: [], // Current items available in shop
     players: [],
     enemies: [],
     projectiles: [],
@@ -47,9 +49,9 @@ let INPUTS = [
 
 // Classes
 const CLASS_DATA = {
-    swordman: { name: 'ソードマン', hp: 150, mp: 20, atk: 15, def: 10, spd: 100, dex: 68, sprite: 'hero_knight_down_1', type: 'melee' },
-    ranger: { name: 'レンジャー', hp: 100, mp: 30, atk: 12, def: 7, spd: 110, dex: 72, sprite: 'hero_wiz_down_1', type: 'ranged' },
-    sorcerer: { name: 'ソーサラー', hp: 70, mp: 100, atk: 8, def: 5, spd: 90, dex: 63, sprite: 'hero_week_down_1', type: 'magic' }
+    swordman: { name: 'ソードマン', hp: 40, mp: 30, atk: 45, def: 17, spd: 100, dex: 68, mind: 29, luck: 10, sprite: 'hero_knight_down_1', type: 'melee', levelUp: { hp: 10, mp: 5, atk: 6, def: 1, dex: 1, mind: 1, luck: 0, spd: 0 } },
+    ranger: { name: 'レンジャー', hp: 30, mp: 20, atk: 23, def: 13, spd: 100, dex: 72, mind: 20, luck: 10, sprite: 'hero_wiz_down_1', type: 'ranged', levelUp: { hp: 6, mp: 4, atk: 5, def: 1, dex: 2, mind: 2, luck: 0, spd: 0 } },
+    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 63, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
 };
 
 const WEAPON_TYPES = {
@@ -70,6 +72,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 5,
         shape: 'fan45',
+        ranges: [195, 195, 195], // 180 + 15
         icon: 'icon_weapon_gun',
         maxCombo: 3,
         timing: [1.2, 1.2],
@@ -81,8 +84,8 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [68, 68, 88],
-        offsets: [{angle: -20, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 40}], // 1st front-left
+        ranges: [68, 63, 78], // Saber -25
+        offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
         timing: [0.8, 0.8],
@@ -94,8 +97,8 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [64, 64, 50],
-        offsets: [{angle: 0, dist: 30}, {angle: 0, dist: 30}, {angle: 0, dist: 0}], // 3rd around player
+        ranges: [64, 59, 125], // Dagger -25, -25, +15
+        offsets: [{angle: 0, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
         timing: [0.7, 0.7],
@@ -107,8 +110,8 @@ const WEAPON_TYPES = {
         targetType: 'scope',
         targetNum: 99,
         shape: 'circle1',
-        ranges: [44, 45, 57],
-        offsets: [{angle: 0, dist: 20}, {angle: 0, dist: 20}, {angle: 0, dist: 25}],
+        ranges: [69, 65, 72], // [84-15, 85-20, 97-25]
+        offsets: [{angle: 0, dist: 70}, {angle: 0, dist: 70}, {angle: 0, dist: 75}],
         icon: 'icon_weapon_cane',
         maxCombo: 3,
         timing: [0.7, 0.7],
@@ -128,34 +131,154 @@ const WEAPON_TYPES = {
 };
 
 const BASE_WEAPONS = {
-    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
-    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 250, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
+    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
+    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
     'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
     'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 55, baseDex: 30, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 100, baseDex: 33, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
     'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 30, baseDex: 30, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
     'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 60, baseDex: 32, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
-    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 200, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 250, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
+
+
+const DEBUG_ENCHANT_100_ON_COMBO_3 = true;
+
+function applyEnchant(p, target, action, comboCount) {
+    if (!action || !action.enchant || action.isUnidentified) return;
+    let ench = ENCHANTS.find(e => e.id === action.enchant);
+    if (!ench) return;
+    
+    let isAoE = (action.weaponType === 'slicer' || action.weaponType === 'shotgun');
+    let effectMult = isAoE ? (1/3) : 1.0;
+    
+    let triggered = false;
+    if (ench.type === 'add_dmg') {
+        triggered = Math.random() < 0.3; 
+    } else if (ench.type === 'status') {
+        triggered = Math.random() < (ench.prob * effectMult);
+    } else if (ench.type === 'drain') {
+        triggered = Math.random() < 0.3; 
+    }
+    
+    if (DEBUG_ENCHANT_100_ON_COMBO_3 && comboCount === 3) {
+        triggered = true;
+    }
+    
+    if (triggered) {
+        p.debugInfo.push(`Enchant: ${ench.name}!`);
+        if (ench.effect === 'fire') addEffect('particle', { x: target.x, y: target.y, color: '#ff3300', r: 25 });
+        else if (ench.effect === 'thunder') addEffect('particle', { x: target.x, y: target.y, color: '#ffff00', r: 25 });
+        else if (ench.effect === 'ice') addEffect('particle', { x: target.x, y: target.y, color: '#00ffff', r: 25 });
+        else if (ench.effect === 'purple_fog') addEffect('particle', { x: target.x, y: target.y, color: '#800080', r: 25 });
+        else if (ench.effect === 'shock') addEffect('particle', { x: target.x, y: target.y, color: '#ffff00', r: 25 });
+        else if (ench.effect === 'green_fog') addEffect('particle', { x: target.x, y: target.y, color: '#00ff00', r: 25 });
+        
+        if (ench.type === 'add_dmg') {
+            let edmg = Math.floor(ench.value(p.level));
+            target.hp -= edmg;
+            addFloatingText(target.x, target.y - 40, edmg, 'white');
+            console.log(`Enchant Damage! +${edmg}`);
+        } else if (ench.type === 'status') {
+            applyStatus(target, ench.status, ench.duration || 15);
+        } else if (ench.type === 'drain') {
+            let heal = Math.floor(Math.max(1, target.hp) * (ench.drainPercent * effectMult));
+            if (heal < 1) heal = 1;
+            p.hp = Math.min(p.maxHp, p.hp + heal);
+            addFloatingText(p.x, p.y - 20, heal, '#33ff33');
+            addEffect('particle', { x: p.x, y: p.y, color: '#00ff00', r: 20 });
+        }
+    }
+}
 
 const ENCHANTS = [
     { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire' },
     { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire' },
     { id: 'shock', name: 'ショック', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'thunder' },
     { id: 'thunder', name: 'サンダー', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'thunder' },
-    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', effect: 'ice' },
-    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', effect: 'ice' },
-    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'confuse', effect: 'purple_fog' },
-    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'confuse', effect: 'purple_fog' },
+    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', duration: 15, effect: 'ice' },
+    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', duration: 15, effect: 'ice' },
+    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'panic', duration: 15, effect: 'purple_fog' },
+    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'panic', duration: 15, effect: 'purple_fog' },
+    { id: 'bind', name: 'バインド', type: 'status', prob: 0.03, status: 'shock', duration: 15, effect: 'shock' },
+    { id: 'hold', name: 'ホールド', type: 'status', prob: 0.06, status: 'shock', duration: 15, effect: 'shock' },
     { id: 'draw', name: 'ドロー', type: 'drain', drainPercent: 0.05, effect: 'green_fog' },
     { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog' }
 ];
+
+const ENCHANT_PRICES = {
+    'heat': 100, 'fire': 400,
+    'shock': 100, 'thunder': 400,
+    'ice': 100, 'frost': 400,
+    'panic': 100, 'riot': 400,
+    'draw': 100, 'drain': 400
+};
+
+const MAGICS_DATA = [
+    { id: 'm_resta', name: 'レスタ', m: 'resta', sortId: '001', basePrice: 100 },
+    { id: 'm_anti', name: 'アンティ', m: 'anti', sortId: '002', basePrice: 300, maxLv: 1 },
+    { id: 'm_shifta', name: 'シフタ', m: 'shifta', sortId: '005', basePrice: 300 },
+    { id: 'm_deband', name: 'デバンド', m: 'deband', sortId: '006', basePrice: 300 },
+    { id: 'm_freme', name: 'フレム', m: 'freme', sortId: '101', basePrice: 100 },
+    { id: 'm_gifreme', name: 'ギフレム', m: 'gifreme', sortId: '102', basePrice: 200 },
+    { id: 'm_rafreme', name: 'ラフレム', m: 'rafreme', sortId: '103', basePrice: 300 },
+    { id: 'm_ice', name: 'アイス', m: 'ice', sortId: '104', basePrice: 100 },
+    { id: 'm_sanda', name: 'サンダ', m: 'sanda', sortId: '107', basePrice: 100 },
+    { id: 'm_jellen', name: 'ジェルン', m: 'jellen', sortId: '201', basePrice: 300 },
+    { id: 'm_zalure', name: 'ザルア', m: 'zalure', sortId: '202', basePrice: 300 }
+];
+
+function getItemPrice(item) {
+    if (!item) return 0;
+    
+    if (item.type === 'weapon') {
+        if (item.isUnidentified) return 10;
+        let baseDef = BASE_WEAPONS[item.id];
+        let base = baseDef ? baseDef.price : 100;
+        
+        let enhanceBonus = item.enhance ? Math.floor(base * 0.1 * item.enhance) : 0;
+        let enchantBonus = item.enchant ? (ENCHANT_PRICES[item.enchant] || 0) : 0;
+        
+        let attrBonus = 0;
+        if (item.attrs) {
+            let totalAttr = 0;
+            for (let k in item.attrs) totalAttr += item.attrs[k];
+            attrBonus = totalAttr * 5;
+        }
+        
+        return base + enhanceBonus + enchantBonus + attrBonus;
+    } else if (item.type === 'armor') {
+        let base = 500; // Base armor price
+        let statBonus = ((item.def || 0) + (item.dex || 0) + (item.atk || 0) + (item.mind || 0)) * 1;
+        let slotBonus = item.slotCount ? Math.floor(base * 0.2 * item.slotCount) : 0;
+        return base + statBonus + slotBonus;
+    } else if (item.type === 'disk') {
+        let magicDef = MAGICS_DATA.find(m => m.m === item.magic);
+        let base = magicDef ? magicDef.basePrice : 100;
+        return base + Math.floor(base * 0.5 * (item.lv || 1));
+    } else if (item.type === 'unit') {
+        let base = 1000;
+        let enhanceBonus = item.enhance ? Math.floor(base * 0.1 * item.enhance) : 0;
+        return base + enhanceBonus;
+    } else if (item.type === 'item') {
+        if (item.id === 'monomate') return 50;
+        if (item.id === 'monofluid') return 100;
+        return 100;
+    }
+    return 10;
+}
+
 
 function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedAttrs = null) {
     let base = BASE_WEAPONS[baseId];
     if (!base) return null;
     let wType = WEAPON_TYPES[base.weaponType];
+    
+    // Random enhance 0-3 if not forced and is a dropped weapon
+    if (forcedEnhance === 0 && Math.random() < 0.5) { // Assuming some chance to get enhanced drop
+        forcedEnhance = Math.floor(Math.random() * 4); // 0, 1, 2, 3
+    }
     
     let w = {
         uid: 'w_' + Date.now() + Math.floor(Math.random() * 1000), // Unique ID
@@ -176,7 +299,8 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
         maxEnhance: base.maxEnhance,
         enhance: forcedEnhance,
         enchant: forcedEnchant,
-        attrs: forcedAttrs || { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 }
+        attrs: forcedAttrs || { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 },
+        isUnidentified: forcedEnchant !== null // If it drops with an enchant, it's unidentified initially
     };
     
     // Calculate final stats
@@ -187,9 +311,72 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
     // Construct display name
     let prefix = w.enchant ? ENCHANTS.find(e => e.id === w.enchant).name + ' ' : '';
     let suffix = w.enhance > 0 ? ' +' + w.enhance : '';
-    w.name = prefix + w.baseName + suffix;
+    if (w.isUnidentified) {
+        w.name = '？？？？' + w.baseName + suffix;
+    } else {
+        w.name = prefix + w.baseName + suffix;
+    }
     
     return w;
+}
+
+function generateArmor(forceSlots = -1, forceExtra = -1) {
+    let extra = forceExtra >= 0 ? forceExtra : Math.floor(Math.random() * 3); // 0, 1, 2
+    let slots = forceSlots >= 0 ? forceSlots : Math.floor(Math.random() * 3); // 0, 1, 2
+    let arr = []; for(let i=0; i<slots; i++) arr.push(null);
+    let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
+    return { uid: 'a_' + Date.now() + Math.floor(Math.random() * 1000), id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
+}
+
+function generateShopLineup() {
+    GAME.shopItems = [];
+    
+    // Guaranteed items
+    GAME.shopItems.push({ uid: 'shop_' + Date.now() + '1', id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 });
+    GAME.shopItems.push({ uid: 'shop_' + Date.now() + '2', id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 });
+    
+    let weapons = ['w_saber', 'w_handgun', 'w_cane'];
+    let magics = MAGICS_DATA;
+    
+    // Calculate max magic level based on progress
+    let maxDifficulty = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
+    let maxStageUnlocked = Math.max(0, GAME.progress[maxDifficulty]);
+    let maxLevelCap = (maxDifficulty * 9) + (maxStageUnlocked * 3) + 3;
+    
+    // 8 random items based on progress
+    for (let i = 0; i < 8; i++) {
+        let rand = Math.random();
+        if (rand < 0.4) {
+            // Weapon
+            let wId = weapons[Math.floor(Math.random() * weapons.length)];
+            let enchant = null;
+            if (Math.random() < 0.5) enchant = ENCHANTS[Math.floor(Math.random() * 2)].id; // low rank
+            if (enchant === 'heat') enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
+            
+            let attrs = null;
+            if (Math.random() < 0.5) {
+                let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+                attrs = {};
+                attrs[attrNames[Math.floor(Math.random() * attrNames.length)]] = 5 + Math.floor(Math.random() * 2) * 5; // 5 or 10
+            }
+            
+            let w = generateWeapon(wId, 0, enchant, attrs);
+            if (w) {
+                w.isUnidentified = false; // Shop weapons are always identified
+                w.name = w.name.replace('？？？？', ''); // Remove unidentified prefix if any
+                GAME.shopItems.push(w);
+            }
+        } else if (rand < 0.7) {
+            // Armor
+            GAME.shopItems.push(generateArmor());
+        } else {
+            // Disk (Lv 1-3)
+            let chosen = magics[Math.floor(Math.random() * magics.length)];
+            let lv = 1 + Math.floor(Math.random() * 3);
+            if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+            GAME.shopItems.push({ uid: 'shop_' + Date.now() + '_' + i, id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId });
+        }
+    }
 }
 
 // Player Entity
@@ -202,6 +389,7 @@ class Player {
         this.maxHp = cdata.hp;
         this.hp = this.maxHp;
         this.maxMp = cdata.mp;
+        this.status = { poisonTimer: 0, poisonDamageTimer: 0, poisonMnd: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaTimer: 0, shiftaLv: 0, debandTimer: 0, debandLv: 0, jellenTimer: 0, jellenLv: 0, zalureTimer: 0, zalureLv: 0 };
         this.mp = this.maxMp;
         this.atk = cdata.atk;
         this.def = cdata.def;
@@ -227,12 +415,12 @@ class Player {
             def: cdata.def,
             spd: cdata.spd,
             dex: cdata.dex || 50,
-            mind: 40,
-            luck: 10
+            mind: (typeof cdata.mind === 'number' && !isNaN(cdata.mind)) ? cdata.mind : 40,
+            luck: cdata.luck || 10
         };
         
         this.exp = 0;
-        this.nextExp = 100;
+        this.nextExp = 50;
         this.coins = 0;
         this.targetDrop = null;
         
@@ -240,27 +428,38 @@ class Player {
         
         this.palette = [null, null, null, null, null, null];
         this.paletteIndex = 1; // 0=L, 1=ACT, 2=R
+        this.coins = 500;
+        this.magicCooldowns = {};
+        this.magic = [];
         
         // Add requested default items
-        this.inventory = [
-            generateWeapon('w_saber', 0, 'heat', {native: 15, mutant: 0, machine: 0, dark: 5, hit: 5}),
-            generateWeapon('w_handgun'),
-            generateWeapon('w_shotgun', 2, 'ice'),
-            generateWeapon('w_buster', 3, 'fire'),
-            generateWeapon('w_railgun'),
-            generateWeapon('w_dagger'),
-            generateWeapon('w_cane', 0, 'draw'),
-            generateWeapon('w_mace', 1, 'drain'),
-            { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] },
-            { id: 'u_acc', name: '命中＋ユニット', type: 'unit', dex: 10 },
-            generateWeapon('w_slicer'),
-            { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
-            { id: 'm_fire_1', name: 'ファイアLv1ディスク', type: 'disk', magic: 'fire', lv: 1 },
-            { id: 'm_gifoie_1', name: 'ギファイアLv1ディスク', type: 'disk', magic: 'gifoie', lv: 1 },
-            { id: 'm_rafoie_1', name: 'ラファイアLv1ディスク', type: 'disk', magic: 'rafoie', lv: 1 },
-            { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
-            { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 2 }
-        ].filter(i => i !== null);
+        if (this.classId === 'swordman') {
+            this.inventory = [
+                generateWeapon('w_saber'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
+            ];
+        } else if (this.classId === 'ranger') {
+            this.inventory = [
+                generateWeapon('w_handgun'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
+            ];
+        } else if (this.classId === 'sorcerer') {
+            this.inventory = [
+                generateWeapon('w_cane'),
+                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
+                { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
+                { id: 'm_zalure_1', name: 'ザルアLv1ディスク', type: 'disk', magic: 'zalure', lv: 1 },
+                { id: 'm_freme_1', name: 'フレムLv1ディスク', type: 'disk', magic: 'freme', lv: 1 }
+            ];
+        } else {
+            this.inventory = [];
+        }
+
 
         // Combo system
         this.comboCount = 0;
@@ -284,9 +483,11 @@ class Player {
         
         this.invincibleTimer = 0;
 
-        // Default weapon for testing
-        this.palette[0] = this.inventory[0];
-        this.palette[1] = this.inventory[1];
+        // Default equip and palette setup
+        this.palette[1] = this.inventory[0]; // Weapon (ACT)
+        this.equip.armor = this.inventory[1]; // Armor
+        this.palette[0] = this.inventory[2]; // Monomate (L)
+        this.palette[2] = this.inventory[3]; // Monofluid (R)
     }
     
     recalculateStats() {
@@ -299,6 +500,7 @@ class Player {
         this.def = this.baseStats.def;
         this.spd = this.baseStats.spd;
         this.dex = this.baseStats.dex;
+        this.mind = (typeof this.baseStats.mind === 'number' && !isNaN(this.baseStats.mind)) ? this.baseStats.mind : (CLASS_DATA[this.classId] ? CLASS_DATA[this.classId].mind || 40 : 40);
         
         if (this.equip.armor) {
             if (this.equip.armor.def) this.def += this.equip.armor.def;
@@ -309,6 +511,7 @@ class Player {
                         if (u.def) this.def += u.def;
                         if (u.hp) this.maxHp += u.hp;
                         if (u.dex) this.dex += u.dex;
+                        if (u.mind) this.mind += u.mind;
                     }
                 });
             }
@@ -334,7 +537,61 @@ class Player {
     }
 
     update(dt) {
-        if (this.magicCooldown > 0) this.magicCooldown -= dt;
+        updateStatusEffects(this, dt, true);
+        
+        // Out of Bounds warp
+        if (GAME.mode === 'map' && GAME.grid) {
+            let maxW = GAME.grid[0].length * 50;
+            let maxH = GAME.grid.length * 50;
+            if (this.x < 0 || this.x > maxW || this.y < 0 || this.y > maxH) {
+                this.x = MAP_DATA.town.start.x;
+                this.y = MAP_DATA.town.start.y;
+                GAME.mode = 'town';
+                GAME.eventFlags = {};
+                GAME.enemies = [];
+                GAME.boxes = [];
+                PROJECTILES = [];
+                EFFECTS = [];
+                return;
+            }
+        }
+            // Check Traps
+            if (GAME.traps) {
+                let isOnTrap = false;
+                GAME.traps.forEach(t => {
+                    let tx = t.x * 50 + 25;
+                    let ty = t.y * 50 + 25;
+                    if (Math.hypot(this.x - tx, this.y - ty) < 25) {
+                        isOnTrap = true;
+                        if (this.lastTrap !== t) {
+                            this.lastTrap = t;
+                            let lv = 5; // force level 5
+                            if (t.type === 'shifta') { this.status.shiftaLv = lv; this.status.shiftaTimer = 60; }
+                            if (t.type === 'deband') { this.status.debandLv = lv; this.status.debandTimer = 60; }
+                            if (t.type === 'jellen') { this.status.jellenLv = lv; this.status.jellenTimer = 60; }
+                            if (t.type === 'zalure') { this.status.zalureLv = lv; this.status.zalureTimer = 60; }
+                            if (t.type === 'poison') applyStatus(this, 'poison', 30, 20);
+                            if (t.type === 'confuse') applyStatus(this, 'confuse', 20);
+                            if (t.type === 'shock') applyStatus(this, 'shock', 999);
+                            if (t.type === 'freeze') applyStatus(this, 'freeze', 20);
+                            addEffect('particle', { x: this.x, y: this.y, color: '#ffffff', r: 20 });
+                        }
+                    }
+                });
+            }
+
+            
+        if (this.status && this.status.freezeTimer > 0) return; // Frozen
+        if (this.status && this.status.shockTimer > 0) {
+            // Cannot use weapon/magic, but can move/use items. Wait, user said:
+            // "武器とまほうが使えなくなる。"
+            // We'll block attack/magic in processInputs.
+        }
+        if (this.magicCooldowns) {
+            for (let k in this.magicCooldowns) {
+                if (this.magicCooldowns[k] > 0) this.magicCooldowns[k] -= dt;
+            }
+        }
         if (this.hp <= 0) {
            if (this.state === 'dead') return;
         }
@@ -353,9 +610,13 @@ class Player {
                     range = wType.range || actItem.range;
                     if (wType.shape === 'fan30' || wType.shape === 'fan45') isCone = true;
                 }
-            } else if (actItem.magic === 'fire' || actItem.magic === 'rafoie') {
+            } else if (actItem.magic === 'freme' || actItem.magic === 'rafreme' || actItem.magic === 'ice') {
                 isCone = true;
-                if (actItem.magic === 'rafoie') range = 75;
+                if (actItem.magic === 'rafreme') range = 150;
+            } else if (actItem.magic === 'sanda') {
+                range = 200;
+            } else if (actItem.magic === 'gifreme') {
+                range = 100;
             }
             
             let inRangeEnemies = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
@@ -403,8 +664,7 @@ class Player {
             let action = this.palette[this.paletteIndex];
             
             this.debugInfo = [
-                `Combo: ${this.comboCount}`,
-                `Timer: ${this.comboTimer.toFixed(2)}`
+                `Combo: ${this.comboCount}`
             ];
             
             if (action && action.weaponType) {
@@ -412,9 +672,9 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    this.debugInfo.push(`Window: ${targetTime.toFixed(2)} - ${(targetTime+0.15).toFixed(2)}`);
+                    // window debug info removed
                     
-                    if (this.comboTimer > targetTime + 0.15) {
+                    if (this.comboTimer > targetTime + 0.25) {
                         this.state = 'idle';
                         this.comboCount = 0;
                         this.lastAttackShape = null;
@@ -457,10 +717,20 @@ class Player {
             this.lastAttackShape = null;
             // Movement
             if (input.vx !== 0 || input.vy !== 0) {
-                this.vx = input.vx * this.spd;
-                this.vy = input.vy * this.spd;
-                this.dirX = input.vx;
-                this.dirY = input.vy;
+                let actualVx = input.vx;
+                let actualVy = input.vy;
+                if (this.status && this.status.confuseTimer > 0) {
+                    let phase = performance.now() / 1000;
+                    let angleOffset = Math.sin(phase * 3) * Math.PI / 2; // oscillates back and forth
+                    let len = Math.hypot(actualVx, actualVy);
+                    let angle = Math.atan2(actualVy, actualVx) + angleOffset;
+                    actualVx = Math.cos(angle) * len;
+                    actualVy = Math.sin(angle) * len;
+                }
+                this.vx = actualVx * this.spd;
+                this.vy = actualVy * this.spd;
+                this.dirX = actualVx;
+                this.dirY = actualVy;
                 this.state = 'move';
             } else {
                 this.vx = 0;
@@ -481,20 +751,83 @@ class Player {
                 if (this.y < p1.y - halfH + 16) this.y = p1.y - halfH + 16;
                 if (this.y > p1.y + halfH - 16) this.y = p1.y + halfH - 16;
             }
+            
+            // Town wall collision
+            if (GAME.mode === 'town' && MAP_DATA.town && MAP_DATA.town.walls) {
+                MAP_DATA.town.walls.forEach(w => {
+                    let closestX = Math.max(w.x, Math.min(this.x, w.x + w.width));
+                    let closestY = Math.max(w.y, Math.min(this.y, w.y + w.height));
+                    let dx = this.x - closestX;
+                    let dy = this.y - closestY;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist < this.radius) {
+                        if (dist === 0) {
+                            this.y -= this.radius; // push up if exactly inside
+                        } else {
+                            let push = this.radius - dist;
+                            this.x += (dx / dist) * push;
+                            this.y += (dy / dist) * push;
+                        }
+                    }
+                });
+            }
         }
     }
 
     draw(ctx) {
+        if (this.status && this.status.freezeTimer > 0) {
+            ctx.filter = 'sepia(1) hue-rotate(180deg) saturate(3)';
+        }
+        if (this.status && this.status.freezeTimer > 0) {
+            ctx.filter = 'sepia(1) hue-rotate(180deg) saturate(3)'; // Blueish
+        }
         if (this.state === 'dead') return;
-        ctx.fillStyle = this.id === 0 ? 'blue' : 'green';
-        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
         
-        // Draw Direction Indicator
-        ctx.strokeStyle = 'white';
+        // Draw facing direction indicator
+        let pAngle = Math.atan2(this.dirY, this.dirX);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(pAngle);
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
         ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
-        ctx.stroke();
+        ctx.moveTo(this.radius + 15, 0); // pointing forward
+        ctx.lineTo(this.radius + 5, -8);
+        ctx.lineTo(this.radius + 5, 8);
+        ctx.fill();
+        ctx.restore();
+
+        let dirStr = 'down';
+        if (Math.abs(this.dirX) > Math.abs(this.dirY)) {
+            dirStr = this.dirX > 0 ? 'right' : 'left';
+        } else {
+            if (this.dirY < 0) dirStr = 'up';
+            else if (this.dirY > 0) dirStr = 'down';
+        }
+        
+        let animStep = 1;
+        if (this.vx !== 0 || this.vy !== 0) {
+            animStep = Math.floor(performance.now() / 200) % 2 === 0 ? 1 : 2;
+        }
+        
+        let baseSprite = 'hero_knight'; // Could depend on class in future
+        if (this.classId === 'ranger') baseSprite = 'hero_wiz';
+        if (this.classId === 'sorcerer') baseSprite = 'hero_week';
+        
+        let spriteName = `${baseSprite}_${dirStr}_${animStep}`;
+        
+        if (PRE_RENDERED[spriteName]) {
+            ctx.drawImage(PRE_RENDERED[spriteName], this.x - 16, this.y - 16, 32, 32);
+        } else {
+            ctx.fillStyle = this.id === 0 ? 'blue' : 'green';
+            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            
+            // Draw Direction Indicator
+            ctx.strokeStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.dirX * 20, this.y + this.dirY * 20);
+            ctx.stroke();
+        }
 
         // Draw attack bounding box (Visualizer)
         if (this.state === 'attack' && this.lastAttackShape) {
@@ -547,20 +880,37 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    let centerTime = targetTime + 0.075;
+                    let centerTime = targetTime + 0.10;
                     
-                    if (this.comboTimer <= targetTime + 0.15) {
+                    if (this.comboTimer <= targetTime + 0.25) {
                         let diff = centerTime - this.comboTimer;
-                        let ringRadius = 10 + Math.max(0, (diff / 0.075)) * 5; // Max 15px, shrinks to 10px
+                        let ringRadius = 10 + Math.max(0, (diff / 0.15)) * 5; // Max 15px, shrinks to 10px
+                        
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
-                        ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#fff';
-                        ctx.lineWidth = 2;
+                        
+                        // Check if in perfect timing window (e.g. within 0.03s of center)
+                        let isJust = Math.abs(this.comboTimer - centerTime) <= 0.03;
+                        
+                        if (isJust) {
+                            ctx.strokeStyle = '#fff';
+                            ctx.lineWidth = 2;
+                            ctx.shadowBlur = 10;
+                            ctx.shadowColor = '#fff';
+                        } else {
+                            ctx.strokeStyle = (this.comboCount === 1) ? '#888' : '#ccc';
+                            ctx.lineWidth = 1;
+                            ctx.shadowBlur = 0;
+                        }
+                        
                         ctx.stroke();
+                        ctx.shadowBlur = 0; // reset
                     }
                 }
             }
         }
+        
+        drawStatusEffects(ctx, this);
         
         // Debug Text
         ctx.fillStyle = 'white';
@@ -627,15 +977,11 @@ class Player {
                         alert('HPとMPが回復しました！');
                     }
                 } else if (closestNPC.type === 'appraiser') {
-                    alert('未鑑定アイテムはありません。');
+                    openAppraiserModal(this);
                 } else if (closestNPC.type === 'shop') {
-                    alert('ショップ機能は準備中です。');
-                } else if (closestNPC.type === 'teleporter') {
-                    if (confirm('ステージ1へ転送しますか？')) {
-                        GAME.mode = 'map';
-                        let n = Math.floor(Math.random() * MAP_PATTERNS.forest1) + 1;
-                        loadAreaFromFile(`forest1_${n}.json`);
-                    }
+                    openShopModal(this);
+                                } else if (closestNPC.type === 'teleporter') {
+                    openTeleporterMenu(this);
                 }
                 return;
             }
@@ -647,11 +993,19 @@ class Player {
             if (dist < 40) {
                 if (confirm('タウンに戻りますか？')) {
                     GAME.mode = 'town';
+                    generateShopLineup();
                     this.x = MAP_DATA.town.start.x;
                     this.y = MAP_DATA.town.start.y;
-                    GAME.eventFlags = {}; // Reset event flags
-                }
-                return;
+                                                GAME.eventFlags = {}; // Reset event flags
+                            GAME.enemies = [];
+                            GAME.boxes = [];
+                            PROJECTILES = [];
+                            EFFECTS = [];
+                            if (this.status) {
+                                this.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
+                            }
+                        }
+                        return;
             }
             
             // Check Action events
@@ -670,16 +1024,22 @@ class Player {
                 if (triggeredEvent) return; // skip attack
             }
             
-            // Check Next Area
+            
+// Check Next Area
             if (GAME.teleporters) {
                 let nextTp = GAME.teleporters.find(t => t.type === 'next');
                 if (nextTp) {
                     let dx = Math.abs(this.x - (nextTp.x * 50 + 25));
                     let dy = Math.abs(this.y - (nextTp.y * 50 + 25));
-                    if (dx < 40 && dy < 40) {
+                    if (dx < 25 && dy < 25) {
                         if (confirm('次のエリアに進みますか？')) {
-                            let n = Math.floor(Math.random() * MAP_PATTERNS.forest2) + 1;
-                            loadAreaFromFile(`forest2_${n}.json`);
+                            let stageFiles = ['forest', 'cave', 'ruins'];
+                            let prefix = stageFiles[GAME.progress.currentStage || 0];
+                            if (GAME.currentMapPattern && GAME.currentMapPattern.filename && GAME.currentMapPattern.filename.includes('2_')) {
+                                loadAreaFromFile(`${prefix}_boss.json`);
+                            } else {
+                                loadAreaFromFile(`${prefix}2_1.json`);
+                            }
                         }
                         return;
                     }
@@ -689,12 +1049,20 @@ class Player {
                 if (townTp) {
                     let dx = Math.abs(this.x - (townTp.x * 50 + 25));
                     let dy = Math.abs(this.y - (townTp.y * 50 + 25));
-                    if (dx < 40 && dy < 40) {
+                    if (dx < 25 && dy < 25) {
                         if (confirm('タウンに戻りますか？')) {
                             GAME.mode = 'town';
+                            generateShopLineup();
                             this.x = MAP_DATA.town.start.x;
                             this.y = MAP_DATA.town.start.y;
                             GAME.eventFlags = {}; // Reset event flags
+                            GAME.enemies = [];
+                            GAME.boxes = [];
+                            PROJECTILES = [];
+                            EFFECTS = [];
+                            if (this.status) {
+                                this.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
+                            }
                         }
                         return;
                     }
@@ -703,8 +1071,13 @@ class Player {
         }
 
         let action = this.palette[this.paletteIndex];
+        if (!action) return;
 
         if (action.type === 'weapon') {
+            if (this.status && this.status.shockTimer > 0) {
+                this.debugInfo.push("Shocked! Cannot attack.");
+                return;
+            }
             let wType = WEAPON_TYPES[action.weaponType];
             let classMod = wType.classMod[this.classId] || 0;
             
@@ -712,7 +1085,7 @@ class Player {
                 if (this.comboCount >= wType.maxCombo) return;
                 
                 let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                if (this.comboTimer >= targetTime && this.comboTimer <= targetTime + 0.15) {
+                if (this.comboTimer >= targetTime - 0.05 && this.comboTimer <= targetTime + 0.25) {
                     this.comboCount++;
                 } else {
                     return; // Ignore if pressed outside window
@@ -753,13 +1126,19 @@ class Player {
             
             // Target logic
             let targets = [];
-            let inRangeEnemies = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= action.range);
-            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x - this.x, b.y - this.y) <= action.range);
+            let checkRange = action.range;
+            if (wType.shape === 'circle1') {
+                let offset = wType.offsets[this.comboCount - 1];
+                if (offset) checkRange += offset.dist;
+            }
+            let inRangeEnemies = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= checkRange);
+            let inRangeBoxes = (GAME.boxes || []).filter(b => Math.hypot(b.x - this.x, b.y - this.y) <= checkRange);
             let inRange = [...inRangeEnemies, ...inRangeBoxes];
             
             let pAngle = Math.atan2(this.dirY, this.dirX);
             
-            this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: 20 };
+            let rad = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] - 20 : 20;
+            this.lastAttackShape = { type: wType.shape, angle: pAngle, range: action.range, cx: this.x, cy: this.y, radius: rad };
             
             if (wType.shape === 'none') {
                 // Just get the closest one
@@ -790,12 +1169,12 @@ class Player {
                 let offset = wType.offsets[this.comboCount - 1];
                 let cx = this.x;
                 let cy = this.y;
-                let radius = 20; // 1 -> 20px scaled radius
+                let radius = (wType.ranges && wType.ranges[this.comboCount - 1]) ? wType.ranges[this.comboCount - 1] - 20 : 20;
                 if (offset) {
                     let hitAngle = pAngle + (offset.angle * Math.PI / 180);
                     cx += Math.cos(hitAngle) * offset.dist;
                     cy += Math.sin(hitAngle) * offset.dist;
-                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range; 
+                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range - 20; 
                 }
                 this.lastAttackShape.cx = cx;
                 this.lastAttackShape.cy = cy;
@@ -825,7 +1204,10 @@ class Player {
                     finalTargets.push(this.mainTarget);
                     targets = targets.filter(t => t !== this.mainTarget);
                 }
-                targets.sort(() => Math.random() - 0.5);
+                for (let i = targets.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [targets[i], targets[j]] = [targets[j], targets[i]];
+                }
                 finalTargets = finalTargets.concat(targets.slice(0, wType.targetNum - finalTargets.length));
                 targets = finalTargets;
             } else if (wType.targetType === 'slicer') {
@@ -839,7 +1221,7 @@ class Player {
                         let chained = [firstTarget];
                         let current = firstTarget;
                         for (let i = 0; i < wType.targetNum - 1; i++) {
-                            let candidates = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 40);
+                            let candidates = [...GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId), ...(GAME.boxes || [])].filter(e => !chained.includes(e) && Math.hypot(e.x - current.x, e.y - current.y) <= 55);
                             if (candidates.length === 0) break;
                             let next = candidates[Math.floor(Math.random() * candidates.length)];
                             chained.push(next);
@@ -913,7 +1295,7 @@ class Player {
                 setTimeout(() => {
                     // Accuracy check
                     let myDex = this.baseStats.dex;
-                    if (this.equip.weapon && this.equip.weapon.dex) myDex += this.equip.weapon.dex;
+                    if (action && action.dex) myDex += action.dex;
                     if (this.equip.armor) {
                         if (this.equip.armor.dex) myDex += this.equip.armor.dex;
                         if (this.equip.armor.slottedUnits) {
@@ -928,7 +1310,7 @@ class Player {
                     
                     if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
                         let dist = Math.hypot(target.x - this.x, target.y - this.y);
-                        distPenalty = (dist / 10) * 2;
+                        distPenalty = (dist / 10);
                     }
                     hitRate -= distPenalty;
                     
@@ -938,7 +1320,7 @@ class Player {
                     }
                     
                     let myLuck = this.baseStats.luck;
-                    if (this.equip.weapon && this.equip.weapon.luck) myLuck += this.equip.weapon.luck;
+                    if (action && action.luck) myLuck += action.luck;
                     if (this.equip.armor) {
                         if (this.equip.armor.luck) myLuck += this.equip.armor.luck;
                         if (this.equip.armor.slottedUnits) {
@@ -946,25 +1328,34 @@ class Player {
                         }
                     }
                     
-                    let myAtk = this.baseStats.atk;
-                    if (this.equip.weapon && this.equip.weapon.atk) myAtk += this.equip.weapon.atk;
-                    if (this.equip.armor) {
-                        if (this.equip.armor.atk) myAtk += this.equip.armor.atk;
-                        if (this.equip.armor.slottedUnits) {
-                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.atk) myAtk += u.atk; });
-                        }
+
+                    
+                    let charPow = this.atk;
+                    if (this.status) {
+                        if (this.status.shiftaTimer > 0) charPow += Math.floor(charPow * (this.status.shiftaLv || 1) / 20);
+                        if (this.status.jellenTimer > 0) charPow -= Math.floor(charPow * (this.status.jellenLv || 1) / 20);
+                    }
+                    
+                    let weaponPow = action ? (action.atk || 0) : 0;
+                    let attrMult = 1.0;
+                    if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
+                        attrMult += (action.attrs.native / 100);
+                    }
+                    weaponPow = Math.floor(weaponPow * attrMult);
+                    
+                    let defenderDef = target.def || 5;
+                    if (target.status) {
+                        if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
+                        if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
                     }
                     
                     let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
-                    let isCrit = (Math.random() * 100) < (myLuck / 5);
+                    let isCrit = (Math.random() * 100) < ((this.luck || this.baseStats.luck || 5) / 5);
                     let critMult = isCrit ? 1.5 : 1.0;
-                    let defenderDef = isBox ? 0 : (target.def || 5);
                     
-                    let baseDmg = (myAtk - (defenderDef / 5)) * critMult;
+                    let baseDmg = (charPow + weaponPow - defenderDef) / 5;
                     if (baseDmg < 1) baseDmg = 1;
-                    let dmg = Math.floor(baseDmg * comboMult);
-                    
-                    if (action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                    let dmg = Math.floor(baseDmg * comboMult * critMult);
                     
                     if (target instanceof Enemy) {
                         target.hp -= dmg;
@@ -973,22 +1364,8 @@ class Player {
                         console.log(`Hit enemy! Enemy HP: ${target.hp}`);
                         
                         // Trigger enchant on 3rd combo
-                        if (this.comboCount === 3 && action.enchant) {
-                            let ench = ENCHANTS.find(e => e.id === action.enchant);
-                            if (ench) {
-                                this.debugInfo.push(`Enchant: ${ench.name}!`);
-                                if (ench.type === 'add_dmg') {
-                                    let edmg = Math.floor(ench.value(this.level));
-                                    target.hp -= edmg;
-                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
-                                    console.log(`Enchant Damage! +${edmg}`);
-                                } else if (ench.type === 'drain') {
-                                    let heal = Math.floor(target.hp * ench.drainPercent);
-                                    this.hp = Math.min(this.maxHp, this.hp + heal);
-                                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
-                                    console.log(`Drain! Healed: ${heal}`);
-                                }
-                            }
+                                                if (action.enchant && !action.isUnidentified) {
+                            applyEnchant(this, target, action, this.comboCount);
                         }
                     } else {
                         target.hp -= 1;
@@ -1022,121 +1399,131 @@ class Player {
             }
             this.state = 'idle'; // Prevent item spam
             
+        
         } else if (action.type === 'disk' || action.type === 'magic') {
-            if (action.magic === 'resta') {
-                let cost = 10;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    let lv = action.lv || 1;
-                    let heal = Math.min(this.maxHp - this.hp, 50 * lv);
-                    this.hp += heal;
-                    addFloatingText(this.x, this.y - 20, heal, '#33ff33');
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'fire') {
-                let lv = action.lv || 1;
-                let cost = 3 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldown = 1.0;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let pAngle = Math.atan2(this.dirY, this.dirX);
-                    let range = 150;
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
-                    let validTargets = inRange.filter(e => {
-                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
-                        if(diff>Math.PI) diff = Math.PI*2-diff;
-                        return diff<=(Math.PI/12);
-                    });
-                    validTargets.sort((a,b) => {
-                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
-                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
-                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
-                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
-                        return diffA - diffB;
-                    });
-                    let target = validTargets.length > 0 ? validTargets[0] : null;
-                    this.mainTarget = target;
-                    
-                    let dmg = Math.floor(this.baseStats.mind + 10 + (lv * 2));
-                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
-                    let projVx = this.dirX * 200;
-                    let projVy = this.dirY * 200;
-                    if (target) {
-                        let ang = Math.atan2(target.y - this.y, target.x - this.x);
-                        projVx = Math.cos(ang)*200;
-                        projVy = Math.sin(ang)*200;
-                    }
-                    PROJECTILES.push({ roomId: this.roomId, type: 'fire', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'gifoie') {
-                let lv = action.lv || 1;
-                let cost = 8 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldown = 4.0;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let dmg = Math.floor((this.baseStats.mind * 2/3) + 10 + (lv * 2));
-                    let numBullets = Math.floor(2 + (lv / 10));
-                    let r = lv >= 21 ? 12 : (lv >= 11 ? 8 : 4);
-                    for (let i = 0; i < numBullets; i++) {
-                        let startAng = (i / numBullets) * Math.PI * 2;
-                        PROJECTILES.push({ roomId: this.roomId, type: 'gifoie', cx: this.x, cy: this.y, angle: startAng, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
-                    }
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
-            } else if (action.magic === 'rafoie') {
-                let lv = action.lv || 1;
-                let cost = 15 + lv;
-                if (this.mp >= cost) {
-                    this.mp -= cost;
-                    this.magicCooldown = 2.5;
-                    this.state = 'attack';
-                    this.comboTimer = 0;
-                    this.comboCount = 0;
-                    
-                    let pAngle = Math.atan2(this.dirY, this.dirX);
-                    let range = 75; // Half of handgun
-                    let inRange = GAME.enemies.filter(e => e.hp>0 && e.roomId === this.roomId && Math.hypot(e.x-this.x, e.y-this.y)<=range);
-                    let validTargets = inRange.filter(e => {
-                        let diff = Math.abs(Math.atan2(e.y-this.y, e.x-this.x) - pAngle);
-                        if(diff>Math.PI) diff = Math.PI*2-diff;
-                        return diff<=(Math.PI/12);
-                    });
-                    validTargets.sort((a,b) => {
-                        let diffA = Math.abs(Math.atan2(a.y-this.y, a.x-this.x) - pAngle);
-                        if(diffA>Math.PI) diffA = Math.PI*2-diffA;
-                        let diffB = Math.abs(Math.atan2(b.y-this.y, b.x-this.x) - pAngle);
-                        if(diffB>Math.PI) diffB = Math.PI*2-diffB;
-                        return diffA - diffB;
-                    });
-                    let target = validTargets.length > 0 ? validTargets[0] : null;
-                    this.mainTarget = target;
-                    
-                    let cx = target ? target.x : this.x + this.dirX * range;
-                    let cy = target ? target.y : this.y + this.dirY * range;
-                    
-                    let dmg = Math.floor((this.baseStats.mind * 3/4) + 5 + (lv * 2));
-                    PROJECTILES.push({ roomId: this.roomId, type: 'rafoie', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
-                } else {
-                    this.debugInfo.push("Not enough MP");
-                }
+            let m = action.magic;
+            let lv = action.lv || 1;
+            
+            // Check shock
+            if (this.status.shockTimer > 0) {
+                this.debugInfo.push("Shocked! Cannot cast.");
+                return;
             }
-            if (action.magic !== 'resta') {
-                // If it was not resta, it handled cooldown and state above
+            
+            let cost = getMagicMpCost(m, lv);
+            
+            // Handle Jellen/Zalure class restrictions
+            if ((m === 'jellen' || m === 'zalure') && this.classId !== 'ranger' && this.classId !== 'sorcerer') {
+                this.debugInfo.push("Cannot use this magic");
+                return;
+            }
+            
+            if (!this.magicCooldowns) this.magicCooldowns = {};
+            if (this.magicCooldowns[m] > 0) return;
+            
+            if (this.mp >= cost) {
+                this.mp -= cost;
+                this.magicCooldowns[m] = 1.0;
+                this.state = 'magic';
+                this.stateTimer = 0.5;
+                addEffect('particle', { x: this.x, y: this.y, color: '#00ffff', r: 20 });
+                
+                let castAngle = Math.atan2(this.dirY, this.dirX);
+                if (this.mainTarget && this.mainTarget.hp > 0) {
+                    castAngle = Math.atan2(this.mainTarget.y - this.y, this.mainTarget.x - this.x);
+                }
+                
+                let targetType = 'none';
+                if (m === 'resta') {
+                    let heal = 20 + lv * 10;
+                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                    addFloatingText(this.x, this.y - 20, heal, '#00ff00');
+                    addEffect('heal', { x: this.x, y: this.y });
+                } else if (m === 'anti') {
+                    this.status.poisonTimer = 0;
+                    this.status.confuseTimer = 0;
+                    addEffect('heal', { x: this.x, y: this.y }); // temp effect
+                } else if (m === 'shifta') {
+                    if (this.status.shiftaLv <= lv || this.status.shiftaTimer <= 0) {
+                        this.status.shiftaLv = lv;
+                        this.status.shiftaTimer = 60.0;
+                    } else if (this.status.shiftaLv === lv) {
+                        this.status.shiftaTimer += 60.0;
+                    }
+                } else if (m === 'deband') {
+                    if (this.status.debandLv <= lv || this.status.debandTimer <= 0) {
+                        this.status.debandLv = lv;
+                        this.status.debandTimer = 60.0;
+                    } else if (this.status.debandLv === lv) {
+                        this.status.debandTimer += 60.0;
+                    }
+                                } else if (m === 'jellen' || m === 'zalure') {
+                    let targets = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId && Math.hypot(e.x - this.x, e.y - this.y) <= 75);
+                    for (let e of targets) {
+                        if (!e.status) e.status = { poisonTimer: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaLv: 0, shiftaTimer: 0, debandLv: 0, debandTimer: 0, jellenLv: 0, jellenTimer: 0, zalureLv: 0, zalureTimer: 0 };
+                        if (m === 'jellen') {
+                            if (e.status.jellenLv <= lv || e.status.jellenTimer <= 0) { e.status.jellenLv = lv; e.status.jellenTimer = 60.0; }
+                            else if (e.status.jellenLv === lv) e.status.jellenTimer += 60.0;
+                        } else {
+                            if (e.status.zalureLv <= lv || e.status.zalureTimer <= 0) { e.status.zalureLv = lv; e.status.zalureTimer = 60.0; }
+                            else if (e.status.zalureLv === lv) e.status.zalureTimer += 60.0;
+                        }
+                    }
+                    addEffect('explosion', { x: this.x, y: this.y, r: 75, lv: lv, color: m==='jellen'?'#ff0000':'#0000ff' });
+                } else if (m === 'freme') {
+                    let dmg = this.baseStats.mind + 39 * (lv / 10);
+                    let projVx = Math.cos(castAngle) * 300;
+                    let projVy = Math.sin(castAngle) * 300;
+                    let r = 5 + lv;
+                    PROJECTILES.push({ roomId: this.roomId, type: 'freme', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: 1.5 });
+                } else if (m === 'gifreme') {
+                    let dmg = this.baseStats.mind + 45 * (lv / 10);
+                    let r = 10 + lv;
+                    // 2 fireballs: front and back
+                    PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                    PROJECTILES.push({ roomId: this.roomId, type: 'gifreme', cx: this.x, cy: this.y, angle: castAngle + Math.PI, speed: 40, dmg: dmg, lv: lv, r: r, life: 5.0, maxLife: 5.0, hitTargets: new Set() });
+                } else if (m === 'rafreme') {
+                    let dmg = this.baseStats.mind + 55 * (lv / 10);
+                    let dist = 100;
+                    let cx = this.x + Math.cos(castAngle) * dist;
+                    let cy = this.y + Math.sin(castAngle) * dist;
+                    PROJECTILES.push({ roomId: this.roomId, type: 'rafreme', cx: cx, cy: cy, dmg: dmg, lv: lv, life: 0.2 });
+                } else if (m === 'ice') {
+                    let dmg = this.baseStats.mind + 28 * (lv / 10);
+                    let dist = 150;
+                    let r = 7.5; // width 15
+                    let projVx = Math.cos(castAngle) * 300; // Fast line
+                    let projVy = Math.sin(castAngle) * 300;
+                    // Projectile handles piercing
+                    PROJECTILES.push({ roomId: this.roomId, type: 'ice', x: this.x, y: this.y, vx: projVx, vy: projVy, dmg: dmg, lv: lv, r: r, life: dist/300, hitTargets: new Set() });
+                } else if (m === 'sanda') {
+                    let dmg = this.baseStats.mind + 39 * (lv / 10);
+                    let closest = null;
+                    let minDist = 200;
+                    for (let e of GAME.enemies) {
+                        if (e.hp > 0 && e.roomId === this.roomId) {
+                            let d = Math.hypot(e.x - this.x, e.y - this.y);
+                            if (d < minDist) { minDist = d; closest = e; }
+                        }
+                    }
+                    if (closest) {
+                        hitEnemyWithMagic(closest, { type: 'sanda', dmg: dmg });
+                        // Lightning strike particles
+                        let dx = closest.x - this.x;
+                        let dy = closest.y - this.y;
+                        let distToTarget = Math.hypot(dx, dy);
+                        let steps = Math.max(5, Math.floor(distToTarget / 15));
+                        for (let i = 0; i <= steps; i++) {
+                            let px = this.x + (dx * (i / steps)) + (Math.random() - 0.5) * 20;
+                            let py = this.y + (dy * (i / steps)) + (Math.random() - 0.5) * 20;
+                            addEffect('particle', { x: px, y: py, color: '#ffff00', r: 10 + Math.random() * 10 });
+                        }
+                    }
+                }
             } else {
-                this.state = 'idle';
+                this.debugInfo.push("Not enough MP");
             }
+
         }
     }
 }
@@ -1153,38 +1540,75 @@ class Enemy {
         this.stunTimer = 0;
         this.invincible = false;
         this.state = 'idle';
+        this.spawnTimer = 1.0;
+        
+        let diffMult = 1;
+        if (GAME.progress && GAME.progress.currentDifficulty === 1) diffMult = 2;
+        else if (GAME.progress && GAME.progress.currentDifficulty === 2) diffMult = 3;
+
         
         if (type === 'hildebear') {
-            this.hp = 180;
-            this.maxHp = 180;
-            this.atk = 140;
-            this.def = 30;
-            this.dex = 80;
+            this.hp = 180 * diffMult;
+            this.maxHp = 180 * diffMult;
+            this.atk = 140 * diffMult;
+            this.def = 30 * diffMult;
+            this.dex = 70;
             this.evi = 22;
             this.luck = 10;
-            this.exp = 10;
+            this.exp = 15;
             this.radius = 30;
-            this.baseSpd = 8;
+            this.baseSpd = 10;
             this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
+        } else if (type === 'gobooma') {
+            this.hp = 85 * diffMult;
+            this.maxHp = 85 * diffMult;
+            this.atk = 85 * diffMult;
+            this.def = 5 * diffMult;
+            this.dex = 15;
+            this.evi = 12;
+            this.luck = 5;
+            this.exp = 6;
+            this.radius = 10;
+            this.baseSpd = 15;
+            this.resists = { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 };
+        } else if (type === 'jigobooma') {
+            this.hp = 110 * diffMult;
+            this.maxHp = 110 * diffMult;
+            this.atk = 90 * diffMult;
+            this.def = 30 * diffMult;
+            this.dex = 20;
+            this.evi = 15;
+            this.luck = 5;
+            this.exp = 7;
+            this.radius = 10;
+            this.baseSpd = 15;
+            this.resists = { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 };
         } else {
-            this.hp = 50;
-            this.maxHp = 50;
-            this.atk = 5;
+            // booma (default)
+            this.hp = 60;
+            this.maxHp = 60;
+            this.atk = 80;
             this.def = 0;
-            this.dex = 10;
+            this.dex = 12;
             this.evi = 10;
             this.luck = 5;
-            this.exp = 10;
+            this.exp = 6;
             this.radius = 10;
-            this.baseSpd = 30;
-            this.resists = { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 };
+            this.baseSpd = 15;
+            this.resists = { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 };
         }
         this.spd = this.baseSpd;
     }
 
     update(dt) {
         if (this.hp <= 0) return;
+        if (typeof drawStatusEffects === 'function') drawStatusEffects(this, false);
         
+        if (this.spawnTimer > 0) {
+            this.spawnTimer -= dt;
+            return;
+        }
+
         if (this.stunTimer > 0) {
             this.stunTimer -= dt;
             return;
@@ -1203,17 +1627,36 @@ class Enemy {
                     this.state = 'jump';
                     this.invincible = true;
                     this.spd = 120;
+                    this.jumpTargetX = target.x;
+                    this.jumpTargetY = target.y;
+                    let jdx = this.jumpTargetX - this.x;
+                    let jdy = this.jumpTargetY - this.y;
+                    let jdist = Math.hypot(jdx, jdy);
+                    this.dirX = jdist > 0 ? jdx / jdist : 0;
+                    this.dirY = jdist > 0 ? jdy / jdist : 0;
                 }
             } else if (this.state === 'jump') {
-                if (dist <= this.radius + target.radius + 3) {
+                let jdx = this.jumpTargetX - this.x;
+                let jdy = this.jumpTargetY - this.y;
+                let jdist = Math.hypot(jdx, jdy);
+                let moveDist = this.spd * dt;
+                
+                let nextX = this.x + this.dirX * moveDist;
+                let nextY = this.y + this.dirY * moveDist;
+                let blocked = checkLineOfSight(this.x, this.y, nextX, nextY, true);
+                let dot = jdx * this.dirX + jdy * this.dirY;
+                
+                if (dot <= 0 || jdist <= moveDist || blocked) { // Reached destination or blocked
+                    if (!blocked && dot > 0) {
+                        this.x = this.jumpTargetX;
+                        this.y = this.jumpTargetY;
+                    }
                     this.state = 'chase';
                     this.invincible = false;
-                    this.spd = 8;
+                    this.spd = this.baseSpd;
                 } else {
-                    this.dirX = dx / dist;
-                    this.dirY = dy / dist;
-                    this.x += this.dirX * this.spd * dt;
-                    this.y += this.dirY * this.spd * dt;
+                    this.x = nextX;
+                    this.y = nextY;
                 }
             } else if (this.state === 'chase') {
                 if (dist > this.radius + target.radius) {
@@ -1235,23 +1678,94 @@ class Enemy {
                 }
             }
         }
+        
+        if (GAME.mode === 'map') {
+            let room = GAME.rooms.find(r => r.id === this.roomId);
+            if (room) {
+                let ts = 50;
+                let minX = room.x * ts + this.radius;
+                let maxX = (room.x + room.w) * ts - this.radius;
+                let minY = room.y * ts + this.radius;
+                let maxY = (room.y + room.h) * ts - this.radius;
+                this.x = Math.max(minX, Math.min(this.x, maxX));
+                this.y = Math.max(minY, Math.min(this.y, maxY));
+            }
+        }
     }
 
     draw(ctx) {
         if (this.hp <= 0) return;
         
-        if (this.type === 'hildebear') {
-            ctx.fillStyle = 'purple';
-            ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+        ctx.save();
+        if (this.spawnTimer > 0) {
+            ctx.globalAlpha = Math.max(0, 1.0 - this.spawnTimer);
+        }
+
+        let spriteName = 'snakey_left';
+        if (this.type === 'gobooma') spriteName = 'medusa_awake';
+        else if (this.type === 'jigobooma') spriteName = 'gol_down_awake';
+        else if (this.type === 'hildebear') spriteName = 'don_medosa_1';
+
+        if (PRE_RENDERED[spriteName]) {
+            let size = this.radius * 2.5; // Slightly larger than hitbox
+            ctx.drawImage(PRE_RENDERED[spriteName], this.x - size/2, this.y - size/2, size, size);
         } else {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            if (this.type === 'hildebear') {
+                ctx.fillStyle = 'purple';
+                ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+            } else if (this.type === 'gobooma') {
+                ctx.fillStyle = '#ff6600'; // orange
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            } else if (this.type === 'jigobooma') {
+                ctx.fillStyle = '#cc0000'; // dark red
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            } else {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+            }
         }
         
         ctx.fillStyle = 'black';
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, this.radius * 2, 4);
         ctx.fillStyle = 'red';
         ctx.fillRect(this.x - this.radius, this.y - this.radius - 5, (this.radius * 2) * (this.hp / this.maxHp), 4);
+        
+        ctx.restore();
+        ctx.filter = 'none';
+        drawStatusEffects(ctx, this);
+    }
+}
+
+// Asset Loading
+async function loadAssets() {
+    try {
+        const res = await fetch('assets.json');
+        const data = await res.json();
+        PALETTE = data.palette;
+        SPRITES = data.sprites;
+        preRenderSprites();
+    } catch(e) {
+        console.error('Failed to load assets.json', e);
+    }
+}
+
+function preRenderSprites() {
+    const dotSize = 4;
+    for (let key in SPRITES) {
+        const cvs = document.createElement('canvas');
+        cvs.width = 32; cvs.height = 32;
+        const cCtx = cvs.getContext('2d');
+        const spriteData = SPRITES[key];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const colorCode = spriteData[r][c];
+                if (PALETTE[colorCode]) {
+                    cCtx.fillStyle = PALETTE[colorCode];
+                    cCtx.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+                }
+            }
+        }
+        PRE_RENDERED[key] = cvs;
     }
 }
 
@@ -1269,6 +1783,7 @@ async function loadAreaFromFile(filename) {
     try {
         const res = await fetch(filename);
         let areaPattern = await res.json();
+        areaPattern.filename = filename;
         loadArea(areaPattern);
     } catch(e) {
         console.error('Failed to load ' + filename, e);
@@ -1316,6 +1831,7 @@ function loadArea(areaPattern) {
         radius: 20
     }));
     GAME.events = JSON.parse(JSON.stringify(areaPattern.events || []));
+    GAME.traps = JSON.parse(JSON.stringify(areaPattern.traps || []));
     GAME.teleporters = JSON.parse(JSON.stringify(areaPattern.teleporters || []));
     
     // Set players to start
@@ -1329,6 +1845,8 @@ function loadArea(areaPattern) {
 
 function startGame(is2P, class1, class2) {
     GAME.mode = 'town';
+    GAME.progress = { currentDifficulty: 0, currentStage: 0, 0: 0, 1: -1, 2: -1 };
+    generateShopLineup();
     GAME.is2P = is2P;
     GAME.players = [];
     GAME.players.push(new Player(0, class1, MAP_DATA.town.start.x, MAP_DATA.town.start.y));
@@ -1451,13 +1969,116 @@ let currentMenuTab = 'inv';
 let currentModalItem = null;
 let currentModalPid = 0;
 
+let currentAppraisalItem = null;
+let currentAppraisalPlayer = null;
+let appraisalResult = null;
+
+function openAppraiserModal(p) {
+    let unids = p.inventory.filter(i => i && i.type === 'weapon' && i.isUnidentified);
+    let listEl = document.getElementById('appraiser-list');
+    listEl.innerHTML = '';
+    
+    if (unids.length === 0) {
+        listEl.innerHTML = '<div style="color:#aaa;">未鑑定のアイテムがありません。</div>';
+    } else {
+        unids.forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerHTML = '<span>' + getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span></span>';
+            div.onclick = () => {
+                if (p.coins >= 100) {
+                    p.coins -= 100;
+                    document.getElementById('appraiser-modal').style.display = 'none';
+                    performAppraisal(p, item);
+                } else {
+                    alert("コインが足りません！");
+                }
+            };
+            listEl.appendChild(div);
+        });
+    }
+    
+    document.getElementById('btn-appraiser-close').onclick = () => {
+        document.getElementById('appraiser-modal').style.display = 'none';
+    };
+    
+    document.getElementById('appraiser-modal').style.display = 'flex';
+}
+
+function performAppraisal(p, item) {
+    currentAppraisalItem = item;
+    currentAppraisalPlayer = p;
+    
+    // Determine new enchant
+    let enchId = item.enchant;
+    let upChances = {
+        'heat': 'fire',
+        'ice': 'freeze',
+        'shock': 'bind',
+        'confuse': 'panic', // Or riot, but we use panic for now
+        'draw': 'drain'
+    };
+    let newEnchId = enchId;
+    if (enchId && upChances[enchId] && Math.random() < 0.1) {
+        newEnchId = upChances[enchId];
+    }
+    
+    // Determine attributes 5-30% across Native, Mutant, Machine, Dark, Hit
+    let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
+    let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+    let numAttrs = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < numAttrs; i++) {
+        let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
+        attrs[attr] += (Math.floor(Math.random() * 6) + 1) * 5; // 5,10,15,20,25,30
+    }
+    
+    // Build display result
+    let base = BASE_WEAPONS[item.id];
+    let prefix = newEnchId ? ENCHANTS.find(e => e.id === newEnchId).name + ' ' : '';
+    let suffix = item.enhance > 0 ? ' +' + item.enhance : '';
+    let newName = prefix + item.baseName + suffix;
+    
+    appraisalResult = {
+        enchant: newEnchId,
+        attrs: attrs,
+        name: newName
+    };
+    
+    document.getElementById('appraiser-result-name').innerHTML = getItemIconHtml(item) + '<span style="color:#00ffdd">' + newName + '</span>';
+    let stats = "";
+    stats += `<div style="color: #ffaa00; font-size:14px; line-height: 1.4;">`;
+    stats += `原生生物 ${attrs.native}%<br>`;
+    stats += `突然変異 ${attrs.mutant}%<br>`;
+    stats += `機械 ${attrs.machine}%<br>`;
+    stats += `闇 ${attrs.dark}%<br>`;
+    stats += `Hit ${attrs.hit}%`;
+    stats += `</div>`;
+    document.getElementById('appraiser-result-stats').innerHTML = stats;
+    
+    document.getElementById('appraiser-result-modal').style.display = 'flex';
+    
+    document.getElementById('btn-appraiser-accept').onclick = () => {
+        item.isUnidentified = false;
+        item.enchant = appraisalResult.enchant;
+        item.attrs = appraisalResult.attrs;
+        item.name = appraisalResult.name;
+        document.getElementById('appraiser-result-modal').style.display = 'none';
+        renderMenu(p.id);
+    };
+    
+    document.getElementById('btn-appraiser-cancel').onclick = () => {
+        // Return to appraiser list, coin is already consumed
+        document.getElementById('appraiser-result-modal').style.display = 'none';
+        openAppraiserModal(p);
+    };
+}
 function openItemModal(item, pid, source, slotIdx = -1) {
     let p = GAME.players[pid];
     let modal = document.getElementById('item-modal');
     currentModalItem = item;
     currentModalPid = pid;
     
-    document.getElementById('modal-item-name').innerText = item.name;
+    document.getElementById('modal-item-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
     
     let descTxt = item.desc || (item.name + " の説明文がここに入ります。");
     if (item.rarity) {
@@ -1487,15 +2108,26 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
     
     if (item.attrs) {
-        let attrStr = [];
-        if (item.attrs.native) attrStr.push(`原生生物 ${item.attrs.native}%`);
-        if (item.attrs.mutant) attrStr.push(`突然変異 ${item.attrs.mutant}%`);
-        if (item.attrs.machine) attrStr.push(`機械 ${item.attrs.machine}%`);
-        if (item.attrs.dark) attrStr.push(`闇 ${item.attrs.dark}%`);
-        if (item.attrs.hit) attrStr.push(`Hit ${item.attrs.hit}%`);
-        if (attrStr.length > 0) {
-            stats += `<br><span style="color: #ffaa00; font-size:12px;">属性: ${attrStr.join(', ')}</span>`;
+        stats += `<div style="color: #ffaa00; font-size:12px; line-height: 1.4; margin-top: 5px;">`;
+        stats += `原生生物 ${item.attrs.native || 0}%<br>`;
+        stats += `突然変異 ${item.attrs.mutant || 0}%<br>`;
+        stats += `機械 ${item.attrs.machine || 0}%<br>`;
+        stats += `闇 ${item.attrs.dark || 0}%<br>`;
+        stats += `Hit ${item.attrs.hit || 0}%`;
+        stats += `</div>`;
+    }
+
+    if (item.type === 'disk') {
+        let isUnusableClass = (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure'));
+        let reqMind = getMagicReqMind(item.magic, item.lv);
+        
+        stats += `<div style="font-size:14px; line-height: 1.4; margin-top: 5px;">`;
+        if (isUnusableClass) {
+            stats += `<span style="color: #ff0000;">使用不可</span>`;
+        } else {
+            stats += `<span style="color: #ff0000;">必要MIND: ${reqMind}</span>`;
         }
+        stats += `</div>`;
     }
     
     document.getElementById('modal-item-stats').innerHTML = stats;
@@ -1513,37 +2145,35 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (!isEquipped && !isPalette && source !== 'magic' && source !== 'modal-slot' && source !== 'modal-inv') {
         btnDrop.style.display = 'inline-block';
         btnDrop.onclick = () => {
-            if (confirm(item.name + ' を捨てますか？')) {
-                // Return slotted units to inventory if it's an armor
-                if (item.type === 'armor' && item.slottedUnits) {
-                    for (let i = 0; i < item.slottedUnits.length; i++) {
-                        let u = item.slottedUnits[i];
-                        if (u) {
-                            if (p.inventory.length < 20) {
-                                p.inventory.push(u);
-                            } else {
-                                // If inventory is full, drop the unit as well
-                                GAME.drops.push({ x: p.x, y: p.y, item: u });
-                            }
-                            item.slottedUnits[i] = null;
+            // Return slotted units to inventory if it's an armor
+            if (item.type === 'armor' && item.slottedUnits) {
+                for (let i = 0; i < item.slottedUnits.length; i++) {
+                    let u = item.slottedUnits[i];
+                    if (u) {
+                        if (p.inventory.length < 20) {
+                            p.inventory.push(u);
+                        } else {
+                            // If inventory is full, drop the unit as well
+                            GAME.drops.push({ x: p.x, y: p.y, item: u });
                         }
+                        item.slottedUnits[i] = null;
                     }
                 }
-                
-                // Remove from inventory
-                if (item.stack && item.stack > 1) {
-                    item.stack--;
-                    let dropItem = Object.assign({}, item);
-                    dropItem.stack = 1;
-                    GAME.drops.push({ x: p.x, y: p.y, item: dropItem });
-                } else {
-                    p.inventory = p.inventory.filter(i => i !== item);
-                    GAME.drops.push({ x: p.x, y: p.y, item: item });
-                }
-                
-                modal.style.display = 'none';
-                renderMenu(pid);
             }
+            
+            // Remove from inventory
+            if (item.stack && item.stack > 1) {
+                item.stack--;
+                let dropItem = Object.assign({}, item);
+                dropItem.stack = 1;
+                GAME.drops.push({ x: p.x, y: p.y, item: dropItem });
+            } else {
+                p.inventory = p.inventory.filter(i => i !== item);
+                GAME.drops.push({ x: p.x, y: p.y, item: item });
+            }
+            
+            modal.style.display = 'none';
+            renderMenu(pid);
         };
     }
     
@@ -1559,7 +2189,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     slotsEl.innerHTML = '';
     invEl.innerHTML = '';
     
-    if (item.type === 'armor' && item.slotCount) {
+    if (item.type === 'armor' && item.slotCount !== undefined) {
         modalContent.classList.add('two-col');
         slotsEl.style.display = 'flex';
         trashEl.style.display = 'block';
@@ -1589,7 +2219,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         units.forEach(u => {
             let div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerText = u.name;
+            div.innerHTML = getItemIconHtml(u) + u.name;
             div.addEventListener('pointerdown', e => {
                 e.preventDefault();
                 div.setPointerCapture(e.pointerId);
@@ -1598,7 +2228,17 @@ function openItemModal(item, pid, source, slotIdx = -1) {
             invEl.appendChild(div);
         });
         
-        btnEquip.style.display = 'inline-block';
+        let isEquipable = true;
+        if (item.type === 'weapon') {
+            if (item.reqClass && p.classId !== item.reqClass) isEquipable = false;
+            if (item.reqDex && p.dex < item.reqDex) isEquipable = false;
+        }
+
+        if (isEquipable) {
+            btnEquip.style.display = 'inline-block';
+        } else {
+            btnEquip.style.display = 'none';
+        }
         if (p.equip.armor === item) {
             btnEquip.innerText = '外す';
             btnEquip.onclick = () => {
@@ -1619,7 +2259,20 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     }
 
     if (item.type === 'item' || item.type === 'disk') {
-        btnUse.style.display = 'inline-block';
+        let canUse = true;
+        if (item.type === 'disk') {
+            let reqMind = getMagicReqMind(item.magic, item.lv);
+            let pMind = Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40));
+            if (pMind < reqMind) canUse = false;
+            if (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure')) canUse = false;
+        }
+        
+        if (canUse) {
+            btnUse.style.display = 'inline-block';
+        } else {
+            btnUse.style.display = 'none';
+        }
+        
         btnUse.onclick = () => {
             if (item.type === 'item') {
                 if (item.healHp) p.hp = Math.min(p.maxHp, p.hp + item.healHp);
@@ -1628,8 +2281,21 @@ function openItemModal(item, pid, source, slotIdx = -1) {
                 if (item.stack <= 0) p.inventory = p.inventory.filter(i => i !== item);
             } else if (item.type === 'disk') {
                 if (!p.magic) p.magic = [];
-                p.magic.push({ id: item.id, name: item.name.replace('ディスク',''), type: 'magic', magic: item.magic, lv: item.lv });
-                p.inventory = p.inventory.filter(i => i !== item);
+                let existing = p.magic.find(m => m.magic === item.magic);
+                if (existing) {
+                    if (item.lv > existing.lv) {
+                        existing.lv = item.lv;
+                        existing.id = item.id;
+                        existing.name = item.name.replace('ディスク','');
+                        p.inventory = p.inventory.filter(i => i !== item);
+                    } else {
+                        // Level too low, do nothing or show msg
+                        p.inventory = p.inventory.filter(i => i !== item); // Consume anyway? Let's consume it.
+                    }
+                } else {
+                    p.magic.push({ id: item.id, name: item.name.replace('ディスク',''), type: 'magic', magic: item.magic, lv: item.lv });
+                    p.inventory = p.inventory.filter(i => i !== item);
+                }
             }
             modal.style.display = 'none';
             renderMenu(pid);
@@ -1714,7 +2380,7 @@ function updateProjectiles(dt) {
     for (let i = PROJECTILES.length - 1; i >= 0; i--) {
         let proj = PROJECTILES[i];
         proj.life -= dt;
-        if (proj.type === 'fire') {
+        if (proj.type === 'freme') {
             proj.x += proj.vx * dt;
             proj.y += proj.vy * dt;
             let colors = ['#ff3300', '#ffcc00'];
@@ -1733,7 +2399,7 @@ function updateProjectiles(dt) {
                 }
             }
             if (hit || proj.life <= 0) PROJECTILES.splice(i, 1);
-        } else if (proj.type === 'gifoie') {
+        } else if (proj.type === 'gifreme') {
             proj.angle += 3 * dt;
             let currentRadius = (5.0 - proj.life) * proj.speed;
             proj.x = proj.cx + Math.cos(proj.angle) * currentRadius;
@@ -1756,19 +2422,42 @@ function updateProjectiles(dt) {
                 }
             }
             if (proj.life <= 0) PROJECTILES.splice(i, 1);
-        } else if (proj.type === 'rafoie') {
+        } else if (proj.type === 'rafreme') {
             if (proj.life <= 0) {
-                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 12, lv: proj.lv });
+                addEffect('explosion', { x: proj.cx, y: proj.cy, r: 65, lv: proj.lv });
                 let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
                 for (let e of targets) {
                     let eRadius = e.radius || 15;
-                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 12) {
+                    if (Math.hypot(e.x - proj.cx, e.y - proj.cy) <= eRadius + 65) {
                         if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
                         else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
                     }
                 }
                 PROJECTILES.splice(i, 1);
             }
+        
+        } else if (proj.type === 'ice') {
+            proj.x += proj.vx * dt;
+            proj.y += proj.vy * dt;
+            proj.life -= dt;
+            
+            // Add particles for ice
+            let colors = ['#aaffff', '#ffffff'];
+            addEffect('particle', { x: proj.x + (Math.random()-0.5)*10, y: proj.y + (Math.random()-0.5)*10, color: colors[Math.floor(Math.random()*2)], r: proj.r, life: 0.8 });
+            
+            let targets = [...GAME.enemies.filter(e=>e.hp>0 && e.roomId === proj.roomId), ...(GAME.boxes || [])];
+            for (let e of targets) {
+                let eRadius = e.radius || 15;
+                if (Math.hypot(e.x - proj.x, e.y - proj.y) <= eRadius + proj.r) {
+                    if (!proj.hitTargets.has(e)) {
+                        proj.hitTargets.add(e);
+                        if (e instanceof Enemy) hitEnemyWithMagic(e, proj);
+                        else { e.hp = (e.hp||1)-1; if (e.hp<=0) breakBox(e); }
+                    }
+                }
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
+
         } else if (proj.type === 'slicer') {
             proj.delayTimer -= dt;
             if (proj.delayTimer <= 0) {
@@ -1777,7 +2466,8 @@ function updateProjectiles(dt) {
                 
                 if (target && target.hp > 0) {
                     let myDex = p.baseStats.dex;
-                    if (p.equip.weapon && p.equip.weapon.dex) myDex += p.equip.weapon.dex;
+                    let action = p.palette[p.paletteIndex];
+                    if (action && action.dex) myDex += action.dex;
                     if (p.equip.armor) {
                         if (p.equip.armor.dex) myDex += p.equip.armor.dex;
                         if (p.equip.armor.slottedUnits) {
@@ -1788,7 +2478,7 @@ function updateProjectiles(dt) {
                     let hitRate = myDex - (targetEvi * 0.2);
                     
                     let distFromPlayer = Math.hypot(target.x - p.x, target.y - p.y);
-                    hitRate -= (distFromPlayer / 10) * 2;
+                    hitRate -= (distFromPlayer / 10);
                     
                     addEffect('bullet', { x1: proj.x, y1: proj.y, x2: target.x, y2: target.y, color: '#00ffff' });
                     // Additional particle effects for slicer to make it obvious
@@ -1796,39 +2486,49 @@ function updateProjectiles(dt) {
                         addEffect('particle', { x: target.x, y: target.y, color: '#00ffff', r: 3 });
                     }
                     
-                    if (Math.random() * 100 > hitRate) {
+                    let isBox = !!(GAME.boxes && GAME.boxes.includes(target));
+                    if (!isBox && Math.random() * 100 > hitRate) {
                         addFloatingText(target.x, target.y - 20, "miss", 'white');
                     } else {
                         let comboMult = [0.9, 1.7, 2.5][proj.comboCount - 1] || 1.0;
-                        let isCrit = (Math.random() * 100) < (p.baseStats.luck / 5);
-                        let critMult = isCrit ? 1.5 : 1.0;
-                        let defenderDef = target.def || 5;
-                        let baseDmg = (p.atk - (defenderDef / 5)) * critMult;
-                        if (baseDmg < 1) baseDmg = 1;
-                        let dmg = Math.floor(baseDmg * comboMult);
+                        let charPow = p.atk;
+                        if (p.status) {
+                            if (p.status.shiftaTimer > 0) charPow += Math.floor(charPow * (p.status.shiftaLv || 1) / 20);
+                            if (p.status.jellenTimer > 0) charPow -= Math.floor(charPow * (p.status.jellenLv || 1) / 20);
+                        }
                         
                         let action = p.palette[p.paletteIndex];
-                        if (action && action.attrs && action.attrs.native) dmg = Math.floor(dmg * 1.2);
+                        let weaponPow = action ? (action.atk || 0) : 0;
+                        let attrMult = 1.0;
+                        if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
+                            attrMult += (action.attrs.native / 100);
+                        }
+                        weaponPow = Math.floor(weaponPow * attrMult);
+                        
+                        let defenderDef = target.def || 5;
+                        if (target.status) {
+                            if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
+                            if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
+                        }
+                        
+                        let isCrit = (Math.random() * 100) < ((p.luck || p.baseStats.luck || 5) / 5);
+                        let critMult = isCrit ? 1.5 : 1.0;
+                        
+                        let baseDmg = (charPow + weaponPow - defenderDef) / 5;
+                        if (baseDmg < 1) baseDmg = 1;
+                        let dmg = Math.floor(baseDmg * comboMult * critMult);
                         
                         target.hp -= dmg;
-                        target.stunTimer = 1.0;
-                        addFloatingText(target.x, target.y - 20, dmg, 'white');
-                        console.log(`Slicer hit! Enemy HP: ${target.hp}`);
+                        if (target.atk !== undefined) {
+                            target.stunTimer = 1.0;
+                            addFloatingText(target.x, target.y - 20, dmg, 'white');
+                            console.log(`Slicer hit! Enemy HP: ${target.hp}`);
+                        } else {
+                            if (target.hp <= 0 && typeof breakBox === 'function') breakBox(target);
+                        }
                         
-                        if (proj.comboCount === 3 && action && action.enchant) {
-                            let ench = ENCHANTS.find(e => e.id === action.enchant);
-                            if (ench) {
-                                p.debugInfo.push(`Enchant: ${ench.name}!`);
-                                if (ench.type === 'add_dmg') {
-                                    let edmg = Math.floor(ench.value(p.level));
-                                    target.hp -= edmg;
-                                    addFloatingText(target.x, target.y - 40, edmg, 'white');
-                                } else if (ench.type === 'drain') {
-                                    let heal = Math.floor(target.hp * ench.drainPercent);
-                                    p.hp = Math.min(p.maxHp, p.hp + heal);
-                                    addFloatingText(p.x, p.y - 20, heal, '#33ff33');
-                                }
-                            }
+                        if (action && action.enchant && !action.isUnidentified) {
+                            applyEnchant(p, target, action, proj.comboCount);
                         }
                     }
                     
@@ -1848,20 +2548,170 @@ function updateProjectiles(dt) {
     }
 }
 function hitEnemyWithMagic(target, proj) {
-    target.hp -= proj.dmg;
-    target.stunTimer = 1.0;
-    addFloatingText(target.x, target.y - 20, proj.dmg, '#ffaa00');
-    console.log(`Magic hit! Enemy HP: ${target.hp}`);
+    if (target.hp <= 0) return;
+    
+    let resist = 0;
+    if (target.resists) {
+        if (proj.type.includes('freme')) resist = target.resists.fire || 0;
+        else if (proj.type.includes('ice')) resist = target.resists.ice || 0;
+        else if (proj.type.includes('sanda')) resist = target.resists.thunder || 0;
+    }
+    
+    let finalDmg = Math.floor(proj.dmg * (1 - resist / 100));
+    if (finalDmg < 1) finalDmg = 1;
+    target.hp -= finalDmg;
+    
+    let color = '#ffaa00';
+    if (proj.type === 'ice') {
+        color = '#00ffff';
+        if (Math.random() < 0.2) applyStatus(target, 'freeze', 15);
+    } else if (proj.type === 'sanda') {
+        color = '#ffff00';
+        if (Math.random() < 0.2) applyStatus(target, 'shock', 999);
+    }
+    
+    addFloatingText(target.x, target.y - 20, finalDmg, color);
+    
+    if (!target.status || (target.status.shockTimer <= 0 && target.status.freezeTimer <= 0)) {
+        target.stunTimer = 1.0;
+    } else if (target.status && (target.status.shockTimer > 0 || target.status.freezeTimer > 0)) {
+        if (target.status.shockTimer > 0) target.status.shockTimer = 0;
+        if (target.status.freezeTimer > 0) target.status.freezeTimer = 0;
+        target.stunTimer = 1.0;
+    }
 }
 function drawProjectiles(ctx) {
     PROJECTILES.forEach(proj => {
-        if (proj.type === 'fire' || proj.type === 'gifoie') {
+        if (proj.type === 'freme' || proj.type === 'gifreme') {
             ctx.fillStyle = 'red';
             ctx.beginPath();
             ctx.arc(proj.x, proj.y, proj.r, 0, Math.PI*2);
             ctx.fill();
         }
     });
+}
+
+
+function updateStatusEffects(obj, dt, isPlayer) {
+    if (!obj.status) return;
+    if (obj.hp <= 0 && obj.state === 'dead') return;
+    
+    if (obj.status.poisonTimer > 0) {
+        obj.status.poisonTimer -= dt;
+        obj.status.poisonDamageTimer -= dt;
+        if (obj.status.poisonDamageTimer <= 0) {
+            obj.status.poisonDamageTimer = 3.0;
+            let dmg = Math.floor(obj.status.poisonMnd / 5 + obj.maxHp * 0.02);
+            if (dmg < 1) dmg = 1;
+            obj.hp -= dmg;
+            addFloatingText(obj.x, obj.y - 20, dmg, '#00ff00');
+            if (obj.hp <= 0) {
+                obj.hp = 0;
+                if (isPlayer) obj.state = 'dead';
+                else obj.state = 'dead'; // Enemy death
+            }
+        }
+    }
+    
+    if (obj.status.confuseTimer > 0) obj.status.confuseTimer -= dt;
+    if (obj.status.shockTimer > 0) obj.status.shockTimer -= dt;
+    if (obj.status.freezeTimer > 0) obj.status.freezeTimer -= dt;
+    
+    if (obj.status.shiftaTimer > 0) obj.status.shiftaTimer -= dt;
+    if (obj.status.debandTimer > 0) obj.status.debandTimer -= dt;
+    if (obj.status.jellenTimer > 0) obj.status.jellenTimer -= dt;
+    if (obj.status.zalureTimer > 0) obj.status.zalureTimer -= dt;
+}
+
+function drawStatusEffects(ctx, obj) {
+    if (!obj.status) return;
+    
+    if (obj.status.poisonTimer > 0) {
+        // Green bubbles (simple approximation)
+        let phase = (Date.now() % 1000) / 1000;
+        ctx.fillStyle = `rgba(0, 255, 0, ${1 - phase})`;
+        ctx.beginPath(); ctx.arc(obj.x + Math.sin(phase*10)*10, obj.y - phase*30, 4, 0, Math.PI*2); ctx.fill();
+    }
+    if (obj.status.confuseTimer > 0) {
+        // Purple swirl
+        let angle = Date.now() / 200;
+        ctx.strokeStyle = 'purple';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<3; i++) {
+            let a = angle + i * Math.PI*2/3;
+            ctx.moveTo(obj.x + Math.cos(a)*10, obj.y - 20 + Math.sin(a)*10);
+            ctx.lineTo(obj.x + Math.cos(a+1)*15, obj.y - 20 + Math.sin(a+1)*15);
+        }
+        ctx.stroke();
+    }
+    if (obj.status.shockTimer > 0) {
+        // Yellow zigzags
+        ctx.strokeStyle = 'yellow';
+        ctx.lineWidth = 2;
+        let phase = Date.now() / 100;
+        ctx.beginPath();
+        ctx.moveTo(obj.x - 10, obj.y - 10 + Math.sin(phase)*5);
+        ctx.lineTo(obj.x, obj.y - 15 - Math.sin(phase)*5);
+        ctx.lineTo(obj.x + 10, obj.y - 10 + Math.sin(phase)*5);
+        ctx.stroke();
+    }
+    if (obj.status.freezeTimer > 0) {
+        // Freeze block overlay for better visibility on mobile
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.4)';
+        ctx.fillRect(obj.x - 16, obj.y - 30, 32, 40);
+        // Sparkles
+        ctx.fillStyle = (Date.now() % 500 < 250) ? '#ffffff' : '#00ffff';
+        ctx.fillRect(obj.x - 15, obj.y - 20, 2, 2);
+        ctx.fillRect(obj.x + 10, obj.y - 10, 2, 2);
+        ctx.fillRect(obj.x, obj.y - 30, 2, 2);
+    }
+    
+    // Hexagons for buffs/debuffs
+    let drawHex = (color, scale) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            let a = i * Math.PI / 3;
+            let px = obj.x + Math.cos(a) * 20 * scale;
+            let py = obj.y + Math.sin(a) * 20 * scale;
+            if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    };
+    
+    let phase = (Date.now() % 1500) / 1500; // 0 to 1
+    
+    if (obj.status.shiftaTimer > 0) {
+        // Shrinking red
+        let scale = 1.5 - phase * 0.5; // 1.5 to 1.0
+        ctx.globalAlpha = 1 - phase;
+        drawHex('red', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.debandTimer > 0) {
+        // Shrinking blue
+        let scale = 1.5 - phase * 0.5; // 1.5 to 1.0
+        ctx.globalAlpha = 1 - phase;
+        drawHex('blue', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.jellenTimer > 0) {
+        // Expanding red
+        let scale = 1.0 + phase * 0.5; // 1.0 to 1.5
+        ctx.globalAlpha = 1 - phase;
+        drawHex('red', scale);
+        ctx.globalAlpha = 1.0;
+    }
+    if (obj.status.zalureTimer > 0) {
+        // Expanding blue
+        let scale = 1.0 + phase * 0.5; // 1.0 to 1.5
+        ctx.globalAlpha = 1 - phase;
+        drawHex('blue', scale);
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 // --- Effects System ---
@@ -1899,12 +2749,18 @@ function drawEffects(ctx) {
             ctx.stroke();
             ctx.setLineDash([]);
         } else if (ef.type === 'bullet') {
+            ctx.globalAlpha = Math.max(0.6, p); // Decrease transparency
             ctx.beginPath();
             ctx.moveTo(ef.data.x1, ef.data.y1);
             let cx = ef.data.x1 + (ef.data.x2 - ef.data.x1) * (1-p);
             let cy = ef.data.y1 + (ef.data.y2 - ef.data.y1) * (1-p);
             ctx.lineTo(cx, cy);
-            ctx.arc(ef.data.x1, ef.data.y1, 2, 0, Math.PI*2);
+            ctx.strokeStyle = ef.data.color;
+            ctx.lineWidth = 4; // Increase width by 2px
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, Math.PI*2);
             ctx.fillStyle = ef.data.color;
             ctx.fill();
         } else if (ef.type === 'particle') {
@@ -1938,21 +2794,24 @@ function gainExp(p, amount) {
     if (p.exp >= p.nextExp) {
         p.exp -= p.nextExp;
         p.level++;
-        p.nextExp = 100; // Flat for now
+        p.nextExp = Math.floor(((p.level - 1) * 100) + 50 + (Math.pow(p.level, 3) / 15));
         
-        p.baseStats.maxHp += 10;
-        p.baseStats.maxMp += 5;
-        p.baseStats.atk += 2;
-        p.baseStats.def += 2;
-        p.baseStats.dex += 1;
-        p.baseStats.mind += 1;
-        p.baseStats.luck += 1;
+        let cdata = CLASS_DATA[p.classId];
+        let lu = cdata.levelUp;
+        p.baseStats.maxHp += lu.hp;
+        p.baseStats.maxMp += lu.mp;
+        p.baseStats.atk += lu.atk;
+        p.baseStats.def += lu.def;
+        p.baseStats.dex += lu.dex;
+        p.baseStats.mind += lu.mind;
+        p.baseStats.luck += lu.luck;
+        p.baseStats.spd += lu.spd;
         
         p.hp = p.baseStats.maxHp;
         p.mp = p.baseStats.maxMp;
         p.recalculateStats();
         
-        let msg = `LEVEL UP!\nLv ${p.level}\nHP +10\nMP +5\nPOW +2\nDEF +2\nDEX +1\nMIND +1\nLUCK +1`;
+        let msg = `LEVEL UP!\nLv ${p.level}\nHP +${lu.hp}\nMP +${lu.mp}\nPOW +${lu.atk}\nDEF +${lu.def}\nDEX +${lu.dex}\nMIND +${lu.mind}`;
         addFloatingText(0, 0, msg, '#ffcc00', true);
     }
 }
@@ -1967,13 +2826,13 @@ function renderMenu(pid) {
         if (st) {
             st.innerHTML = `
                 LV: ${p.level} <br>
-                EXP: 0 / 100 <br>
+                EXP: ${p.exp} / ${p.nextExp} <br>
                 HP: ${Math.floor(p.hp)} / ${p.maxHp} <br>
                 MP: ${Math.floor(p.mp)} / ${p.maxMp} <br>
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
-                MIND: 40 <br>
+                MIND: ${Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40))} <br>
                 EIV: 30 <br>
                 LUCK: 10 <br>
                 所持コイン: ${p.coins} <br>
@@ -2010,7 +2869,8 @@ function renderMenu(pid) {
         pdiv.setAttribute('data-slot-idx', i);
         pdiv.style.minHeight = '30px';
         let item = p.palette[i];
-        pdiv.innerHTML = `<span>[${i+1}] ${item ? item.name : '空'}</span>`;
+        let getIcon = (itm) => itm ? (itm.type === 'magic' ? getMagicIconHtml(itm.magic) : getItemIconHtml(itm)) : '';
+        pdiv.innerHTML = `<span>[${i+1}] ${item ? getIcon(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>' : '空'}</span>`;
         
         if (item) {
             pdiv.addEventListener('pointerdown', e => {
@@ -2042,7 +2902,16 @@ function renderMenu(pid) {
             let bT = typeOrder[b.type] || 99;
             if (aT !== bT) return aT - bT;
             
-            return a.id.localeCompare(b.id);
+            return (a.id || '').localeCompare(b.id || '');
+        });
+    } else {
+        listSource.sort((a, b) => {
+            let sA = a.sortId || '999';
+            let sB = b.sortId || '999';
+            if (sA !== sB) return sA.localeCompare(sB);
+            let lvA = a.lv || 1;
+            let lvB = b.lv || 1;
+            return lvA - lvB;
         });
     }
     
@@ -2068,13 +2937,13 @@ function renderMenu(pid) {
             if (isPalette) prefix = '[P] ';
         }
 
-        div.innerHTML = `<span>${prefix}${item.name} ${item.stack ? 'x'+item.stack : ''}</span>`;
+        let iconHtml = isMagic ? getMagicIconHtml(item.magic) : getItemIconHtml(item);
+        div.innerHTML = `<span>${prefix}${iconHtml}<span style="color:${getItemColor(item)}">${item.name}</span> ${item.stack ? 'x'+item.stack : ''}</span>`;
         
         div.addEventListener('pointerdown', (e) => {
-            if (!isEquipable) return; // Prevent drag
             e.preventDefault();
             div.setPointerCapture(e.pointerId);
-            dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1 };
+            dndState = { item: item, clone: null, pid: pid, startX: e.clientX, startY: e.clientY, startTime: Date.now(), source: isMagic ? 'magic' : 'inv', slotIdx: -1, isEquipable: isEquipable };
         });
 
         invEl.appendChild(div);
@@ -2104,7 +2973,7 @@ window.addEventListener('pointermove', (e) => {
         let dy = e.clientY - dndState.startY;
         if (Math.hypot(dx, dy) > 10) {
             clearTimeout(dndState.longPressTimer);
-            if (!dndState.clone) {
+            if (!dndState.clone && dndState.isEquipable !== false) {
                 let div = document.createElement('div');
                 div.className = 'menu-item';
                 div.style.background = '#ffcc00';
@@ -2117,8 +2986,10 @@ window.addEventListener('pointermove', (e) => {
                 dndState.clone.style.pointerEvents = 'none';
                 document.body.appendChild(dndState.clone);
             }
-            dndState.clone.style.left = e.clientX - 50 + 'px';
-            dndState.clone.style.top = e.clientY - 20 + 'px';
+            if (dndState.clone) {
+                dndState.clone.style.left = e.clientX - 50 + 'px';
+                dndState.clone.style.top = e.clientY - 20 + 'px';
+            }
         }
     }
 });
@@ -2226,7 +3097,10 @@ function updateUI() {
             }
         }
         
-        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}${waveStr}`;
+        document.getElementById(`info-${idstr}`).innerText = `Lv.${p.level} ${cdata.name}`;
+        
+        let waveElem = document.getElementById(`wave-${idstr}`);
+        if (waveElem) waveElem.innerText = waveStr.trim() !== "" ? waveStr.trim() : "";
         
         updatePaletteUI(p.id);
     });
@@ -2239,9 +3113,11 @@ function updatePaletteUI(pid) {
     let leftIdx = (p.paletteIndex - 1 + 6) % 6;
     let rightIdx = (p.paletteIndex + 1) % 6;
     
-    document.querySelector(`#pal-${idstr}-left .slot-name`).innerText = p.palette[leftIdx] ? p.palette[leftIdx].name.substring(0,8) : '';
-    document.querySelector(`#pal-${idstr}-center .slot-name`).innerText = p.palette[p.paletteIndex] ? p.palette[p.paletteIndex].name.substring(0,12) : '空';
-    document.querySelector(`#pal-${idstr}-right .slot-name`).innerText = p.palette[rightIdx] ? p.palette[rightIdx].name.substring(0,8) : '';
+    let getIcon = (item) => item ? (item.type === 'magic' ? getMagicIconHtml(item.magic) : getItemIconHtml(item)) : '';
+    
+    document.querySelector(`#pal-${idstr}-left .slot-name`).innerHTML = p.palette[leftIdx] ? getIcon(p.palette[leftIdx]) + '<span style="color:' + getItemColor(p.palette[leftIdx]) + '">' + p.palette[leftIdx].name.substring(0,8) + '</span>' : '';
+    document.querySelector(`#pal-${idstr}-center .slot-name`).innerHTML = p.palette[p.paletteIndex] ? getIcon(p.palette[p.paletteIndex]) + '<span style="color:' + getItemColor(p.palette[p.paletteIndex]) + '">' + p.palette[p.paletteIndex].name.substring(0,12) + '</span>' : 'ACT';
+    document.querySelector(`#pal-${idstr}-right .slot-name`).innerHTML = p.palette[rightIdx] ? getIcon(p.palette[rightIdx]) + '<span style="color:' + getItemColor(p.palette[rightIdx]) + '">' + p.palette[rightIdx].name.substring(0,8) + '</span>' : '';
 }
 
 function hitPlayer(p, e) {
@@ -2263,10 +3139,22 @@ function hitPlayer(p, e) {
     
     let isCrit = (Math.random() * 100) < ((e.luck || 10) / 5); // Enemy luck is 10
     let critMult = isCrit ? 1.5 : 1.0;
-    let defenderDef = p.def;
-    let baseDmg = (e.atk - (defenderDef / 5)) * critMult;
+    
+    let charPow = e.atk;
+    if (e.status) {
+        if (e.status.shiftaTimer > 0) charPow += Math.floor(charPow * (e.status.shiftaLv || 1) / 20);
+        if (e.status.jellenTimer > 0) charPow -= Math.floor(charPow * (e.status.jellenLv || 1) / 20);
+    }
+    
+    let defenderDef = p.def; // p.def already includes armor and units
+    if (p.status) {
+        if (p.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (p.status.debandLv || 1) / 20);
+        if (p.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (p.status.zalureLv || 1) / 20);
+    }
+    
+    let baseDmg = (charPow - defenderDef) / 5;
     if (baseDmg < 1) baseDmg = 1;
-    let dmg = Math.floor(baseDmg);
+    let dmg = Math.floor(baseDmg * critMult);
     
     p.hp -= dmg;
     p.invincibleTimer = 1.0; // 1s invincibility
@@ -2387,6 +3275,12 @@ function resolveCollisions(dt) {
                             if (dist === 0) { nx = 1; ny = 0; }
                             a.x += nx * overlap;
                             a.y += ny * overlap;
+                            
+                            if (a instanceof Enemy && a.type === 'hildebear' && a.state === 'jump') {
+                                a.state = 'chase';
+                                a.invincible = false;
+                                a.spd = a.baseSpd;
+                            }
                         }
                     }
                 }
@@ -2433,6 +3327,25 @@ function updateRooms(dt) {
                 r.currentWave++;
                 if (r.currentWave >= r.waves.length) {
                     r.cleared = true;
+                    if (r.isBossRoom) {
+                        // Boss defeated unlock logic
+                        let d = GAME.progress.currentDifficulty;
+                        let s = GAME.progress.currentStage;
+                        if (GAME.progress[d] === s) {
+                            if (s < 2) {
+                                GAME.progress[d] = s + 1; // Unlock next stage
+                            } else {
+                                if (d < 2) GAME.progress[d + 1] = 0; // Unlock next difficulty
+                            }
+                        }
+                        // Spawn town teleporter
+                        GAME.teleporters.push({
+                            type: 'town',
+                            x: r.x + Math.floor(r.w / 2),
+                            y: r.y + Math.floor(r.h / 2)
+                        });
+                        console.log("Boss defeated! Stage/Difficulty unlocked.");
+                    }
                     if (r.doors) {
                         r.doors.forEach(dDef => {
                             let door = GAME.doors.find(d => d.id === dDef.id);
@@ -2509,9 +3422,12 @@ function spawnWave(r) {
     let wave = r.waves[r.currentWave];
     GAME.enemies = GAME.enemies.filter(e => e.roomId !== r.id);
     if (wave.enemies) {
-        wave.enemies.forEach(ed => {
+        wave.enemies.forEach((ed, idx) => {
+            if (ed.dead) return;
             let e = new Enemy(ed.type, ed.x * 50 + 25, ed.y * 50 + 25);
             e.roomId = r.id;
+            e.waveIdx = r.currentWave;
+            e.enemyIdx = idx;
             GAME.enemies.push(e);
         });
     }
@@ -2524,9 +3440,28 @@ function breakBox(b) {
         if (Math.random() < 0.5) {
             let rand = Math.random();
             let dropItem = null;
-            if (rand < 0.3) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-            else if (rand < 0.6) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-            else dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
+            if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+            else if (rand < 0.3) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+            else if (rand < 0.5) {
+                 let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
+                 let chosen = magics[Math.floor(Math.random() * magics.length)];
+                 let lv = Math.floor(Math.random() * 3) + 1; // 1-3
+                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
+            }
+            else if (rand < 0.7) {
+                let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
+                let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
+                let enchant = null;
+                if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
+                dropItem = generateWeapon(baseId, 0, enchant);
+            }
+            else {
+                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
+                let progMult = 1 + (maxDiff * 3) + maxStage;
+                dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: (Math.floor(Math.random() * 50) + 10) * progMult };
+            }
             if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
         }
     }
@@ -2550,18 +3485,36 @@ function update() {
             e.update(dt);
             if (e.hp <= 0 && !e.deadProcessed) {
                 e.deadProcessed = true;
-                gainExp(GAME.players[0], 10);
+                gainExp(GAME.players[0], e.exp || 10);
+                
+                let room = GAME.rooms.find(r => r.id === e.roomId);
+                if (room && e.waveIdx !== undefined && e.enemyIdx !== undefined) {
+                    if (room.waves[e.waveIdx] && room.waves[e.waveIdx].enemies[e.enemyIdx]) {
+                        room.waves[e.waveIdx].enemies[e.enemyIdx].dead = true;
+                    }
+                }
                 
                 // Drop logic
                 if (Math.random() < 0.2) {
                     let rand = Math.random();
                     let dropItem = null;
-                    if (rand < 0.2) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-                    else if (rand < 0.4) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.6) dropItem = { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 2, slottedUnits: [null, null] };
-                    else if (rand < 0.8) dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: Math.floor(Math.random() * 50) + 10 };
-                    else {
-                        // Drop Weapon
+                    if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+                    else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+                    else if (rand < 0.50) { // Armor
+                        let extra = Math.floor(Math.random() * 3); // 0, 1, 2
+                        let slots = Math.floor(Math.random() * 3); // 0, 1, 2
+                        let arr = []; for(let i=0; i<slots; i++) arr.push(null);
+                        let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
+                        dropItem = { id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
+                    }
+                    else if (rand < 0.70) { // Disk
+                        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
+                        let chosen = magics[Math.floor(Math.random() * magics.length)];
+                        let lv = Math.floor(Math.random() * 3) + 1; // 1-3
+                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
+                    }
+                    else if (rand < 0.90) { // Weapon
                         let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
                         let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
                         
@@ -2582,7 +3535,10 @@ function update() {
                                 let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5); // 5 to 20 per attr
                                 val = Math.ceil(val / 5) * 5; // round to nearest 5
                                 if (val > remaining) val = remaining;
-                                attrs[attr] = (attrs[attr] || 0) + val;
+                                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+                                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
+                                let boost = (maxDiff * 15) + (maxStage * 5);
+                                attrs[attr] = (attrs[attr] || 0) + val + boost;
                                 remaining -= val;
                                 if (remaining <= 0) break;
                             }
@@ -2658,19 +3614,25 @@ function draw() {
                 if (px + ts < GAME.cameraX || px > GAME.cameraX + SCREEN_W || py + ts < GAME.cameraY || py > GAME.cameraY + SCREEN_H) continue;
                 
                 let tile = GAME.grid[y][x];
-                if (tile === 0) {
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(px, py, ts, ts);
-                    ctx.strokeStyle = '#111';
-                    ctx.strokeRect(px, py, ts, ts);
-                } else if (tile === 1) {
-                    ctx.fillStyle = '#1a1a1a';
-                    ctx.fillRect(px, py, ts, ts);
-                    ctx.strokeStyle = '#222';
-                    ctx.strokeRect(px, py, ts, ts);
-                } else if (tile === 2) {
-                    ctx.fillStyle = '#000';
-                    ctx.fillRect(px, py, ts, ts);
+                let spriteName = tile === 0 ? 'wall_1' : (tile === 2 ? 'tree' : 'grasses');
+                
+                if (PRE_RENDERED[spriteName]) {
+                    ctx.drawImage(PRE_RENDERED[spriteName], px, py, ts, ts);
+                } else {
+                    if (tile === 0) {
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(px, py, ts, ts);
+                        ctx.strokeStyle = '#111';
+                        ctx.strokeRect(px, py, ts, ts);
+                    } else if (tile === 1) {
+                        ctx.fillStyle = '#1a1a1a';
+                        ctx.fillRect(px, py, ts, ts);
+                        ctx.strokeStyle = '#222';
+                        ctx.strokeRect(px, py, ts, ts);
+                    } else if (tile === 2) {
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(px, py, ts, ts);
+                    }
                 }
             }
         }
@@ -2719,6 +3681,19 @@ function draw() {
             });
         }
         
+        
+        // Draw Traps
+        if (GAME.traps) {
+            GAME.traps.forEach(t => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(t.x * 50 + 5, t.y * 50 + 5, 40, 40);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.type, t.x * 50 + 25, t.y * 50 + 25);
+            });
+        }
+
         // Draw Teleporters
         GAME.teleporters.forEach(t => {
             ctx.fillStyle = t.type === 'town' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)';
@@ -2737,6 +3712,16 @@ function draw() {
 
 
     if (GAME.mode === 'town') {
+        if (MAP_DATA.town.walls) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            MAP_DATA.town.walls.forEach(w => {
+                ctx.fillRect(w.x, w.y, w.width, w.height);
+                ctx.strokeRect(w.x, w.y, w.width, w.height);
+            });
+        }
+        
         ctx.fillStyle = 'white';
         ctx.font = '20px sans-serif';
         MAP_DATA.town.npcs.forEach(npc => {
@@ -2752,7 +3737,8 @@ function draw() {
         GAME.particles.forEach(p => p.draw(ctx));
         drawProjectiles(ctx);
         drawEffects(ctx);
-        
+        updateDebugUI();
+
         // Draw Drops
         GAME.drops.forEach(d => {
             ctx.save();
@@ -2777,19 +3763,80 @@ function draw() {
 
     ctx.restore();
     
-    // Draw target drop UI
+    // Draw target drop / enemy UI on right side
     let p1 = GAME.players[0];
-    if (p1 && p1.targetDrop) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 20, 160, 40);
-        ctx.fillStyle = 'white';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'right';
-        let name = p1.targetDrop.item.name;
-        if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
-        ctx.fillText(name, SCREEN_W - 10, SCREEN_H / 2 + 6);
-        ctx.restore();
+    if (p1) {
+        let drawInfoBox = (title, lines, itemObj = null, debuffIcons = null) => {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 100, 0.7)';
+            ctx.fillRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(SCREEN_W - 160, SCREEN_H / 2 - 30, 150, 60);
+            
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            
+            let offsetX = 0;
+            if (itemObj) {
+                let spriteName = getItemSpriteName(itemObj);
+                if (spriteName && PRE_RENDERED[spriteName]) {
+                    ctx.drawImage(PRE_RENDERED[spriteName], SCREEN_W - 150, SCREEN_H / 2 - 24, 16, 16);
+                    offsetX = 20;
+                }
+            }
+            
+            ctx.fillStyle = itemObj ? getItemColor(itemObj) : 'white';
+            ctx.fillText(title, SCREEN_W - 150 + offsetX, SCREEN_H / 2 - 12);
+            ctx.fillStyle = 'white';
+            
+            // Draw status icons for enemy
+            if (debuffIcons && debuffIcons.length > 0) {
+                let iconX = SCREEN_W - 150 + offsetX + ctx.measureText(title).width + 5;
+                debuffIcons.forEach(iconName => {
+                    if (iconName && PRE_RENDERED[iconName]) {
+                        ctx.drawImage(PRE_RENDERED[iconName], iconX, SCREEN_H / 2 - 24, 16, 16);
+                        iconX += 18;
+                    }
+                });
+            }
+
+            lines.forEach((line, i) => {
+                ctx.fillText(line, SCREEN_W - 150, SCREEN_H / 2 + 5 + (i * 15));
+            });
+            ctx.restore();
+        };
+
+        if (p1.targetDrop) {
+            let name = p1.targetDrop.item.name;
+            if (p1.targetDrop.item.type === 'coin') name = p1.targetDrop.item.amount + name;
+            drawInfoBox(name, [], p1.targetDrop.item);
+        } else if (p1.mainTarget) {
+            let t = p1.mainTarget;
+            let isBoxTarget = !!(GAME.boxes && GAME.boxes.includes(t));
+            if (isBoxTarget) {
+                drawInfoBox("アイテムボックス", []);
+            } else if (t.hp > 0) {
+                                let name = t.type;
+                if (t.type === 'booma') name = "ブーマ";
+                else if (t.type === 'gobooma') name = "ゴブーマ";
+                else if (t.type === 'jigobooma') name = "ジゴブーマ";
+                else if (t.type === 'hildebear') name = "ヒルデベア";
+                
+                let debuffIcons = [];
+                if (t.status) {
+                    if (t.status.jellenTimer > 0) debuffIcons.push(getStatusSpriteName('jellen'));
+                    if (t.status.zalureTimer > 0) debuffIcons.push(getStatusSpriteName('zalure'));
+                    if (t.status.poisonTimer > 0) debuffIcons.push(getStatusSpriteName('poison'));
+                    if (t.status.confuseTimer > 0) debuffIcons.push(getStatusSpriteName('confuse'));
+                    if (t.status.shockTimer > 0) debuffIcons.push(getStatusSpriteName('shock'));
+                    if (t.status.freezeTimer > 0) debuffIcons.push(getStatusSpriteName('freeze'));
+                }
+                
+                // Draw info box for enemy
+                drawInfoBox(name, [`種族: Native`, `HP: ${t.hp} / ${t.maxHp}`], null, debuffIcons);
+            }
+        }
     }
     
     drawLevelUpUI(ctx);
@@ -2803,6 +3850,7 @@ function loop() {
 
 // Init
 window.onload = async () => {
+    await loadAssets();
     await loadMapData();
     GAME.walls = [
         {x: 200, y: 150, w: 100, h: 50},
@@ -2839,6 +3887,14 @@ window.onload = async () => {
     setupScrollBtn('scroll-inv-down', 'menu-list-1p', 1);
     setupScrollBtn('scroll-mag-up', 'menu-magic-1p', -1);
     setupScrollBtn('scroll-mag-down', 'menu-magic-1p', 1);
+    setupScrollBtn('scroll-modal-up', 'modal-item-inventory', -1);
+    setupScrollBtn('scroll-modal-down', 'modal-item-inventory', 1);
+    setupScrollBtn('scroll-pal-inv-up', 'menu-palette-1p', -1);
+    setupScrollBtn('scroll-pal-inv-down', 'menu-palette-1p', 1);
+    setupScrollBtn('scroll-pal-mag-up', 'menu-palette-magic-1p', -1);
+    setupScrollBtn('scroll-pal-mag-down', 'menu-palette-magic-1p', 1);
+    setupScrollBtn('scroll-shop-up', 'shop-item-list', -1);
+    setupScrollBtn('scroll-shop-down', 'shop-item-list', 1);
     
     document.getElementById('btn-start-2p').onclick = () => {
         document.getElementById('screen-title').style.display = 'none';
@@ -2948,3 +4004,423 @@ window.onload = async () => {
 
     requestAnimationFrame(loop);
 };
+
+let currentShopPlayer = null;
+let currentShopTab = 'buy';
+let currentShopItem = null;
+
+function openShopModal(p) {
+    currentShopPlayer = p;
+    currentShopTab = 'buy';
+    document.getElementById('shop-modal').style.display = 'flex';
+    document.getElementById('shop-subwindow').style.display = 'none';
+    
+    document.getElementById('btn-shop-close').onclick = () => {
+        document.getElementById('shop-modal').style.display = 'none';
+    };
+    
+    document.getElementById('tab-shop-buy').onclick = () => {
+        currentShopTab = 'buy';
+        document.getElementById('tab-shop-buy').classList.add('active');
+        document.getElementById('tab-shop-buy').style.borderColor = '#ffcc00';
+        document.getElementById('tab-shop-sell').classList.remove('active');
+        document.getElementById('tab-shop-sell').style.borderColor = 'transparent';
+        document.getElementById('shop-subwindow').style.display = 'none';
+        renderShopList();
+    };
+    
+    document.getElementById('tab-shop-sell').onclick = () => {
+        currentShopTab = 'sell';
+        document.getElementById('tab-shop-sell').classList.add('active');
+        document.getElementById('tab-shop-sell').style.borderColor = '#ffcc00';
+        document.getElementById('tab-shop-buy').classList.remove('active');
+        document.getElementById('tab-shop-buy').style.borderColor = 'transparent';
+        document.getElementById('shop-subwindow').style.display = 'none';
+        renderShopList();
+    };
+    
+    renderShopList();
+}
+
+function renderShopList() {
+    let listEl = document.getElementById('shop-item-list');
+    listEl.innerHTML = '';
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    let stageNames = ['表層', '洞窟', '地下遺跡'];
+    let maxDiff = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
+    let maxStage = Math.max(0, GAME.progress[maxDiff]);
+    let progStr = `[進捗: ${diffNames[maxDiff]}/${stageNames[maxStage]}]`;
+    document.getElementById('shop-meseta').innerText = (currentShopPlayer.meseta || 0) + ' ' + progStr;
+    
+    let items = [];
+    if (currentShopTab === 'buy') {
+        items = GAME.shopItems;
+    } else {
+        items = currentShopPlayer.inventory.filter(i => i !== null);
+        let typeOrder = { 'weapon': 1, 'armor': 2, 'unit': 3, 'item': 4, 'disk': 5 };
+        items.sort((a, b) => {
+            let aEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === a || currentShopPlayer.palette.includes(a)) ? 0 : 1;
+            let bEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === b || currentShopPlayer.palette.includes(b)) ? 0 : 1;
+            if (aEquip !== bEquip) return aEquip - bEquip;
+            let aT = typeOrder[a.type] || 99;
+            let bT = typeOrder[b.type] || 99;
+            if (aT !== bT) return aT - bT;
+            return (a.id || '').localeCompare(b.id || '');
+        });
+    }
+    
+    if (items.length === 0) {
+        listEl.innerHTML = '<div style="color:#aaa; padding:10px;">アイテムがありません</div>';
+        return;
+    }
+    
+    items.forEach(item => {
+        let div = document.createElement('div');
+        div.className = 'menu-item';
+        
+        let isEquipped = currentShopPlayer.equip && currentShopPlayer.equip.armor === item;
+        let isPalette = currentShopPlayer.palette.includes(item);
+        
+        let prefix = '';
+        if (isEquipped || isPalette) prefix = '<span style="color:#00ff00;">E </span>';
+        else if (item.isUnidentified) prefix = '<span style="color:#ff0000;">? </span>';
+        
+        div.innerHTML = '<span>' + prefix + getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span></span>';
+        
+        // Indicate if selling is blocked because equipped
+        if (currentShopTab === 'sell' && (isEquipped || isPalette)) {
+            div.style.opacity = '0.5';
+        }
+        
+        div.onclick = () => {
+            if (currentShopTab === 'sell' && (isEquipped || isPalette)) return;
+            showShopSubwindow(item);
+        };
+        listEl.appendChild(div);
+    });
+}
+
+function showShopSubwindow(item) {
+    currentShopItem = item;
+    let sub = document.getElementById('shop-subwindow');
+    sub.style.display = 'flex';
+    
+    document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
+    document.getElementById('shop-sub-desc').innerText = item.desc || (item.name + ' のアイテム');
+    
+    let stats = '';
+    if (item.type === 'weapon') {
+        stats = `POW: ${item.basePow || 0}`;
+        if (item.enhance) stats += ` (+${item.enhance})`;
+        stats += `<br>DEX: ${item.baseDex || 0}`;
+        if (item.attrs) {
+            let attrNames = { native: '原生生物', mutant: '突然変異', machine: '機械', dark: 'ダーク', hit: 'Hit' };
+            for (let k in item.attrs) {
+                if (item.attrs[k] > 0) stats += `<br>${attrNames[k]}: ${item.attrs[k]}%`;
+            }
+        }
+    } else if (item.type === 'armor') {
+        stats = `DEF: ${item.def || 0}<br>スロット: ${item.slotCount || 0}`;
+    }
+    document.getElementById('shop-sub-stats').innerHTML = stats;
+    
+    let price = getItemPrice(item);
+    if (currentShopTab === 'sell') {
+        price = Math.floor(price * 0.5);
+    }
+    document.getElementById('shop-sub-price').innerText = price + ' コイン';
+    
+    let btn = document.getElementById('btn-shop-action');
+    btn.innerText = currentShopTab === 'buy' ? '購入' : '売却';
+    
+    if (currentShopTab === 'buy' && (currentShopPlayer.meseta || 0) < price) {
+        btn.style.background = '#555';
+        btn.style.pointerEvents = 'none';
+    } else {
+        btn.style.background = currentShopTab === 'buy' ? '#0066cc' : '#ff4444';
+        btn.style.pointerEvents = 'auto';
+    }
+    
+    btn.onclick = () => {
+        if (currentShopTab === 'buy') {
+            if ((currentShopPlayer.meseta || 0) >= price) {
+                if (currentShopPlayer.inventory.filter(i => i !== null).length >= 30) {
+                    alert('インベントリがいっぱいです！');
+                    return;
+                }
+                currentShopPlayer.meseta -= price;
+                let itemCopy = JSON.parse(JSON.stringify(item));
+                itemCopy.uid = 'i_' + Date.now() + Math.floor(Math.random()*1000); 
+                currentShopPlayer.inventory.push(itemCopy);
+                
+                document.getElementById('shop-subwindow').style.display = 'none';
+                renderShopList();
+            }
+        } else {
+            // Sell
+            currentShopPlayer.meseta = (currentShopPlayer.meseta || 0) + price;
+            currentShopPlayer.inventory = currentShopPlayer.inventory.filter(i => i !== item);
+            document.getElementById('shop-subwindow').style.display = 'none';
+            renderShopList();
+        }
+    };
+}
+
+
+function applyStatus(obj, type, val, mnd=0) {
+    if (!obj.status) obj.status = { poisonTimer: 0, poisonDamageTimer: 0, poisonMnd: 0, confuseTimer: 0, shockTimer: 0, freezeTimer: 0, shiftaTimer: 0, shiftaLv: 0, debandTimer: 0, debandLv: 0, jellenTimer: 0, jellenLv: 0, zalureTimer: 0, zalureLv: 0 };
+    if (type === 'poison') {
+        obj.status.poisonTimer = val;
+        obj.status.poisonDamageTimer = 3.0;
+        obj.status.poisonMnd = mnd;
+    } else if (type === 'confuse') {
+        obj.status.confuseTimer = val;
+    } else if (type === 'shock') {
+        obj.status.shockTimer = val;
+    } else if (type === 'freeze') {
+        obj.status.freezeTimer = val;
+    }
+}
+
+
+function updateDebugUI() {
+    for (let i = 0; i < GAME.players.length; i++) {
+        let p = GAME.players[i];
+        let el = document.getElementById(i === 0 ? 'info-1p' : 'info-2p');
+        let buffContainer = document.getElementById(i === 0 ? 'buffs-1p' : 'buffs-2p');
+        if (el && p) {
+            let clsName = CLASS_DATA[p.classId].name;
+            el.innerHTML = `Lv.${p.level} ${clsName}`;
+            
+            if (p.status) {
+                let buffs = [];
+                if (p.status.shiftaTimer > 0) buffs.push('shifta');
+                if (p.status.debandTimer > 0) buffs.push('deband');
+                if (p.status.jellenTimer > 0) buffs.push('jellen');
+                if (p.status.zalureTimer > 0) buffs.push('zalure');
+                if (p.status.poisonTimer > 0) buffs.push('poison');
+                if (p.status.confuseTimer > 0) buffs.push('confuse');
+                if (p.status.shockTimer > 0) buffs.push('shock');
+                if (p.status.freezeTimer > 0) buffs.push('freeze');
+                
+                let buffHtml = '';
+                buffs.forEach(b => {
+                    let spriteName = getStatusSpriteName(b);
+                    if (spriteName && PRE_RENDERED[spriteName]) {
+                        buffHtml += `<img src="${PRE_RENDERED[spriteName].toDataURL()}" style="width:16px; height:16px; image-rendering:pixelated;">`;
+                    }
+                });
+                if (buffContainer) buffContainer.innerHTML = buffHtml;
+            }
+        }
+    }
+}
+
+
+window.openTeleporterMenu = function(player) {
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    
+    let modal = document.getElementById('teleporterModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teleporterModal';
+        modal.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:900; align-items:center; justify-content:center; display:flex; font-family: monospace;';
+        document.body.appendChild(modal);
+    }
+    
+    let html = `
+    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+            <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">難易度を選択</div>
+            <div class="menu-btn" onclick="closeTeleporterModal()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">とじる</div>
+        </div>
+        <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+    `;
+    
+    for(let d = 0; d < 3; d++) {
+        if (GAME.progress[d] >= 0) {
+            html += `<button class="menu-btn" style="width:100%; padding: 15px; margin-bottom: 5px; background: #1a1a3a; color: white; border: 1px solid #55f; border-radius: 4px; cursor: pointer; font-size: 16px;" onclick="teleporterSelectStage(${d})">${diffNames[d]}</button>`;
+        }
+    }
+    
+    html += `</div></div>`;
+    modal.innerHTML = html;
+};
+
+window.teleporterSelectStage = function(diff) {
+    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
+    let stageNames = ['表層', '洞窟', '地下遺跡'];
+    
+    let modal = document.getElementById('teleporterModal');
+    let html = `
+    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+            <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">ステージを選択 (${diffNames[diff]})</div>
+            <div class="menu-btn" onclick="openTeleporterMenu()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">戻る</div>
+        </div>
+        <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+    `;
+    
+    for(let s = 0; s <= GAME.progress[diff]; s++) {
+        if (s > 2) continue;
+        html += `<button class="menu-btn" style="width:100%; padding: 15px; margin-bottom: 5px; background: #1a1a3a; color: white; border: 1px solid #55f; border-radius: 4px; cursor: pointer; font-size: 16px;" onclick="selectTeleportTarget(${diff}, ${s})">${stageNames[s]}</button>`;
+    }
+    
+    html += `</div></div>`;
+    modal.innerHTML = html;
+};
+
+window.selectTeleportTarget = function(diff, stage) {
+    GAME.progress.currentDifficulty = diff;
+    GAME.progress.currentStage = stage;
+    GAME.mode = 'map';
+    
+    let stageFiles = ['forest', 'cave', 'ruins'];
+    let prefix = stageFiles[stage];
+    // Start at area 1
+    loadAreaFromFile(`${prefix}1_1.json`);
+    
+    closeTeleporterModal();
+};
+
+window.closeTeleporterModal = function() {
+    let el = document.getElementById('teleporterModal');
+    if (el) el.remove();
+};
+
+
+function getItemSpriteName(item) {
+    if (!item) return '';
+    if (item.type === 'weapon') {
+        if (item.weaponType === 'saber' || item.weaponType === 'slicer' || item.weaponType === 'dagger') return 'item_wepon_sword';
+        if (item.weaponType === 'handgun' || item.weaponType === 'shotgun') return 'item_wepon_gun';
+        if (item.weaponType === 'cane') return 'item_wepon_cane';
+        return 'item_wepon_sword';
+    } else if (item.type === 'armor') return 'item_armor';
+    else if (item.type === 'unit') return 'item_unit';
+    else if (item.type === 'item') return 'item_consuma_drink';
+    else if (item.type === 'disk') return 'item_consuma_disc';
+    return '';
+}
+
+function getItemIconHtml(item) {
+    let spriteName = getItemSpriteName(item);
+    if (spriteName && PRE_RENDERED[spriteName]) {
+        let dataUrl = PRE_RENDERED[spriteName].toDataURL();
+        return '<img src="' + dataUrl + '" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; image-rendering: pixelated;">';
+    }
+    return '';
+}
+
+
+function getMagicSpriteName(magicId) {
+    if (!magicId) return '';
+    let map = {
+        'resta': 'magic_lesta',
+        'anti': 'magic_anti',
+        'shifta': 'magic_shifta',
+        'deband': 'magic_deband',
+        'jellen': 'magic_jellen',
+        'zalure': 'magic_zalure',
+        'freme': 'magic_flem',
+        'gifreme': 'magic_giflem',
+        'rafreme': 'magic_laflem',
+        'ice': 'magic_ice',
+        'giice': 'magic_giice',
+        'laice': 'magic_laice',
+        'sanda': 'magic_thanda',
+        'gisanda': 'magic_githanda',
+        'lasanda': 'magic_lathanda'
+    };
+    return map[magicId] || '';
+}
+
+function getMagicIconHtml(magicId) {
+    let spriteName = getMagicSpriteName(magicId);
+    if (spriteName && PRE_RENDERED[spriteName]) {
+        let dataUrl = PRE_RENDERED[spriteName].toDataURL();
+        return '<img src="' + dataUrl + '" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; image-rendering: pixelated;">';
+    }
+    return '';
+}
+
+function getStatusSpriteName(statusName) {
+    // using English fallback names as well in case of mojibake
+    let map = {
+        'シフタ': 'magic_shifta', 'shifta': 'magic_shifta',
+        'デバンド': 'magic_deband', 'deband': 'magic_deband',
+        'ジェルン': 'magic_jellen', 'jellen': 'magic_jellen',
+        'ザルア': 'magic_zalure', 'zalure': 'magic_zalure',
+        '毒': 'stt_poison', 'poison': 'stt_poison',
+        '混乱': 'stt_confuse', 'confuse': 'stt_confuse', 'panic': 'stt_confuse',
+        'ショック': 'stt_shock', 'shock': 'stt_shock',
+        '凍結': 'stt_freeze', 'freeze': 'stt_freeze'
+    };
+    return map[statusName] || '';
+}
+
+
+function getMagicReqMind(magicId, lv) {
+    let l = Number(lv) || 1;
+    switch (magicId) {
+        case 'freme': return 20 + (l * 20);
+        case 'gifreme': return 75 + (l * 25);
+        case 'rafreme': return 108 + (l * 28);
+        case 'ice': return 10 + (l * 25);
+        case 'giice': return 76 + (l * 24);
+        case 'laice': return 76 + (l * 30);
+        case 'sanda': return 20 + (l * 24);
+        case 'gisanda': return 75 + (l * 25);
+        case 'lasanda': return 104 + (l * 30);
+        case 'resta': return 20 + (l * 30);
+        case 'shifta':
+        case 'deband':
+        case 'jellen':
+        case 'zalure': return 32 + (l * 28);
+        case 'anti': return 100;
+        default: return 999;
+    }
+}
+
+function getMagicMpCost(magicId, lv) {
+    let halfLv = Math.floor(lv / 2);
+    switch (magicId) {
+        case 'freme': return 4 + halfLv;
+        case 'gifreme': return 21 + halfLv;
+        case 'rafreme': return 30 + halfLv;
+        case 'ice': return 6 + halfLv;
+        case 'giice': return 21 + halfLv;
+        case 'laice': return 30 + halfLv;
+        case 'sanda': return 4 + halfLv;
+        case 'gisanda': return 21 + halfLv;
+        case 'lasanda': return 30 + halfLv;
+        case 'resta': return 15 + halfLv;
+        case 'shifta':
+        case 'deband':
+        case 'jellen':
+        case 'zalure': return 10 + halfLv;
+        case 'anti': return 20 + halfLv;
+        default: return 10;
+    }
+}
+
+
+function getItemColor(item) {
+    if (!item) return '#ffffff';
+    let color = '#ffffff';
+    let lightBlue = '#00ffdd';
+    
+    if (item.type === 'weapon') {
+        if (item.isUnidentified) color = lightBlue;
+        else if (item.enchant !== null && item.enchant !== undefined) color = lightBlue;
+        else if (item.attrs && (item.attrs.native > 0 || item.attrs.mutant > 0 || item.attrs.machine > 0 || item.attrs.dark > 0 || item.attrs.hit > 0)) color = lightBlue;
+    } else if (item.type === 'armor') {
+        if (item.slotCount && item.slotCount > 0) color = lightBlue;
+        else if (item.def > 10 && item.name && !item.name.includes('+')) color = lightBlue;
+        else if (item.isBonusStats) color = lightBlue;
+    } else if (item.type === 'unit') {
+        if (item.name && !item.name.includes('+')) color = lightBlue;
+        else if (item.isBonusStats) color = lightBlue;
+    }
+    return color;
+}
