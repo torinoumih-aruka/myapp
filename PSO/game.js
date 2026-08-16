@@ -500,6 +500,7 @@ class Player {
         this.def = this.baseStats.def;
         this.spd = this.baseStats.spd;
         this.dex = this.baseStats.dex;
+        this.mind = this.baseStats.mind || 0;
         
         if (this.equip.armor) {
             if (this.equip.armor.def) this.def += this.equip.armor.def;
@@ -510,6 +511,7 @@ class Player {
                         if (u.def) this.def += u.def;
                         if (u.hp) this.maxHp += u.hp;
                         if (u.dex) this.dex += u.dex;
+                        if (u.mind) this.mind += u.mind;
                     }
                 });
             }
@@ -1409,8 +1411,7 @@ class Player {
                 return;
             }
             
-            let costs = { resta: 10, anti: 8, shifta: 15, deband: 15, freme: 10, gifreme: 15, rafreme: 20, ice: 12, sanda: 15, jellen: 15, zalure: 15 };
-            let cost = costs[m] || 10;
+            let cost = getMagicMpCost(m, lv);
             
             // Handle Jellen/Zalure class restrictions
             if ((m === 'jellen' || m === 'zalure') && this.classId !== 'ranger' && this.classId !== 'sorcerer') {
@@ -2116,6 +2117,19 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         stats += `Hit ${item.attrs.hit || 0}%`;
         stats += `</div>`;
     }
+
+    if (item.type === 'disk') {
+        let isUnusableClass = (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure'));
+        let reqMind = getMagicReqMind(item.magic, item.lv);
+        
+        stats += `<div style="font-size:14px; line-height: 1.4; margin-top: 5px;">`;
+        if (isUnusableClass) {
+            stats += `<span style="color: #ff0000;">使用不可</span>`;
+        } else {
+            stats += `<span style="color: #ff0000;">必要MIND: ${reqMind}</span>`;
+        }
+        stats += `</div>`;
+    }
     
     document.getElementById('modal-item-stats').innerHTML = stats;
     
@@ -2246,7 +2260,19 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     }
 
     if (item.type === 'item' || item.type === 'disk') {
-        btnUse.style.display = 'inline-block';
+        let canUse = true;
+        if (item.type === 'disk') {
+            let reqMind = getMagicReqMind(item.magic, item.lv);
+            if (p.mind < reqMind) canUse = false;
+            if (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure')) canUse = false;
+        }
+        
+        if (canUse) {
+            btnUse.style.display = 'inline-block';
+        } else {
+            btnUse.style.display = 'none';
+        }
+        
         btnUse.onclick = () => {
             if (item.type === 'item') {
                 if (item.healHp) p.hp = Math.min(p.maxHp, p.hp + item.healHp);
@@ -2843,7 +2869,8 @@ function renderMenu(pid) {
         pdiv.setAttribute('data-slot-idx', i);
         pdiv.style.minHeight = '30px';
         let item = p.palette[i];
-        pdiv.innerHTML = `<span>[${i+1}] ${item ? getItemIconHtml(item) + item.name : '空'}</span>`;
+        let getIcon = (itm) => itm ? (itm.type === 'magic' ? getMagicIconHtml(itm.magic) : getItemIconHtml(itm)) : '';
+        pdiv.innerHTML = `<span>[${i+1}] ${item ? getIcon(item) + item.name : '空'}</span>`;
         
         if (item) {
             pdiv.addEventListener('pointerdown', e => {
@@ -4329,4 +4356,48 @@ function getStatusSpriteName(statusName) {
         '凍結': 'stt_freeze', 'freeze': 'stt_freeze'
     };
     return map[statusName] || '';
+}
+
+
+function getMagicReqMind(magicId, lv) {
+    switch (magicId) {
+        case 'freme': return 20 + (lv * 20);
+        case 'gifreme': return 75 + (lv * 25);
+        case 'rafreme': return 108 + (lv * 28);
+        case 'ice': return 10 + (lv * 25);
+        case 'giice': return 76 + (lv * 24);
+        case 'laice': return 76 + (lv * 30);
+        case 'sanda': return 20 + (lv * 24);
+        case 'gisanda': return 75 + (lv * 25);
+        case 'lasanda': return 104 + (lv * 30);
+        case 'resta': return 20 + (lv * 30);
+        case 'shifta':
+        case 'deband':
+        case 'jellen':
+        case 'zalure': return 32 + (lv * 28);
+        case 'anti': return 100;
+        default: return 999;
+    }
+}
+
+function getMagicMpCost(magicId, lv) {
+    let halfLv = Math.floor(lv / 2);
+    switch (magicId) {
+        case 'freme': return 4 + halfLv;
+        case 'gifreme': return 21 + halfLv;
+        case 'rafreme': return 30 + halfLv;
+        case 'ice': return 6 + halfLv;
+        case 'giice': return 21 + halfLv;
+        case 'laice': return 30 + halfLv;
+        case 'sanda': return 4 + halfLv;
+        case 'gisanda': return 21 + halfLv;
+        case 'lasanda': return 30 + halfLv;
+        case 'resta': return 15 + halfLv;
+        case 'shifta':
+        case 'deband':
+        case 'jellen':
+        case 'zalure': return 10 + halfLv;
+        case 'anti': return 20 + halfLv;
+        default: return 10;
+    }
 }
