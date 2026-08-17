@@ -183,6 +183,34 @@ const BASE_WEAPONS = {
 };
 
 
+const BASE_ARMORS = {
+    'a_armor': { name: 'アーマー', type: 'armor', price: 100, rarity: 1, baseDef: 5, baseEvi: 5, reqLv: 1 },
+    'a_shimamura': { name: 'シマムラアーマー', type: 'armor', price: 900, rarity: 3, baseDef: 10, baseEvi: 7, reqLv: 2 }
+};
+
+function generateArmor(baseId) {
+    let base = BASE_ARMORS[baseId];
+    if (!base) return null;
+    
+    let bonusDef = Math.floor(Math.random() * 4); // 0, 1, 2, 3
+    let bonusEvi = Math.floor(Math.random() * 4); // 0, 1, 2, 3
+    let slots = Math.floor(Math.random() * 3); // 0, 1, 2
+    
+    return {
+        uid: 'a_' + Date.now() + Math.floor(Math.random() * 1000),
+        id: baseId,
+        type: 'armor',
+        name: base.name,
+        desc: "防御力と回避力を高める防具",
+        reqLv: base.reqLv,
+        rarity: base.rarity,
+        def: base.baseDef + bonusDef,
+        evi: base.baseEvi + bonusEvi,
+        slotCount: slots,
+        slottedUnits: new Array(slots).fill(null)
+    };
+}
+
 const DEBUG_ENCHANT_100_ON_COMBO_3 = true;
 
 function applyEnchant(p, target, action, comboCount) {
@@ -360,13 +388,7 @@ function generateWeapon(baseId, forcedEnhance = 0, forcedEnchant = null, forcedA
     return w;
 }
 
-function generateArmor(forceSlots = -1, forceExtra = -1) {
-    let extra = forceExtra >= 0 ? forceExtra : Math.floor(Math.random() * 3); // 0, 1, 2
-    let slots = forceSlots >= 0 ? forceSlots : Math.floor(Math.random() * 3); // 0, 1, 2
-    let arr = []; for(let i=0; i<slots; i++) arr.push(null);
-    let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
-    return { uid: 'a_' + Date.now() + Math.floor(Math.random() * 1000), id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
-}
+
 
 function generateShopLineup() {
     GAME.shopItems = [];
@@ -408,7 +430,7 @@ function generateShopLineup() {
             }
         } else if (rand < 0.7) {
             // Armor
-            GAME.shopItems.push(generateArmor());
+            GAME.shopItems.push(generateArmor(Math.random() < 0.5 ? 'a_armor' : 'a_shimamura'));
         } else {
             // Disk (Lv 1-3)
             let chosen = magics[Math.floor(Math.random() * magics.length)];
@@ -476,7 +498,8 @@ class Player {
         if (this.classId === 'swordman') {
             this.inventory = [
                 generateWeapon('w_dagger'),
-                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                generateArmor('a_armor'),
+                generateArmor('a_shimamura'),
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
             ];
@@ -484,14 +507,14 @@ class Player {
             this.inventory = [
                 generateWeapon('w_handgun'),
                 generateWeapon('w_rifle', 0, 'heat'),
-                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                generateArmor('a_armor'),
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
             ];
         } else if (this.classId === 'sorcerer') {
             this.inventory = [
                 generateWeapon('w_cane'),
-                { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
+                generateArmor('a_armor'),
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
                 { id: 'm_zalure_1', name: 'ザルアLv1ディスク', type: 'disk', magic: 'zalure', lv: 1 },
@@ -541,10 +564,12 @@ class Player {
         this.def = this.baseStats.def;
         this.spd = this.baseStats.spd;
         this.dex = this.baseStats.dex;
+        this.evi = this.baseStats.evi || 30;
         this.mind = (typeof this.baseStats.mind === 'number' && !isNaN(this.baseStats.mind)) ? this.baseStats.mind : (CLASS_DATA[this.classId] ? CLASS_DATA[this.classId].mind || 40 : 40);
         
         if (this.equip.armor) {
             if (this.equip.armor.def) this.def += this.equip.armor.def;
+            if (this.equip.armor.evi) this.evi += this.equip.armor.evi;
             if (this.equip.armor.slottedUnits) {
                 this.equip.armor.slottedUnits.forEach(u => {
                     if (u) {
@@ -553,11 +578,13 @@ class Player {
                         if (u.hp) this.maxHp += u.hp;
                         if (u.dex) this.dex += u.dex;
                         if (u.mind) this.mind += u.mind;
+                        if (u.evi) this.evi += u.evi;
                     }
                 });
             }
         }
         
+
         this.hp = Math.min(this.maxHp, this.maxHp * hpRatio);
         this.mp = Math.min(this.maxMp, this.maxMp * mpRatio);
         
@@ -2140,7 +2167,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     }
     document.getElementById('modal-item-desc').innerText = descTxt;
     
-    let bonus = { atk: 0, def: 0, hp: 0, dex: 0 };
+    let bonus = { atk: 0, def: 0, hp: 0, dex: 0, evi: 0 };
     if (item.type === 'armor' && item.slottedUnits) {
         item.slottedUnits.forEach(u => {
             if (u) {
@@ -2148,6 +2175,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
                 if (u.def) bonus.def += u.def;
                 if (u.hp) bonus.hp += u.hp;
                 if (u.dex) bonus.dex += u.dex;
+                if (u.evi) bonus.evi += u.evi;
             }
         });
     }
@@ -2157,8 +2185,19 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (item.def || bonus.def) stats += `DEF: ${item.def || 0} ` + (bonus.def ? `<span style="color: #88ff88;">(+${bonus.def})</span> ` : '');
     if (item.hp || bonus.hp) stats += `HP: ${item.hp || 0} ` + (bonus.hp ? `<span style="color: #88ff88;">(+${bonus.hp})</span> ` : '');
     if (item.dex || bonus.dex) stats += `DEX: ${item.dex || 0} ` + (bonus.dex ? `<span style="color: #88ff88;">(+${bonus.dex})</span> ` : '');
+    if (item.evi || bonus.evi) stats += `EIV: ${item.evi || 0} ` + (bonus.evi ? `<span style="color: #88ff88;">(+${bonus.evi})</span> ` : '');
     if (item.healHp) stats += "回復HP: " + item.healHp + " ";
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
+    
+    if (item.type === 'armor') {
+        stats += `<div style="font-size:14px; line-height: 1.4; margin-top: 5px;">`;
+        if (item.reqLv && p.level < item.reqLv) {
+            stats += `<span style="color: #ff0000;">必要レベル: ${item.reqLv}</span>`;
+        } else {
+            stats += `<span style="color: #ffffff;">必要レベル: ${item.reqLv || 1}</span>`;
+        }
+        stats += `</div>`;
+    }
     
     if (item.attrs) {
         stats += `<div style="color: #ffaa00; font-size:12px; line-height: 1.4; margin-top: 5px;">`;
@@ -2285,6 +2324,8 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         if (item.type === 'weapon') {
             if (item.reqClass && p.classId !== item.reqClass) isEquipable = false;
             if (item.reqDex && p.dex < item.reqDex) isEquipable = false;
+        } else if (item.type === 'armor') {
+            if (item.reqLv && p.level < item.reqLv) isEquipable = false;
         }
 
         if (isEquipable) {
@@ -2886,7 +2927,7 @@ function renderMenu(pid) {
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
                 MIND: ${Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40))} <br>
-                EIV: 30 <br>
+                EIV: ${Math.floor(p.evi || 30)} <br>
                 LUCK: 10 <br>
                 所持コイン: ${p.coins} <br>
             `;
@@ -3554,11 +3595,7 @@ function update() {
                     if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
                     else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
                     else if (rand < 0.50) { // Armor
-                        let extra = Math.floor(Math.random() * 3); // 0, 1, 2
-                        let slots = Math.floor(Math.random() * 3); // 0, 1, 2
-                        let arr = []; for(let i=0; i<slots; i++) arr.push(null);
-                        let name = extra > 0 ? `アーマー+${extra}` : `アーマー`;
-                        dropItem = { id: 'a_armor', name: name, type: 'armor', def: 10 + extra, slotCount: slots, slottedUnits: arr };
+                        dropItem = generateArmor(Math.random() < 0.8 ? 'a_armor' : 'a_shimamura');
                     }
                     else if (rand < 0.70) { // Disk
                         let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
