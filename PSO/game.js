@@ -168,24 +168,46 @@ const WEAPON_TYPES = {
 };
 
 const BASE_WEAPONS = {
-    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 300, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
-    'w_rifle': { name: 'ライフル', desc: '高密度の光子の弾を発射。高い命中精度を誇る。', price: 250, baseRarity: 2, basePow: 50, baseDex: 38, maxEnhance: 3, range: 400, reqClass: 'ranger', reqPow: 0, reqDex: 25, reqMind: 0, weaponType: 'rifle' },
-    'w_machinegun': { name: 'マシンガン', desc: '光子の弾を３連続で放つ銃。高い命中精度が求められる。', price: 250, baseRarity: 2, basePow: 4, baseDex: 0, maxEnhance: 3, range: 200, reqClass: null, reqPow: 0, reqDex: 25, reqMind: 0, weaponType: 'machinegun' },
-    'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
-    'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
-    'w_sword': { name: 'ソード', desc: '大きな光子の刃を纏った武器。ソードマンのみが扱える。', price: 250, baseRarity: 4, basePow: 70, baseDex: 15, maxEnhance: 3, range: 85, reqClass: 'swordman', reqPow: 25, reqDex: 0, reqMind: 0, weaponType: 'sword' },
-    'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 55, baseDex: 30, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
-    'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 100, baseDex: 33, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
-    'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
-    'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100, baseRarity: 1, basePow: 30, baseDex: 30, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'cane' },
-    'w_mace':    { name: 'メイス', desc: '青い光子を放出する杖。', price: 500, baseRarity: 4, basePow: 60, baseDex: 32, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 100, weaponType: 'cane' },
-    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 400, baseRarity: 3, basePow: 15, baseDex: 20, maxEnhance: 3, range: 250, reqClass: null, reqPow: 70, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100,  baseRarity: 1, basePow: 30, baseDex: 25, maxEnhance: 3, range: 300, reqClass: null, reqPow: 0, reqDex: 1, reqMind: 0, weaponType: 'handgun' },
+    'w_lockgun': { name: 'ロックガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 1600, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 300, reqClass: null, reqPow: 0, reqDex: 68, reqMind: 0, weaponType: 'handgun' },
+    'w_raygun': { name: 'レイガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 4900,    baseRarity: 7, basePow:102, baseDex: 31, maxEnhance: 3, range: 300, reqClass: null, reqPow: 0, reqDex: 88, reqMind: 0, weaponType: 'handgun' },
+    'w_rifle': { name: 'ライフル', desc: '高密度の光子の弾を発射。高い命中精度を誇る。', price: 400,             baseRarity: 2, basePow: 50, baseDex: 38, maxEnhance: 3, range: 400, reqClass: 'ranger', reqPow: 0, reqDex: 72, reqMind: 0, weaponType: 'rifle' },
+    'w_braster': { name: 'ブラスター', desc: '高密度の光子の弾を発射。高い命中精度を誇る。', price: 2500,        baseRarity: 5, basePow: 90, baseDex: 41, maxEnhance: 3, range: 400, reqClass: 'ranger', reqPow: 0, reqDex: 83, reqMind: 0, weaponType: 'rifle' },
+    'w_beam': { name: 'ビーム', desc: '高密度の光子の弾を発射。高い命中精度を誇る。', price: 6400,               baseRarity: 8, basePow:140, baseDex: 45, maxEnhance: 3, range: 400, reqClass: 'ranger', reqPow: 0, reqDex:100, reqMind: 0, weaponType: 'rifle' },
+    'w_machinegun': { name: 'マシンガン', desc: '光子の弾を３連続で放つ銃。高い命中精度が求められる。', price:1600,baseRarity: 4, basePow: 4, baseDex: 0, maxEnhance: 3, range: 200, reqClass: null, reqPow: 0, reqDex: 79, reqMind: 0, weaponType: 'machinegun' },
+    'w_repeater': { name: 'リピーター', desc: '光子の弾を３連続で放つ銃。高い命中精度が求められる。', price:4900, baseRarity: 7, basePow: 8, baseDex: 3, maxEnhance: 3, range: 200, reqClass: null, reqPow: 0, reqDex: 87, reqMind: 0, weaponType: 'machinegun' },
+    'w_gatring': { name: 'ガトリング', desc: '光子の弾を３連続で放つ銃。高い命中精度が求められる。', price:10000, baseRarity:10, basePow:12, baseDex: 6, maxEnhance: 3, range: 200, reqClass: null, reqPow: 0, reqDex: 97, reqMind: 0, weaponType: 'machinegun' },
+    'w_shotgun': { name: 'ショット', desc: '圧縮した光子を広範囲に発射する', price: 900,                           baseRarity: 3, basePow: 25, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 85, reqMind: 0, weaponType: 'shotgun' },
+    'w_spred': { name: 'スプレッド', desc: '圧縮した光子を広範囲に発射する', price: 3600,                          baseRarity: 6, basePow: 50, baseDex: 28, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 90, reqMind: 0, weaponType: 'shotgun' },
+    'w_runcher': { name: 'ランチャー', desc: '圧縮した光子を広範囲に発射する', price: 8100,                        baseRarity: 9, basePow: 80, baseDex: 30, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex:102, reqMind: 0, weaponType: 'shotgun' },
+    'w_sword': { name: 'ソード', desc: '大きな光子の刃を纏った武器。ソードマンのみが扱える。', price: 1600,         baseRarity: 4, basePow: 70, baseDex: 15, maxEnhance: 3, range: 85, reqClass: 'swordman', reqPow: 65, reqDex: 0, reqMind: 0, weaponType: 'sword' },
+    'w_gigash': { name: 'ギガッシュ', desc: '大きな光子の刃を纏った武器。ソードマンのみが扱える。', price: 4900,    baseRarity: 7, basePow:130, baseDex: 18, maxEnhance: 3, range: 85, reqClass: 'swordman', reqPow:160, reqDex: 0, reqMind: 0, weaponType: 'sword' },
+    'w_qurimoe': { name: 'クレイモア', desc: '大きな光子の刃を纏った武器。ソードマンのみが扱える。', price:10000,   baseRarity:10, basePow:190, baseDex: 20, maxEnhance: 3, range: 85, reqClass: 'swordman', reqPow:250, reqDex: 0, reqMind: 0, weaponType: 'sword' },
+    'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100,          baseRarity: 1, basePow: 55, baseDex: 27, maxEnhance: 3, range: 60, reqClass: null, reqPow: 1, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price:1600,   baseRarity: 4, basePow:100, baseDex: 31, maxEnhance: 3, range: 60, reqClass: null, reqPow: 90, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_parash':  { name: 'パラッシュ', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price:4900, baseRarity: 7, basePow:160, baseDex: 35, maxEnhance: 3, range: 60, reqClass: null, reqPow:155, reqDex: 0, reqMind: 0, weaponType: 'saber' },
+    'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 400,                           baseRarity: 2, basePow: 40, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 65, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
+    'w_brade':  { name: 'ブレイド', desc: '圧縮した光子で生成された短剣', price:2500,                          baseRarity: 5, basePow: 70, baseDex: 22, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow:110, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
+    'w_edge':  { name: 'エッジ', desc: '圧縮した光子で生成された短剣', price:6400,                             baseRarity: 8, basePow:102, baseDex: 24, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow:170, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
+    'w_cane':    { name: 'ケイン', desc: '光子を放出する杖。', price: 100,      baseRarity: 1, basePow: 30, baseDex: 33, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 1, weaponType: 'cane' },
+    'w_pool':    { name: 'ポール', desc: '光子を放出する杖。', price: 400,      baseRarity: 2, basePow: 45, baseDex: 35, baseDef: 5, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 70, weaponType: 'cane' },
+    'w_mace':    { name: 'メイス', desc: '光子を放出する杖。', price:1600,      baseRarity: 4, basePow: 60, baseDex: 37, baseDef:10, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 95, weaponType: 'cane' },
+    'w_batton':    { name: 'バトン', desc: '光子を放出する杖。', price:3600,    baseRarity: 6, basePow: 75, baseDex: 39, baseDef:10, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 110, weaponType: 'cane' },
+    'w_clab':    { name: 'クラブ', desc: '光子を放出する杖。', price:6400,      baseRarity: 8, basePow: 80, baseDex: 42, baseDef:15, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 145, weaponType: 'cane' },
+    'w_septer':    { name: 'セプター', desc: '光子を放出する杖。', price:10000, baseRarity: 10, basePow:100, baseDex: 45, baseDef:15, maxEnhance: 3, range: 40, reqClass: 'sorcerer', reqPow: 0, reqDex: 0, reqMind: 180, weaponType: 'cane' },
+    'w_slicer':  { name: 'スライサー', desc: '圧縮した光子で生成された刃を放つ。', price: 900,                  baseRarity: 3, basePow: 15, baseDex: 13, maxEnhance: 3, range: 250, reqClass: null, reqPow:100, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_cutter':  { name: 'カッター', desc: '圧縮した光子で生成された刃を放つ。', price:3600,                    baseRarity: 6, basePow: 32, baseDex: 15, maxEnhance: 3, range: 250, reqClass: null, reqPow:200, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
+    'w_disca':  { name: 'ディスカ', desc: '圧縮した光子で生成された刃を放つ。', price:8100,                     baseRarity: 9, basePow: 55, baseDex: 19, maxEnhance: 3, range: 250, reqClass: null, reqPow:300, reqDex: 0, reqMind: 0, weaponType: 'slicer' },
 };
 
 
 const BASE_ARMORS = {
-    'a_armor': { name: 'アーマー', type: 'armor', price: 100, rarity: 1, baseDef: 5, baseEvi: 5, reqLv: 1 },
-    'a_shimamura': { name: 'シマムラアーマー', type: 'armor', price: 900, rarity: 3, baseDef: 10, baseEvi: 7, reqLv: 2 }
+    'a_armor': { name: 'アーマー', type: 'armor', price: 100, rarity: 1,            baseDef: 5, baseEvi: 5, reqLv: 1 },
+    'a_shimamura': { name: 'シマムラアーマー', type: 'armor', price: 900, rarity: 3, baseDef: 10, baseEvi: 7, reqLv: 5 },
+    'a_honeys': { name: 'ハニーズアーマー', type: 'armor', price:2500, rarity: 5,   baseDef: 15, baseEvi: 9, reqLv: 9 },
+    'a_gu': { name: 'ジーユーアーマー', type: 'armor', price:4900, rarity: 7,       baseDef: 20, baseEvi:11, reqLv: 13 },
+    'a_coca': { name: 'コカアーマー', type: 'armor', price:8100, rarity: 9,         baseDef: 25, baseEvi:13, reqLv: 17 },
+    'a_uniqlo': { name: 'ユニクロアーマー', type: 'armor', price:12100, rarity:11,  baseDef: 30, baseEvi:15, reqLv: 21 }
 };
 
 function generateArmor(baseId) {
@@ -219,7 +241,27 @@ const BASE_UNITS = {
     'u_cando_mind': { name: 'キャンドゥ/マインド', type: 'unit', price: 400, rarity: 2, baseMind: 8 },
     'u_cando_arm': { name: 'キャンドゥ/アーム', type: 'unit', price: 400, rarity: 2, baseDex: 5 },
     'u_cando_luck': { name: 'キャンドゥ/ラック', type: 'unit', price: 400, rarity: 2, baseLuck: 5 },
-    'u_seria_hp': { name: 'セリア/HP', type: 'unit', price: 2500, rarity: 5, baseHp: 25 }
+    'u_seria_hp': { name: 'セリア/HP', type: 'unit', price: 2500, rarity: 5, baseHp: 25 },
+    'u_seria_mp': { name: 'セリア/MP', type: 'unit', price: 2500, rarity: 5, baseMp: 15 },
+    'u_seria_pow': { name: 'セリア/パワー', type: 'unit', price: 2500, rarity: 5, baseAtk: 12 },
+    'u_seria_body': { name: 'セリア/ボディ', type: 'unit', price: 2500, rarity: 5, baseDef: 12 },
+    'u_seria_mind': { name: 'セリア/マインド', type: 'unit', price: 2500, rarity: 5, baseMind: 12 },
+    'u_seria_arm': { name: 'セリア/アーム', type: 'unit', price: 2500, rarity: 5, baseDex: 8 },
+    'u_seria_luck': { name: 'セリア/ラック', type: 'unit', price: 2500, rarity: 5, baseLuck: 8 },
+    'u_daiso_hp': { name: 'ダイソー/HP', type: 'unit', price: 6400, rarity: 8, baseHp: 40 },
+    'u_daiso_mp': { name: 'ダイソー/MP', type: 'unit', price: 6400, rarity: 8, baseMp: 25 },
+    'u_daiso_pow': { name: 'ダイソー/パワー', type: 'unit', price: 6400, rarity: 8, baseAtk: 20 },
+    'u_daiso_body': { name: 'ダイソー/ボディ', type: 'unit', price: 6400, rarity: 8, baseDef: 20 },
+    'u_daiso_mind': { name: 'ダイソー/マインド', type: 'unit', price: 6400, rarity: 8, baseMind: 20 },
+    'u_daiso_arm': { name: 'ダイソー/アーム', type: 'unit', price: 6400, rarity: 8, baseDex: 12 },
+    'u_daiso_luck': { name: 'ダイソー/ラック', type: 'unit', price: 6400, rarity: 8, baseLuck: 12 },
+    'u_thrico_hp': { name: 'スリコ/HP', type: 'unit', price:12100, rarity:11, baseHp: 70 },
+    'u_thrico_mp': { name: 'スリコ/MP', type: 'unit', price:12100, rarity:11, baseMp: 50 },
+    'u_thrico_pow': { name: 'スリコ/パワー', type: 'unit', price:12100, rarity:11, baseAtk: 35 },
+    'u_thrico_body': { name: 'スリコ/ボディ', type: 'unit', price:12100, rarity:11, baseDef: 35 },
+    'u_thrico_mind': { name: 'スリコ/マインド', type: 'unit', price:12100, rarity:11, baseMind: 35 },
+    'u_thrico_arm': { name: 'スリコ/アーム', type: 'unit', price:12100, rarity:11, baseDex: 20 },
+    'u_thrico_luck': { name: 'スリコ/ラック', type: 'unit', price:12100, rarity:11, baseLuck: 20 }
 };
 
 function generateUnit(baseId) {
