@@ -66,6 +66,30 @@ const WEAPON_TYPES = {
         timing: [0.8, 0.8], // Combo timings
         classMod: { swordman: 0.1, ranger: 0.0, sorcerer: 0.1 }
     },
+    rifle: {
+        attackType: 'ranged',
+        motions: [0, 0, 0],
+        targetType: 'single',
+        targetNum: 1,
+        shape: 'fan30',
+        icon: 'icon_weapon_gun',
+        maxCombo: 3,
+        timing: [1.1, 1.1],
+        classMod: { swordman: 0.3, ranger: 0.0, sorcerer: 0.3 }
+    },
+    machinegun: {
+        attackType: 'ranged',
+        motions: [0, 0, 0],
+        targetType: 'single',
+        targetNum: 1,
+        shape: 'fan30',
+        icon: 'icon_weapon_gun',
+        maxCombo: 3,
+        timing: [1.0, 1.0],
+        classMod: { swordman: 0.3, ranger: 0.0, sorcerer: 0.3 },
+        burstCount: 3,
+        burstDelay: 100
+    },
     shotgun: {
         attackType: 'ranged',
         motions: [0, 0, 0],
@@ -78,13 +102,26 @@ const WEAPON_TYPES = {
         timing: [1.2, 1.2],
         classMod: { swordman: 0.1, ranger: 0.0, sorcerer: 0.1 }
     },
-    saber: {
+    sword: {
         attackType: 'melee',
         motions: [2.5, 2.5, 4],
         targetType: 'scope',
         targetNum: 99,
-        shape: 'circle1', // radius 1 -> 10px scaled
-        ranges: [68, 63, 78], // Saber -25
+        shape: 'circle1',
+        ranges: [85, 85, 85], // 85 - 20 = 65 radius
+        offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}],
+        icon: 'icon_weapon_sword',
+        maxCombo: 3,
+        timing: [1.4, 1.5],
+        classMod: { swordman: 0.0, ranger: 0.8, sorcerer: 0.8 }
+    },
+    saber: {
+        attackType: 'melee',
+        motions: [2.5, 2.5, 4],
+        targetType: 'scopeN',
+        targetNum: 2,
+        shape: 'circle1',
+        ranges: [70, 70, 70], // Saber -25
         offsets: [{angle: -20, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 90}], // 1st front-left
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -97,7 +134,7 @@ const WEAPON_TYPES = {
         targetType: 'scopeN',
         targetNum: 2,
         shape: 'circle1',
-        ranges: [64, 59, 125], // Dagger -25, -25, +15
+        ranges: [64, 59, 95], // Dagger -25, -25, +15
         offsets: [{angle: 0, dist: 80}, {angle: 0, dist: 80}, {angle: 0, dist: 0}], // 3rd around player
         icon: 'icon_weapon_sword',
         maxCombo: 3,
@@ -131,9 +168,12 @@ const WEAPON_TYPES = {
 };
 
 const BASE_WEAPONS = {
-    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
+    'w_handgun': { name: 'ハンドガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 100, baseRarity: 1, basePow: 30, baseDex: 26, maxEnhance: 3, range: 300, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'handgun' },
+    'w_rifle': { name: 'ライフル', desc: '高密度の光子の弾を発射。高い命中精度を誇る。', price: 250, baseRarity: 2, basePow: 50, baseDex: 38, maxEnhance: 3, range: 400, reqClass: 'ranger', reqPow: 0, reqDex: 25, reqMind: 0, weaponType: 'rifle' },
+    'w_machinegun': { name: 'マシンガン', desc: '光子の弾を３連続で放つ銃。高い命中精度が求められる。', price: 250, baseRarity: 2, basePow: 4, baseDex: 0, maxEnhance: 3, range: 200, reqClass: null, reqPow: 0, reqDex: 25, reqMind: 0, weaponType: 'machinegun' },
     'w_railgun': { name: 'レールガン', desc: '圧縮した光子を撃ちだす短銃。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 65, baseDex: 29, maxEnhance: 3, range: 350, reqClass: null, reqPow: 0, reqDex: 53, reqMind: 0, weaponType: 'handgun' },
     'w_shotgun': { name: 'ショットガン', desc: '圧縮した光子を広範囲に発射する', price: 300, baseRarity: 2, basePow: 35, baseDex: 27, maxEnhance: 3, range: 180, reqClass: 'ranger', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'shotgun' },
+    'w_sword': { name: 'ソード', desc: '大きな光子の刃を纏った武器。ソードマンのみが扱える。', price: 250, baseRarity: 4, basePow: 70, baseDex: 15, maxEnhance: 3, range: 85, reqClass: 'swordman', reqPow: 25, reqDex: 0, reqMind: 0, weaponType: 'sword' },
     'w_saber':   { name: 'セイバー', desc: '圧縮した光子で生成された剣。扱いやすい形状。', price: 100, baseRarity: 1, basePow: 55, baseDex: 30, maxEnhance: 3, range: 60, reqClass: null, reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_buster':  { name: 'バスター', desc: '圧縮した光子で生成された剣。扱いやすい形状をしている', price: 500, baseRarity: 4, basePow: 100, baseDex: 33, maxEnhance: 3, range: 60, reqClass: null, reqPow: 100, reqDex: 0, reqMind: 0, weaponType: 'saber' },
     'w_dagger':  { name: 'ダガー', desc: '圧縮した光子で生成された短剣', price: 200, baseRarity: 2, basePow: 45, baseDex: 20, maxEnhance: 3, range: 50, reqClass: 'swordman', reqPow: 0, reqDex: 0, reqMind: 0, weaponType: 'dagger' },
@@ -435,7 +475,7 @@ class Player {
         // Add requested default items
         if (this.classId === 'swordman') {
             this.inventory = [
-                generateWeapon('w_saber'),
+                generateWeapon('w_dagger'),
                 { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
@@ -443,6 +483,7 @@ class Player {
         } else if (this.classId === 'ranger') {
             this.inventory = [
                 generateWeapon('w_handgun'),
+                generateWeapon('w_rifle', 0, 'heat'),
                 { id: 'a_armor', name: 'アーマー', type: 'armor', def: 10, slotCount: 0, slottedUnits: [] },
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 5 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 3 }
@@ -1174,8 +1215,7 @@ class Player {
                     let hitAngle = pAngle + (offset.angle * Math.PI / 180);
                     cx += Math.cos(hitAngle) * offset.dist;
                     cy += Math.sin(hitAngle) * offset.dist;
-                    if (offset.dist === 0 && action.weaponType === 'dagger') radius = action.range - 20; 
-                }
+                    }
                 this.lastAttackShape.cx = cx;
                 this.lastAttackShape.cy = cy;
                 this.lastAttackShape.radius = radius;
@@ -1252,7 +1292,10 @@ class Player {
             
             // Hit enemies
             // Visual Effects (Particles / Trails)
-            if (action.weaponType === 'saber' || action.weaponType === 'cane') {
+            let burstCount = wType.burstCount || 1;
+            let burstDelay = wType.burstDelay || 0;
+
+            if (action.weaponType === 'saber' || action.weaponType === 'cane' || action.weaponType === 'sword') {
                 let isLeftToRight = (this.comboCount !== 2); // 1 and 3 are L->R
                 let startAng = pAngle + (isLeftToRight ? -Math.PI/2 : Math.PI/2);
                 let endAng = pAngle + (isLeftToRight ? Math.PI/2 : -Math.PI/2);
@@ -1274,105 +1317,115 @@ class Player {
                 } else {
                     addEffect('slash', { cx: this.lastAttackShape.cx, cy: this.lastAttackShape.cy, r: this.lastAttackShape.radius, startAngle: startAng, endAngle: endAng, anticlockwise: anticlockwise, color: '#00ffff' });
                 }
-            } else if (action.weaponType === 'handgun' || action.weaponType === 'shotgun') {
-                targets.forEach(t => {
-                    let hitWall = checkLineOfSight(this.x, this.y, t.x, t.y);
-                    if (hitWall) {
-                        addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#ffcc00' });
-                        t.blockedByWall = true;
-                    } else {
-                        addEffect('bullet', { x1: this.x, y1: this.y, x2: t.x, y2: t.y, color: '#ffcc00' });
-                        t.blockedByWall = false;
-                    }
-                });
-                targets = targets.filter(t => !t.blockedByWall);
             }
 
-            let allTargets = targets;
-            allTargets.forEach((target, i) => {
-                let delay = wType.hitDelay || 0;
-                if (Array.isArray(delay)) delay = delay[Math.min(this.comboCount - 1, delay.length - 1)];
+            for (let b = 0; b < burstCount; b++) {
                 setTimeout(() => {
-                    // Accuracy check
-                    let myDex = this.baseStats.dex;
-                    if (action && action.dex) myDex += action.dex;
-                    if (this.equip.armor) {
-                        if (this.equip.armor.dex) myDex += this.equip.armor.dex;
-                        if (this.equip.armor.slottedUnits) {
-                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
-                        }
+                    let currentTargets = [...targets];
+                    
+                    if (action.weaponType === 'handgun' || action.weaponType === 'shotgun' || action.weaponType === 'machinegun' || action.weaponType === 'rifle') {
+                        currentTargets.forEach(t => {
+                            if (t.hp <= 0 && !(GAME.boxes && GAME.boxes.includes(t))) return; // Ignore if already dead
+                            let hitWall = checkLineOfSight(this.x, this.y, t.x, t.y);
+                            if (hitWall) {
+                                addEffect('bullet', { x1: this.x, y1: this.y, x2: hitWall.x, y2: hitWall.y, color: '#ffcc00' });
+                                t.blockedByWall = true;
+                            } else {
+                                addEffect('bullet', { x1: this.x, y1: this.y, x2: t.x, y2: t.y, color: '#ffcc00' });
+                                t.blockedByWall = false;
+                            }
+                        });
+                        currentTargets = currentTargets.filter(t => !t.blockedByWall && (t.hp > 0 || (GAME.boxes && GAME.boxes.includes(t))));
                     }
-                    let isBox = !!(GAME.boxes && GAME.boxes.includes(target));
-                    let targetEvi = isBox ? 0 : (target.evi || 10);
-                    
-                    let hitRate = myDex - (targetEvi * 0.2);
-                    let distPenalty = 0;
-                    
-                    if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
-                        let dist = Math.hypot(target.x - this.x, target.y - this.y);
-                        distPenalty = (dist / 10);
-                    }
-                    hitRate -= distPenalty;
-                    
-                    if (!isBox && Math.random() * 100 > hitRate) {
-                        addFloatingText(target.x, target.y - 20, "miss", 'white');
-                        return; // Missed
-                    }
-                    
-                    let myLuck = this.baseStats.luck;
-                    if (action && action.luck) myLuck += action.luck;
-                    if (this.equip.armor) {
-                        if (this.equip.armor.luck) myLuck += this.equip.armor.luck;
-                        if (this.equip.armor.slottedUnits) {
-                            this.equip.armor.slottedUnits.forEach(u => { if (u && u.luck) myLuck += u.luck; });
-                        }
-                    }
-                    
-
-                    
-                    let charPow = this.atk;
-                    if (this.status) {
-                        if (this.status.shiftaTimer > 0) charPow += Math.floor(charPow * (this.status.shiftaLv || 1) / 20);
-                        if (this.status.jellenTimer > 0) charPow -= Math.floor(charPow * (this.status.jellenLv || 1) / 20);
-                    }
-                    
-                    let weaponPow = action ? (action.atk || 0) : 0;
-                    let attrMult = 1.0;
-                    if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
-                        attrMult += (action.attrs.native / 100);
-                    }
-                    weaponPow = Math.floor(weaponPow * attrMult);
-                    
-                    let defenderDef = target.def || 5;
-                    if (target.status) {
-                        if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
-                        if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
-                    }
-                    
-                    let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
-                    let isCrit = (Math.random() * 100) < ((this.luck || this.baseStats.luck || 5) / 5);
-                    let critMult = isCrit ? 1.5 : 1.0;
-                    
-                    let baseDmg = (charPow + weaponPow - defenderDef) / 5;
-                    if (baseDmg < 1) baseDmg = 1;
-                    let dmg = Math.floor(baseDmg * comboMult * critMult);
-                    
-                    if (target instanceof Enemy) {
-                        target.hp -= dmg;
-                        target.stunTimer = 1.0; // Stun for 1.0s on hit
-                        addFloatingText(target.x, target.y - 20, dmg, isCrit ? 'yellow' : 'white');
-                        console.log(`Hit enemy! Enemy HP: ${target.hp}`);
-                        
-                        // Trigger enchant on 3rd combo
-                                                if (action.enchant && !action.isUnidentified) {
-                            applyEnchant(this, target, action, this.comboCount);
-                        }
-                    } else {
-                        target.hp -= 1;
-                        if (target.hp <= 0) breakBox(target);
-                    }
-                }, delay * 1000);
-            });
+        
+                    currentTargets.forEach((target, i) => {
+                        let delay = wType.hitDelay || 0;
+                        if (Array.isArray(delay)) delay = delay[Math.min(this.comboCount - 1, delay.length - 1)];
+                        setTimeout(() => {
+                            if (target.hp <= 0 && !(GAME.boxes && GAME.boxes.includes(target))) return; // Double check if died during hitDelay
+                            
+                            // Accuracy check
+                            let myDex = this.baseStats.dex;
+                            if (action && action.dex) myDex += action.dex;
+                            if (this.equip.armor) {
+                                if (this.equip.armor.dex) myDex += this.equip.armor.dex;
+                                if (this.equip.armor.slottedUnits) {
+                                    this.equip.armor.slottedUnits.forEach(u => { if (u && u.dex) myDex += u.dex; });
+                                }
+                            }
+                            let isBox = !!(GAME.boxes && GAME.boxes.includes(target));
+                            let targetEvi = isBox ? 0 : (target.evi || 10);
+                            
+                            let hitRate = myDex - (targetEvi * 0.2);
+                            let distPenalty = 0;
+                            
+                            if (wType && (wType.shape === 'fan30' || wType.shape === 'fan45')) {
+                                let dist = Math.hypot(target.x - this.x, target.y - this.y);
+                                distPenalty = (dist / 10);
+                            }
+                            hitRate -= distPenalty;
+                            
+                            if (!isBox && Math.random() * 100 > hitRate) {
+                                addFloatingText(target.x, target.y - 20, "miss", 'white');
+                                return; // Missed
+                            }
+                            
+                            let myLuck = this.baseStats.luck;
+                            if (action && action.luck) myLuck += action.luck;
+                            if (this.equip.armor) {
+                                if (this.equip.armor.luck) myLuck += this.equip.armor.luck;
+                                if (this.equip.armor.slottedUnits) {
+                                    this.equip.armor.slottedUnits.forEach(u => { if (u && u.luck) myLuck += u.luck; });
+                                }
+                            }
+                            
+        
+                            
+                            let charPow = this.atk;
+                            if (this.status) {
+                                if (this.status.shiftaTimer > 0) charPow += Math.floor(charPow * (this.status.shiftaLv || 1) / 20);
+                                if (this.status.jellenTimer > 0) charPow -= Math.floor(charPow * (this.status.jellenLv || 1) / 20);
+                            }
+                            
+                            let weaponPow = action ? (action.atk || 0) : 0;
+                            let attrMult = 1.0;
+                            if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
+                                attrMult += (action.attrs.native / 100);
+                            }
+                            weaponPow = Math.floor(weaponPow * attrMult);
+                            
+                            let defenderDef = target.def || 5;
+                            if (target.status) {
+                                if (target.status.debandTimer > 0) defenderDef += Math.floor(defenderDef * (target.status.debandLv || 1) / 20);
+                                if (target.status.zalureTimer > 0) defenderDef -= Math.floor(defenderDef * (target.status.zalureLv || 1) / 20);
+                            }
+                            
+                            let comboMult = [0.9, 1.7, 2.5][this.comboCount - 1] || 1.0;
+                            let isCrit = (Math.random() * 100) < ((this.luck || this.baseStats.luck || 5) / 5);
+                            let critMult = isCrit ? 1.5 : 1.0;
+                            
+                            let baseDmg = (charPow + weaponPow - defenderDef) / 5;
+                            if (baseDmg < 1) baseDmg = 1;
+                            let dmg = Math.floor(baseDmg * comboMult * critMult);
+                            
+                            if (target instanceof Enemy) {
+                                target.hp -= dmg;
+                                target.stunTimer = 1.0; // Stun for 1.0s on hit
+                                addFloatingText(target.x, target.y - 20, dmg, isCrit ? 'yellow' : 'white');
+                                console.log(`Hit enemy! Enemy HP: ${target.hp}`);
+                                
+                                // Trigger enchant on 3rd combo or on every hit for some cases
+                                if (action.enchant && !action.isUnidentified) {
+                                    applyEnchant(this, target, action, this.comboCount);
+                                }
+                            } else {
+                                target.hp -= 1;
+                                if (target.hp <= 0) breakBox(target);
+                            }
+                        }, delay * 1000);
+                    });
+                }, b * burstDelay);
+            }
 
         } else if (action.type === 'item') {
             if (action.healHp) {
@@ -2832,7 +2885,7 @@ function renderMenu(pid) {
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
-                MIND: ${Math.floor(p.mind)} <br>
+                MIND: ${Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40))} <br>
                 EIV: 30 <br>
                 LUCK: 10 <br>
                 所持コイン: ${p.coins} <br>
