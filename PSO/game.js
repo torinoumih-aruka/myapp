@@ -211,6 +211,44 @@ function generateArmor(baseId) {
     };
 }
 
+const BASE_UNITS = {
+    'u_cando_hp': { name: 'キャンドゥ/HP', type: 'unit', price: 400, rarity: 2, baseHp: 15 },
+    'u_cando_mp': { name: 'キャンドゥ/MP', type: 'unit', price: 400, rarity: 2, baseMp: 10 },
+    'u_cando_pow': { name: 'キャンドゥ/パワー', type: 'unit', price: 400, rarity: 2, baseAtk: 8 },
+    'u_cando_body': { name: 'キャンドゥ/ボディ', type: 'unit', price: 400, rarity: 2, baseDef: 8 },
+    'u_cando_mind': { name: 'キャンドゥ/マインド', type: 'unit', price: 400, rarity: 2, baseMind: 8 },
+    'u_cando_arm': { name: 'キャンドゥ/アーム', type: 'unit', price: 400, rarity: 2, baseDex: 5 },
+    'u_cando_luck': { name: 'キャンドゥ/ラック', type: 'unit', price: 400, rarity: 2, baseLuck: 5 },
+    'u_seria_hp': { name: 'セリア/HP', type: 'unit', price: 2500, rarity: 5, baseHp: 25 }
+};
+
+function generateUnit(baseId) {
+    let base = BASE_UNITS[baseId];
+    if (!base) return null;
+    
+    let u = {
+        uid: 'u_' + Date.now() + Math.floor(Math.random() * 1000),
+        id: baseId,
+        type: 'unit',
+        name: base.name,
+        desc: "防具のスロットに装着することで能力を引き上げるユニット",
+        price: base.price,
+        rarity: base.rarity
+    };
+    
+    let isBonusStats = false;
+    if (base.baseHp) { let b = Math.floor(Math.random() * 6); u.hp = base.baseHp + b; if(b>0) isBonusStats = true; }
+    if (base.baseMp) { let b = Math.floor(Math.random() * 6); u.mp = base.baseMp + b; if(b>0) isBonusStats = true; }
+    if (base.baseAtk) { let b = Math.floor(Math.random() * 4); u.atk = base.baseAtk + b; if(b>0) isBonusStats = true; }
+    if (base.baseDef) { let b = Math.floor(Math.random() * 4); u.def = base.baseDef + b; if(b>0) isBonusStats = true; }
+    if (base.baseMind) { let b = Math.floor(Math.random() * 4); u.mind = base.baseMind + b; if(b>0) isBonusStats = true; }
+    if (base.baseDex) { let b = Math.floor(Math.random() * 4); u.dex = base.baseDex + b; if(b>0) isBonusStats = true; }
+    if (base.baseLuck) { let b = Math.floor(Math.random() * 4); u.luck = base.baseLuck + b; if(b>0) isBonusStats = true; }
+    u.isBonusStats = isBonusStats;
+    
+    return u;
+}
+
 const DEBUG_ENCHANT_100_ON_COMBO_3 = true;
 
 function applyEnchant(p, target, action, comboCount) {
@@ -408,7 +446,7 @@ function generateShopLineup() {
     // 8 random items based on progress
     for (let i = 0; i < 8; i++) {
         let rand = Math.random();
-        if (rand < 0.4) {
+        if (rand < 0.35) {
             // Weapon
             let wId = weapons[Math.floor(Math.random() * weapons.length)];
             let enchant = null;
@@ -428,10 +466,10 @@ function generateShopLineup() {
                 w.name = w.name.replace('？？？？', ''); // Remove unidentified prefix if any
                 GAME.shopItems.push(w);
             }
-        } else if (rand < 0.7) {
+        } else if (rand < 0.60) {
             // Armor
             GAME.shopItems.push(generateArmor(Math.random() < 0.5 ? 'a_armor' : 'a_shimamura'));
-        } else {
+        } else if (rand < 0.85) {
             // Disk (Lv 1-3)
             let chosen = magics[Math.floor(Math.random() * magics.length)];
             let lv = 1 + Math.floor(Math.random() * 3);
@@ -555,7 +593,9 @@ class Player {
     }
     
     recalculateStats() {
-        let hpRatio = this.hp / this.maxHp;
+        let oldHp = this.hp;
+        let oldMp = this.mp;
+        let hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 0;
         let mpRatio = this.maxMp > 0 ? (this.mp / this.maxMp) : 0;
         
         this.maxHp = this.baseStats.maxHp;
@@ -566,6 +606,7 @@ class Player {
         this.dex = this.baseStats.dex;
         this.evi = this.baseStats.evi || 30;
         this.mind = (typeof this.baseStats.mind === 'number' && !isNaN(this.baseStats.mind)) ? this.baseStats.mind : (CLASS_DATA[this.classId] ? CLASS_DATA[this.classId].mind || 40 : 40);
+        this.luck = this.baseStats.luck || 10;
         
         if (this.equip.armor) {
             if (this.equip.armor.def) this.def += this.equip.armor.def;
@@ -576,17 +617,19 @@ class Player {
                         if (u.atk) this.atk += u.atk;
                         if (u.def) this.def += u.def;
                         if (u.hp) this.maxHp += u.hp;
+                        if (u.mp) this.maxMp += u.mp;
                         if (u.dex) this.dex += u.dex;
                         if (u.mind) this.mind += u.mind;
                         if (u.evi) this.evi += u.evi;
+                        if (u.luck) this.luck += u.luck;
                     }
                 });
             }
         }
         
 
-        this.hp = Math.min(this.maxHp, this.maxHp * hpRatio);
-        this.mp = Math.min(this.maxMp, this.maxMp * mpRatio);
+        this.hp = Math.min(this.maxHp, oldHp);
+        this.mp = Math.min(this.maxMp, oldMp);
         
         // パレットにセットされている武器の条件を再チェック
         for (let i = 0; i < 6; i++) {
@@ -2167,15 +2210,18 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     }
     document.getElementById('modal-item-desc').innerText = descTxt;
     
-    let bonus = { atk: 0, def: 0, hp: 0, dex: 0, evi: 0 };
+    let bonus = { atk: 0, def: 0, hp: 0, mp: 0, dex: 0, evi: 0, mind: 0, luck: 0 };
     if (item.type === 'armor' && item.slottedUnits) {
         item.slottedUnits.forEach(u => {
             if (u) {
                 if (u.atk) bonus.atk += u.atk;
                 if (u.def) bonus.def += u.def;
                 if (u.hp) bonus.hp += u.hp;
+                if (u.mp) bonus.mp += u.mp;
                 if (u.dex) bonus.dex += u.dex;
                 if (u.evi) bonus.evi += u.evi;
+                if (u.mind) bonus.mind += u.mind;
+                if (u.luck) bonus.luck += u.luck;
             }
         });
     }
@@ -2184,8 +2230,11 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     if (item.atk || bonus.atk) stats += `ATK: ${item.atk || 0} ` + (bonus.atk ? `<span style="color: #88ff88;">(+${bonus.atk})</span> ` : '');
     if (item.def || bonus.def) stats += `DEF: ${item.def || 0} ` + (bonus.def ? `<span style="color: #88ff88;">(+${bonus.def})</span> ` : '');
     if (item.hp || bonus.hp) stats += `HP: ${item.hp || 0} ` + (bonus.hp ? `<span style="color: #88ff88;">(+${bonus.hp})</span> ` : '');
+    if (item.mp || bonus.mp) stats += `MP: ${item.mp || 0} ` + (bonus.mp ? `<span style="color: #88ff88;">(+${bonus.mp})</span> ` : '');
     if (item.dex || bonus.dex) stats += `DEX: ${item.dex || 0} ` + (bonus.dex ? `<span style="color: #88ff88;">(+${bonus.dex})</span> ` : '');
     if (item.evi || bonus.evi) stats += `EIV: ${item.evi || 0} ` + (bonus.evi ? `<span style="color: #88ff88;">(+${bonus.evi})</span> ` : '');
+    if (item.mind || bonus.mind) stats += `MIND: ${item.mind || 0} ` + (bonus.mind ? `<span style="color: #88ff88;">(+${bonus.mind})</span> ` : '');
+    if (item.luck || bonus.luck) stats += `LUCK: ${item.luck || 0} ` + (bonus.luck ? `<span style="color: #88ff88;">(+${bonus.luck})</span> ` : '');
     if (item.healHp) stats += "回復HP: " + item.healHp + " ";
     if (item.healMp) stats += "回復MP: " + item.healMp + " ";
     
@@ -2311,7 +2360,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         units.forEach(u => {
             let div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerHTML = getItemIconHtml(u) + u.name;
+            div.innerHTML = `<span style="display:flex; align-items:center; gap:5px;">${getItemIconHtml(u)} <span style="color:${getItemColor(u)}">${u.name}</span></span>`;
             div.addEventListener('pointerdown', e => {
                 e.preventDefault();
                 div.setPointerCapture(e.pointerId);
@@ -2399,6 +2448,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     document.getElementById('btn-modal-close').onclick = () => {
         modal.style.display = 'none';
         currentModalItem = null;
+        if (typeof pid !== 'undefined') renderMenu(pid);
     };
     
     modal.style.display = 'flex';
@@ -2928,7 +2978,7 @@ function renderMenu(pid) {
                 DEX: ${p.dex} <br>
                 MIND: ${Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40))} <br>
                 EIV: ${Math.floor(p.evi || 30)} <br>
-                LUCK: 10 <br>
+                LUCK: ${Math.floor(p.luck || 10)} <br>
                 所持コイン: ${p.coins} <br>
             `;
         }
@@ -3551,10 +3601,8 @@ function breakBox(b) {
                 dropItem = generateWeapon(baseId, 0, enchant);
             }
             else {
-                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
-                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
-                let progMult = 1 + (maxDiff * 3) + maxStage;
-                dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: (Math.floor(Math.random() * 50) + 10) * progMult };
+                let unitKeys = Object.keys(BASE_UNITS);
+                dropItem = generateUnit(unitKeys[Math.floor(Math.random() * unitKeys.length)]);
             }
             if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
         }
@@ -3594,17 +3642,17 @@ function update() {
                     let dropItem = null;
                     if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
                     else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.50) { // Armor
+                    else if (rand < 0.45) { // Armor
                         dropItem = generateArmor(Math.random() < 0.8 ? 'a_armor' : 'a_shimamura');
                     }
-                    else if (rand < 0.70) { // Disk
+                    else if (rand < 0.65) { // Disk
                         let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
                         let chosen = magics[Math.floor(Math.random() * magics.length)];
                         let lv = Math.floor(Math.random() * 3) + 1; // 1-3
                         if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
                         dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
                     }
-                    else if (rand < 0.90) { // Weapon
+                    else if (rand < 0.80) { // Weapon
                         let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
                         let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
                         
@@ -3634,6 +3682,10 @@ function update() {
                             }
                         }
                         dropItem = generateWeapon(baseId, 0, enchant, attrs);
+                    }
+                    else { // Unit (from 0.80 to 1.00 -> 20% of the 20% drop pool)
+                        let unitKeys = Object.keys(BASE_UNITS);
+                        dropItem = generateUnit(unitKeys[Math.floor(Math.random() * unitKeys.length)]);
                     }
                     
                     if (dropItem) {
@@ -4509,8 +4561,7 @@ function getItemColor(item) {
         else if (item.def > 10 && item.name && !item.name.includes('+')) color = lightBlue;
         else if (item.isBonusStats) color = lightBlue;
     } else if (item.type === 'unit') {
-        if (item.name && !item.name.includes('+')) color = lightBlue;
-        else if (item.isBonusStats) color = lightBlue;
+        if (item.isBonusStats) color = lightBlue;
     }
     return color;
 }
