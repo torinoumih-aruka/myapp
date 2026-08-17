@@ -51,7 +51,7 @@ let INPUTS = [
 const CLASS_DATA = {
     swordman: { name: 'ソードマン', hp: 40, mp: 30, atk: 45, def: 17, spd: 100, dex: 68, mind: 29, luck: 10, sprite: 'hero_knight_down_1', type: 'melee', levelUp: { hp: 10, mp: 5, atk: 6, def: 1, dex: 1, mind: 1, luck: 0, spd: 0 } },
     ranger: { name: 'レンジャー', hp: 30, mp: 20, atk: 23, def: 13, spd: 100, dex: 72, mind: 20, luck: 10, sprite: 'hero_wiz_down_1', type: 'ranged', levelUp: { hp: 6, mp: 4, atk: 5, def: 1, dex: 2, mind: 2, luck: 0, spd: 0 } },
-    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 63, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
+    sorcerer: { name: 'ソーサラー', hp: 30, mp: 80, atk: 16, def: 10, spd: 100, dex: 63, mind: 53, luck: 10, sprite: 'hero_week_down_1', type: 'magic', levelUp: { hp: 4, mp: 9, atk: 3, def: 1, dex: 1, mind: 3, luck: 0, spd: 0 } }
 };
 
 const WEAPON_TYPES = {
@@ -236,7 +236,7 @@ function generateUnit(baseId) {
         rarity: base.rarity
     };
     
-    let isBonusStats = false;
+        let isBonusStats = false;
     if (base.baseHp) { let b = Math.floor(Math.random() * 6); u.hp = base.baseHp + b; if(b>0) isBonusStats = true; }
     if (base.baseMp) { let b = Math.floor(Math.random() * 6); u.mp = base.baseMp + b; if(b>0) isBonusStats = true; }
     if (base.baseAtk) { let b = Math.floor(Math.random() * 4); u.atk = base.baseAtk + b; if(b>0) isBonusStats = true; }
@@ -515,8 +515,8 @@ class Player {
             def: cdata.def,
             spd: cdata.spd,
             dex: cdata.dex || 50,
-            mind: (typeof cdata.mind === 'number' && !isNaN(cdata.mind)) ? cdata.mind : 40,
-            luck: cdata.luck || 10
+            mind: 40,
+            luck: 10
         };
         
         this.exp = 0;
@@ -555,7 +555,7 @@ class Player {
                 generateArmor('a_armor'),
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
-                { id: 'm_zalure_1', name: 'ザルアLv1ディスク', type: 'disk', magic: 'zalure', lv: 1 },
+                { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
                 { id: 'm_freme_1', name: 'フレムLv1ディスク', type: 'disk', magic: 'freme', lv: 1 }
             ];
         } else {
@@ -627,7 +627,6 @@ class Player {
             }
         }
         
-
         this.hp = Math.min(this.maxHp, oldHp);
         this.mp = Math.min(this.maxMp, oldMp);
         
@@ -775,7 +774,8 @@ class Player {
             let action = this.palette[this.paletteIndex];
             
             this.debugInfo = [
-                `Combo: ${this.comboCount}`
+                `Combo: ${this.comboCount}`,
+                `Timer: ${this.comboTimer.toFixed(2)}`
             ];
             
             if (action && action.weaponType) {
@@ -783,7 +783,7 @@ class Player {
                 if (this.comboCount < wType.maxCombo) {
                     let classMod = wType.classMod[this.classId] || 0;
                     let targetTime = wType.timing[this.comboCount - 1] + classMod;
-                    // window debug info removed
+                    this.debugInfo.push(`Window: ${(targetTime - 0.05).toFixed(2)} - ${(targetTime + 0.25).toFixed(2)}`);
                     
                     if (this.comboTimer > targetTime + 0.25) {
                         this.state = 'idle';
@@ -2405,8 +2405,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         let canUse = true;
         if (item.type === 'disk') {
             let reqMind = getMagicReqMind(item.magic, item.lv);
-            let pMind = Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40));
-            if (pMind < reqMind) canUse = false;
+            if (p.mind < reqMind) canUse = false;
             if (p.classId === 'swordman' && (item.magic === 'jellen' || item.magic === 'zalure')) canUse = false;
         }
         
@@ -2976,7 +2975,7 @@ function renderMenu(pid) {
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
-                MIND: ${Math.floor((typeof p.mind === 'number' && !isNaN(p.mind)) ? p.mind : (CLASS_DATA[p.classId] ? CLASS_DATA[p.classId].mind || 40 : 40))} <br>
+                MIND: 40 <br>
                 EIV: ${Math.floor(p.evi || 30)} <br>
                 LUCK: ${Math.floor(p.luck || 10)} <br>
                 所持コイン: ${p.coins} <br>
@@ -3577,35 +3576,102 @@ function spawnWave(r) {
     }
 }
 
+function generateDropItem(isBox) {
+    let rand = Math.random();
+    let diff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+    let stage = Math.max(0, GAME.progress[diff] || 0);
+    let baseRarity = (diff * 3) + stage + 1;
+    
+    let rarityRoll = Math.random();
+    let rarity = baseRarity;
+    if (rarityRoll >= 0.80 && rarityRoll < 0.98) rarity = baseRarity + 1;
+    else if (rarityRoll >= 0.98) rarity = baseRarity + 2;
+
+    let dropItem = null;
+
+    if (rand < 0.15) {
+        let doCoin = false;
+        if (!isBox) doCoin = true;
+        else if (Math.random() < 0.5) doCoin = true;
+        
+        if (doCoin) {
+            let progMult = 1 + (diff * 3) + stage;
+            dropItem = { id: 'i_coin', name: 'コイン', type: 'coin', amount: (Math.floor(Math.random() * 50) + 10) * progMult };
+        }
+    } else if (rand < 0.50) {
+        if (Math.random() < 0.5) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
+        else dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+    } else if (rand < 0.70) {
+        let wKeys = Object.keys(BASE_WEAPONS).filter(k => BASE_WEAPONS[k].rarity === rarity);
+        if (wKeys.length > 0) {
+            let baseId = wKeys[Math.floor(Math.random() * wKeys.length)];
+            let enchant = null;
+            if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
+            let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
+            if (Math.random() < 0.4) {
+                let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+                let remaining = 30;
+                let numAttrs = Math.floor(Math.random() * 3) + 1; 
+                for(let i=0; i<numAttrs; i++) {
+                    let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
+                    let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5);
+                    val = Math.ceil(val / 5) * 5;
+                    if (val > remaining) val = remaining;
+                    let boost = (diff * 15) + (stage * 5);
+                    attrs[attr] = (attrs[attr] || 0) + val + boost;
+                    remaining -= val;
+                    if (remaining <= 0) break;
+                }
+            }
+            dropItem = generateWeapon(baseId, 0, enchant, attrs);
+        } else {
+            dropItem = Math.random() < 0.5 ? { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 } : { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+        }
+    } else if (rand < 0.87) {
+        let aKeys = Object.keys(BASE_ARMORS).filter(k => BASE_ARMORS[k].rarity === rarity);
+        if (aKeys.length > 0) {
+            let baseId = aKeys[Math.floor(Math.random() * aKeys.length)];
+            dropItem = generateArmor(baseId);
+        } else {
+            dropItem = Math.random() < 0.5 ? { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 } : { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+        }
+    } else if (rand < 0.93) {
+        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
+        let chosen = magics[Math.floor(Math.random() * magics.length)];
+        
+        let minLv = 1, maxLv = 12;
+        if (diff === 1) { minLv = 10; maxLv = 24; }
+        else if (diff === 2) { minLv = 20; maxLv = 30; }
+        
+        let capDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
+        let capStage = Math.max(0, GAME.progress[capDiff] || 0);
+        let overallCap = (capDiff * 9) + (capStage * 3) + 3;
+        
+        maxLv = Math.min(maxLv, overallCap);
+        if (minLv > maxLv) minLv = maxLv;
+        
+        let lv = Math.floor(Math.random() * (maxLv - minLv + 1)) + minLv;
+        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
+        
+        dropItem = { id: chosen.id+'_'+lv, name: chosen.name+'Lv'+lv+'ディスク', type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
+    } else {
+        let uKeys = Object.keys(BASE_UNITS).filter(k => BASE_UNITS[k].rarity === rarity);
+        if (uKeys.length > 0) {
+            let baseId = uKeys[Math.floor(Math.random() * uKeys.length)];
+            dropItem = generateUnit(baseId);
+        } else {
+            dropItem = Math.random() < 0.5 ? { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 } : { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
+        }
+    }
+    
+    return dropItem;
+}
 function breakBox(b) {
     if (GAME.boxes) {
         GAME.boxes = GAME.boxes.filter(box => box !== b);
         addEffect('explosion', { x: b.x, y: b.y, r: 20 });
-        if (Math.random() < 0.5) {
-            let rand = Math.random();
-            let dropItem = null;
-            if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-            else if (rand < 0.3) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-            else if (rand < 0.5) {
-                 let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
-                 let chosen = magics[Math.floor(Math.random() * magics.length)];
-                 let lv = Math.floor(Math.random() * 3) + 1; // 1-3
-                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
-                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
-            }
-            else if (rand < 0.7) {
-                let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
-                let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
-                let enchant = null;
-                if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
-                dropItem = generateWeapon(baseId, 0, enchant);
-            }
-            else {
-                let unitKeys = Object.keys(BASE_UNITS);
-                dropItem = generateUnit(unitKeys[Math.floor(Math.random() * unitKeys.length)]);
-            }
-            if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
-        }
+        let dropItem = generateDropItem(true);
+        if (dropItem) GAME.drops.push({ x: b.x, y: b.y, item: dropItem });
     }
 }
 
@@ -3637,64 +3703,13 @@ function update() {
                 }
                 
                 // Drop logic
-                if (Math.random() < 0.2) {
-                    let rand = Math.random();
-                    let dropItem = null;
-                    if (rand < 0.15) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
-                    else if (rand < 0.30) dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
-                    else if (rand < 0.45) { // Armor
-                        dropItem = generateArmor(Math.random() < 0.8 ? 'a_armor' : 'a_shimamura');
-                    }
-                    else if (rand < 0.65) { // Disk
-                        let magics = [{id:'m_resta', name:'レスタ', m:'resta'}, {id:'m_anti', name:'アンティ', m:'anti', maxLv:1}, {id:'m_shifta', name:'シフタ', m:'shifta'}, {id:'m_deband', name:'デバンド', m:'deband'}, {id:'m_freme', name:'フレム', m:'freme'}, {id:'m_gifreme', name:'ギフレム', m:'gifreme'}, {id:'m_rafreme', name:'ラフレム', m:'rafreme'}, {id:'m_ice', name:'アイス', m:'ice'}, {id:'m_sanda', name:'サンダ', m:'sanda'}, {id:'m_jellen', name:'ジェルン', m:'jellen'}, {id:'m_zalure', name:'ザルア', m:'zalure'}];
-                        let chosen = magics[Math.floor(Math.random() * magics.length)];
-                        let lv = Math.floor(Math.random() * 3) + 1; // 1-3
-                        if (chosen.maxLv && lv > chosen.maxLv) lv = chosen.maxLv;
-                        dropItem = { id: chosen.id+'_'+lv, name: `${chosen.name}Lv${lv}ディスク`, type: 'disk', magic: chosen.m, lv: lv, sortId: chosen.sortId };
-                    }
-                    else if (rand < 0.80) { // Weapon
-                        let baseWeapons = ['w_handgun', 'w_shotgun', 'w_saber', 'w_dagger', 'w_cane', 'w_slicer'];
-                        let baseId = baseWeapons[Math.floor(Math.random() * baseWeapons.length)];
-                        
-                        let enchant = null;
-                        if (Math.random() < 0.3) { // 30% chance for enchant
-                            let enchants = ['heat', 'shock', 'ice', 'panic', 'draw'];
-                            enchant = enchants[Math.floor(Math.random() * enchants.length)];
-                        }
-                        
-                        let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
-                        if (Math.random() < 0.4) { // 40% chance for attributes
-                            let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
-                            let remaining = 30; // max total points
-                            // Pick 1 to 3 attributes
-                            let numAttrs = Math.floor(Math.random() * 3) + 1; 
-                            for(let i=0; i<numAttrs; i++) {
-                                let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
-                                let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5); // 5 to 20 per attr
-                                val = Math.ceil(val / 5) * 5; // round to nearest 5
-                                if (val > remaining) val = remaining;
-                                let maxDiff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
-                                let maxStage = Math.max(0, GAME.progress[maxDiff] || 0);
-                                let boost = (maxDiff * 15) + (maxStage * 5);
-                                attrs[attr] = (attrs[attr] || 0) + val + boost;
-                                remaining -= val;
-                                if (remaining <= 0) break;
-                            }
-                        }
-                        dropItem = generateWeapon(baseId, 0, enchant, attrs);
-                    }
-                    else { // Unit (from 0.80 to 1.00 -> 20% of the 20% drop pool)
-                        let unitKeys = Object.keys(BASE_UNITS);
-                        dropItem = generateUnit(unitKeys[Math.floor(Math.random() * unitKeys.length)]);
-                    }
-                    
-                    if (dropItem) {
-                        GAME.drops.push({
-                            x: e.x,
-                            y: e.y,
-                            item: dropItem
-                        });
-                    }
+                let dropItem = generateDropItem(false);
+                if (dropItem) {
+                    GAME.drops.push({
+                        x: e.x,
+                        y: e.y,
+                        item: dropItem
+                    });
                 }
             }
         });
@@ -4503,22 +4518,21 @@ function getStatusSpriteName(statusName) {
 
 
 function getMagicReqMind(magicId, lv) {
-    let l = Number(lv) || 1;
     switch (magicId) {
-        case 'freme': return 20 + (l * 20);
-        case 'gifreme': return 75 + (l * 25);
-        case 'rafreme': return 108 + (l * 28);
-        case 'ice': return 10 + (l * 25);
-        case 'giice': return 76 + (l * 24);
-        case 'laice': return 76 + (l * 30);
-        case 'sanda': return 20 + (l * 24);
-        case 'gisanda': return 75 + (l * 25);
-        case 'lasanda': return 104 + (l * 30);
-        case 'resta': return 20 + (l * 30);
+        case 'freme': return 20 + (lv * 20);
+        case 'gifreme': return 75 + (lv * 25);
+        case 'rafreme': return 108 + (lv * 28);
+        case 'ice': return 10 + (lv * 25);
+        case 'giice': return 76 + (lv * 24);
+        case 'laice': return 76 + (lv * 30);
+        case 'sanda': return 20 + (lv * 24);
+        case 'gisanda': return 75 + (lv * 25);
+        case 'lasanda': return 104 + (lv * 30);
+        case 'resta': return 20 + (lv * 30);
         case 'shifta':
         case 'deband':
         case 'jellen':
-        case 'zalure': return 32 + (l * 28);
+        case 'zalure': return 32 + (lv * 28);
         case 'anti': return 100;
         default: return 999;
     }
