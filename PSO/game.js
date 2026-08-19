@@ -3621,7 +3621,7 @@ function spawnWave(r) {
 function generateDropItem(isBox) {
     let rand = Math.random();
     let diff = GAME.progress.currentDifficulty !== undefined ? GAME.progress.currentDifficulty : (GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0));
-    let stage = Math.max(0, GAME.progress[diff] || 0);
+    let stage = GAME.progress.currentStage || 0;
     let baseRarity = (diff * 3) + stage + 1;
     
     let rarityRoll = Math.random();
@@ -3644,7 +3644,7 @@ function generateDropItem(isBox) {
         if (Math.random() < 0.5) dropItem = { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 };
         else dropItem = { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
     } else if (rand < 0.70) {
-        let wKeys = Object.keys(BASE_WEAPONS).filter(k => BASE_WEAPONS[k].rarity === rarity);
+        let wKeys = Object.keys(BASE_WEAPONS).filter(k => BASE_WEAPONS[k].baseRarity === rarity || BASE_WEAPONS[k].rarity === rarity);
         if (wKeys.length > 0) {
             let baseId = wKeys[Math.floor(Math.random() * wKeys.length)];
             let enchant = null;
