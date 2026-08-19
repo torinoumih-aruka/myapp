@@ -2247,7 +2247,7 @@ function openItemModal(item, pid, source, slotIdx = -1) {
     
     let descTxt = item.desc || (item.name + " の説明文がここに入ります。");
     if (item.rarity) {
-        let stars = Math.floor(item.rarity / 2) + 1;
+        let stars = item.rarity;
         descTxt = "★".repeat(stars) + "\n" + descTxt;
     }
     document.getElementById('modal-item-desc').innerText = descTxt;
@@ -4305,7 +4305,13 @@ function showShopSubwindow(item) {
     sub.style.display = 'flex';
     
     document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
-    document.getElementById('shop-sub-desc').innerText = item.desc || (item.name + ' のアイテム');
+    
+    let descTxt = item.desc || (item.name + ' のアイテム');
+    if (item.rarity) {
+        let stars = item.rarity;
+        descTxt = "★".repeat(stars) + "\n" + descTxt;
+    }
+    document.getElementById('shop-sub-desc').innerText = descTxt;
     
     let stats = '';
     if (item.type === 'weapon') {
@@ -4359,6 +4365,13 @@ function showShopSubwindow(item) {
             // Sell
             currentShopPlayer.meseta = (currentShopPlayer.meseta || 0) + price;
             currentShopPlayer.inventory = currentShopPlayer.inventory.filter(i => i !== item);
+            
+            if (item.type === 'armor' && item.slottedUnits) {
+                item.slottedUnits.forEach(u => {
+                    if (u) currentShopPlayer.inventory.push(u);
+                });
+            }
+            
             document.getElementById('shop-subwindow').style.display = 'none';
             renderShopList();
         }
