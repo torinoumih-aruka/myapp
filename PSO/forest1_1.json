@@ -979,14 +979,14 @@
         {
           "enemies": [
             {
-              "type": "booma",
+              "type": "rappy",
               "x": 6,
               "y": 6
             },
             {
-              "type": "jigobooma",
-              "x": 8,
-              "y": 6
+              "type": "chaos_bringer",
+              "x": 9,
+              "y": 5
             }
           ]
         },

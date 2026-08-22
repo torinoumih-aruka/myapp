@@ -340,6 +340,231 @@ function applyEnchant(p, target, action, comboCount) {
     }
 }
 
+
+const BASE_ENEMIES = {
+    'rappy': {
+        name: 'ラッピー',
+        pattern: 'rappy',
+        attribute: 'native',
+        asset: 'snakey_left', // Placeholder
+        baseSpd: 15, radius: 10,
+        hp: [60, 120, 240],
+        atk: [80, 160, 320],
+        def: [0, 5, 10],
+        dex: [12, 24, 40],
+        evi: [10, 20, 35],
+        luck: [5, 10, 15],
+        exp: [6, 15, 30],
+        resists: [
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 },
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 },
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'recon': {
+        name: 'レコン',
+        pattern: 'booma',
+        attribute: 'machine',
+        asset: 'snakey_left', // Placeholder
+        baseSpd: 20, radius: 10,
+        hp: [50, 100, 200],
+        atk: [70, 140, 280],
+        def: [5, 10, 20],
+        dex: [15, 30, 45],
+        evi: [10, 20, 30],
+        luck: [5, 10, 15],
+        exp: [4, 10, 20],
+        resists: [
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'recobox': {
+        name: 'レコボクス',
+        pattern: 'recobox',
+        attribute: 'machine',
+        asset: 'medusa_awake', // Placeholder
+        baseSpd: 0, radius: 20,
+        hp: [150, 300, 600],
+        atk: [0, 0, 0],
+        def: [20, 40, 80],
+        dex: [0, 0, 0],
+        evi: [0, 0, 0],
+        luck: [5, 10, 15],
+        exp: [12, 30, 60],
+        resists: [
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 20, light: 0, dark: 0 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'chaos_bringer': {
+        name: 'カオスブリンガー',
+        pattern: 'bringer',
+        attribute: 'dark',
+        asset: 'snakey_left', // Placeholder
+        baseSpd: 25, radius: 15,
+        hp: [300, 600, 1200],
+        atk: [150, 300, 600],
+        def: [30, 60, 120],
+        dex: [40, 80, 120],
+        evi: [20, 40, 60],
+        luck: [10, 20, 30],
+        exp: [30, 75, 150],
+        resists: [
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 },
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 },
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'delbiter': {
+        name: 'デルバイツァー',
+        pattern: 'delbiter',
+        attribute: 'dark',
+        asset: 'medusa_awake', // Placeholder
+        baseSpd: 25, radius: 15,
+        hp: [250, 500, 1000],
+        atk: [120, 240, 480],
+        def: [25, 50, 100],
+        dex: [35, 70, 105],
+        evi: [15, 30, 45],
+        luck: [10, 20, 30],
+        exp: [25, 60, 120],
+        resists: [
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 },
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 },
+            { fire: 20, ice: 20, thunder: 20, light: -10, dark: 50 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'poisonous_lily': {
+        name: 'ポイゾナスリリー',
+        pattern: 'lily',
+        attribute: 'mutant',
+        asset: 'medusa_awake', 
+        baseSpd: 0, radius: 15,
+        hp: [100, 200, 400],
+        atk: [90, 180, 360],
+        def: [15, 30, 60],
+        dex: [25, 50, 75],
+        evi: [10, 20, 30],
+        luck: [5, 10, 15],
+        exp: [8, 20, 40],
+        resists: [
+            { fire: 20, ice: 20, thunder: 20, light: 20, dark: 20 },
+            { fire: 20, ice: 20, thunder: 20, light: 20, dark: 20 },
+            { fire: 20, ice: 20, thunder: 20, light: 20, dark: 20 }
+        ],
+        debuffEffect: { type: 'poison', duration: 30, mnd: 10 },
+        rareDropItem: [null, null, null]
+    },
+    'pofuillyslime': {
+        name: 'プフィスライム',
+        pattern: 'slime',
+        attribute: 'native',
+        asset: 'medusa_awake', // Placeholder asset
+        baseSpd: 15, radius: 10,
+        hp: [60, 120, 240],
+        atk: [80, 160, 320],
+        def: [0, 5, 10],
+        dex: [12, 24, 40],
+        evi: [10, 20, 35],
+        luck: [5, 10, 15],
+        exp: [6, 15, 30],
+        resists: [
+            { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 },
+            { fire: 0, ice: 0, thunder: 0, light: 0, dark: 0 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'booma': {
+        name: 'ブーマ',
+        pattern: 'booma',
+        attribute: 'native',
+        asset: 'snakey_left',
+        baseSpd: 15, radius: 10,
+        hp: [60, 120, 240],
+        atk: [80, 160, 320],
+        def: [0, 5, 10],
+        dex: [12, 24, 40],
+        evi: [10, 20, 35],
+        luck: [5, 10, 15],
+        exp: [6, 15, 30],
+        resists: [
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 },
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 },
+            { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'gobooma': {
+        name: 'ゴブーマ',
+        pattern: 'booma',
+        attribute: 'native',
+        asset: 'medusa_awake',
+        baseSpd: 15, radius: 10,
+        hp: [85, 170, 340],
+        atk: [85, 170, 340],
+        def: [5, 15, 30],
+        dex: [15, 30, 50],
+        evi: [12, 24, 35],
+        luck: [5, 10, 15],
+        exp: [6, 15, 30],
+        resists: [
+            { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 },
+            { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 },
+            { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'jigobooma': {
+        name: 'ジゴブーマ',
+        pattern: 'booma',
+        attribute: 'native',
+        asset: 'gol_down_awake',
+        baseSpd: 15, radius: 10,
+        hp: [110, 220, 440],
+        atk: [90, 180, 360],
+        def: [30, 60, 90],
+        dex: [20, 40, 60],
+        evi: [15, 30, 45],
+        luck: [5, 10, 15],
+        exp: [7, 18, 35],
+        resists: [
+            { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 },
+            { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 },
+            { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+    'hildebear': {
+        name: 'ヒルデベア',
+        pattern: 'hildebear',
+        attribute: 'native',
+        asset: 'don_medosa_1',
+        baseSpd: 10, radius: 30,
+        hp: [180, 360, 720],
+        atk: [140, 280, 560],
+        def: [30, 70, 120],
+        dex: [70, 100, 140],
+        evi: [22, 40, 60],
+        luck: [10, 15, 25],
+        exp: [15, 35, 70],
+        resists: [
+            { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 },
+            { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 },
+            { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 }
+        ],
+        rareDropItem: [null, null, null]
+    }
+};
+
 const ENCHANTS = [
     { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire' },
     { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire' },
@@ -598,7 +823,7 @@ class Player {
                 { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50, stack: 3 },
                 { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30, stack: 5 },
                 { id: 'm_resta_1', name: 'レスタLv1ディスク', type: 'disk', magic: 'resta', lv: 1 },
-                { id: 'm_freme_1', name: 'フレムLv1ディスク', type: 'disk', magic: 'freme', lv: 1 }
+                { id: 'm_ice_1', name: 'アイスLv1ディスク', type: 'disk', magic: 'ice', lv: 1 }
             ];
         } else {
             this.inventory = [];
@@ -1501,8 +1726,8 @@ class Player {
                             
                             let weaponPow = action ? (action.atk || 0) : 0;
                             let attrMult = 1.0;
-                            if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
-                                attrMult += (action.attrs.native / 100);
+                            if (target instanceof Enemy && target.attribute && action && action.attrs && action.attrs[target.attribute]) {
+                                attrMult += (action.attrs[target.attribute] / 100);
                             }
                             weaponPow = Math.floor(weaponPow * attrMult);
                             
@@ -1521,6 +1746,7 @@ class Player {
                             let dmg = Math.floor(baseDmg * comboMult * critMult);
                             
                             if (target instanceof Enemy) {
+                                if (target.invincible) return; // Ignores damage if invincible
                                 target.hp -= dmg;
                                 target.stunTimer = 1.0; // Stun for 1.0s on hit
                                 addFloatingText(target.x, target.y - 20, dmg, isCrit ? 'yellow' : 'white');
@@ -1696,7 +1922,7 @@ class Player {
 // Enemy Entity
 class Enemy {
     constructor(type, x, y) {
-        this.type = type;
+        this.type = type.trim();
         this.x = x;
         this.y = y;
         let ang = Math.random() * Math.PI * 2;
@@ -1707,62 +1933,33 @@ class Enemy {
         this.state = 'idle';
         this.spawnTimer = 1.0;
         
-        let diffMult = 1;
-        if (GAME.progress && GAME.progress.currentDifficulty === 1) diffMult = 2;
-        else if (GAME.progress && GAME.progress.currentDifficulty === 2) diffMult = 3;
-
+        let d = (GAME.progress && GAME.progress.currentDifficulty !== undefined) ? GAME.progress.currentDifficulty : 0;
         
-        if (type === 'hildebear') {
-            this.hp = 180 * diffMult;
-            this.maxHp = 180 * diffMult;
-            this.atk = 140 * diffMult;
-            this.def = 30 * diffMult;
-            this.dex = 70;
-            this.evi = 22;
-            this.luck = 10;
-            this.exp = 15;
-            this.radius = 30;
-            this.baseSpd = 10;
-            this.resists = { fire: 70, ice: 0, thunder: 30, light: 50, dark: 30 };
-        } else if (type === 'gobooma') {
-            this.hp = 85 * diffMult;
-            this.maxHp = 85 * diffMult;
-            this.atk = 85 * diffMult;
-            this.def = 5 * diffMult;
-            this.dex = 15;
-            this.evi = 12;
-            this.luck = 5;
-            this.exp = 6;
-            this.radius = 10;
-            this.baseSpd = 15;
-            this.resists = { fire: 15, ice: 35, thunder: 0, light: 20, dark: 10 };
-        } else if (type === 'jigobooma') {
-            this.hp = 110 * diffMult;
-            this.maxHp = 110 * diffMult;
-            this.atk = 90 * diffMult;
-            this.def = 30 * diffMult;
-            this.dex = 20;
-            this.evi = 15;
-            this.luck = 5;
-            this.exp = 7;
-            this.radius = 10;
-            this.baseSpd = 15;
-            this.resists = { fire: 45, ice: 0, thunder: 15, light: 20, dark: 15 };
-        } else {
-            // booma (default)
-            this.hp = 60;
-            this.maxHp = 60;
-            this.atk = 80;
-            this.def = 0;
-            this.dex = 12;
-            this.evi = 10;
-            this.luck = 5;
-            this.exp = 6;
-            this.radius = 10;
-            this.baseSpd = 15;
-            this.resists = { fire: 0, ice: 25, thunder: 15, light: 20, dark: 10 };
-        }
-        this.spd = this.baseSpd;
+        let base = BASE_ENEMIES[type] || BASE_ENEMIES['booma'];
+        
+        this.name = base.name;
+        this.pattern = base.pattern;
+        this.asset = base.asset;
+        this.attribute = base.attribute || 'native';
+        this.rareDropItem = base.rareDropItem[d];
+        
+        this.hp = base.hp[d];
+        this.maxHp = base.hp[d];
+        this.atk = base.atk[d];
+        this.def = base.def[d];
+        this.dex = base.dex[d];
+        this.evi = base.evi[d];
+        this.luck = base.luck[d];
+        this.exp = base.exp[d];
+        this.resists = base.resists[d];
+        
+        this.radius = base.radius;
+        this.baseSpd = base.baseSpd;
+        
+        let speedMult = 1.0;
+        if (d === 1) speedMult = 1.2;
+        else if (d === 2) speedMult = 1.5;
+        this.spd = this.baseSpd * speedMult;
     }
 
     update(dt) {
@@ -1774,6 +1971,7 @@ class Enemy {
             return;
         }
 
+        if ((this.pattern === 'delbiter' || this.pattern === 'bringer') && (this.state === 'charging' || this.state === 'prepare_charge')) this.stunTimer = 0;
         if (this.stunTimer > 0) {
             this.stunTimer -= dt;
             return;
@@ -1786,12 +1984,17 @@ class Enemy {
         let dy = target.y - this.y;
         let dist = Math.hypot(dx, dy);
         
-        if (this.type === 'hildebear') {
+        let d = (GAME.progress && GAME.progress.currentDifficulty !== undefined) ? GAME.progress.currentDifficulty : 0;
+        let speedMult = 1.0;
+        if (d === 1) speedMult = 1.2;
+        else if (d === 2) speedMult = 1.5;
+
+        if (this.pattern === 'hildebear') {
             if (this.state === 'idle') {
                 if (dist <= 250) {
                     this.state = 'jump';
                     this.invincible = true;
-                    this.spd = 120;
+                    this.spd = 120 * speedMult;
                     this.jumpTargetX = target.x;
                     this.jumpTargetY = target.y;
                     let jdx = this.jumpTargetX - this.x;
@@ -1818,7 +2021,7 @@ class Enemy {
                     }
                     this.state = 'chase';
                     this.invincible = false;
-                    this.spd = this.baseSpd;
+                    this.spd = this.baseSpd * speedMult;
                 } else {
                     this.x = nextX;
                     this.y = nextY;
@@ -1829,6 +2032,279 @@ class Enemy {
                     this.dirY = dy / dist;
                     this.x += this.dirX * this.spd * dt;
                     this.y += this.dirY * this.spd * dt;
+                }
+            }
+        } else if (this.pattern === 'slime') {
+            if (this.timer === undefined) {
+                this.state = 'move';
+                this.timer = 3.0;
+                this.invincible = true;
+                let ang = Math.random() * Math.PI * 2;
+                this.dirX = Math.cos(ang);
+                this.dirY = Math.sin(ang);
+            }
+            if (this.state === 'move') {
+                this.timer -= dt;
+                this.x += this.dirX * this.spd * dt;
+                this.y += this.dirY * this.spd * dt;
+                if (this.timer <= 0) {
+                    this.state = 'idle_pre';
+                    this.invincible = false;
+                    this.timer = 1.0;
+                }
+            } else if (this.state === 'idle_pre' || this.state === 'idle') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    if (typeof PROJECTILES !== 'undefined') {
+                        let pdx = target.x - this.x;
+                        let pdy = target.y - this.y;
+                        let pdist = Math.hypot(pdx, pdy);
+                        if (pdist > 0) {
+                            PROJECTILES.push({
+                                roomId: this.roomId,
+                                type: 'enemy_bullet',
+                                x: this.x,
+                                y: this.y,
+                                dx: (pdx / pdist) * (200 / 3),
+                                dy: (pdy / pdist) * (200 / 3),
+                                life: 10.0,
+                                distanceTraveled: 0,
+                                r: 5,
+                                dmg: this.atk,
+                                owner: this
+                            });
+                        }
+                    }
+                    this.state = 'idle_post';
+                    this.timer = 1.0;
+                }
+            } else if (this.state === 'idle_post') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.state = 'move';
+                    this.invincible = true;
+                    this.timer = 3.0;
+                    let ang = Math.random() * Math.PI * 2;
+                    this.dirX = Math.cos(ang);
+                    this.dirY = Math.sin(ang);
+                }
+            }
+        } else if (this.pattern === 'lily') {
+            let isDying = (this.hp / this.maxHp) < 0.20;
+            if (isDying && this.state !== 'dying') {
+                this.state = 'dying';
+                this.timer = 4.0;
+            }
+            
+            if (this.state === 'dying') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.hp = 0;
+                    if (typeof addEffect === 'function') {
+                        addEffect('explosion', { x: this.x, y: this.y, r: 40 });
+                    }
+                    let p = GAME.players[0];
+                    if (p && p.hp > 0 && Math.hypot(p.x - this.x, p.y - this.y) <= p.radius + 40) {
+                        let base = BASE_ENEMIES[this.type];
+                        if (base && base.debuffEffect && typeof applyStatus === 'function') {
+                            applyStatus(p, base.debuffEffect.type, base.debuffEffect.duration, base.debuffEffect.mnd || 0);
+                        }
+                    }
+                }
+            } else {
+                if (this.timer === undefined) this.timer = 5.0; // Wait 5s for first attack? The prompt says "魔法弾のクールタイムは、5秒とします". I'll let it shoot initially after a shorter delay, say 1.0s, then 5.0s. Let's make it 1.0s initially.
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.timer = 5.0;
+                    if (typeof PROJECTILES !== 'undefined') {
+                        let pdx = target.x - this.x;
+                        let pdy = target.y - this.y;
+                        let pdist = Math.hypot(pdx, pdy);
+                        if (pdist > 0) {
+                            let dx = (pdx / pdist) * 140;
+                            let dy = (pdy / pdist) * 140;
+                            let debuffEffect = null;
+                            let base = BASE_ENEMIES[this.type];
+                            if (pdist >= 50 && base && base.debuffEffect) {
+                                debuffEffect = base.debuffEffect;
+                            }
+                            PROJECTILES.push({
+                                roomId: this.roomId,
+                                type: 'enemy_bullet',
+                                x: this.x,
+                                y: this.y,
+                                dx: dx,
+                                dy: dy,
+                                life: 10.0,
+                                distanceTraveled: 0,
+                                r: 5,
+                                dmg: this.atk,
+                                owner: this,
+                                debuffEffect: debuffEffect,
+                                isPoison: debuffEffect ? true : false
+                            });
+                        }
+                    }
+                }
+            }
+        } else if (this.pattern === 'delbiter') {
+            if (this.state === 'idle') {
+                if (dist >= 300) {
+                    this.state = 'fire_magic';
+                    this.timer = 0;
+                    this.bulletsFired = 0;
+                } else if (dist >= 150) {
+                    this.state = 'prepare_charge';
+                    this.timer = 1.5;
+                    this.chargeSpd = 100;
+                } else {
+                    this.state = 'chase';
+                }
+            } else if (this.state === 'fire_magic') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    if (typeof PROJECTILES !== 'undefined') {
+                        let pdx = target.x - this.x;
+                        let pdy = target.y - this.y;
+                        let pdist = Math.hypot(pdx, pdy);
+                        if (pdist > 0) {
+                            PROJECTILES.push({
+                                roomId: this.roomId,
+                                type: 'enemy_bullet',
+                                x: this.x,
+                                y: this.y,
+                                dx: (pdx / pdist) * 200,
+                                dy: (pdy / pdist) * 200,
+                                life: 10.0,
+                                distanceTraveled: 0,
+                                r: 5,
+                                dmg: this.atk,
+                                owner: this
+                            });
+                        }
+                    }
+                    this.bulletsFired++;
+                    this.timer = 0.5;
+                    if (this.bulletsFired >= 5) {
+                        this.state = 'prepare_charge';
+                        this.timer = 1.5;
+                        this.chargeSpd = 100;
+                    }
+                }
+            } else if (this.state === 'prepare_charge') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.state = 'charging';
+                    let cDist = Math.hypot(dx, dy);
+                    if (cDist > 0) {
+                        this.chargeDirX = dx / cDist;
+                        this.chargeDirY = dy / cDist;
+                        this.timer = cDist / (this.chargeSpd * speedMult);
+                    } else {
+                        this.state = 'chase';
+                    }
+                }
+            } else if (this.state === 'charging') {
+                this.timer -= dt;
+                this.x += this.chargeDirX * this.chargeSpd * speedMult * dt;
+                this.y += this.chargeDirY * this.chargeSpd * speedMult * dt;
+                if (this.timer <= 0) {
+                    this.state = 'chase';
+                }
+            } else if (this.state === 'chase') {
+                if (dist >= 150) {
+                    this.state = 'prepare_charge';
+                    this.timer = 1.5;
+                    this.chargeSpd = 80;
+                } else {
+                    if (dist > this.radius + target.radius) {
+                        this.dirX = dx / dist;
+                        this.dirY = dy / dist;
+                        this.x += this.dirX * this.spd * dt;
+                        this.y += this.dirY * this.spd * dt;
+                    }
+                }
+            }
+        } else if (this.pattern === 'bringer') {
+            if (this.state === 'idle') {
+                if (dist >= 150) {
+                    this.state = 'prepare_charge';
+                    this.timer = 1.5;
+                    this.chargeSpd = 100;
+                } else {
+                    this.state = 'chase';
+                }
+            } else if (this.state === 'prepare_charge') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.state = 'charging';
+                    let cDist = Math.hypot(dx, dy);
+                    if (cDist > 0) {
+                        this.chargeDirX = dx / cDist;
+                        this.chargeDirY = dy / cDist;
+                        this.timer = cDist / (this.chargeSpd * speedMult);
+                    } else {
+                        this.state = 'chase';
+                    }
+                }
+            } else if (this.state === 'charging') {
+                this.timer -= dt;
+                this.x += this.chargeDirX * this.chargeSpd * speedMult * dt;
+                this.y += this.chargeDirY * this.chargeSpd * speedMult * dt;
+                if (this.timer <= 0) {
+                    this.state = 'chase';
+                }
+            } else if (this.state === 'chase') {
+                if (dist >= 150) {
+                    this.state = 'prepare_charge';
+                    this.timer = 1.5;
+                    this.chargeSpd = 100;
+                } else {
+                    if (dist > this.radius + target.radius) {
+                        this.dirX = dx / dist;
+                        this.dirY = dy / dist;
+                        this.x += this.dirX * this.spd * dt;
+                        this.y += this.dirY * this.spd * dt;
+                    }
+                }
+            }
+        } else if (this.pattern === 'recobox') {
+            if (this.timer === undefined) this.timer = 7.0;
+            this.timer -= dt;
+            if (this.timer <= 0) {
+                this.timer = 7.0;
+                
+                if (!this.spawnCount) this.spawnCount = 0;
+                let myRecons = GAME.enemies.filter(e => e.spawner === this && e.hp > 0);
+                
+                if (this.spawnCount < 7 && myRecons.length < 2) {
+                    this.spawnCount++;
+                    let recon = new Enemy('recon', this.x + (Math.random()-0.5)*40, this.y + (Math.random()-0.5)*40);
+                    recon.roomId = this.roomId;
+                    recon.spawner = this;
+                    GAME.enemies.push(recon);
+                }
+            }
+        } else if (this.pattern === 'rappy') {
+            let isFleeing = (this.hp / this.maxHp) < 0.10;
+            let currentSpd = isFleeing ? this.spd * 3 : this.spd;
+            
+            if (isFleeing) {
+                this.state = 'flee';
+                this.dirX = dist > 0 ? -dx / dist : 1;
+                this.dirY = dist > 0 ? -dy / dist : 0;
+                this.x += this.dirX * currentSpd * dt;
+                this.y += this.dirY * currentSpd * dt;
+            } else {
+                if (this.state === 'idle') {
+                    if (dist <= 300) this.state = 'chase';
+                } else if (this.state === 'chase') {
+                    if (dist > this.radius + target.radius) {
+                        this.dirX = dx / dist;
+                        this.dirY = dy / dist;
+                        this.x += this.dirX * currentSpd * dt;
+                        this.y += this.dirY * currentSpd * dt;
+                    }
                 }
             }
         } else {
@@ -1871,6 +2347,18 @@ class Enemy {
         else if (this.type === 'jigobooma') spriteName = 'gol_down_awake';
         else if (this.type === 'hildebear') spriteName = 'don_medosa_1';
 
+        if (this.invincible && this.pattern === 'slime') ctx.globalAlpha *= 0.5;
+        if (this.state === 'dying' && this.pattern === 'lily') {
+            let blink = Math.floor(this.timer * 10) % 2 === 0;
+            if (blink) {
+                ctx.globalAlpha *= 0.5;
+                // Add a red circle behind
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
         if (PRE_RENDERED[spriteName]) {
             let size = this.radius * 2.5; // Slightly larger than hitbox
             ctx.drawImage(PRE_RENDERED[spriteName], this.x - size/2, this.y - size/2, size, size);
@@ -2685,8 +3173,8 @@ function updateProjectiles(dt) {
                         let action = p.palette[p.paletteIndex];
                         let weaponPow = action ? (action.atk || 0) : 0;
                         let attrMult = 1.0;
-                        if (target instanceof Enemy && action && action.attrs && action.attrs.native) {
-                            attrMult += (action.attrs.native / 100);
+                        if (target instanceof Enemy && target.attribute && action && action.attrs && action.attrs[target.attribute]) {
+                            attrMult += (action.attrs[target.attribute] / 100);
                         }
                         weaponPow = Math.floor(weaponPow * attrMult);
                         
@@ -2729,11 +3217,70 @@ function updateProjectiles(dt) {
                 }
             }
             if (proj.life <= 0) PROJECTILES.splice(i, 1);
+        } else if (proj.type === 'enemy_bullet') {
+            proj.x += proj.dx * dt;
+            proj.y += proj.dy * dt;
+            proj.distanceTraveled = (proj.distanceTraveled || 0) + Math.hypot(proj.dx * dt, proj.dy * dt);
+            
+            let outOfBounds = false;
+            if (GAME.mode === 'map') {
+                let room = GAME.rooms.find(r => r.id === proj.roomId);
+                if (room) {
+                    let ts = 50;
+                    if (proj.x < room.x * ts || proj.x > (room.x + room.w) * ts ||
+                        proj.y < room.y * ts || proj.y > (room.y + room.h) * ts) {
+                        outOfBounds = true;
+                    }
+                }
+            }
+            
+            if (outOfBounds || proj.distanceTraveled >= 300) {
+                PROJECTILES.splice(i, 1);
+                continue;
+            }
+
+            let color = proj.isPoison ? '#00ff00' : '#ff00ff';
+            addEffect('particle', { x: proj.x, y: proj.y, color: color, r: proj.r });
+            let p = GAME.players[0];
+            if (p && p.hp > 0 && Math.hypot(p.x - proj.x, p.y - proj.y) <= p.radius + proj.r) {
+                if (p.invincibleTimer <= 0 && p.state !== 'dead') {
+                    let dmg = Math.max(1, proj.dmg - (p.def || 0));
+                    p.hp -= dmg;
+                    addFloatingText(p.x, p.y - 20, dmg, 'red');
+                    p.invincibleTimer = 1.0;
+                    
+                    if (proj.debuffEffect && typeof applyStatus === 'function') {
+                        applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                    }
+                }
+                PROJECTILES.splice(i, 1);
+                continue;
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
         }
     }
 }
 function hitEnemyWithMagic(target, proj) {
     if (target.hp <= 0) return;
+    
+    let isIce = proj.type.includes('ice');
+    if (target.pattern === 'slime' && isIce) {
+        target.splitCount = target.splitCount || 0;
+        let sameSlimes = GAME.enemies.filter(e => e.pattern === 'slime' && e.roomId === target.roomId && e.hp > 0);
+        if (target.splitCount < 2 && sameSlimes.length < 3) {
+            target.splitCount++;
+            let copy = new Enemy(target.type, target.x + 20, target.y + 20);
+            copy.hp = target.hp;
+            copy.splitCount = 2; // Copy cannot split further
+            copy.roomId = target.roomId;
+            GAME.enemies.push(copy);
+        }
+    }
+    
+    if (target.invincible) {
+        addFloatingText(target.x, target.y - 20, "miss", 'white');
+        return;
+    }
     
     let resist = 0;
     if (target.resists) {
@@ -3306,6 +3853,7 @@ function updatePaletteUI(pid) {
 }
 
 function hitPlayer(p, e) {
+    if (e.pattern === 'recobox') return;
     if (p.invincibleTimer > 0 || p.state === 'dead') return;
     
     let targetEvi = p.baseStats.evi;
