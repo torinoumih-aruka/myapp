@@ -342,6 +342,48 @@ function applyEnchant(p, target, action, comboCount) {
 
 
 const BASE_ENEMIES = {
+    'canaan': {
+        name: 'カナン',
+        pattern: 'canaan',
+        attribute: 'machine', // or dark, or native, let's use machine
+        asset: 'robot_1', // Placeholder
+        baseSpd: 0, radius: 15,
+        hp: [120, 240, 480],
+        atk: [70, 140, 280],
+        def: [20, 40, 80],
+        dex: [30, 60, 90],
+        evi: [10, 20, 30],
+        luck: [10, 20, 30],
+        exp: [15, 35, 70],
+        resists: [
+            { fire: 20, ice: 20, thunder: 100, light: -10, dark: 40 },
+            { fire: 20, ice: 20, thunder: 100, light: -10, dark: 40 },
+            { fire: 20, ice: 20, thunder: 100, light: -10, dark: 40 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+
+    'savage_wolf': {
+        name: 'サベージウルフ',
+        pattern: 'savage_wolf',
+        attribute: 'native',
+        asset: 'ghost_1', // Placeholder
+        baseSpd: 40, radius: 10,
+        hp: [80, 160, 320],
+        atk: [60, 120, 240],
+        def: [15, 30, 60],
+        dex: [20, 40, 80],
+        evi: [25, 50, 100],
+        luck: [10, 20, 40],
+        exp: [12, 30, 60],
+        resists: [
+            { fire: 10, ice: -10, thunder: 10, light: 10, dark: 10 },
+            { fire: 10, ice: -10, thunder: 10, light: 10, dark: 10 },
+            { fire: 10, ice: -10, thunder: 10, light: 10, dark: 10 }
+        ],
+        rareDropItem: [null, null, null]
+    },
+
     'rappy': {
         name: 'ラッピー',
         pattern: 'rappy',
@@ -2388,7 +2430,156 @@ class Enemy {
                     this.timer = 1.2;
                 }
             }
-        } else if (this.pattern === 'recobox') {
+                } else if (this.pattern === 'savage_wolf') {
+            if (!this.circleDir) this.circleDir = Math.random() < 0.5 ? 1 : -1;
+
+            if (this.state === 'leap') {
+                this.timer -= dt;
+                let moveDist = this.spd * dt;
+                this.x += this.leapDirX * moveDist;
+                this.y += this.leapDirY * moveDist;
+                
+                if (this.timer <= 0) {
+                    this.state = 'idle'; // Let next frame decide to chase or circle
+                }
+            } else {
+                // Check if behind player
+                let isBehind = false;
+                if (dist < 120) {
+                    let nx = -dx / dist; // Direction from player to enemy
+                    let ny = -dy / dist;
+                    let dot = nx * (-target.dirX) + ny * (-target.dirY);
+                    if (dot > 0.866) { // About 30 degrees tolerance
+                        isBehind = true;
+                    }
+                }
+                
+                if (isBehind && dist < 120) {
+                    this.state = 'leap';
+                    this.spd = 70 * speedMult;
+                    this.timer = 150 / 70; // 150px at speed 70
+                    this.leapDirX = dx / dist;
+                    this.leapDirY = dy / dist;
+                } else if (dist < 80) {
+                    this.state = 'circle';
+                    this.spd = this.baseSpd * speedMult;
+                    // Move in an arc: tangent to the player
+                    let tx = -dy / dist;
+                    let ty = dx / dist;
+                    // Apply circle direction
+                    tx *= this.circleDir;
+                    ty *= this.circleDir;
+                    
+                    // Also maintain slight distance correction if too close/far from 80
+                    // But requirement says "around player", tangent is enough if distance is close to 80.
+                    // Let's add a small outward/inward push to keep it around 70-80px
+                    let push = (75 - dist) * 2;
+                    let moveX = tx * this.spd - (dx / dist) * push;
+                    let moveY = ty * this.spd - (dy / dist) * push;
+                    
+                    // Normalize move
+                    let mLen = Math.hypot(moveX, moveY);
+                    if (mLen > 0) {
+                        this.x += (moveX / mLen) * this.spd * dt;
+                        this.y += (moveY / mLen) * this.spd * dt;
+                        this.dirX = moveX / mLen;
+                        this.dirY = moveY / mLen;
+                    }
+                } else {
+                    this.state = 'chase';
+                    this.spd = this.baseSpd * speedMult * 1.5; // "素早く近づき" (approaches quickly)
+                    this.x += (dx / dist) * this.spd * dt;
+                    this.y += (dy / dist) * this.spd * dt;
+                    this.dirX = dx / dist;
+                    this.dirY = dy / dist;
+                    
+                    // Occasionally change circle direction when chasing so it's fresh when it gets close
+                    if (Math.random() < 0.02) this.circleDir = Math.random() < 0.5 ? 1 : -1;
+                }
+            }
+        } else if (this.pattern === 'canaan') {
+            if (dist >= 120) {
+                this.state = 'chase';
+                this.spd = this.baseSpd > 0 ? this.baseSpd * speedMult : 80 * speedMult;
+                this.x += (dx / dist) * this.spd * dt;
+                this.y += (dy / dist) * this.spd * dt;
+                this.dirX = dx / dist;
+                this.dirY = dy / dist;
+            } else {
+                if (this.state === 'chase' || this.state === 'idle') {
+                    this.state = 'circle';
+                    this.timer = 1.0;
+                    this.canaanCircleCount = 0;
+                    this.canaanCircleTarget = Math.floor(Math.random() * 2) + 2; // 2 or 3
+                    this.canaanCircleDir = Math.random() < 0.5 ? 1 : -1;
+                    this.canaanSpeed = 100 + Math.random() * 100;
+                }
+                
+                if (this.state === 'circle') {
+                    this.timer -= dt;
+                    let tx = -dy / dist;
+                    let ty = dx / dist;
+                    tx *= this.canaanCircleDir;
+                    ty *= this.canaanCircleDir;
+                    
+                    // Keep distance around 100
+                    let push = (100 - dist) * 2;
+                    let moveX = tx * this.canaanSpeed - (dx / dist) * push;
+                    let moveY = ty * this.canaanSpeed - (dy / dist) * push;
+                    
+                    let mLen = Math.hypot(moveX, moveY);
+                    if (mLen > 0) {
+                        this.x += (moveX / mLen) * this.canaanSpeed * dt;
+                        this.y += (moveY / mLen) * this.canaanSpeed * dt;
+                        this.dirX = moveX / mLen;
+                        this.dirY = moveY / mLen;
+                    }
+                    
+                    if (this.timer <= 0) {
+                        this.state = 'wait';
+                        this.timer = 1.0;
+                    }
+                } else if (this.state === 'wait') {
+                    this.timer -= dt;
+                    if (this.timer <= 0) {
+                        this.canaanCircleCount = (this.canaanCircleCount || 0) + 1;
+                        if (this.canaanCircleCount >= this.canaanCircleTarget) {
+                            // fire thunder magic
+                            if (typeof PROJECTILES !== 'undefined') {
+                                PROJECTILES.push({
+                                    roomId: this.roomId,
+                                    type: 'enemy_bullet',
+                                    x: this.x,
+                                    y: this.y,
+                                    dx: (dx / dist) * 200, // Velocity components
+                                    dy: (dy / dist) * 200,
+                                    spd: 200,
+                                    life: 5.0,
+                                    r: 6,
+                                    dmg: this.atk,
+                                    owner: this,
+                                    color: '#ffff00', // Yellow
+                                    debuffEffect: { type: 'shock', duration: 10, chance: 0.05 }
+                                });
+                            }
+                            // Reset
+                            this.state = 'circle';
+                            this.timer = 1.0;
+                            this.canaanCircleCount = 0;
+                            this.canaanCircleTarget = Math.floor(Math.random() * 2) + 2;
+                            this.canaanCircleDir = Math.random() < 0.5 ? 1 : -1;
+                            this.canaanSpeed = 100 + Math.random() * 100;
+                        } else {
+                            // Next circle
+                            this.state = 'circle';
+                            this.timer = 1.0;
+                            this.canaanCircleDir = Math.random() < 0.5 ? 1 : -1;
+                            this.canaanSpeed = 100 + Math.random() * 100;
+                        }
+                    }
+                }
+            }
+} else if (this.pattern === 'recobox') {
             if (this.timer === undefined) this.timer = 7.0;
             this.timer -= dt;
             if (this.timer <= 0) {
@@ -3369,7 +3560,9 @@ function updateProjectiles(dt) {
                             if (dmg > 0) addFloatingText(p.x, p.y - 20, dmg, 'red');
                             p.invincibleTimer = 1.0;
                             if (proj.debuffEffect && typeof applyStatus === 'function') {
-                                applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                                if (proj.debuffEffect.chance === undefined || Math.random() < proj.debuffEffect.chance) {
+                                    applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                                }
                             }
                         }
                     }
@@ -3400,7 +3593,7 @@ function updateProjectiles(dt) {
                 continue;
             }
 
-            let color = proj.isPoison ? '#00ff00' : '#ff00ff';
+            let color = proj.color || (proj.isPoison ? '#00ff00' : '#ff00ff');
             addEffect('particle', { x: proj.x, y: proj.y, color: color, r: proj.r });
             let p = GAME.players[0];
             if (p && p.hp > 0 && Math.hypot(p.x - proj.x, p.y - proj.y) <= p.radius + proj.r) {
@@ -3411,7 +3604,9 @@ function updateProjectiles(dt) {
                     p.invincibleTimer = 1.0;
                     
                     if (proj.debuffEffect && typeof applyStatus === 'function') {
-                        applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                        if (proj.debuffEffect.chance === undefined || Math.random() < proj.debuffEffect.chance) {
+                            applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                        }
                     }
                 }
                 PROJECTILES.splice(i, 1);
@@ -4726,11 +4921,10 @@ function draw() {
             if (isBoxTarget) {
                 drawInfoBox("アイテムボックス", []);
             } else if (t.hp > 0) {
-                                let name = t.type;
-                if (t.type === 'booma') name = "ブーマ";
-                else if (t.type === 'gobooma') name = "ゴブーマ";
-                else if (t.type === 'jigobooma') name = "ジゴブーマ";
-                else if (t.type === 'hildebear') name = "ヒルデベア";
+                let name = t.name || t.type;
+                
+                let attrMap = { 'native': 'Native', 'machine': 'Machine', 'dark': 'Dark', 'mutant': 'Mutant', 'a.beast': 'A.Beast' };
+                let attrDisplay = attrMap[t.attribute] || (t.attribute ? t.attribute.charAt(0).toUpperCase() + t.attribute.slice(1) : 'Native');
                 
                 let debuffIcons = [];
                 if (t.status) {
@@ -4743,7 +4937,7 @@ function draw() {
                 }
                 
                 // Draw info box for enemy
-                drawInfoBox(name, [`種族: Native`, `HP: ${t.hp} / ${t.maxHp}`], null, debuffIcons);
+                drawInfoBox(name, [`種族: ${attrDisplay}`, `HP: ${t.hp} / ${t.maxHp}`], null, debuffIcons);
             }
         }
     }
