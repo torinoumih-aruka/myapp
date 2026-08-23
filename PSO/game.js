@@ -402,6 +402,31 @@ const BASE_ENEMIES = {
         ],
         rareDropItem: [null, null, null]
     },
+    'chaos_sorcerer': {
+        name: 'カオスソーサラー',
+        pattern: 'sorcerer',
+        attribute: 'dark',
+        asset: 'don_medosa_1', // Placeholder
+        baseSpd: 0, radius: 15,
+        hp: [200, 400, 800],
+        atk: [80, 160, 320],
+        def: [20, 40, 80],
+        dex: [30, 60, 90],
+        evi: [15, 30, 45],
+        luck: [10, 20, 30],
+        exp: [20, 50, 100],
+        resists: [
+            { fire: 40, ice: 40, thunder: 40, light: -20, dark: 80 },
+            { fire: 40, ice: 40, thunder: 40, light: -20, dark: 80 },
+            { fire: 40, ice: 40, thunder: 40, light: -20, dark: 80 }
+        ],
+        rareDropItem: [null, null, null],
+        sorcererMagics: {
+            fireSpeed: [30, 40, 60],
+            iceSpeed: [20, 30, 50],
+            heal: [100, 300, 800]
+        }
+    },
     'chaos_bringer': {
         name: 'カオスブリンガー',
         pattern: 'bringer',
@@ -958,6 +983,7 @@ class Player {
             }
 
             
+        if (this.invincibleTimer > 0) this.invincibleTimer -= dt; // Tick down before early return
         if (this.status && this.status.freezeTimer > 0) return; // Frozen
         if (this.status && this.status.shockTimer > 0) {
             // Cannot use weapon/magic, but can move/use items. Wait, user said:
@@ -1972,6 +1998,7 @@ class Enemy {
         }
 
         if ((this.pattern === 'delbiter' || this.pattern === 'bringer') && (this.state === 'charging' || this.state === 'prepare_charge')) this.stunTimer = 0;
+        if (this.pattern === 'sorcerer') this.stunTimer = 0;
         if (this.stunTimer > 0) {
             this.stunTimer -= dt;
             return;
@@ -2268,6 +2295,99 @@ class Enemy {
                     }
                 }
             }
+        } else if (this.pattern === 'sorcerer') {
+            if (this.state === 'idle') {
+                this.state = 'appear_wait';
+                this.timer = 1.2;
+                this.magicIndex = 0;
+            } else if (this.state === 'appear_wait') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.state = 'cast';
+                }
+            } else if (this.state === 'cast') {
+                let base = BASE_ENEMIES[this.type];
+                let diff = (GAME.progress && GAME.progress.currentDifficulty !== undefined) ? GAME.progress.currentDifficulty : 0;
+                
+                if (this.magicIndex === 0) {
+                    let speed = base.sorcererMagics.fireSpeed[diff];
+                    if (typeof PROJECTILES !== 'undefined') {
+                        PROJECTILES.push({
+                            roomId: this.roomId,
+                            type: 'sorcerer_fire',
+                            x: this.x,
+                            y: this.y,
+                            spd: speed,
+                            life: 15.0,
+                            r: 6,
+                            dmg: this.atk,
+                            owner: this
+                        });
+                    }
+                } else if (this.magicIndex === 1) {
+                    let speed = base.sorcererMagics.iceSpeed[diff];
+                    if (typeof PROJECTILES !== 'undefined') {
+                        PROJECTILES.push({
+                            roomId: this.roomId,
+                            type: 'sorcerer_ice',
+                            x: this.x,
+                            y: this.y,
+                            spd: speed,
+                            life: 7.0,
+                            r: 6,
+                            dmg: 0,
+                            owner: this,
+                            debuffEffect: { type: 'freeze', duration: 20 }
+                        });
+                    }
+                } else if (this.magicIndex === 2) {
+                    let healAmt = base.sorcererMagics.heal[diff];
+                    let targets = GAME.enemies.filter(e => e.hp > 0 && e.roomId === this.roomId);
+                    targets.forEach(e => {
+                        if (Math.hypot(e.x - this.x, e.y - this.y) <= 200) {
+                            e.hp = Math.min(e.maxHp, e.hp + healAmt);
+                            if (typeof addFloatingText === 'function') {
+                                addFloatingText(e.x, e.y - 20, healAmt, '#00ff00');
+                            }
+                        }
+                    });
+                }
+                
+                this.magicIndex = (this.magicIndex + 1) % 3;
+                this.state = 'post_cast_wait';
+                this.timer = 0.8;
+            } else if (this.state === 'post_cast_wait') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.state = 'invisible';
+                    this.timer = 5.0;
+                    this.invincible = true;
+                }
+            } else if (this.state === 'invisible') {
+                this.timer -= dt;
+                if (this.timer <= 0) {
+                    this.invincible = false;
+                    let room = GAME.rooms.find(r => r.id === this.roomId);
+                    if (room) {
+                        for (let i = 0; i < 20; i++) {
+                            let ang = Math.random() * Math.PI * 2;
+                            let rad = Math.random() * 200;
+                            let nx = target.x + Math.cos(ang) * rad;
+                            let ny = target.y + Math.sin(ang) * rad;
+                            let ts = 50;
+                            let tx = Math.floor(nx / ts);
+                            let ty = Math.floor(ny / ts);
+                            if (tx >= room.x && tx < room.x + room.w && ty >= room.y && ty < room.y + room.h) {
+                                this.x = nx;
+                                this.y = ny;
+                                break;
+                            }
+                        }
+                    }
+                    this.state = 'appear_wait';
+                    this.timer = 1.2;
+                }
+            }
         } else if (this.pattern === 'recobox') {
             if (this.timer === undefined) this.timer = 7.0;
             this.timer -= dt;
@@ -2348,6 +2468,10 @@ class Enemy {
         else if (this.type === 'hildebear') spriteName = 'don_medosa_1';
 
         if (this.invincible && this.pattern === 'slime') ctx.globalAlpha *= 0.5;
+        if (this.pattern === 'sorcerer' && this.state === 'invisible') { ctx.restore(); return; }
+        if (this.pattern === 'sorcerer' && this.state === 'appear_wait') {
+            ctx.globalAlpha *= Math.max(0, 1.0 - (this.timer / 1.2));
+        }
         if (this.state === 'dying' && this.pattern === 'lily') {
             let blink = Math.floor(this.timer * 10) % 2 === 0;
             if (blink) {
@@ -3217,6 +3341,43 @@ function updateProjectiles(dt) {
                 }
             }
             if (proj.life <= 0) PROJECTILES.splice(i, 1);
+        } else if (proj.type === 'sorcerer_fire' || proj.type === 'sorcerer_ice') {
+            proj.life -= dt;
+            let p = GAME.players[0];
+            
+            if (p && p.roomId !== proj.roomId) {
+                PROJECTILES.splice(i, 1);
+                continue;
+            }
+            
+            if (p && p.state !== 'dead') {
+                let dx = p.x - proj.x;
+                let dy = p.y - proj.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    proj.x += (dx / dist) * proj.spd * dt;
+                    proj.y += (dy / dist) * proj.spd * dt;
+                }
+                
+                addEffect('particle', { x: proj.x, y: proj.y, color: proj.type === 'sorcerer_fire' ? '#ff3300' : '#00aaff', r: proj.r });
+                
+                if (dist <= p.radius + proj.r) {
+                    if (p.invincibleTimer <= 0) {
+                        let dmg = Math.max(1, proj.dmg - (p.def || 0));
+                        if (dmg > 0 || proj.type === 'sorcerer_ice') {
+                            p.hp -= dmg;
+                            if (dmg > 0) addFloatingText(p.x, p.y - 20, dmg, 'red');
+                            p.invincibleTimer = 1.0;
+                            if (proj.debuffEffect && typeof applyStatus === 'function') {
+                                applyStatus(p, proj.debuffEffect.type, proj.debuffEffect.duration, proj.debuffEffect.mnd || 0);
+                            }
+                        }
+                    }
+                    PROJECTILES.splice(i, 1);
+                    continue;
+                }
+            }
+            if (proj.life <= 0) PROJECTILES.splice(i, 1);
         } else if (proj.type === 'enemy_bullet') {
             proj.x += proj.dx * dt;
             proj.y += proj.dy * dt;
@@ -3854,6 +4015,7 @@ function updatePaletteUI(pid) {
 
 function hitPlayer(p, e) {
     if (e.pattern === 'recobox') return;
+    if (e.pattern === 'sorcerer' && e.state === 'invisible') return;
     if (p.invincibleTimer > 0 || p.state === 'dead') return;
     
     let targetEvi = p.baseStats.evi;
