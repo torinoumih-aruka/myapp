@@ -1455,8 +1455,12 @@ class Player {
                     openAppraiserModal(this);
                 } else if (closestNPC.type === 'shop') {
                     openShopModal(this);
-                                } else if (closestNPC.type === 'teleporter') {
+                } else if (closestNPC.type === 'teleporter') {
                     openTeleporterMenu(this);
+                } else if (closestNPC.type === 'save') {
+                    if (confirm('ゲームをセーブしますか？')) {
+                        saveGame(this);
+                    }
                 }
                 return;
             }
@@ -2851,6 +2855,9 @@ function startGame(is2P, class1, class2) {
         GAME.players.push(new Player(1, class2 || 'ranger', MAP_DATA.town.start.x + 30, MAP_DATA.town.start.y));
     }
     
+    // Load saved game if exists
+    loadGame(GAME.players[0]);
+    
     // Hide screens
     document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
     document.getElementById('hud').style.display = 'block';
@@ -3974,8 +3981,8 @@ function renderMenu(pid) {
                 POW: ${p.atk} <br>
                 DEF: ${p.def} <br>
                 DEX: ${p.dex} <br>
-                MIND: 40 <br>
-                EIV: ${Math.floor(p.evi || 30)} <br>
+                MIND: ${Math.floor(p.mind || 40)} <br>
+                EVI: ${Math.floor(p.evi || 30)} <br>
                 LUCK: ${Math.floor(p.luck || 10)} <br>
                 所持コイン: ${p.coins} <br>
             `;
@@ -5222,7 +5229,7 @@ function renderShopList() {
     let maxDiff = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
     let maxStage = Math.max(0, GAME.progress[maxDiff]);
     let progStr = `[進捗: ${diffNames[maxDiff]}/${stageNames[maxStage]}]`;
-    document.getElementById('shop-meseta').innerText = (currentShopPlayer.meseta || 0) + ' ' + progStr;
+    document.getElementById('shop-meseta').innerText = (currentShopPlayer.coins || 0) + ' ' + progStr;
     
     let items = [];
     if (currentShopTab === 'buy') {
@@ -5311,7 +5318,7 @@ function showShopSubwindow(item) {
     let btn = document.getElementById('btn-shop-action');
     btn.innerText = currentShopTab === 'buy' ? '購入' : '売却';
     
-    if (currentShopTab === 'buy' && (currentShopPlayer.meseta || 0) < price) {
+    if (currentShopTab === 'buy' && (currentShopPlayer.coins || 0) < price) {
         btn.style.background = '#555';
         btn.style.pointerEvents = 'none';
     } else {
@@ -5321,12 +5328,12 @@ function showShopSubwindow(item) {
     
     btn.onclick = () => {
         if (currentShopTab === 'buy') {
-            if ((currentShopPlayer.meseta || 0) >= price) {
+            if ((currentShopPlayer.coins || 0) >= price) {
                 if (currentShopPlayer.inventory.filter(i => i !== null).length >= 30) {
                     alert('インベントリがいっぱいです！');
                     return;
                 }
-                currentShopPlayer.meseta -= price;
+                currentShopPlayer.coins -= price;
                 let itemCopy = JSON.parse(JSON.stringify(item));
                 itemCopy.uid = 'i_' + Date.now() + Math.floor(Math.random()*1000); 
                 currentShopPlayer.inventory.push(itemCopy);
@@ -5336,7 +5343,7 @@ function showShopSubwindow(item) {
             }
         } else {
             // Sell
-            currentShopPlayer.meseta = (currentShopPlayer.meseta || 0) + price;
+            currentShopPlayer.coins = (currentShopPlayer.coins || 0) + price;
             currentShopPlayer.inventory = currentShopPlayer.inventory.filter(i => i !== item);
             
             if (item.type === 'armor' && item.slottedUnits) {
@@ -5606,4 +5613,40 @@ function getItemColor(item) {
         if (item.isBonusStats) color = lightBlue;
     }
     return color;
+}
+
+function saveGame(p) {
+    let saveData = {
+        progress: GAME.progress,
+        coins: p.coins,
+        level: p.level,
+        exp: p.exp,
+        nextExp: p.nextExp,
+        baseStats: p.baseStats
+    };
+    localStorage.setItem('pso_save', JSON.stringify(saveData));
+    alert('セーブが完了しました。');
+}
+
+function loadGame(p) {
+    let saved = localStorage.getItem('pso_save');
+    if (saved) {
+        try {
+            let data = JSON.parse(saved);
+            if (data.progress) GAME.progress = data.progress;
+            if (data.coins !== undefined) p.coins = data.coins;
+            if (data.level) p.level = data.level;
+            if (data.exp !== undefined) p.exp = data.exp;
+            if (data.nextExp !== undefined) p.nextExp = data.nextExp;
+            if (data.baseStats) {
+                p.baseStats = data.baseStats;
+                p.maxHp = p.baseStats.maxHp;
+                p.maxMp = p.baseStats.maxMp;
+                p.hp = p.maxHp;
+                p.mp = p.maxMp;
+            }
+        } catch(e) {
+            console.error('Failed to load save data', e);
+        }
+    }
 }
