@@ -293,7 +293,7 @@ function generateUnit(baseId) {
 
 const DEBUG_ENCHANT_100_ON_COMBO_3 = true;
 
-function applyEnchant(p, target, action, comboCount) {
+function applyEnchant(p, target, action, comboCount, dmg = 0) {
     if (!action || !action.enchant || action.isUnidentified) return;
     let ench = ENCHANTS.find(e => e.id === action.enchant);
     if (!ench) return;
@@ -302,12 +302,10 @@ function applyEnchant(p, target, action, comboCount) {
     let effectMult = isAoE ? (1/3) : 1.0;
     
     let triggered = false;
-    if (ench.type === 'add_dmg') {
+    if (ench.type === 'add_dmg' || ench.type === 'drain' || ench.type === 'drain_mp' || ench.type === 'hp_halve') {
         triggered = Math.random() < 0.3; 
-    } else if (ench.type === 'status') {
+    } else if (ench.type === 'status' || ench.type === 'death') {
         triggered = Math.random() < (ench.prob * effectMult);
-    } else if (ench.type === 'drain') {
-        triggered = Math.random() < 0.3; 
     }
     
     if (DEBUG_ENCHANT_100_ON_COMBO_3 && comboCount === 3) {
@@ -322,6 +320,8 @@ function applyEnchant(p, target, action, comboCount) {
         else if (ench.effect === 'purple_fog') addEffect('particle', { x: target.x, y: target.y, color: '#800080', r: 25 });
         else if (ench.effect === 'shock') addEffect('particle', { x: target.x, y: target.y, color: '#ffff00', r: 25 });
         else if (ench.effect === 'green_fog') addEffect('particle', { x: target.x, y: target.y, color: '#00ff00', r: 25 });
+        else if (ench.effect === 'blue_fog') addEffect('particle', { x: target.x, y: target.y, color: '#0000ff', r: 25 });
+        else if (ench.effect === 'dark_fog') addEffect('particle', { x: target.x, y: target.y, color: '#222222', r: 25 });
         
         if (ench.type === 'add_dmg') {
             let edmg = Math.floor(ench.value(p.level));
@@ -334,8 +334,22 @@ function applyEnchant(p, target, action, comboCount) {
             let heal = Math.floor(Math.max(1, target.hp) * (ench.drainPercent * effectMult));
             if (heal < 1) heal = 1;
             p.hp = Math.min(p.maxHp, p.hp + heal);
-            addFloatingText(p.x, p.y - 20, heal, '#33ff33');
+            addFloatingText(p.x, p.y - 20, Math.floor(heal), '#33ff33');
             addEffect('particle', { x: p.x, y: p.y, color: '#00ff00', r: 20 });
+        } else if (ench.type === 'drain_mp') {
+            let heal = Math.floor(dmg * (ench.drainPercent * effectMult));
+            if (heal < 1) heal = 1;
+            p.mp = Math.min(p.maxMp || 100, (p.mp || 0) + heal);
+            addFloatingText(p.x, p.y - 20, Math.floor(heal), '#3333ff');
+            addEffect('particle', { x: p.x, y: p.y, color: '#0000ff', r: 20 });
+        } else if (ench.type === 'death') {
+            target.hp = 0;
+            addFloatingText(target.x, target.y - 40, 'DEATH', '#880088');
+        } else if (ench.type === 'hp_halve') {
+            let red = Math.floor(target.hp - (target.hp / ench.divisor));
+            if (red < 1) red = 1;
+            target.hp -= red;
+            addFloatingText(target.x, target.y - 40, red, '#ff8800');
         }
     }
 }
@@ -633,26 +647,41 @@ const BASE_ENEMIES = {
 };
 
 const ENCHANTS = [
-    { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire' },
-    { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire' },
-    { id: 'shock', name: 'ショック', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'thunder' },
-    { id: 'thunder', name: 'サンダー', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'thunder' },
-    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', duration: 15, effect: 'ice' },
-    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', duration: 15, effect: 'ice' },
-    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'panic', duration: 15, effect: 'purple_fog' },
-    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'panic', duration: 15, effect: 'purple_fog' },
-    { id: 'bind', name: 'バインド', type: 'status', prob: 0.03, status: 'shock', duration: 15, effect: 'shock' },
-    { id: 'hold', name: 'ホールド', type: 'status', prob: 0.06, status: 'shock', duration: 15, effect: 'shock' },
-    { id: 'draw', name: 'ドロー', type: 'drain', drainPercent: 0.05, effect: 'green_fog' },
-    { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog' }
+    { id: 'heat', name: 'ヒート', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'fire', family: 'heat', tier: 'low', rarity: 2 },
+    { id: 'fire', name: 'ファイア', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'fire', family: 'heat', tier: 'mid', rarity: 4 },
+    { id: 'flame', name: 'フレイム', type: 'add_dmg', value: (lv) => 79 + Math.floor(lv * 3 / 4), effect: 'fire', family: 'heat', tier: 'high', rarity: 6 },
+    { id: 'shock', name: 'ショック', type: 'add_dmg', value: (lv) => 39 + Math.floor(lv / 4), effect: 'thunder', family: 'shock', tier: 'low', rarity: 2 },
+    { id: 'thunder', name: 'サンダー', type: 'add_dmg', value: (lv) => 59 + Math.floor(lv / 2), effect: 'thunder', family: 'shock', tier: 'mid', rarity: 4 },
+    { id: 'storm', name: 'ストーム', type: 'add_dmg', value: (lv) => 79 + Math.floor(lv * 3 / 4), effect: 'thunder', family: 'shock', tier: 'high', rarity: 6 },
+    { id: 'ice', name: 'アイス', type: 'status', prob: 0.03, status: 'freeze', duration: 15, effect: 'ice', family: 'ice', tier: 'low', rarity: 1 },
+    { id: 'frost', name: 'フロスト', type: 'status', prob: 0.06, status: 'freeze', duration: 15, effect: 'ice', family: 'ice', tier: 'mid', rarity: 3 },
+    { id: 'freeze_enc', name: 'フリーズ', type: 'status', prob: 0.13, status: 'freeze', duration: 15, effect: 'ice', family: 'ice', tier: 'high', rarity: 5 },
+    { id: 'panic', name: 'パニック', type: 'status', prob: 0.03, status: 'panic', duration: 15, effect: 'purple_fog', family: 'panic', tier: 'low', rarity: 2 },
+    { id: 'riot', name: 'ライアット', type: 'status', prob: 0.06, status: 'panic', duration: 15, effect: 'purple_fog', family: 'panic', tier: 'mid', rarity: 4 },
+    { id: 'havoc', name: 'ハブック', type: 'status', prob: 0.13, status: 'panic', duration: 15, effect: 'purple_fog', family: 'panic', tier: 'high', rarity: 6 },
+    { id: 'bind', name: 'バインド', type: 'status', prob: 0.05, status: 'shock', duration: 15, effect: 'shock', family: 'bind', tier: 'low', rarity: 2 },
+    { id: 'hold', name: 'ホールド', type: 'status', prob: 0.09, status: 'shock', duration: 15, effect: 'shock', family: 'bind', tier: 'mid', rarity: 4 },
+    { id: 'seize', name: 'シーズ', type: 'status', prob: 0.13, status: 'shock', duration: 15, effect: 'shock', family: 'bind', tier: 'high', rarity: 6 },
+    { id: 'draw', name: 'ドロー', type: 'drain', drainPercent: 0.05, effect: 'green_fog', family: 'draw', tier: 'low', rarity: 1 },
+    { id: 'drain', name: 'ドレイン', type: 'drain', drainPercent: 0.09, effect: 'green_fog', family: 'draw', tier: 'mid', rarity: 3 },
+    { id: 'fill', name: 'フィル', type: 'drain', drainPercent: 0.13, effect: 'green_fog', family: 'draw', tier: 'high', rarity: 5 },
+    { id: 'heart', name: 'ハート', type: 'drain_mp', drainPercent: 0.03, effect: 'blue_fog', family: 'heart', tier: 'low', rarity: 1 },
+    { id: 'mind', name: 'マインド', type: 'drain_mp', drainPercent: 0.04, effect: 'blue_fog', family: 'heart', tier: 'mid', rarity: 3 },
+    { id: 'soul', name: 'ソウル', type: 'drain_mp', drainPercent: 0.05, effect: 'blue_fog', family: 'heart', tier: 'high', rarity: 5 },
+    { id: 'dim', name: 'ディム', type: 'death', prob: 0.03, effect: 'dark_fog', family: 'dim', tier: 'low', rarity: 2 },
+    { id: 'shadow', name: 'シャドウ', type: 'death', prob: 0.05, effect: 'dark_fog', family: 'dim', tier: 'mid', rarity: 4 },
+    { id: 'dark', name: 'ダーク', type: 'death', prob: 0.07, effect: 'dark_fog', family: 'dim', tier: 'high', rarity: 6 },
+    { id: 'devil', name: 'デビル', type: 'hp_halve', prob: 0.3, divisor: 2, effect: 'dark_fog', family: 'devil', tier: 'mid', rarity: 3 },
+    { id: 'demon', name: 'デーモン', type: 'hp_halve', prob: 0.3, divisor: 4, effect: 'dark_fog', family: 'devil', tier: 'high', rarity: 5 }
 ];
 
 const ENCHANT_PRICES = {
-    'heat': 100, 'fire': 400,
-    'shock': 100, 'thunder': 400,
-    'ice': 100, 'frost': 400,
-    'panic': 100, 'riot': 400,
-    'draw': 100, 'drain': 400
+    'heat': 100, 'fire': 400, 'flame': 1000,
+    'shock': 100, 'thunder': 400, 'storm': 1000,
+    'ice': 100, 'frost': 400, 'freeze_enc': 1000,
+    'panic': 100, 'riot': 400, 'havoc': 1000,
+    'draw': 100, 'drain': 400, 'fill': 1000,
+    'bind': 100, 'hold': 400
 };
 
 const MAGICS_DATA = [
@@ -1822,7 +1851,7 @@ class Player {
                                 
                                 // Trigger enchant on 3rd combo or on every hit for some cases
                                 if (action.enchant && !action.isUnidentified) {
-                                    applyEnchant(this, target, action, this.comboCount);
+                                    applyEnchant(this, target, action, this.comboCount, dmg);
                                 }
                             } else {
                                 target.hp -= 1;
@@ -2979,25 +3008,50 @@ function performAppraisal(p, item) {
     
     // Determine new enchant
     let enchId = item.enchant;
-    let upChances = {
-        'heat': 'fire',
-        'ice': 'freeze',
-        'shock': 'bind',
-        'confuse': 'panic', // Or riot, but we use panic for now
-        'draw': 'drain'
-    };
     let newEnchId = enchId;
-    if (enchId && upChances[enchId] && Math.random() < 0.1) {
-        newEnchId = upChances[enchId];
+    if (enchId) {
+        let baseDef = ENCHANTS.find(e => e.id === enchId);
+        if (baseDef) {
+            let famEnchants = ENCHANTS.filter(e => e.family === baseDef.family);
+            let low = famEnchants.find(e => e.tier === 'low');
+            let mid = famEnchants.find(e => e.tier === 'mid');
+            let high = famEnchants.find(e => e.tier === 'high');
+            
+            let r = Math.random();
+            if (baseDef.tier === 'low') {
+                if (r < 0.2 && mid) newEnchId = mid.id;
+                else if (low) newEnchId = low.id; 
+            } else if (baseDef.tier === 'mid') {
+                if (r < 0.2 && low) newEnchId = low.id;
+                else if (r < 0.9 && mid) newEnchId = mid.id;
+                else if (r >= 0.9 && high) newEnchId = high.id;
+                else if (mid) newEnchId = mid.id;
+            } else if (baseDef.tier === 'high') {
+                newEnchId = high ? high.id : enchId;
+            }
+        }
     }
     
-    // Determine attributes 5-30% across Native, Mutant, Machine, Dark, Hit
     let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
-    let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
-    let numAttrs = Math.floor(Math.random() * 3) + 1;
-    for (let i = 0; i < numAttrs; i++) {
-        let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
-        attrs[attr] += (Math.floor(Math.random() * 6) + 1) * 5; // 5,10,15,20,25,30
+    let min = item.attrMin || 0;
+    let max = item.attrMax || 0;
+    let totalAttr = 0;
+    if (max > 0) {
+        let minSteps = Math.ceil(min / 5);
+        let maxSteps = Math.floor(max / 5);
+        if (maxSteps < minSteps) maxSteps = minSteps;
+        let steps = minSteps + Math.floor(Math.random() * (maxSteps - minSteps + 1));
+        totalAttr = steps * 5;
+    }
+    
+    if (totalAttr > 0) {
+        let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
+        let remaining = totalAttr;
+        while (remaining > 0) {
+            let pick = attrNames[Math.floor(Math.random() * attrNames.length)];
+            attrs[pick] += 5;
+            remaining -= 5;
+        }
     }
     
     // Build display result
@@ -3516,7 +3570,7 @@ function updateProjectiles(dt) {
                         }
                         
                         if (action && action.enchant && !action.isUnidentified) {
-                            applyEnchant(p, target, action, proj.comboCount);
+                            applyEnchant(p, target, action, proj.comboCount, dmg);
                         }
                     }
                     
@@ -4552,25 +4606,40 @@ function generateDropItem(isBox) {
         let wKeys = Object.keys(BASE_WEAPONS).filter(k => BASE_WEAPONS[k].baseRarity === rarity || BASE_WEAPONS[k].rarity === rarity);
         if (wKeys.length > 0) {
             let baseId = wKeys[Math.floor(Math.random() * wKeys.length)];
-            let enchant = null;
-            if (Math.random() < 0.3) enchant = ['heat', 'shock', 'ice', 'panic', 'draw'][Math.floor(Math.random() * 5)];
-            let attrs = { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 };
-            if (Math.random() < 0.4) {
-                let attrNames = ['native', 'mutant', 'machine', 'dark', 'hit'];
-                let remaining = 30;
-                let numAttrs = Math.floor(Math.random() * 3) + 1; 
-                for(let i=0; i<numAttrs; i++) {
-                    let attr = attrNames[Math.floor(Math.random() * attrNames.length)];
-                    let val = Math.min(remaining, Math.floor(Math.random() * 20) + 5);
-                    val = Math.ceil(val / 5) * 5;
-                    if (val > remaining) val = remaining;
-                    let boost = (diff * 15) + (stage * 5);
-                    attrs[attr] = (attrs[attr] || 0) + val + boost;
-                    remaining -= val;
-                    if (remaining <= 0) break;
+            let enchantDropProb = 0, rarityDist = [], attrMin = 0, attrMax = 0;
+            if (diff === 0 && stage === 0) { enchantDropProb = 0; attrMin = 0; attrMax = 5; }
+            else if (diff === 0 && stage === 1) { enchantDropProb = 0.5; rarityDist = [{r: 1, p: 1.0}]; attrMin = 0; attrMax = 10; }
+            else if (diff === 0 && stage === 2) { enchantDropProb = 0.75; rarityDist = [{r: 1, p: 0.5/0.75}, {r: 2, p: 0.25/0.75}]; attrMin = 5; attrMax = 20; }
+            else if (diff === 1 && stage === 0) { enchantDropProb = 0.8; rarityDist = [{r: 1, p: 0.5/0.8}, {r: 2, p: 0.3/0.8}]; attrMin = 10; attrMax = 30; }
+            else if (diff === 1 && stage === 1) { enchantDropProb = 0.8; rarityDist = [{r: 2, p: 0.6/0.8}, {r: 3, p: 0.2/0.8}]; attrMin = 10; attrMax = 40; }
+            else if (diff === 1 && stage === 2) { enchantDropProb = 0.85; rarityDist = [{r: 2, p: 0.6/0.85}, {r: 3, p: 0.25/0.85}]; attrMin = 10; attrMax = 50; }
+            else if (diff === 2 && stage === 0) { enchantDropProb = 0.9; rarityDist = [{r: 2, p: 0.3/0.9}, {r: 3, p: 0.5/0.9}, {r: 4, p: 0.1/0.9}]; attrMin = 15; attrMax = 60; }
+            else if (diff === 2 && stage === 1) { enchantDropProb = 0.9; rarityDist = [{r: 3, p: 0.6/0.9}, {r: 4, p: 0.3/0.9}]; attrMin = 15; attrMax = 70; }
+            else if (diff === 2 && stage === 2) { enchantDropProb = 0.9; rarityDist = [{r: 3, p: 0.5/0.9}, {r: 4, p: 0.4/0.9}]; attrMin = 15; attrMax = 80; }
+            
+            let baseEnchant = null;
+            if (Math.random() < enchantDropProb && typeof ENCHANTS !== 'undefined' && ENCHANTS.length > 0) {
+                let rp = Math.random();
+                let chosenRarity = 1;
+                let c = 0;
+                for (let i = 0; i < rarityDist.length; i++) {
+                    c += rarityDist[i].p;
+                    if (rp <= c) { chosenRarity = rarityDist[i].r; break; }
+                }
+                let validEnchants = ENCHANTS.filter(e => e.rarity === chosenRarity);
+                if (validEnchants.length > 0) {
+                    baseEnchant = validEnchants[Math.floor(Math.random() * validEnchants.length)].id;
                 }
             }
-            dropItem = generateWeapon(baseId, 0, enchant, attrs);
+            dropItem = generateWeapon(baseId, 0, baseEnchant, { native: 0, mutant: 0, machine: 0, dark: 0, hit: 0 });
+            if (dropItem) {
+                dropItem.attrMin = attrMin;
+                dropItem.attrMax = attrMax;
+                if (baseEnchant || attrMax > 0) {
+                    dropItem.isUnidentified = true;
+                    dropItem.name = '？？？？' + dropItem.baseName + (dropItem.enhance > 0 ? ' +' + dropItem.enhance : '');
+                }
+            }
         } else {
             dropItem = Math.random() < 0.5 ? { id: 'i_monomate', name: 'モノメイト', type: 'item', healHp: 50 } : { id: 'i_monofluid', name: 'モノフルイド', type: 'item', healMp: 30 };
         }
