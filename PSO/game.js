@@ -3082,6 +3082,11 @@ function performAppraisal(p, item) {
     stats += `闇 ${attrs.dark}%<br>`;
     stats += `Hit ${attrs.hit}%`;
     stats += `</div>`;
+    stats += `<div style="color: #ff4444; font-size:14px; line-height: 1.4; margin-top:5px;">`;
+    if (item.reqPow) stats += `必要POW: ${item.reqPow}<br>`;
+    if (item.reqMind) stats += `必要MIND: ${item.reqMind}<br>`;
+    if (item.reqDex) stats += `必要DEX: ${item.reqDex}<br>`;
+    stats += `</div>`;
     document.getElementById('appraiser-result-stats').innerHTML = stats;
     
     document.getElementById('appraiser-result-modal').style.display = 'flex';
@@ -3161,6 +3166,14 @@ function openItemModal(item, pid, source, slotIdx = -1) {
         stats += `機械 ${item.attrs.machine || 0}%<br>`;
         stats += `闇 ${item.attrs.dark || 0}%<br>`;
         stats += `Hit ${item.attrs.hit || 0}%`;
+        stats += `</div>`;
+    }
+    
+    if (item.type === 'weapon') {
+        stats += `<div style="color: #ff4444; font-size:12px; line-height: 1.4; margin-top:5px;">`;
+        if (item.reqPow) stats += `必要POW: ${item.reqPow}<br>`;
+        if (item.reqMind) stats += `必要MIND: ${item.reqMind}<br>`;
+        if (item.reqDex) stats += `必要DEX: ${item.reqDex}<br>`;
         stats += `</div>`;
     }
 
@@ -4999,7 +5012,7 @@ function draw() {
             } else if (t.hp > 0) {
                 let name = t.name || t.type;
                 
-                let attrMap = { 'native': 'Native', 'machine': 'Machine', 'dark': 'Dark', 'mutant': 'Mutant', 'a.beast': 'A.Beast' };
+                let attrMap = { 'native': '原生生物', 'machine': '機械', 'dark': '闇', 'mutant': '突然変異', 'a.beast': '突然変異' };
                 let attrDisplay = attrMap[t.attribute] || (t.attribute ? t.attribute.charAt(0).toUpperCase() + t.attribute.slice(1) : 'Native');
                 
                 let debuffIcons = [];
@@ -5189,8 +5202,12 @@ let currentShopTab = 'buy';
 let currentShopItem = null;
 
 function openShopModal(p) {
-    currentShopPlayer = p;
     currentShopTab = 'buy';
+    currentShopPlayer = p;
+    document.getElementById('tab-shop-buy').classList.add('active');
+    document.getElementById('tab-shop-buy').style.borderColor = '#ffcc00';
+    document.getElementById('tab-shop-sell').classList.remove('active');
+    document.getElementById('tab-shop-sell').style.borderColor = 'transparent';
     document.getElementById('shop-modal').style.display = 'flex';
     document.getElementById('shop-subwindow').style.display = 'none';
     
@@ -5224,29 +5241,39 @@ function openShopModal(p) {
 function renderShopList() {
     let listEl = document.getElementById('shop-item-list');
     listEl.innerHTML = '';
-    let diffNames = ['ノーマル', 'ハード', 'ベリーハード'];
-    let stageNames = ['表層', '洞窟', '地下遺跡'];
-    let maxDiff = GAME.progress[2] >= 0 ? 2 : (GAME.progress[1] >= 0 ? 1 : 0);
-    let maxStage = Math.max(0, GAME.progress[maxDiff]);
-    let progStr = `[進捗: ${diffNames[maxDiff]}/${stageNames[maxStage]}]`;
-    document.getElementById('shop-meseta').innerText = (currentShopPlayer.coins || 0) + ' ' + progStr;
+        document.getElementById('shop-meseta').innerText = (currentShopPlayer.coins || 0) + ' コイン';
     
     let items = [];
     if (currentShopTab === 'buy') {
-        items = GAME.shopItems;
+        items = GAME.shopItems.slice(); // copy
     } else {
         items = currentShopPlayer.inventory.filter(i => i !== null);
-        let typeOrder = { 'weapon': 1, 'armor': 2, 'unit': 3, 'item': 4, 'disk': 5 };
-        items.sort((a, b) => {
+    }
+    
+    // Sort items
+    items.sort((a, b) => {
+        if (currentShopTab === 'sell') {
             let aEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === a || currentShopPlayer.palette.includes(a)) ? 0 : 1;
             let bEquip = (currentShopPlayer.equip && currentShopPlayer.equip.armor === b || currentShopPlayer.palette.includes(b)) ? 0 : 1;
             if (aEquip !== bEquip) return aEquip - bEquip;
-            let aT = typeOrder[a.type] || 99;
-            let bT = typeOrder[b.type] || 99;
-            if (aT !== bT) return aT - bT;
-            return (a.id || '').localeCompare(b.id || '');
-        });
-    }
+        }
+        
+        const typeOrder = { item: 1, weapon: 2, armor: 3, disk: 4, unit: 5 };
+        let ta = typeOrder[a.type] || 99;
+        let tb = typeOrder[b.type] || 99;
+        if (ta !== tb) return ta - tb;
+        
+        if (a.type === 'item') {
+            return (a.id === 'i_monomate' ? -1 : 1) - (b.id === 'i_monomate' ? -1 : 1);
+        } else if (a.type === 'weapon' || a.type === 'armor') {
+            return (a.rarity || 1) - (b.rarity || 1);
+        } else if (a.type === 'disk') {
+            let nameCmp = (a.name || '').localeCompare(b.name || '');
+            if (nameCmp !== 0) return nameCmp;
+            return (a.level || 1) - (b.level || 1);
+        }
+        return (a.id || '').localeCompare(b.id || '');
+    });
     
     if (items.length === 0) {
         listEl.innerHTML = '<div style="color:#aaa; padding:10px;">アイテムがありません</div>';
@@ -5284,6 +5311,8 @@ function showShopSubwindow(item) {
     let sub = document.getElementById('shop-subwindow');
     sub.style.display = 'flex';
     
+    let subCloseBtn = document.getElementById('btn-shop-sub-close');
+    if(subCloseBtn) subCloseBtn.onclick = () => document.getElementById('shop-subwindow').style.display = 'none';
     document.getElementById('shop-sub-name').innerHTML = getItemIconHtml(item) + '<span style="color:' + getItemColor(item) + '">' + item.name + '</span>';
     
     let descTxt = item.desc || (item.name + ' のアイテム');
@@ -5299,13 +5328,26 @@ function showShopSubwindow(item) {
         if (item.enhance) stats += ` (+${item.enhance})`;
         stats += `<br>DEX: ${item.baseDex || 0}`;
         if (item.attrs) {
-            let attrNames = { native: '原生生物', mutant: '突然変異', machine: '機械', dark: 'ダーク', hit: 'Hit' };
+            let attrNames = { native: '原生生物', mutant: '突然変異', machine: '機械', dark: '闇', hit: 'Hit' };
             for (let k in item.attrs) {
                 if (item.attrs[k] > 0) stats += `<br>${attrNames[k]}: ${item.attrs[k]}%`;
             }
         }
+        stats += `<div style="color: #ff4444; font-size:12px; line-height: 1.4; margin-top:5px;">`;
+        if (item.reqPow) stats += `必要POW: ${item.reqPow}<br>`;
+        if (item.reqMind) stats += `必要MIND: ${item.reqMind}<br>`;
+        if (item.reqDex) stats += `必要DEX: ${item.reqDex}<br>`;
+        stats += `</div>`;
     } else if (item.type === 'armor') {
         stats = `DEF: ${item.def || 0}<br>スロット: ${item.slotCount || 0}`;
+        stats += `<div style="color: #ff4444; font-size:12px; line-height: 1.4; margin-top:5px;">`;
+        stats += `必要レベル: ${item.reqLv || 1}`;
+        stats += `</div>`;
+    } else if (item.type === 'disk') {
+        let reqMind = getMagicReqMind(item.magic, item.lv);
+        stats += `<div style="color: #ff4444; font-size:12px; line-height: 1.4; margin-top:5px;">`;
+        stats += `必要MIND: ${reqMind}`;
+        stats += `</div>`;
     }
     document.getElementById('shop-sub-stats').innerHTML = stats;
     
@@ -5421,10 +5463,10 @@ window.openTeleporterMenu = function(player) {
     }
     
     let html = `
-    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+    <div class="modal-content" style="width: 350px; height: 350px; display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
             <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">難易度を選択</div>
-            <div class="menu-btn" onclick="closeTeleporterModal()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">とじる</div>
+            <div class="menu-btn" onclick="closeTeleporterModal()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">閉じる</div>
         </div>
         <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
     `;
@@ -5445,9 +5487,9 @@ window.teleporterSelectStage = function(diff) {
     
     let modal = document.getElementById('teleporterModal');
     let html = `
-    <div class="modal-content" style="width: 300px; height: 350px; display: flex; flex-direction: column;">
+    <div class="modal-content" style="width: 350px; height: 350px; display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
-            <div class="modal-title" style="margin: 0; font-size: 18px; color: #ffcc00; font-weight: bold;">ステージを選択 (${diffNames[diff]})</div>
+            <div class="modal-title" style="margin: 0; font-size: 16px; color: #ffcc00; font-weight: bold;">ステージを選択 (${diffNames[diff]})</div>
             <div class="menu-btn" onclick="openTeleporterMenu()" style="width: auto; padding: 5px 10px; cursor: pointer; background: #333; border: 1px solid #777; border-radius: 4px;">戻る</div>
         </div>
         <div class="menu-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
