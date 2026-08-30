@@ -1,0 +1,1018 @@
+{
+  "canaan": {
+    "name": "カナン",
+    "pattern": "canaan",
+    "attribute": "machine",
+    "asset": "enemy_canadin",
+    "baseSpd": 0,
+    "radius": 7,
+    "hp": [
+      120,
+      240,
+      480
+    ],
+    "atk": [
+      70,
+      140,
+      280
+    ],
+    "def": [
+      20,
+      40,
+      80
+    ],
+    "dex": [
+      30,
+      60,
+      90
+    ],
+    "evi": [
+      10,
+      20,
+      30
+    ],
+    "luck": [
+      10,
+      20,
+      30
+    ],
+    "exp": [
+      15,
+      35,
+      70
+    ],
+    "resists": [
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 100,
+        "light": -10,
+        "dark": 40
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 100,
+        "light": -10,
+        "dark": 40
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 100,
+        "light": -10,
+        "dark": 40
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "savage_wolf": {
+    "name": "サベージウルフ",
+    "pattern": "savage_wolf",
+    "attribute": "native",
+    "asset": "enemy_sabagewolf",
+    "baseSpd": 40,
+    "radius": 10,
+    "hp": [
+      80,
+      160,
+      320
+    ],
+    "atk": [
+      60,
+      120,
+      240
+    ],
+    "def": [
+      15,
+      30,
+      60
+    ],
+    "dex": [
+      20,
+      40,
+      80
+    ],
+    "evi": [
+      25,
+      50,
+      100
+    ],
+    "luck": [
+      10,
+      20,
+      40
+    ],
+    "exp": [
+      12,
+      30,
+      60
+    ],
+    "resists": [
+      {
+        "fire": 10,
+        "ice": -10,
+        "thunder": 10,
+        "light": 10,
+        "dark": 10
+      },
+      {
+        "fire": 10,
+        "ice": -10,
+        "thunder": 10,
+        "light": 10,
+        "dark": 10
+      },
+      {
+        "fire": 10,
+        "ice": -10,
+        "thunder": 10,
+        "light": 10,
+        "dark": 10
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "rappy": {
+    "name": "ラッピー",
+    "pattern": "rappy",
+    "attribute": "native",
+    "asset": "enemy_rappy",
+    "baseSpd": 15,
+    "radius": 10,
+    "hp": [
+      60,
+      120,
+      240
+    ],
+    "atk": [
+      80,
+      160,
+      320
+    ],
+    "def": [
+      0,
+      5,
+      10
+    ],
+    "dex": [
+      12,
+      24,
+      40
+    ],
+    "evi": [
+      10,
+      20,
+      35
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      6,
+      15,
+      30
+    ],
+    "resists": [
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "recon": {
+    "name": "レコン",
+    "pattern": "booma",
+    "attribute": "machine",
+    "asset": "enemy_monest_baby",
+    "baseSpd": 20,
+    "radius": 10,
+    "hp": [
+      50,
+      100,
+      200
+    ],
+    "atk": [
+      70,
+      140,
+      280
+    ],
+    "def": [
+      5,
+      10,
+      20
+    ],
+    "dex": [
+      15,
+      30,
+      45
+    ],
+    "evi": [
+      10,
+      20,
+      30
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      4,
+      10,
+      20
+    ],
+    "resists": [
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "recobox": {
+    "name": "レコボクス",
+    "pattern": "recobox",
+    "attribute": "machine",
+    "asset": "enemy_monest",
+    "baseSpd": 0,
+    "radius": 20,
+    "hp": [
+      150,
+      300,
+      600
+    ],
+    "atk": [
+      0,
+      0,
+      0
+    ],
+    "def": [
+      20,
+      40,
+      80
+    ],
+    "dex": [
+      0,
+      0,
+      0
+    ],
+    "evi": [
+      0,
+      0,
+      0
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      12,
+      30,
+      60
+    ],
+    "resists": [
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 20,
+        "light": 0,
+        "dark": 0
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "chaos_sorcerer": {
+    "name": "カオスソーサラー",
+    "pattern": "sorcerer",
+    "attribute": "dark",
+    "asset": "enemy_khaossorcerer",
+    "baseSpd": 0,
+    "radius": 15,
+    "hp": [
+      200,
+      400,
+      800
+    ],
+    "atk": [
+      80,
+      160,
+      320
+    ],
+    "def": [
+      20,
+      40,
+      80
+    ],
+    "dex": [
+      30,
+      60,
+      90
+    ],
+    "evi": [
+      15,
+      30,
+      45
+    ],
+    "luck": [
+      10,
+      20,
+      30
+    ],
+    "exp": [
+      20,
+      50,
+      100
+    ],
+    "resists": [
+      {
+        "fire": 40,
+        "ice": 40,
+        "thunder": 40,
+        "light": -20,
+        "dark": 80
+      },
+      {
+        "fire": 40,
+        "ice": 40,
+        "thunder": 40,
+        "light": -20,
+        "dark": 80
+      },
+      {
+        "fire": 40,
+        "ice": 40,
+        "thunder": 40,
+        "light": -20,
+        "dark": 80
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ],
+    "sorcererMagics": {
+      "fireSpeed": [
+        30,
+        40,
+        60
+      ],
+      "iceSpeed": [
+        20,
+        30,
+        50
+      ],
+      "heal": [
+        100,
+        300,
+        800
+      ]
+    }
+  },
+  "chaos_bringer": {
+    "name": "カオスブリンガー",
+    "pattern": "bringer",
+    "attribute": "dark",
+    "asset": "snakey_left",
+    "baseSpd": 25,
+    "radius": 15,
+    "hp": [
+      300,
+      600,
+      1200
+    ],
+    "atk": [
+      150,
+      300,
+      600
+    ],
+    "def": [
+      30,
+      60,
+      120
+    ],
+    "dex": [
+      40,
+      80,
+      120
+    ],
+    "evi": [
+      20,
+      40,
+      60
+    ],
+    "luck": [
+      10,
+      20,
+      30
+    ],
+    "exp": [
+      30,
+      75,
+      150
+    ],
+    "resists": [
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "delbiter": {
+    "name": "デルバイツァー",
+    "pattern": "delbiter",
+    "attribute": "dark",
+    "asset": "enemy_delviture",
+    "baseSpd": 25,
+    "radius": 15,
+    "hp": [
+      250,
+      500,
+      1000
+    ],
+    "atk": [
+      120,
+      240,
+      480
+    ],
+    "def": [
+      25,
+      50,
+      100
+    ],
+    "dex": [
+      35,
+      70,
+      105
+    ],
+    "evi": [
+      15,
+      30,
+      45
+    ],
+    "luck": [
+      10,
+      20,
+      30
+    ],
+    "exp": [
+      25,
+      60,
+      120
+    ],
+    "resists": [
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": -10,
+        "dark": 50
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "poisonous_lily": {
+    "name": "ポイゾナスリリー",
+    "pattern": "lily",
+    "attribute": "mutant",
+    "asset": "enemy_poisonuslilly",
+    "baseSpd": 0,
+    "radius": 15,
+    "hp": [
+      100,
+      200,
+      400
+    ],
+    "atk": [
+      90,
+      180,
+      360
+    ],
+    "def": [
+      15,
+      30,
+      60
+    ],
+    "dex": [
+      25,
+      50,
+      75
+    ],
+    "evi": [
+      10,
+      20,
+      30
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      8,
+      20,
+      40
+    ],
+    "resists": [
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": 20,
+        "dark": 20
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": 20,
+        "dark": 20
+      },
+      {
+        "fire": 20,
+        "ice": 20,
+        "thunder": 20,
+        "light": 20,
+        "dark": 20
+      }
+    ],
+    "debuffEffect": {
+      "type": "poison",
+      "duration": 30,
+      "mnd": 10
+    },
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "pofuillyslime": {
+    "name": "プフィスライム",
+    "pattern": "slime",
+    "attribute": "native",
+    "asset": "enemy_pufyslime",
+    "baseSpd": 15,
+    "radius": 10,
+    "hp": [
+      60,
+      120,
+      240
+    ],
+    "atk": [
+      80,
+      160,
+      320
+    ],
+    "def": [
+      0,
+      5,
+      10
+    ],
+    "dex": [
+      12,
+      24,
+      40
+    ],
+    "evi": [
+      10,
+      20,
+      35
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      6,
+      15,
+      30
+    ],
+    "resists": [
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 0,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 0,
+        "light": 0,
+        "dark": 0
+      },
+      {
+        "fire": 0,
+        "ice": 0,
+        "thunder": 0,
+        "light": 0,
+        "dark": 0
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "booma": {
+    "name": "ブーマ",
+    "pattern": "booma",
+    "attribute": "native",
+    "asset": "enemy_booma",
+    "baseSpd": 15,
+    "radius": 10,
+    "hp": [
+      60,
+      120,
+      240
+    ],
+    "atk": [
+      80,
+      160,
+      320
+    ],
+    "def": [
+      0,
+      5,
+      10
+    ],
+    "dex": [
+      12,
+      24,
+      40
+    ],
+    "evi": [
+      10,
+      20,
+      35
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      6,
+      15,
+      30
+    ],
+    "resists": [
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 0,
+        "ice": 25,
+        "thunder": 15,
+        "light": 20,
+        "dark": 10
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "gobooma": {
+    "name": "ゴブーマ",
+    "pattern": "booma",
+    "attribute": "native",
+    "asset": "enemy_gobooma",
+    "baseSpd": 15,
+    "radius": 10,
+    "hp": [
+      85,
+      170,
+      340
+    ],
+    "atk": [
+      85,
+      170,
+      340
+    ],
+    "def": [
+      5,
+      15,
+      30
+    ],
+    "dex": [
+      15,
+      30,
+      50
+    ],
+    "evi": [
+      12,
+      24,
+      35
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      6,
+      15,
+      30
+    ],
+    "resists": [
+      {
+        "fire": 15,
+        "ice": 35,
+        "thunder": 0,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 15,
+        "ice": 35,
+        "thunder": 0,
+        "light": 20,
+        "dark": 10
+      },
+      {
+        "fire": 15,
+        "ice": 35,
+        "thunder": 0,
+        "light": 20,
+        "dark": 10
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "jigobooma": {
+    "name": "ジゴブーマ",
+    "pattern": "booma",
+    "attribute": "native",
+    "asset": "enemy_zigobooma",
+    "baseSpd": 15,
+    "radius": 10,
+    "hp": [
+      110,
+      220,
+      440
+    ],
+    "atk": [
+      90,
+      180,
+      360
+    ],
+    "def": [
+      30,
+      60,
+      90
+    ],
+    "dex": [
+      20,
+      40,
+      60
+    ],
+    "evi": [
+      15,
+      30,
+      45
+    ],
+    "luck": [
+      5,
+      10,
+      15
+    ],
+    "exp": [
+      7,
+      18,
+      35
+    ],
+    "resists": [
+      {
+        "fire": 45,
+        "ice": 0,
+        "thunder": 15,
+        "light": 20,
+        "dark": 15
+      },
+      {
+        "fire": 45,
+        "ice": 0,
+        "thunder": 15,
+        "light": 20,
+        "dark": 15
+      },
+      {
+        "fire": 45,
+        "ice": 0,
+        "thunder": 15,
+        "light": 20,
+        "dark": 15
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hildebear": {
+    "name": "ヒルデベア",
+    "pattern": "hildebear",
+    "attribute": "native",
+    "asset": "enemy_hildebear",
+    "baseSpd": 10,
+    "radius": 30,
+    "hp": [
+      180,
+      360,
+      720
+    ],
+    "atk": [
+      140,
+      280,
+      560
+    ],
+    "def": [
+      30,
+      70,
+      120
+    ],
+    "dex": [
+      70,
+      100,
+      140
+    ],
+    "evi": [
+      22,
+      40,
+      60
+    ],
+    "luck": [
+      10,
+      15,
+      25
+    ],
+    "exp": [
+      15,
+      35,
+      70
+    ],
+    "resists": [
+      {
+        "fire": 70,
+        "ice": 0,
+        "thunder": 30,
+        "light": 50,
+        "dark": 30
+      },
+      {
+        "fire": 70,
+        "ice": 0,
+        "thunder": 30,
+        "light": 50,
+        "dark": 30
+      },
+      {
+        "fire": 70,
+        "ice": 0,
+        "thunder": 30,
+        "light": 50,
+        "dark": 30
+      }
+    ],
+    "rareDropItem": [
+      null,
+      null,
+      null
+    ]
+  }
+}

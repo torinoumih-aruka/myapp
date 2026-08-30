@@ -119,16 +119,7 @@
         <div id="opt-enemy" style="display:none;">
             Type:
             <select id="enemy-type" style="width: 120px;">
-                <option value="booma">ブーマ</option>
-                <option value="gobooma">ゴブーマ</option>
-                <option value="gigobooma">ジゴブーマ</option>
-                <option value="rappy">ラッピー</option>
-                <option value="hildebear">ヒルデベア</option>
-                <option value="hildeblue">ヒルデブルー</option>
-                <option value="savage_wolf">サベージウルフ</option>
-                <option value="canaan">カナン</option>
-                <option value="sorcerer">カオスソーサラー</option>
-                <option value="lily">ポイゾナスリリー</option>
+                <!-- Populated dynamically from enemy.json -->
             </select>
             <hr style="border:1px solid #444; margin:5px 0;">
             <b>Wave Assignment</b><br>
@@ -185,18 +176,8 @@ let mapW = 30;
 let mapH = 30;
 let zoomLevel = 1.0;
 
-const ENEMY_ASSETS = {
-    'booma': 'enemy_booma',
-    'gobooma': 'enemy_gobooma',
-    'gigobooma': 'enemy_zigobooma',
-    'rappy': 'enemy_rappy',
-    'hildebear': 'enemy_hildebear',
-    'hildeblue': 'enemy_hildeblue',
-    'savage_wolf': 'enemy_sabagewolf',
-    'canaan': 'enemy_canadin',
-    'sorcerer': 'enemy_khaossorcerer',
-    'lily': 'enemy_poisonuslilly'
-};
+let ENEMY_ASSETS = {};
+let BASE_ENEMIES = {};
 
 let mapData = [];
 let startPt = { x: 5, y: 5 };
@@ -243,6 +224,22 @@ async function loadAssets() {
             PRE_RENDERED[key] = cvs;
         }
         
+        const enemyRes = await fetch('enemy.json');
+        let enemyText = await enemyRes.text();
+        if(enemyText.charCodeAt(0) === 0xFEFF) enemyText = enemyText.slice(1);
+        BASE_ENEMIES = JSON.parse(enemyText);
+        
+        let enemySelect = document.getElementById('enemy-type');
+        enemySelect.innerHTML = '';
+        for (let key in BASE_ENEMIES) {
+            let enemy = BASE_ENEMIES[key];
+            ENEMY_ASSETS[key] = enemy.asset || 'enemy_booma';
+            let opt = document.createElement('option');
+            opt.value = key;
+            opt.innerText = enemy.name || key;
+            enemySelect.appendChild(opt);
+        }
+
         populateChipList();
         drawMap();
     } catch(e) {

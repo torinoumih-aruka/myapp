@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSO 2D - Enemy Master Editor</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-bg: #2d2d2d;
+            --border-color: #444;
+            --text-color: #eee;
+            --primary: #007acc;
+            --primary-hover: #005f9e;
+            --danger: #cc3333;
+            --input-bg: #111;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #252526;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 18px;
+            color: #ffcc00;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.danger {
+            background-color: var(--danger);
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Mobile Layout adjustments */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100% !important;
+                height: 30%;
+                border-right: none !important;
+                border-bottom: 2px solid var(--border-color);
+            }
+            #editor {
+                height: 70%;
+            }
+        }
+
+        #sidebar {
+            width: 250px;
+            background-color: var(--panel-bg);
+            border-right: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 5px;
+        }
+
+        .enemy-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .enemy-list li {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .enemy-list li:hover {
+            background-color: #3d3d3d;
+        }
+
+        .enemy-list li.active {
+            background-color: #004a77;
+            border-left: 4px solid #0099ff;
+        }
+
+        .enemy-icon {
+            width: 32px;
+            height: 32px;
+            background-color: black;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        #editor {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--bg-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background-color: var(--input-bg);
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        input:disabled {
+            background-color: #333;
+            color: #888;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: #252526;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .stats-grid .header {
+            font-weight: bold;
+            color: #ffcc00;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .stats-grid .row-label {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .stats-grid input {
+            text-align: right;
+        }
+
+        .section-title {
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #00ccff;
+        }
+
+        .preview-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000;
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            min-height: 150px;
+            position: relative;
+        }
+
+        #sprite-preview {
+            image-rendering: pixelated;
+        }
+
+        .hitbox-circle {
+            position: absolute;
+            border: 2px solid rgba(255, 0, 0, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Enemy Master Editor</h1>
+    <div style="display:flex; gap:10px;">
+        <button onclick="saveToLocal()">Save (Local)</button>
+        <button onclick="exportData()" style="background:#009933;">Export JSON</button>
+    </div>
+</header>
+
+<div class="container">
+    <div id="sidebar">
+        <div class="toolbar">
+            <button onclick="createNew()" style="flex:1;">+ New</button>
+            <button onclick="duplicateCurrent()" style="flex:1;">Duplicate</button>
+        </div>
+        <ul class="enemy-list" id="enemy-list">
+            <!-- Populated via JS -->
+        </ul>
+    </div>
+    
+    <div id="editor" style="display:none;">
+        <div class="form-row">
+            <div style="flex:1;">
+                <label>Enemy ID (Key)</label>
+                <input type="text" id="e-id" onchange="updateId()">
+            </div>
+            <div style="flex:2;">
+                <label>Name (名前)</label>
+                <input type="text" id="e-name" onchange="saveField('name')">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div style="flex:1;">
+                <label>Attribute (属性)</label>
+                <select id="e-attr" onchange="saveField('attribute')">
+                    <option value="native">Native (原生生物)</option>
+                    <option value="altered">Altered (突然変異)</option>
+                    <option value="machine">Machine (機械)</option>
+                    <option value="dark">Dark (闇)</option>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label>Pattern (行動パターン)</label>
+                <input type="text" id="e-pattern" onchange="saveField('pattern')" list="pattern-list">
+                <datalist id="pattern-list">
+                    <option value="booma">
+                    <option value="savage_wolf">
+                    <option value="rappy">
+                    <option value="lily">
+                    <option value="sorcerer">
+                    <option value="canaan">
+                </datalist>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div style="flex:1;">
+                <label>Asset (画像名)</label>
+                <select id="e-asset" onchange="saveField('asset'); updatePreview();"></select>
+            </div>
+            <div style="flex:1;">
+                <label>Radius (当たり判定 / 画像サイズ基準)</label>
+                <input type="number" id="e-radius" onchange="saveField('radius'); updatePreview();">
+            </div>
+            <div style="flex:1;">
+                <label>Base Speed (移動速度)</label>
+                <input type="number" id="e-speed" onchange="saveField('baseSpd')">
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;">
+            <label style="margin:0;">Preview (プレビュー)</label>
+            <div>
+                <label style="display:inline; margin-right:5px;">背景色: </label>
+                <select id="preview-bg-color" onchange="document.querySelector('.preview-box').style.backgroundColor = this.value;" style="width:auto; display:inline-block; padding: 4px;">
+                    <option value="#000000">黒 (Black)</option>
+                    <option value="#0000ff">青 (Blue)</option>
+                    <option value="#ff0000">赤 (Red)</option>
+                    <option value="#008000">緑 (Green)</option>
+                    <option value="#ffc0cb">ピンク (Pink)</option>
+                    <option value="#ffff00">黄色 (Yellow)</option>
+                    <option value="#00ffff">水色 (Light Blue)</option>
+                </select>
+            </div>
+        </div>
+        <div class="preview-box">
+            <canvas id="sprite-preview"></canvas>
+            <div id="hitbox-preview" class="hitbox-circle"></div>
+        </div>
+
+        <h3 class="section-title">Base Stats (難易度別ステータス)</h3>
+        <div class="stats-grid">
+            <div class="header">Param</div>
+            <div class="header">Normal</div>
+            <div class="header">Hard</div>
+            <div class="header">Very Hard</div>
+            
+            <!-- Injected via JS -->
+            <script>
+                const statKeys = ['hp', 'atk', 'def', 'dex', 'evi', 'luck', 'exp'];
+                statKeys.forEach(k => {
+                    document.write(`<div class="row-label">${k.toUpperCase()}</div>`);
+                    for(let i=0; i<3; i++) {
+                        document.write(`<input type="number" id="stat-${k}-${i}" onchange="saveStat('${k}', ${i})">`);
+                    }
+                });
+            </script>
+        </div>
+
+        <h3 class="section-title">Resists (耐性)</h3>
+        <div class="stats-grid">
+            <div class="header">Element</div>
+            <div class="header">Normal</div>
+            <div class="header">Hard</div>
+            <div class="header">Very Hard</div>
+            
+            <script>
+                const elements = ['fire', 'ice', 'thunder', 'light', 'dark'];
+                elements.forEach(el => {
+                    document.write(`<div class="row-label">${el.charAt(0).toUpperCase() + el.slice(1)}</div>`);
+                    for(let i=0; i<3; i++) {
+                        document.write(`<input type="number" id="res-${el}-${i}" onchange="saveResist('${el}', ${i})">`);
+                    }
+                });
+            </script>
+        </div>
+
+        <h3 class="section-title">Rare Drop Items (ドロップ設定 - Read Only)</h3>
+        <div class="stats-grid" style="grid-template-columns: 100px 1fr 1fr 1fr;">
+            <div class="row-label">Drop Item</div>
+            <input type="text" id="drop-0" disabled placeholder="Not editable">
+            <input type="text" id="drop-1" disabled placeholder="Not editable">
+            <input type="text" id="drop-2" disabled placeholder="Not editable">
+        </div>
+        
+        <div style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+            <button class="danger" onclick="deleteCurrent()">Delete Enemy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let ENEMY_DATA = {};
+let ASSET_IMAGES = {};
+let currentKey = null;
+
+// Initialization
+async function init() {
+    // 1. Load Assets (for images and select options)
+    try {
+        const res = await fetch('assets.json');
+        let text = await res.text();
+        if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+        const data = JSON.parse(text);
+        
+        const PALETTE = data.palette;
+        const SPRITES = data.sprites;
+        const dotSize = 4;
+        
+        const assetSelect = document.getElementById('e-asset');
+        
+        for (let key in SPRITES) {
+            if (key.startsWith('enemy_')) {
+                const cvs = document.createElement('canvas');
+                cvs.width = 32; cvs.height = 32;
+                const cCtx = cvs.getContext('2d');
+                const spriteData = SPRITES[key];
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const colorCode = spriteData[r][c];
+                        if (PALETTE[colorCode]) {
+                            cCtx.fillStyle = PALETTE[colorCode];
+                            cCtx.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+                        }
+                    }
+                }
+                ASSET_IMAGES[key] = cvs.toDataURL();
+                
+                let opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = key;
+                assetSelect.appendChild(opt);
+            }
+        }
+    } catch(e) {
+        console.error("Failed to load assets.json", e);
+    }
+
+    // 2. Load Enemy Data
+    let localData = localStorage.getItem('pso_enemy_master');
+    if (localData) {
+        ENEMY_DATA = JSON.parse(localData);
+        renderList();
+    } else {
+        try {
+            const res = await fetch('enemy.json');
+            let text = await res.text();
+            if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+            ENEMY_DATA = JSON.parse(text);
+        } catch(e) {
+            console.warn("Could not fetch enemy.json, starting blank", e);
+            ENEMY_DATA = {};
+        }
+        renderList();
+    }
+}
+
+function renderList() {
+    const list = document.getElementById('enemy-list');
+    list.innerHTML = '';
+    
+    Object.keys(ENEMY_DATA).forEach(key => {
+        let e = ENEMY_DATA[key];
+        let li = document.createElement('li');
+        if (key === currentKey) li.classList.add('active');
+        
+        let imgUrl = ASSET_IMAGES[e.asset] || '';
+        let imgTag = imgUrl ? `<img src="${imgUrl}" class="enemy-icon">` : `<div class="enemy-icon"></div>`;
+        
+        li.innerHTML = `${imgTag} <span>${e.name || key}</span>`;
+        li.onclick = () => selectEnemy(key);
+        list.appendChild(li);
+    });
+    
+    if (currentKey && ENEMY_DATA[currentKey]) {
+        document.getElementById('editor').style.display = 'block';
+    } else {
+        document.getElementById('editor').style.display = 'none';
+    }
+}
+
+function selectEnemy(key) {
+    currentKey = key;
+    renderList();
+    
+    const e = ENEMY_DATA[key];
+    document.getElementById('e-id').value = key;
+    document.getElementById('e-name').value = e.name || '';
+    document.getElementById('e-attr').value = e.attribute || 'native';
+    document.getElementById('e-pattern').value = e.pattern || '';
+    document.getElementById('e-asset').value = e.asset || '';
+    document.getElementById('e-radius').value = e.radius || 15;
+    document.getElementById('e-speed').value = e.baseSpd || 40;
+    
+    // Stats
+    const statKeys = ['hp', 'atk', 'def', 'dex', 'evi', 'luck', 'exp'];
+    statKeys.forEach(k => {
+        for(let i=0; i<3; i++) {
+            document.getElementById(`stat-${k}-${i}`).value = (e[k] && e[k][i] !== undefined) ? e[k][i] : 0;
+        }
+    });
+    
+    // Resists
+    const elements = ['fire', 'ice', 'thunder', 'light', 'dark'];
+    elements.forEach(el => {
+        for(let i=0; i<3; i++) {
+            document.getElementById(`res-${el}-${i}`).value = (e.resists && e.resists[i] && e.resists[i][el] !== undefined) ? e.resists[i][el] : 0;
+        }
+    });
+    
+    // Drops (Read only display)
+    for(let i=0; i<3; i++) {
+        let d = (e.rareDropItem && e.rareDropItem[i]) ? JSON.stringify(e.rareDropItem[i]) : 'null';
+        document.getElementById(`drop-${i}`).value = d;
+    }
+    
+    updatePreview();
+}
+
+function updateId() {
+    let newId = document.getElementById('e-id').value.trim();
+    if (!newId || newId === currentKey) return;
+    if (ENEMY_DATA[newId]) {
+        alert("This ID already exists!");
+        document.getElementById('e-id').value = currentKey;
+        return;
+    }
+    // Rename key
+    ENEMY_DATA[newId] = ENEMY_DATA[currentKey];
+    delete ENEMY_DATA[currentKey];
+    currentKey = newId;
+    renderList();
+}
+
+function saveField(field) {
+    if(!currentKey) return;
+    let val = document.getElementById(`e-${field}`).value;
+    if (field === 'radius' || field === 'baseSpd') val = parseFloat(val) || 0;
+    ENEMY_DATA[currentKey][field] = val;
+    if (field === 'name' || field === 'asset') renderList(); // update sidebar
+}
+
+function saveStat(stat, difficultyIndex) {
+    if(!currentKey) return;
+    let val = parseFloat(document.getElementById(`stat-${stat}-${difficultyIndex}`).value) || 0;
+    if (!ENEMY_DATA[currentKey][stat]) ENEMY_DATA[currentKey][stat] = [0, 0, 0];
+    ENEMY_DATA[currentKey][stat][difficultyIndex] = val;
+}
+
+function saveResist(element, difficultyIndex) {
+    if(!currentKey) return;
+    let val = parseFloat(document.getElementById(`res-${element}-${difficultyIndex}`).value) || 0;
+    if (!ENEMY_DATA[currentKey].resists) {
+        ENEMY_DATA[currentKey].resists = [{}, {}, {}];
+    }
+    if (!ENEMY_DATA[currentKey].resists[difficultyIndex]) ENEMY_DATA[currentKey].resists[difficultyIndex] = {};
+    ENEMY_DATA[currentKey].resists[difficultyIndex][element] = val;
+}
+
+function updatePreview() {
+    if(!currentKey) return;
+    const e = ENEMY_DATA[currentKey];
+    const asset = e.asset;
+    const radius = e.radius || 15;
+    const size = radius * 2.5; // From game.js render scale
+    
+    const cvs = document.getElementById('sprite-preview');
+    const ctx = cvs.getContext('2d');
+    
+    // Clear
+    cvs.width = size;
+    cvs.height = size;
+    ctx.clearRect(0,0,size,size);
+    
+    if (asset && ASSET_IMAGES[asset]) {
+        let img = new Image();
+        img.src = ASSET_IMAGES[asset];
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, size, size);
+        };
+    }
+    
+    // Hitbox visualization (CSS circle overlay)
+    const hb = document.getElementById('hitbox-preview');
+    hb.style.width = (radius * 2) + 'px';
+    hb.style.height = (radius * 2) + 'px';
+}
+
+function createNew() {
+    let id = prompt("Enter new Enemy ID (e.g. booma2):");
+    if (!id) return;
+    if (ENEMY_DATA[id]) { alert("ID exists"); return; }
+    
+    ENEMY_DATA[id] = {
+        name: id,
+        pattern: "booma",
+        asset: "enemy_booma",
+        attribute: "native",
+        rareDropItem: [null, null, null],
+        hp: [10, 10, 10], atk: [1, 1, 1], def: [1, 1, 1], dex: [1, 1, 1], evi: [1, 1, 1], luck: [1, 1, 1], exp: [1, 1, 1],
+        resists: [
+            {fire:0, ice:0, thunder:0, light:0, dark:0},
+            {fire:0, ice:0, thunder:0, light:0, dark:0},
+            {fire:0, ice:0, thunder:0, light:0, dark:0}
+        ],
+        radius: 15,
+        baseSpd: 40
+    };
+    selectEnemy(id);
+}
+
+function duplicateCurrent() {
+    if (!currentKey) return;
+    let id = prompt("Enter ID for the duplicated enemy:", currentKey + "_copy");
+    if (!id) return;
+    if (ENEMY_DATA[id]) { alert("ID exists"); return; }
+    
+    // Deep copy
+    ENEMY_DATA[id] = JSON.parse(JSON.stringify(ENEMY_DATA[currentKey]));
+    ENEMY_DATA[id].name += " (Copy)";
+    selectEnemy(id);
+}
+
+function deleteCurrent() {
+    if (!currentKey) return;
+    if (confirm("Are you sure you want to delete " + currentKey + "?")) {
+        delete ENEMY_DATA[currentKey];
+        currentKey = null;
+        renderList();
+    }
+}
+
+function saveToLocal() {
+    localStorage.setItem('pso_enemy_master', JSON.stringify(ENEMY_DATA));
+    alert('Saved to LocalStorage!');
+}
+
+function exportData() {
+    const jsonStr = JSON.stringify(ENEMY_DATA, null, 2);
+    
+    // Mobile detection simple regex
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Mailto
+        const subject = encodeURIComponent("enemy.json Export");
+        const body = encodeURIComponent(jsonStr);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    } else {
+        // Clipboard for PC
+        navigator.clipboard.writeText(jsonStr).then(() => {
+            alert('JSON copied to clipboard! You can paste it into enemy.json.');
+        }).catch(err => {
+            console.error('Clipboard error', err);
+            alert('Failed to copy to clipboard. See console.');
+        });
+    }
+}
+
+init();
+
+</script>
+</body>
+</html>
