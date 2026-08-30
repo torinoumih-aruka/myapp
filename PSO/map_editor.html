@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>PSO 2D Map Editor - Enhanced V3</title>
+    <style>
+        body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; background: #222; color: #fff; overflow: hidden; }
+        #sidebar { width: 350px; min-width: 350px; flex-shrink: 0; background: #333; padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; border-right: 2px solid #555; }
+        #main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        #toolbar { background: #444; padding: 10px; display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #555; flex-wrap: wrap; }
+        #canvas-container { flex: 1; overflow: auto; position: relative; background: #111; }
+        canvas { display: block; }
+        
+        button { background: #555; color: white; border: 1px solid #777; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #666; }
+        button.active { background: #0066cc; border-color: #0099ff; font-weight: bold; }
+        
+        .panel { background: #222; border: 1px solid #444; padding: 10px; border-radius: 4px; }
+        .panel h3 { margin: 0 0 10px 0; font-size: 14px; color: #ffcc00; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        
+        .tool-btn { display: block; width: 100%; text-align: left; margin-bottom: 5px; }
+        
+        input, select { background: #111; color: white; border: 1px solid #555; padding: 4px; border-radius: 3px; width: 60px; }
+        input[type="text"] { width: 100%; box-sizing: border-box; }
+        
+        textarea { width: 100%; height: 80px; background: #111; color: white; border: 1px solid #555; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+
+        .chip-list { display: flex; flex-wrap: wrap; gap: 5px; max-height: 150px; overflow-y: auto; background: #111; padding: 5px; border: 1px solid #555; }
+        .chip-item { width: 32px; height: 32px; border: 2px solid transparent; cursor: pointer; background: #000; }
+        .chip-item:hover { border-color: #888; }
+        .chip-item.active { border-color: #00ff00; }
+        
+        #status-info { margin-left: 15px; font-size: 13px; color: #ccc; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Map Editor</h2>
+    
+    <div class="panel">
+        <h3>File</h3>
+        <button onclick="exportJson()">Export JSON</button>
+        <button onclick="importJson()">Import JSON</button>
+        <textarea id="json-io" placeholder="Paste JSON here to import, or copy from here after export."></textarea>
+    </div>
+
+    <div class="panel">
+        <h3>Map Properties</h3>
+        <label>Width: <input type="number" id="map-w" value="30" min="1"></label>
+        <label>Height: <input type="number" id="map-h" value="30" min="1"></label>
+        <button onclick="resizeMap()">Apply Size</button>
+    </div>
+
+    <div class="panel">
+        <h3>Map Chips (Tiles)</h3>
+        <button class="tool-btn active" id="tool-floor" onclick="selectTool('floor')">Floor (Basic 1)</button>
+        <button class="tool-btn" id="tool-void" onclick="selectTool('void')">Void (Basic 0)</button>
+        <button class="tool-btn" id="tool-chip" onclick="selectTool('chip')">Custom Map Chip</button>
+        <div id="opt-chip" style="display:none; margin-top:10px;">
+            <div style="font-size:12px; margin-bottom:5px;">Select Chip:</div>
+            <div class="chip-list" id="chip-list"></div>
+            <div id="selected-chip-name" style="font-size:12px; margin-top:5px; color:#aaa;">None</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Objects & Gimmicks</h3>
+        <button class="tool-btn" id="tool-start" onclick="selectTool('start')">Start Point</button>
+        <button class="tool-btn" id="tool-door" onclick="selectTool('door')">Door</button>
+        <button class="tool-btn" id="tool-switch" onclick="selectTool('switch')">Switch</button>
+        <button class="tool-btn" id="tool-box" onclick="selectTool('box')">Item Box</button>
+        <button class="tool-btn" id="tool-teleporter" onclick="selectTool('teleporter')">Teleporter</button>
+        <button class="tool-btn" id="tool-trap" onclick="selectTool('trap')">Trap</button>
+        <button class="tool-btn" id="tool-room" onclick="selectTool('room')">Room Definition</button>
+        <button class="tool-btn" id="tool-enemy" onclick="selectTool('enemy')">Enemy / Wave</button>
+        <button class="tool-btn" id="tool-npc" onclick="selectTool('npc')">NPC (Town)</button>
+        <button class="tool-btn" id="tool-erase" onclick="selectTool('erase')">Eraser (Objects/Rooms)</button>
+    </div>
+    
+    <div class="panel" id="tool-options" style="display:none;">
+        <h3>Tool Options</h3>
+        
+        <div id="opt-door" style="display:none;">
+            Door ID: <input type="text" id="door-id" value="door_1"><br>
+            Width: <input type="number" id="door-w" value="1" min="1" style="width:40px;"> 
+            Height: <input type="number" id="door-h" value="2" min="1" style="width:40px;"><br>
+            <label><input type="checkbox" id="door-horiz"> Horizontal?</label><br>
+            <small>※部屋クリアで開く場合は指定↓</small><br>
+            Target Room (opt): <input type="text" id="door-room" placeholder="room1" style="width: 80px;">
+        </div>
+        
+        <div id="opt-switch" style="display:none;">
+            Target Doors (comma separated):<br>
+            <input type="text" id="switch-targets" value="door_1">
+        </div>
+        
+        <div id="opt-teleporter" style="display:none;">
+            Type: 
+            <select id="tp-type">
+                <option value="next">Next Stage</option>
+                <option value="town">Town</option>
+                <option value="prev">Prev Stage</option>
+            </select>
+        </div>
+        
+        <div id="opt-trap" style="display:none;">
+            Type: 
+            <select id="trap-type">
+                <option value="damage">Damage</option>
+                <option value="poison">Poison</option>
+                <option value="freeze">Freeze</option>
+                <option value="shock">Shock</option>
+                <option value="confuse">Confuse</option>
+            </select><br>
+            Lv: <input type="number" id="trap-lv" value="1" min="1" max="5">
+        </div>
+        
+        <div id="opt-enemy" style="display:none;">
+            Type:
+            <select id="enemy-type" style="width: 120px;">
+                <option value="booma">ブーマ</option>
+                <option value="gobooma">ゴブーマ</option>
+                <option value="gigobooma">ジゴブーマ</option>
+                <option value="rappy">ラッピー</option>
+                <option value="hildebear">ヒルデベア</option>
+                <option value="hildeblue">ヒルデブルー</option>
+                <option value="savage_wolf">サベージウルフ</option>
+                <option value="canaan">カナン</option>
+                <option value="sorcerer">カオスソーサラー</option>
+                <option value="lily">ポイゾナスリリー</option>
+            </select>
+            <hr style="border:1px solid #444; margin:5px 0;">
+            <b>Wave Assignment</b><br>
+            <small>空白の場合は即座に湧きます</small><br>
+            Room ID: <input type="text" id="enemy-room" placeholder="room1" style="width: 80px;" oninput="drawMap()"><br>
+            Wave No: <input type="number" id="enemy-wave" value="1" min="1" max="10" style="width: 40px;" onchange="drawMap()"><br>
+            <label><input type="checkbox" id="enemy-hide-others" onchange="drawMap()"> Hide other waves</label>
+        </div>
+        
+        <div id="opt-npc" style="display:none;">
+            Type:
+            <select id="npc-type" style="width: 120px;">
+                <option value="shop">ショップ</option>
+                <option value="appraiser">鑑定屋</option>
+                <option value="inn">宿屋</option>
+                <option value="teleporter">転送装置</option>
+                <option value="save">セーブポイント</option>
+            </select><br>
+            Name: <input type="text" id="npc-name" value="NPC" style="width: 120px;">
+        </div>
+        
+        <div id="opt-room" style="display:none;">
+            <small>ドラッグして部屋を作成します。</small><br>
+            ID: <input type="text" id="room-id" value="room1"><br>
+            <small>※最大20部屋まで</small>
+        </div>
+    </div>
+</div>
+
+<div id="main">
+    <div id="toolbar">
+        <span>Click to place. Drag for Tiles/Room.</span>
+        <button onclick="clearMap()">Clear All</button>
+        <span id="status-info">Boxes: 0 | Enemies: 0 | Pos: (0, 0)</span>
+        <div style="margin-left: auto;">
+            <label>Zoom: 
+                <select id="map-zoom" onchange="changeZoom()" style="width: auto;">
+                    <option value="0.5">50%</option>
+                    <option value="1" selected>100%</option>
+                    <option value="1.5">150%</option>
+                    <option value="2">200%</option>
+                </select>
+            </label>
+        </div>
+    </div>
+    <div id="canvas-container">
+        <canvas id="mapCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+const TILE_SIZE = 50;
+let mapW = 30;
+let mapH = 30;
+let zoomLevel = 1.0;
+
+const ENEMY_ASSETS = {
+    'booma': 'enemy_booma',
+    'gobooma': 'enemy_gobooma',
+    'gigobooma': 'enemy_zigobooma',
+    'rappy': 'enemy_rappy',
+    'hildebear': 'enemy_hildebear',
+    'hildeblue': 'enemy_hildeblue',
+    'savage_wolf': 'enemy_sabagewolf',
+    'canaan': 'enemy_canadin',
+    'sorcerer': 'enemy_khaossorcerer',
+    'lily': 'enemy_poisonuslilly'
+};
+
+let mapData = [];
+let startPt = { x: 5, y: 5 };
+let objects = []; 
+let rooms = [];
+
+let currentTool = 'floor';
+let currentChip = null;
+let isDragging = false;
+let dragStart = null;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+let PRE_RENDERED = {};
+
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+
+async function loadAssets() {
+    try {
+        const res = await fetch('assets.json');
+        let text = await res.text();
+        if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+        const data = JSON.parse(text);
+        
+        const PALETTE = data.palette;
+        const SPRITES = data.sprites;
+        const dotSize = 4;
+        
+        for (let key in SPRITES) {
+            const cvs = document.createElement('canvas');
+            cvs.width = 32; cvs.height = 32;
+            const cCtx = cvs.getContext('2d');
+            const spriteData = SPRITES[key];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const colorCode = spriteData[r][c];
+                    if (PALETTE[colorCode]) {
+                        cCtx.fillStyle = PALETTE[colorCode];
+                        cCtx.fillRect(c * dotSize, r * dotSize, dotSize + 0.5, dotSize + 0.5);
+                    }
+                }
+            }
+            PRE_RENDERED[key] = cvs;
+        }
+        
+        populateChipList();
+        drawMap();
+    } catch(e) {
+        console.error('Failed to load assets.json', e);
+        alert('assets.jsonを読み込めませんでした。ローカルサーバーで実行してください。\n' + e.message);
+    }
+}
+
+function populateChipList() {
+    const listEl = document.getElementById('chip-list');
+    listEl.innerHTML = '';
+    
+    // Pattern for chips: map_floor_xxx, map_wall_xxx, map_hole_xxx
+    const chipKeys = Object.keys(PRE_RENDERED).filter(k => /^map_(floor|wall|hole)_\d{3}$/.test(k));
+    chipKeys.sort(); // sort by name
+    
+    chipKeys.forEach(key => {
+        const img = document.createElement('img');
+        img.src = PRE_RENDERED[key].toDataURL();
+        img.className = 'chip-item';
+        img.title = key;
+        img.onclick = () => {
+            document.querySelectorAll('.chip-item').forEach(el => el.classList.remove('active'));
+            img.classList.add('active');
+            currentChip = key;
+            document.getElementById('selected-chip-name').innerText = key;
+            if(currentTool !== 'chip') selectTool('chip');
+        };
+        listEl.appendChild(img);
+    });
+    
+    if (chipKeys.length > 0) {
+        currentChip = chipKeys[0];
+        listEl.firstChild.classList.add('active');
+        document.getElementById('selected-chip-name').innerText = currentChip;
+    }
+}
+
+function changeZoom() {
+    zoomLevel = parseFloat(document.getElementById('map-zoom').value);
+    updateCanvasSize();
+    drawMap();
+}
+
+function initMap() {
+    mapData = [];
+    for (let y = 0; y < mapH; y++) {
+        let row = [];
+        for (let x = 0; x < mapW; x++) {
+            row.push(0);
+        }
+        mapData.push(row);
+    }
+    updateCanvasSize();
+    drawMap();
+}
+
+function updateCanvasSize() {
+    canvas.width = mapW * TILE_SIZE * zoomLevel;
+    canvas.height = mapH * TILE_SIZE * zoomLevel;
+}
+
+function resizeMap() {
+    const nw = parseInt(document.getElementById('map-w').value);
+    const nh = parseInt(document.getElementById('map-h').value);
+    if (nw > 0 && nh > 0) {
+        let newData = [];
+        for (let y = 0; y < nh; y++) {
+            let row = [];
+            for (let x = 0; x < nw; x++) {
+                row.push(y < mapH && x < mapW ? mapData[y][x] : 0);
+            }
+            newData.push(row);
+        }
+        mapData = newData;
+        mapW = nw;
+        mapH = nh;
+        updateCanvasSize();
+        drawMap();
+    }
+}
+
+function clearMap() {
+    if (confirm("全てのデータを消去しますか？")) {
+        objects = [];
+        rooms = [];
+        initMap();
+    }
+}
+
+function selectTool(tool) {
+    currentTool = tool;
+    document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tool-' + tool).classList.add('active');
+    
+    const objOptions = ['door', 'switch', 'teleporter', 'trap', 'enemy', 'npc', 'room', 'chip'];
+    let showOptions = objOptions.includes(tool);
+    document.getElementById('tool-options').style.display = showOptions ? 'block' : 'none';
+    
+    objOptions.forEach(opt => {
+        let el = document.getElementById('opt-' + opt);
+        if(el) el.style.display = (tool === opt) ? 'block' : 'none';
+    });
+    
+    drawMap(); // redraw to potentially apply wave filters
+}
+
+function updateStatus(mx, my) {
+    let boxes = objects.filter(o => o.type === 'box').length;
+    let enemies = objects.filter(o => o.type === 'enemy').length;
+    let el = document.getElementById('status-info');
+    if (el) el.innerHTML = `Boxes: ${boxes} | Enemies: ${enemies} | Pos: (${mx}, ${my})`;
+}
+
+function drawMap() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.save();
+    ctx.scale(zoomLevel, zoomLevel);
+
+    // Draw floor
+    for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+            let tile = mapData[y][x];
+            if (typeof tile === 'string' && PRE_RENDERED[tile]) {
+                ctx.drawImage(PRE_RENDERED[tile], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            } else if (tile === 1) {
+                ctx.fillStyle = '#445544';
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+    
+    // Draw grid lines
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for(let i=0; i<=mapW; i++) {
+        ctx.beginPath(); ctx.moveTo(i*TILE_SIZE, 0); ctx.lineTo(i*TILE_SIZE, mapH*TILE_SIZE); ctx.stroke();
+    }
+    for(let i=0; i<=mapH; i++) {
+        ctx.beginPath(); ctx.moveTo(0, i*TILE_SIZE); ctx.lineTo(mapW*TILE_SIZE, i*TILE_SIZE); ctx.stroke();
+    }
+    
+    // Draw rooms
+    rooms.forEach(r => {
+        ctx.fillStyle = 'rgba(0, 150, 255, 0.2)';
+        ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.fillRect(r.x * TILE_SIZE, r.y * TILE_SIZE, r.w * TILE_SIZE, r.h * TILE_SIZE);
+        ctx.strokeRect(r.x * TILE_SIZE, r.y * TILE_SIZE, r.w * TILE_SIZE, r.h * TILE_SIZE);
+        ctx.fillStyle = 'white';
+        ctx.fillText(r.id, r.x * TILE_SIZE + 5, r.y * TILE_SIZE + 15);
+    });
+
+    // Draw start
+    ctx.fillStyle = '#00ff00';
+    ctx.beginPath();
+    ctx.arc(startPt.x * TILE_SIZE + TILE_SIZE/2, startPt.y * TILE_SIZE + TILE_SIZE/2, 10, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'black';
+    ctx.fillText('S', startPt.x * TILE_SIZE + 20, startPt.y * TILE_SIZE + 30);
+    
+    // Check wave filter
+    let hideOthers = false;
+    let curRoom = '';
+    let curWave = 1;
+    if (currentTool === 'enemy' && document.getElementById('enemy-hide-others') && document.getElementById('enemy-hide-others').checked) {
+        hideOthers = true;
+        curRoom = document.getElementById('enemy-room').value.trim();
+        curWave = parseInt(document.getElementById('enemy-wave').value) || 1;
+    }
+    
+    // Draw logic links (Switch->Door, Room->Door)
+    ctx.save();
+    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 2;
+    objects.forEach(obj => {
+        if (obj.type === 'switch' && obj.targetDoors) {
+            ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+            let sx = obj.x * TILE_SIZE + 25;
+            let sy = obj.y * TILE_SIZE + 25;
+            obj.targetDoors.forEach(tid => {
+                let targetDoors = objects.filter(o => o.type === 'door' && o.id === tid);
+                targetDoors.forEach(td => {
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(td.x * TILE_SIZE + (td.w*TILE_SIZE)/2, td.y * TILE_SIZE + (td.h*TILE_SIZE)/2);
+                    ctx.stroke();
+                });
+            });
+        } else if (obj.type === 'door' && obj.roomId) {
+            ctx.strokeStyle = 'rgba(100, 255, 100, 0.8)';
+            let rm = rooms.find(r => r.id === obj.roomId);
+            if (rm) {
+                let rx = rm.x * TILE_SIZE + (rm.w*TILE_SIZE)/2;
+                let ry = rm.y * TILE_SIZE + (rm.h*TILE_SIZE)/2;
+                ctx.beginPath();
+                ctx.moveTo(rx, ry);
+                ctx.lineTo(obj.x * TILE_SIZE + (obj.w*TILE_SIZE)/2, obj.y * TILE_SIZE + (obj.h*TILE_SIZE)/2);
+                ctx.stroke();
+            }
+        }
+    });
+    ctx.restore();
+    
+    // Draw objects
+    objects.forEach(obj => {
+        // Apply wave filter for enemies
+        if (obj.type === 'enemy' && hideOthers) {
+            if ((obj.roomId || '') !== curRoom || (obj.wave || 1) !== curWave) return;
+        }
+        
+        let cx = obj.x * TILE_SIZE;
+        let cy = obj.y * TILE_SIZE;
+        
+        ctx.save();
+        if (obj.type === 'box') {
+            if(PRE_RENDERED['enemy_itembox']) {
+                ctx.drawImage(PRE_RENDERED['enemy_itembox'], cx+10, cy+10, 30, 30);
+            } else {
+                ctx.fillStyle = '#cc8844';
+                ctx.fillRect(cx + 10, cy + 10, 30, 30);
+                ctx.fillStyle = 'white';
+                ctx.fillText('Box', cx + 15, cy + 30);
+            }
+        } else if (obj.type === 'door') {
+            ctx.fillStyle = 'rgba(150, 75, 0, 0.7)';
+            ctx.fillRect(cx, cy, obj.w * TILE_SIZE, obj.h * TILE_SIZE);
+            ctx.strokeStyle = '#ffcc00';
+            ctx.strokeRect(cx, cy, obj.w * TILE_SIZE, obj.h * TILE_SIZE);
+            ctx.fillStyle = 'white';
+            ctx.fillText(obj.id, cx + 5, cy + 15);
+        } else if (obj.type === 'switch') {
+            ctx.fillStyle = '#cc8888';
+            ctx.beginPath(); ctx.arc(cx+25, cy+25, 15, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = 'white'; ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.fillText('SW', cx + 16, cy + 30);
+        } else if (obj.type === 'teleporter') {
+            ctx.fillStyle = '#00ccff';
+            ctx.beginPath(); ctx.arc(cx+25, cy+25, 15, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.fillText('Tp', cx + 18, cy + 30);
+        } else if (obj.type === 'trap') {
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(cx + 15, cy + 15, 20, 20);
+            ctx.fillStyle = 'white';
+            ctx.fillText('T', cx + 20, cy + 30);
+        } else if (obj.type === 'enemy') {
+            let assetName = ENEMY_ASSETS[obj.enemyType] || 'enemy_booma';
+            if (PRE_RENDERED[assetName]) {
+                ctx.drawImage(PRE_RENDERED[assetName], cx + 10, cy + 10, 30, 30);
+            } else {
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath(); ctx.arc(cx+25, cy+25, 12, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.fillText('E', cx + 21, cy + 30);
+            }
+            if (obj.roomId) {
+                ctx.fillStyle = 'yellow';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(obj.roomId + '(W' + obj.wave + ')', cx, cy + 45);
+            }
+        } else if (obj.type === 'npc') {
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillRect(cx + 10, cy + 5, 30, 40);
+            ctx.fillStyle = 'black';
+            ctx.fillText('NPC', cx + 13, cy + 30);
+        }
+        ctx.restore();
+    });
+    
+    ctx.restore();
+    
+    updateStatus(lastMouseX, lastMouseY);
+}
+
+function handleInteract(x, y, isDrag) {
+    if (x < 0 || x >= mapW || y < 0 || y >= mapH) return;
+    
+    if (currentTool === 'floor') {
+        mapData[y][x] = 1;
+    } else if (currentTool === 'void') {
+        mapData[y][x] = 0;
+    } else if (currentTool === 'chip') {
+        if(currentChip) mapData[y][x] = currentChip;
+    } else if (currentTool === 'room') {
+        if (!isDrag) {
+            // Click to remove room
+            rooms = rooms.filter(r => !(x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h));
+        }
+        return;
+    } else if (currentTool === 'start' && !isDrag) {
+        startPt = { x, y };
+    } else if (currentTool === 'erase') {
+        // Eraser removes all objects intersecting the point
+        objects = objects.filter(o => !(x >= o.x && x < o.x + (o.w||1) && y >= o.y && y < o.y + (o.h||1)));
+    } else if (!isDrag) {
+        // Overlap management depending on tool
+        if (currentTool === 'enemy') {
+            let curRoom = document.getElementById('enemy-room').value.trim();
+            let curWave = parseInt(document.getElementById('enemy-wave').value) || 1;
+            // Only erase enemy if it's on the EXACT same wave layer
+            objects = objects.filter(o => {
+                if (x >= o.x && x < o.x + (o.w||1) && y >= o.y && y < o.y + (o.h||1)) {
+                    if (o.type === 'enemy') {
+                        let r1 = o.roomId || ''; let r2 = curRoom;
+                        let w1 = o.wave || 1; let w2 = curWave;
+                        if (r1 !== r2 || w1 !== w2) return true; // keep, different layer
+                    }
+                    return false; // erase (same layer enemy, or other object)
+                }
+                return true;
+            });
+        } else {
+            // Default: erase everything at spot
+            objects = objects.filter(o => !(x >= o.x && x < o.x + (o.w||1) && y >= o.y && y < o.y + (o.h||1)));
+        }
+        
+        let obj = { x, y, type: currentTool };
+        if (currentTool === 'door') {
+            obj.id = document.getElementById('door-id').value;
+            obj.w = parseInt(document.getElementById('door-w').value);
+            obj.h = parseInt(document.getElementById('door-h').value);
+            obj.isHorizontal = document.getElementById('door-horiz').checked;
+            let rm = document.getElementById('door-room').value.trim();
+            if (rm !== '') obj.roomId = rm;
+        } else if (currentTool === 'switch') {
+            let tgts = document.getElementById('switch-targets').value;
+            obj.targetDoors = tgts.split(',').map(s => s.trim()).filter(s => s);
+        } else if (currentTool === 'teleporter') {
+            obj.tpType = document.getElementById('tp-type').value;
+        } else if (currentTool === 'trap') {
+            obj.trapType = document.getElementById('trap-type').value;
+            obj.lv = parseInt(document.getElementById('trap-lv').value);
+        } else if (currentTool === 'enemy') {
+            obj.enemyType = document.getElementById('enemy-type').value;
+            let rid = document.getElementById('enemy-room').value.trim();
+            if (rid !== '') {
+                obj.roomId = rid;
+                let wv = parseInt(document.getElementById('enemy-wave').value) || 1;
+                obj.wave = Math.min(10, Math.max(1, wv)); // limit to 10
+            }
+        } else if (currentTool === 'npc') {
+            obj.npcType = document.getElementById('npc-type').value;
+            obj.name = document.getElementById('npc-name').value;
+        }
+        objects.push(obj);
+    }
+    
+    drawMap();
+}
+
+canvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / (TILE_SIZE * zoomLevel));
+    const y = Math.floor((e.clientY - rect.top) / (TILE_SIZE * zoomLevel));
+    lastMouseX = x; lastMouseY = y;
+    
+    if (currentTool === 'room') {
+        dragStart = { x, y };
+    } else {
+        handleInteract(x, y, false);
+    }
+});
+
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / (TILE_SIZE * zoomLevel));
+    const y = Math.floor((e.clientY - rect.top) / (TILE_SIZE * zoomLevel));
+    
+    if (x !== lastMouseX || y !== lastMouseY) {
+        lastMouseX = x;
+        lastMouseY = y;
+        updateStatus(x, y);
+    }
+    
+    if (!isDragging) return;
+    
+    if (currentTool === 'room' && dragStart) {
+        drawMap(); 
+        
+        ctx.save();
+        ctx.scale(zoomLevel, zoomLevel);
+        ctx.fillStyle = 'rgba(0, 150, 255, 0.4)';
+        let rx = Math.min(x, dragStart.x);
+        let ry = Math.min(y, dragStart.y);
+        let rw = Math.abs(x - dragStart.x) + 1;
+        let rh = Math.abs(y - dragStart.y) + 1;
+        ctx.fillRect(rx * TILE_SIZE, ry * TILE_SIZE, rw * TILE_SIZE, rh * TILE_SIZE);
+        ctx.restore();
+    } else {
+        handleInteract(x, y, true);
+    }
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (isDragging && currentTool === 'room' && dragStart) {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / (TILE_SIZE * zoomLevel));
+        const y = Math.floor((e.clientY - rect.top) / (TILE_SIZE * zoomLevel));
+        
+        let rx = Math.min(x, dragStart.x);
+        let ry = Math.min(y, dragStart.y);
+        let rw = Math.abs(x - dragStart.x) + 1;
+        let rh = Math.abs(y - dragStart.y) + 1;
+        
+        // If it was a drag (w > 1 or h > 1), create room
+        if (rw > 1 || rh > 1 || rx !== dragStart.x || ry !== dragStart.y) {
+            if (rooms.length >= 20) {
+                alert('部屋の作成上限（20個）に達しています。');
+            } else {
+                let id = document.getElementById('room-id').value || ('room' + (rooms.length + 1));
+                // Ensure no duplicate id
+                if (rooms.some(r => r.id === id)) {
+                    id = id + '_' + Math.floor(Math.random()*1000);
+                }
+                rooms.push({ id, x: rx, y: ry, w: rw, h: rh, waves: [], doors: [] });
+                // Auto increment UI id
+                let match = id.match(/^(.*?)(\d+)$/);
+                if(match) {
+                    document.getElementById('room-id').value = match[1] + (parseInt(match[2])+1);
+                }
+            }
+        }
+        dragStart = null;
+        drawMap();
+    }
+    isDragging = false;
+});
+canvas.addEventListener('mouseleave', () => isDragging = false);
+
+function exportJson() {
+    let out = {
+        width: mapW,
+        height: mapH,
+        data: mapData,
+        start: startPt,
+        rooms: [],
+        switches: [],
+        standaloneDoors: [],
+        boxes: [],
+        teleporters: [],
+        traps: [],
+        enemies: [],
+        npcs: []
+    };
+    
+    // Deep clone rooms to clear waves/doors for rebuild
+    out.rooms = JSON.parse(JSON.stringify(rooms));
+    out.rooms.forEach(r => { r.waves = []; r.doors = []; });
+    
+    objects.forEach(o => {
+        if (o.type === 'box') {
+            out.boxes.push({ x: o.x, y: o.y });
+        } else if (o.type === 'teleporter') {
+            out.teleporters.push({ type: o.tpType, x: o.x, y: o.y });
+        } else if (o.type === 'trap') {
+            out.traps.push({ type: o.trapType, x: o.x, y: o.y, lv: o.lv });
+        } else if (o.type === 'switch') {
+            out.switches.push({ x: o.x, y: o.y, targetDoors: o.targetDoors });
+        } else if (o.type === 'door') {
+            let d = { id: o.id, x: o.x, y: o.y, w: o.w, h: o.h, isHorizontal: o.isHorizontal };
+            if (o.roomId) {
+                let r = out.rooms.find(rm => rm.id === o.roomId);
+                if (r) r.doors.push(d);
+                else out.standaloneDoors.push(d);
+            } else {
+                out.standaloneDoors.push(d);
+            }
+        } else if (o.type === 'npc') {
+            out.npcs.push({ type: o.npcType, x: o.x * 50, y: o.y * 50, name: o.name });
+        } else if (o.type === 'enemy') {
+            let e = { type: o.enemyType, x: o.x, y: o.y };
+            if (o.roomId) {
+                let r = out.rooms.find(rm => rm.id === o.roomId);
+                if (r) {
+                    let wIdx = (o.wave || 1) - 1;
+                    while(r.waves.length <= wIdx) r.waves.push({ enemies: [] });
+                    r.waves[wIdx].enemies.push(e);
+                } else {
+                    out.enemies.push(e); // Room not found, spawn loose
+                }
+            } else {
+                out.enemies.push(e); // No room specified
+            }
+        }
+    });
+    
+    document.getElementById('json-io').value = JSON.stringify(out, null, 2);
+}
+
+function importJson() {
+    try {
+        let text = document.getElementById('json-io').value;
+        let data = JSON.parse(text);
+        
+        mapW = data.width || 30;
+        mapH = data.height || 30;
+        document.getElementById('map-w').value = mapW;
+        document.getElementById('map-h').value = mapH;
+        
+        if (data.data) {
+            mapData = data.data;
+        } else {
+            initMap();
+        }
+        
+        if (data.start) {
+            startPt = { x: data.start.x, y: data.start.y };
+            if (startPt.x > mapW) {
+                startPt.x = Math.floor(startPt.x / 50);
+                startPt.y = Math.floor(startPt.y / 50);
+            }
+        }
+        
+        rooms = data.rooms || [];
+        
+        objects = [];
+        if (data.boxes) data.boxes.forEach(b => objects.push({ type: 'box', x: b.x, y: b.y }));
+        if (data.teleporters) data.teleporters.forEach(t => objects.push({ type: 'teleporter', tpType: t.type, x: t.x, y: t.y }));
+        if (data.traps) data.traps.forEach(t => objects.push({ type: 'trap', trapType: t.type, lv: t.lv, x: t.x, y: t.y }));
+        if (data.switches) data.switches.forEach(s => objects.push({ type: 'switch', targetDoors: s.targetDoors, x: s.x, y: s.y }));
+        if (data.standaloneDoors) data.standaloneDoors.forEach(d => objects.push({ type: 'door', id: d.id, w: d.w, h: d.h, isHorizontal: d.isHorizontal, x: d.x, y: d.y }));
+        
+        if (data.enemies) data.enemies.forEach(e => objects.push({ type: 'enemy', enemyType: e.type, x: e.x, y: e.y }));
+        rooms.forEach(r => {
+            if (r.waves) {
+                r.waves.forEach((w, wIdx) => {
+                    w.enemies.forEach(e => {
+                        objects.push({ type: 'enemy', enemyType: e.type, x: e.x, y: e.y, roomId: r.id, wave: wIdx + 1 });
+                    });
+                });
+            }
+            if (r.doors) {
+                r.doors.forEach(d => {
+                    objects.push({ type: 'door', id: d.id, w: d.w, h: d.h, isHorizontal: d.isHorizontal, x: d.x, y: d.y, roomId: r.id });
+                });
+            }
+        });
+        
+        if (data.npcs) {
+            data.npcs.forEach(n => {
+                let gx = n.x; let gy = n.y;
+                if (gx > mapW) { gx = Math.floor(gx / 50); gy = Math.floor(gy / 50); }
+                objects.push({ type: 'npc', npcType: n.type, name: n.name, x: gx, y: gy });
+            });
+        }
+        
+        updateCanvasSize();
+        drawMap();
+        alert("Imported successfully!");
+    } catch(e) {
+        alert("Invalid JSON format:\n" + e.message);
+    }
+}
+
+// Initial draw and load
+initMap();
+loadAssets();
+
+</script>
+</body>
+</html>

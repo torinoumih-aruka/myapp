@@ -360,8 +360,8 @@ const BASE_ENEMIES = {
         name: 'カナン',
         pattern: 'canaan',
         attribute: 'machine', // or dark, or native, let's use machine
-        asset: 'robot_1', // Placeholder
-        baseSpd: 0, radius: 15,
+        asset: 'enemy_canadin', // Placeholder
+        baseSpd: 0, radius: 7,
         hp: [120, 240, 480],
         atk: [70, 140, 280],
         def: [20, 40, 80],
@@ -381,7 +381,7 @@ const BASE_ENEMIES = {
         name: 'サベージウルフ',
         pattern: 'savage_wolf',
         attribute: 'native',
-        asset: 'ghost_1', // Placeholder
+        asset: 'enemy_sabagewolf', // Placeholder
         baseSpd: 40, radius: 10,
         hp: [80, 160, 320],
         atk: [60, 120, 240],
@@ -402,7 +402,7 @@ const BASE_ENEMIES = {
         name: 'ラッピー',
         pattern: 'rappy',
         attribute: 'native',
-        asset: 'snakey_left', // Placeholder
+        asset: 'enemy_rappy', // Placeholder
         baseSpd: 15, radius: 10,
         hp: [60, 120, 240],
         atk: [80, 160, 320],
@@ -422,7 +422,7 @@ const BASE_ENEMIES = {
         name: 'レコン',
         pattern: 'booma',
         attribute: 'machine',
-        asset: 'snakey_left', // Placeholder
+        asset: 'enemy_monest_baby', // Placeholder
         baseSpd: 20, radius: 10,
         hp: [50, 100, 200],
         atk: [70, 140, 280],
@@ -442,7 +442,7 @@ const BASE_ENEMIES = {
         name: 'レコボクス',
         pattern: 'recobox',
         attribute: 'machine',
-        asset: 'medusa_awake', // Placeholder
+        asset: 'enemy_monest', // Placeholder
         baseSpd: 0, radius: 20,
         hp: [150, 300, 600],
         atk: [0, 0, 0],
@@ -462,7 +462,7 @@ const BASE_ENEMIES = {
         name: 'カオスソーサラー',
         pattern: 'sorcerer',
         attribute: 'dark',
-        asset: 'don_medosa_1', // Placeholder
+        asset: 'enemy_khaossorcerer', // Placeholder
         baseSpd: 0, radius: 15,
         hp: [200, 400, 800],
         atk: [80, 160, 320],
@@ -507,7 +507,7 @@ const BASE_ENEMIES = {
         name: 'デルバイツァー',
         pattern: 'delbiter',
         attribute: 'dark',
-        asset: 'medusa_awake', // Placeholder
+        asset: 'enemy_delviture', // Placeholder
         baseSpd: 25, radius: 15,
         hp: [250, 500, 1000],
         atk: [120, 240, 480],
@@ -527,7 +527,7 @@ const BASE_ENEMIES = {
         name: 'ポイゾナスリリー',
         pattern: 'lily',
         attribute: 'mutant',
-        asset: 'medusa_awake', 
+        asset: 'enemy_poisonuslilly', 
         baseSpd: 0, radius: 15,
         hp: [100, 200, 400],
         atk: [90, 180, 360],
@@ -548,7 +548,7 @@ const BASE_ENEMIES = {
         name: 'プフィスライム',
         pattern: 'slime',
         attribute: 'native',
-        asset: 'medusa_awake', // Placeholder asset
+        asset: 'enemy_pufyslime', // Placeholder asset
         baseSpd: 15, radius: 10,
         hp: [60, 120, 240],
         atk: [80, 160, 320],
@@ -568,7 +568,7 @@ const BASE_ENEMIES = {
         name: 'ブーマ',
         pattern: 'booma',
         attribute: 'native',
-        asset: 'snakey_left',
+        asset: 'enemy_booma',
         baseSpd: 15, radius: 10,
         hp: [60, 120, 240],
         atk: [80, 160, 320],
@@ -588,7 +588,7 @@ const BASE_ENEMIES = {
         name: 'ゴブーマ',
         pattern: 'booma',
         attribute: 'native',
-        asset: 'medusa_awake',
+        asset: 'enemy_gobooma',
         baseSpd: 15, radius: 10,
         hp: [85, 170, 340],
         atk: [85, 170, 340],
@@ -608,7 +608,7 @@ const BASE_ENEMIES = {
         name: 'ジゴブーマ',
         pattern: 'booma',
         attribute: 'native',
-        asset: 'gol_down_awake',
+        asset: 'enemy_zigobooma',
         baseSpd: 15, radius: 10,
         hp: [110, 220, 440],
         atk: [90, 180, 360],
@@ -628,7 +628,7 @@ const BASE_ENEMIES = {
         name: 'ヒルデベア',
         pattern: 'hildebear',
         attribute: 'native',
-        asset: 'don_medosa_1',
+        asset: 'enemy_hildebear',
         baseSpd: 10, radius: 30,
         hp: [180, 360, 720],
         atk: [140, 280, 560],
@@ -2686,10 +2686,7 @@ class Enemy {
             ctx.globalAlpha = Math.max(0, 1.0 - this.spawnTimer);
         }
 
-        let spriteName = 'snakey_left';
-        if (this.type === 'gobooma') spriteName = 'medusa_awake';
-        else if (this.type === 'jigobooma') spriteName = 'gol_down_awake';
-        else if (this.type === 'hildebear') spriteName = 'don_medosa_1';
+        let spriteName = this.asset;
 
         if (this.invincible && this.pattern === 'slime') ctx.globalAlpha *= 0.5;
         if (this.pattern === 'sorcerer' && this.state === 'invisible') { ctx.restore(); return; }
@@ -2795,7 +2792,8 @@ function loadArea(areaPattern) {
     GAME.currentMapPattern = areaPattern;
     GAME.enemies = [];
     GAME.drops = [];
-    GAME.grid = areaPattern.grid ? JSON.parse(JSON.stringify(areaPattern.grid)) : null;
+    let gridData = areaPattern.grid || areaPattern.data;
+    GAME.grid = gridData ? JSON.parse(JSON.stringify(gridData)) : null;
     
     GAME.rooms = (areaPattern.rooms || []).map(r => ({
         ...r,
@@ -2812,15 +2810,21 @@ function loadArea(areaPattern) {
         areaPattern.standaloneDoors.forEach(d => GAME.doors.push({...d, open: false, roomDef: null}));
     }
     
-    // Write closed doors to grid
+    // Write closed doors to grid and save original tiles
     GAME.doors.forEach(d => {
         if (!GAME.grid) return;
+        d.originalTiles = [];
         for (let dy = 0; dy < d.h; dy++) {
+            let row = [];
             for (let dx = 0; dx < d.w; dx++) {
                 if (GAME.grid[d.y + dy] && GAME.grid[d.y + dy][d.x + dx] !== undefined) {
+                    row.push(GAME.grid[d.y + dy][d.x + dx]);
                     GAME.grid[d.y + dy][d.x + dx] = 0; // Wall
+                } else {
+                    row.push(1);
                 }
             }
+            d.originalTiles.push(row);
         }
     });
     
@@ -2850,9 +2854,26 @@ function startGame(is2P, class1, class2) {
     generateShopLineup();
     GAME.is2P = is2P;
     GAME.players = [];
-    GAME.players.push(new Player(0, class1, MAP_DATA.town.start.x, MAP_DATA.town.start.y));
+    let sx = MAP_DATA.town.start.x;
+    let sy = MAP_DATA.town.start.y;
+    
+    // If the map uses grid format (like exported from map editor), convert to pixels
+    if (MAP_DATA.town.data || MAP_DATA.town.grid) {
+        if (sx < 100) sx = sx * 50 + 25;
+        if (sy < 100) sy = sy * 50 + 25;
+    }
+    
+    GAME.players.push(new Player(0, class1, sx, sy));
     if (is2P) {
-        GAME.players.push(new Player(1, class2 || 'ranger', MAP_DATA.town.start.x + 30, MAP_DATA.town.start.y));
+        GAME.players.push(new Player(1, class2 || 'ranger', sx + 30, sy));
+    }
+    
+    // Initialize grid and objects if the town is a grid map
+    if (MAP_DATA.town.data || MAP_DATA.town.grid) {
+        loadArea(MAP_DATA.town);
+        GAME.mode = 'town'; // Preserve town mode
+        GAME.players[0].x = sx; GAME.players[0].y = sy;
+        if (is2P) { GAME.players[1].x = sx + 30; GAME.players[1].y = sy; }
     }
     
     // Load saved game if exists
@@ -4350,7 +4371,9 @@ function checkLineOfSight(x1, y1, x2, y2, blockHoles = false) {
         let c = Math.floor(cx / ts);
         if (r >= 0 && r < h && c >= 0 && c < w) {
             let tile = GAME.grid[r][c];
-            if (tile === 0 || (blockHoles && tile === 2)) {
+            let isWall = (tile === 0 || (typeof tile === 'string' && tile.includes('_wall_')));
+            let isHole = (tile === 2 || (typeof tile === 'string' && tile.includes('_hole_')));
+            if (isWall || (blockHoles && isHole)) {
                 return { x: cx, y: cy };
             }
         }
@@ -4406,7 +4429,7 @@ function resolveCollisions(dt) {
         }
     }
     // Grid Wall collisions
-    if (GAME.mode === 'map' && GAME.grid) {
+    if (GAME.grid) {
         let ts = 50;
         let h = GAME.grid.length;
         let w = GAME.grid[0].length;
@@ -4420,9 +4443,11 @@ function resolveCollisions(dt) {
                 for (let c = leftCol; c <= rightCol; c++) {
                     if (r < 0 || r >= h || c < 0 || c >= w) continue;
                     let tile = GAME.grid[r][c];
-                    let solid = (tile === 0);
-                    if (tile === 2 && a instanceof Player) solid = true; // holes block players
-                    if (tile === 2 && a instanceof Enemy) solid = true; // holes block current enemies
+                    let isWall = (tile === 0 || (typeof tile === 'string' && tile.includes('_wall_')));
+                    let isHole = (tile === 2 || (typeof tile === 'string' && tile.includes('_hole_')));
+                    let solid = isWall;
+                    if (isHole && a instanceof Player) solid = true; // holes block players
+                    if (isHole && a instanceof Enemy) solid = true; // holes block current enemies
                     
                     if (solid) {
                         let rx = c * ts;
@@ -4512,15 +4537,16 @@ function updateRooms(dt) {
                     }
                     if (r.doors) {
                         r.doors.forEach(dDef => {
-                            let door = GAME.doors.find(d => d.id === dDef.id);
-                            if (door) {
+                            GAME.doors.filter(d => d.id === dDef.id).forEach(door => {
                                 door.open = true;
                                 for (let dy = 0; dy < door.h; dy++) {
                                     for (let dx = 0; dx < door.w; dx++) {
-                                        if (GAME.grid[door.y + dy]) GAME.grid[door.y + dy][door.x + dx] = 1;
+                                        if (GAME.grid[door.y + dy]) {
+                                            GAME.grid[door.y + dy][door.x + dx] = (door.originalTiles && door.originalTiles[dy] && door.originalTiles[dy][dx] !== undefined) ? door.originalTiles[dy][dx] : 1;
+                                        }
                                     }
                                 }
-                            }
+                            });
                         });
                     }
                     addFloatingText(p.x, p.y - 50, 'ROOM CLEARED!', 'cyan');
@@ -4546,17 +4572,22 @@ function updateGimmicks(dt) {
                 let dy = Math.abs(p.y - (sw.y * 50 + 25));
                 if (dx < 20 && dy < 20) {
                     sw.pressed = true;
-                    // Open target doors
+                    // Check target doors for AND logic
                     if (sw.targetDoors) {
                         sw.targetDoors.forEach(tid => {
-                            let d = GAME.doors.find(d => d.id === tid);
-                            if (d && !d.open) {
-                                d.open = true;
-                                for (let dY = 0; dY < d.h; dY++) {
-                                    for (let dX = 0; dX < d.w; dX++) {
-                                        if (GAME.grid[d.y + dY]) GAME.grid[d.y + dY][d.x + dX] = 1;
+                            let targetingSwitches = GAME.switches.filter(s => s.targetDoors && s.targetDoors.includes(tid));
+                            let allPressed = targetingSwitches.every(s => s.pressed);
+                            if (allPressed) {
+                                GAME.doors.filter(d => d.id === tid && !d.open).forEach(d => {
+                                    d.open = true;
+                                    for (let dY = 0; dY < d.h; dY++) {
+                                        for (let dX = 0; dX < d.w; dX++) {
+                                            if (GAME.grid[d.y + dY]) {
+                                                GAME.grid[d.y + dY][d.x + dX] = (d.originalTiles && d.originalTiles[dY] && d.originalTiles[dY][dX] !== undefined) ? d.originalTiles[dY][dX] : 1;
+                                            }
+                                        }
                                     }
-                                }
+                                });
                             }
                         });
                     }
@@ -4795,7 +4826,7 @@ function draw() {
     ctx.translate(-GAME.cameraX, -GAME.cameraY);
 
     // Draw Map grid
-    if (GAME.mode === 'map' && GAME.grid) {
+    if (GAME.grid) {
         let ts = 50;
         let h = GAME.grid.length;
         let w = GAME.grid[0].length;
@@ -4807,7 +4838,7 @@ function draw() {
                 if (px + ts < GAME.cameraX || px > GAME.cameraX + SCREEN_W || py + ts < GAME.cameraY || py > GAME.cameraY + SCREEN_H) continue;
                 
                 let tile = GAME.grid[y][x];
-                let spriteName = tile === 0 ? 'wall_1' : (tile === 2 ? 'tree' : 'grasses');
+                let spriteName = (typeof tile === 'string') ? tile : (tile === 0 ? 'wall_1' : (tile === 2 ? 'tree' : 'grasses'));
                 
                 if (PRE_RENDERED[spriteName]) {
                     ctx.drawImage(PRE_RENDERED[spriteName], px, py, ts, ts);
@@ -4867,10 +4898,14 @@ function draw() {
         // Draw Boxes
         if (GAME.boxes) {
             GAME.boxes.forEach(b => {
-                ctx.fillStyle = '#8b5a2b';
-                ctx.fillRect(b.x - 15, b.y - 15, 30, 30);
-                ctx.strokeStyle = '#5c3a21';
-                ctx.strokeRect(b.x - 15, b.y - 15, 30, 30);
+                if (PRE_RENDERED['enemy_itembox']) {
+                    ctx.drawImage(PRE_RENDERED['enemy_itembox'], b.x - 15, b.y - 15, 30, 30);
+                } else {
+                    ctx.fillStyle = '#8b5a2b';
+                    ctx.fillRect(b.x - 15, b.y - 15, 30, 30);
+                    ctx.strokeStyle = '#5c3a21';
+                    ctx.strokeRect(b.x - 15, b.y - 15, 30, 30);
+                }
             });
         }
         
